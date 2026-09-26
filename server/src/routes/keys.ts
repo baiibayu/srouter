@@ -17,6 +17,7 @@ import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, e
 import { registerCustomModels, registerCustomChatModels } from '../services/custom-model-register.js';
 import { registerCustomMediaModel } from '../services/custom-media-register.js';
 import { discoverEndpointModels, probeEndpointModel, classifyModelId, ModelDiscoveryError } from '../services/model-discovery.js';
+import { autoDiscoverModels } from '../services/auto-discover.js';
 import { probeEmbeddingDimensions, registerCustomEmbeddingModel } from '../services/embeddings.js';
 import { endpointScopeForBaseUrl, normalizeBaseUrl } from '../lib/endpoint-scope.js';
 import { recordCustomModelTombstone } from '../services/custom-model-tombstone.js';
@@ -237,20 +238,10 @@ function noModelsNotice(platform: string): string | undefined {
   const customRoute = baseUrl
     ? `add ${platform} as a custom OpenAI-compatible provider with base URL ${baseUrl}`
     : null;
-  const premium = getSyncState().appliedTier === 'live';
-  if (premium) {
-    return (
-      `Key saved, but your Premium catalog does not list any ${platform} models yet. ` +
-      `Try Check for updates on the Premium page to pull the latest catalog` +
-      (customRoute ? `, or ${customRoute}.` : '.')
-    );
-  }
   return (
-    `Key saved, but no ${platform} models are in your current catalog yet. ` +
-    `Newer providers are published to the premium catalog first and appear ` +
-    `for free-tier installs once they age into the monthly catalog. ` +
-    `Add a Premium license key to use them now` +
-    (customRoute ? `, or ${customRoute}.` : '.')
+    `Key saved, but no ${platform} models could be discovered automatically. ` +
+    `The provider's /v1/models endpoint may be unavailable or returned no chat models. ` +
+    `Try refreshing later, or ${customRoute ?? 'check the provider\'s documentation'}.`
   );
 }
 
@@ -600,8 +591,8 @@ keysRouter.post('/:id/reveal', (req: Request, res: Response) => {
   }
 });
 
-// Add a key
-keysRouter.post('/', (req: Request, res: Response) => {
+// Add a key — auto-discovers models when the catalog hasn't shipped them yet
+keysRouter.post('/', async (req: Request, res: Response) => {
   const parsed = addKeySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: parsed.error.errors.map(e => e.message).join(', ') } });
@@ -629,6 +620,12 @@ keysRouter.post('/', (req: Request, res: Response) => {
     const existing = db.prepare('SELECT id FROM api_keys WHERE platform = ? LIMIT 1').get(platform) as { id: number } | undefined;
     if (existing) {
       db.prepare("UPDATE api_keys SET enabled = 1, status = 'unknown' WHERE id = ?").run(existing.id);
+      // Auto-discover models if this provider has none yet
+      let modelsAvailable = enabledModelCount(platform);
+      if (modelsAvailable === 0) {
+        try { await autoDiscoverModels(platform); } catch {}
+        modelsAvailable = enabledModelCount(platform);
+      }
       res.status(200).json({
         id: existing.id,
         platform,
@@ -636,8 +633,8 @@ keysRouter.post('/', (req: Request, res: Response) => {
         maskedKey: maskKey(keyToStore),
         status: 'unknown',
         enabled: true,
-        modelsAvailable: enabledModelCount(platform),
-        notice: noModelsNotice(platform),
+        modelsAvailable,
+        notice: modelsAvailable > 0 ? undefined : noModelsNotice(platform),
       });
       return;
     }
@@ -653,18 +650,23 @@ keysRouter.post('/', (req: Request, res: Response) => {
     VALUES (?, ?, ?, ?, ?, 'unknown', 1, ?, ?, ?)
   `).run(platform, label ?? '', encrypted, iv, authTag, proxy.encrypted, proxy.iv, proxy.authTag);
 
+  // Auto-discover models if the catalog hasn't shipped them for this provider
+  let modelsAvailable = enabledModelCount(platform);
+  if (modelsAvailable === 0) {
+    try { await autoDiscoverModels(platform); } catch {}
+    modelsAvailable = enabledModelCount(platform);
+  }
+
   res.status(201).json({
     id: result.lastInsertRowid,
     platform,
     label: label ?? '',
-    // Echoed back masked, never in the clear — the response body ends up in
-    // logs and dev tools.
     maskedProxyUrl: maskProxyUrl(proxyUrl),
     maskedKey: maskKey(keyToStore),
     status: 'unknown',
     enabled: true,
-    modelsAvailable: enabledModelCount(platform),
-    notice: noModelsNotice(platform),
+    modelsAvailable,
+    notice: modelsAvailable > 0 ? undefined : noModelsNotice(platform),
   });
 });
 

@@ -878,7 +878,18 @@ export function startCatalogSync(scheduler: Scheduler): void {
     void refreshLicenseStatus();
     void syncCatalog();
   };
-  cancelBootTimer = scheduler.after(BOOT_DELAY_MS, run);
+  cancelBootTimer = scheduler.after(BOOT_DELAY_MS, async () => {
+    run();
+    // Auto-discover models for providers that have keys but zero models in
+    // the catalog. This bypasses the Premium gate: instead of waiting for
+    // the monthly catalog to include a new provider, we query their APIs.
+    try {
+      const { autoDiscoverAll } = await import('./auto-discover.js');
+      await autoDiscoverAll();
+    } catch (err) {
+      console.warn(`[catalog-sync] auto-discover failed: ${err instanceof Error ? err.message : err}`);
+    }
+  });
   cancelInterval = scheduler.every(SYNC_INTERVAL_MS, run);
   console.log(`[catalog-sync] polling ${catalogBaseUrl()} every ${SYNC_INTERVAL_MS / 3600000}h`);
 }
