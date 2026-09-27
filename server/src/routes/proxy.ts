@@ -1386,7 +1386,16 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
           logprobs: null,
           finish_reason: result.choices?.[0]?.finish_reason ?? 'stop',
         }],
-        usage: result.usage,
+        // `usage` is required by the OpenAI completions spec. The fallback
+        // counts computed just above (chars/4 when the provider omits usage,
+        // #764) existed but were dropped here — clients like editor
+        // ghost-text plugins read usage to throttle and saw `undefined`.
+        usage: result.usage ?? {
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: totalTokens,
+          estimated: true,
+        },
         execution_id: requestGroupId,
       });
 
