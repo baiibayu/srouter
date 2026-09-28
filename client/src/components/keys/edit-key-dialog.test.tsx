@@ -72,6 +72,15 @@ describe('editing provider credentials', () => {
     await submit()
     expect(apiFetch).toHaveBeenCalledWith('/api/keys/7', { method: 'PATCH', body: JSON.stringify({ label: 'Renamed' }) })
   })
+  it('lets the anonymous row of a key-optional provider take a real key (#1331)', async () => {
+    mount(<EditKeyDialog apiKey={{ ...key, platform: 'kilo', keyless: true, keyOptional: true }} onOpenChange={onOpenChange} />)
+    const input = container.querySelector<HTMLInputElement>('#edit-key-value')!
+    expect(input.readOnly).toBe(false)
+    expect(input.placeholder).toBe('Optional')
+    enter('#edit-key-value', ' kilo-token ')
+    await submit()
+    expect(apiFetch).toHaveBeenCalledWith('/api/keys/7', { method: 'PATCH', body: JSON.stringify({ key: 'kilo-token' }) })
+  })
   it('sends a normal provider token without an account prefix', async () => {
     mount(<EditKeyDialog apiKey={{ ...key, platform: 'groq' }} onOpenChange={onOpenChange} />)
     enter('#edit-key-value', ' new-token ')

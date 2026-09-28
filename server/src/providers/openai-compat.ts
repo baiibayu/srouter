@@ -15,16 +15,11 @@ import { recordQuotaObservationsFromResponse, type QuotaObservationContext } fro
 import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { isAbortLikeError } from '../lib/error-classify.js';
 import { contentToString } from '../lib/content.js';
+import { bearerAuthHeader } from '../lib/credential.js';
 
-/** The sentinel the Keys page stores for keyless/custom endpoints (routes/
- * keys.ts keeps `no-key` for "auth off"), plus the empty string a caller can
- * hand a provider when no credential exists. A keyless provider sends no
- * Authorization header for these and a real bearer for anything else (#1331).
- * Exported so validateKey and the request path share one definition. */
-export function isAnonymousCredential(apiKey: string | null | undefined): boolean {
-  const v = apiKey?.trim() ?? '';
-  return v === '' || v === 'no-key';
-}
+// Shared with the media/embeddings custom-endpoint paths; re-exported so
+// existing imports keep working (#1331).
+export { isAnonymousCredential } from '../lib/credential.js';
 
 /** Hosts that ARE Moonshot's OpenAI-compatible API (api.moonshot.ai,
  * api.moonshot.cn, api.kimi.com and their subdomains). */
@@ -181,8 +176,7 @@ export class OpenAICompatProvider extends BaseProvider {
    * bearer (#1331): the presence of a credential decides at request time —
    * Kilo, OVH and AI Horde all accept both modes per their docs. */
   private authHeader(apiKey: string): Record<string, string> {
-    if (isAnonymousCredential(apiKey)) return {};
-    return { 'Authorization': `Bearer ${apiKey.trim()}` };
+    return bearerAuthHeader(apiKey);
   }
 
   /** Requesty's Leanstral route rejects greedy sampling when temperature=0.

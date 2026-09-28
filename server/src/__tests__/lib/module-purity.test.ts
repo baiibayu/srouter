@@ -32,6 +32,8 @@ const LIB = path.resolve(here, '../../lib');
 // loud in a diff.
 const PURE_MODULES = [
   'budget.ts',
+  // Shared by the provider, media and embeddings request paths (#1331).
+  'credential.ts',
   'error-classify.ts',
   'header-value.ts',
   'provider-identity.ts',

@@ -14,6 +14,7 @@ import { secondsUntilNextMonth } from './key-budget.js';
 import { getClientContext } from '../lib/client-context.js';
 import { reserveProviderCredential } from './provider-credential.js';
 import { proxyFetch } from '../lib/proxy.js';
+import { bearerAuthHeader } from '../lib/credential.js';
 import { assessProviderUrl } from '../lib/url-guard.js';
 import { isOnCooldown, setCooldown } from './ratelimit.js';
 import { SPEECHIFY_BASE_URL, SPEECHIFY_VERSION } from '../providers/speechify.js';
@@ -356,7 +357,7 @@ async function callImageProvider(
       if (p.size) body.size = p.size;
       const r = await mediaFetch(`${credential.baseUrl}/images/generations`, 'custom', 'image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key ?? 'no-key'}` },
+        headers: { 'Content-Type': 'application/json', ...bearerAuthHeader(key) },
         body: JSON.stringify(body),
       });
       const j = (await r.json()) as { data?: { b64_json?: string; url?: string }[] };
@@ -622,7 +623,7 @@ async function callSpeechProvider(
       if (p.format) body.response_format = p.format;
       const r = await mediaFetch(`${credential.baseUrl}/audio/speech`, 'custom', 'audio', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key ?? 'no-key'}` },
+        headers: { 'Content-Type': 'application/json', ...bearerAuthHeader(key) },
         body: JSON.stringify(body),
       });
       return {
@@ -1002,7 +1003,7 @@ async function callTranscriptionProvider(
       // Never set Content-Type by hand — FormData supplies the boundary.
       const r = await mediaFetch(`${credential.baseUrl}/audio/transcriptions`, 'custom', 'transcription', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${key ?? 'no-key'}` },
+        headers: { ...bearerAuthHeader(key) },
         body: form,
       });
       const j = (await r.json()) as { text?: string; language?: string; duration?: number; segments?: unknown[] };

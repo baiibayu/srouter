@@ -22,9 +22,10 @@ export function GetKeyLink({ url }: { url: string }) {
 // `url` points to each provider's key-management / signup page so the Keys page
 // can show a "Get API key" shortcut (#137). OpenCode Zen's key is free from
 // opencode.ai/auth — no card needed; billing only applies to paid models (#128).
-// `keyless: true` providers (Kilo's anonymous free tier) need no API key — the
-// form disables the key field and submits a sentinel the backend stores so
-// routing treats the platform as configured.
+// `keyless: true` providers (Kilo, OVH, AI Horde) need no API key but accept
+// one (#1331): the key field is optional, a blank submit stores a sentinel so
+// routing treats the platform as configured and calls go out anonymously, and
+// a real key is stored and sent like any other.
 export const PLATFORMS: { value: Platform; label: string; url: string; keyless?: boolean }[] = [
   { value: 'aclide', label: 'ACLIDE (shared monthly credits)', url: 'https://aclide.com/en/dashboard/api-keys' },
   { value: 'speka', label: 'Speka ($1 shared monthly credits)', url: 'https://speka.me/dashboard/keys' },

@@ -5,7 +5,8 @@ import multer from 'multer';
 import path from 'path';
 import { getDb } from '../db/index.js';
 import { resolveProvider, getAllProviders } from '../providers/index.js';
-import { OpenAICompatProvider } from '../providers/openai-compat.js';
+import { OpenAICompatProvider, isAnonymousCredential } from '../providers/openai-compat.js';
+import { getSyncState } from '../services/catalog-sync.js';
 import { encrypt, decrypt, maskKey } from '../lib/crypto.js';
 import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../lib/key-parser.js';
 import { assessProviderUrl } from '../lib/url-guard.js';
@@ -378,7 +379,12 @@ keysRouter.get('/', (_req: Request, res: Response) => {
       },
       status: row.status,
       enabled: row.enabled === 1,
-      keyless: resolveProvider(row.platform)?.keyless === true,
+      // `keyOptional`: the platform works with or without a key (Kilo, OVH,
+      // AI Horde). `keyless`: THIS row is the anonymous sentinel, so there is
+      // no credential to copy, scope or reveal. A real key saved on a
+      // key-optional platform is an ordinary key row (#1331).
+      keyOptional: resolveProvider(row.platform)?.keyless === true,
+      keyless: resolveProvider(row.platform)?.keyless === true && isAnonymousCredential(realKey),
       // Lets the export dialog count exactly what the export will write.
       exportable: isExportableKey({ platform: row.platform, baseUrl: row.base_url ?? null, key: realKey }),
       createdAt: row.created_at,
@@ -618,34 +624,63 @@ keysRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
-  // Keyless providers (Kilo anon) store a sentinel so routing sees the platform
-  // as configured; the provider omits the auth header on outgoing calls.
+  // Key-optional providers (Kilo, OVH, AI Horde) store a sentinel when no key
+  // is given so routing sees the platform as configured; the provider then
+  // calls upstream anonymously. A real key is stored encrypted like any other
+  // and sent as the bearer (#1331).
   const keyToStore = isKeyless ? (rawKey || 'no-key') : rawKey;
+  const proxyUrl = parsed.data.proxyUrl?.trim() ?? '';
 
   const db = getDb();
 
-  // A keyless provider needs only one sentinel row — re-enable an existing one
-  // instead of piling up duplicates each time the user clicks "Add".
   if (isKeyless) {
-    const existing = db.prepare('SELECT id FROM api_keys WHERE platform = ? LIMIT 1').get(platform) as { id: number } | undefined;
-    if (existing) {
-      db.prepare("UPDATE api_keys SET enabled = 1, status = 'unknown' WHERE id = ?").run(existing.id);
-      // Auto-discover models if this provider has none yet
-      let modelsAvailable = enabledModelCount(platform);
-      if (modelsAvailable === 0) {
+    const rows = db.prepare('SELECT id, encrypted_key, iv, auth_tag FROM api_keys WHERE platform = ? ORDER BY id')
+      .all(platform) as { id: number; encrypted_key: string; iv: string; auth_tag: string }[];
+    const plaintext = (r: typeof rows[number]): string | null => {
+      try { return decrypt(r.encrypted_key, r.iv, r.auth_tag); } catch { return null; }
+    };
+    const sentinel = rows.find(r => isAnonymousCredential(plaintext(r)));
+    const respond = async (id: number, maskedKey: string) => {
+      // Auto-discover models if the catalog hasn't shipped them for this provider
+      if (enabledModelCount(platform) === 0) {
         try { await autoDiscoverModels(platform); } catch {}
-        modelsAvailable = enabledModelCount(platform);
       }
-      res.status(200).json({
-        id: existing.id,
+      return res.status(200).json({
+        id,
         platform,
         label: label ?? '',
-        maskedKey: maskKey(keyToStore),
+        maskedKey,
         status: 'unknown',
         enabled: true,
-        modelsAvailable,
-        notice: modelsAvailable > 0 ? undefined : noModelsNotice(platform),
+        modelsAvailable: enabledModelCount(platform),
+        notice: noModelsNotice(platform),
       });
+    };
+
+    if (!rawKey) {
+      // Only one sentinel row is needed: re-enable an existing row instead of
+      // piling up duplicates each time the user clicks "Enable".
+      const existing = sentinel ?? rows[0];
+      if (existing) {
+        db.prepare("UPDATE api_keys SET enabled = 1, status = 'unknown' WHERE id = ?").run(existing.id);
+        await respond(existing.id, maskKey(plaintext(existing) ?? keyToStore));
+        return;
+      }
+    } else if (sentinel) {
+      // A real key upgrades the anonymous row in place rather than leaving a
+      // second, anonymous row competing with it in the pool.
+      const { encrypted, iv, authTag } = encrypt(rawKey);
+      const updates = ['encrypted_key = ?', 'iv = ?', 'auth_tag = ?', 'enabled = 1', "status = 'unknown'", 'last_checked_at = NULL', 'last_health_error = NULL'];
+      const values: (string | number | null)[] = [encrypted, iv, authTag];
+      if (label !== undefined) { updates.push('label = ?'); values.push(label); }
+      if (parsed.data.proxyUrl !== undefined) {
+        const proxy = encryptProxyUrl(proxyUrl);
+        updates.push('proxy_encrypted = ?', 'proxy_iv = ?', 'proxy_auth_tag = ?');
+        values.push(proxy.encrypted, proxy.iv, proxy.authTag);
+      }
+      db.prepare(`UPDATE api_keys SET ${updates.join(', ')} WHERE id = ?`).run(...values, sentinel.id);
+      clearCooldownsForKey(sentinel.id);
+      await respond(sentinel.id, maskKey(rawKey));
       return;
     }
   }
@@ -653,7 +688,6 @@ keysRouter.post('/', async (req: Request, res: Response) => {
   const { encrypted, iv, authTag } = encrypt(keyToStore);
   // #590: the proxy URL is encrypted like the key itself — it usually embeds
   // `user:pass@` credentials. Absent/'' stores NULLs = no override.
-  const proxyUrl = parsed.data.proxyUrl?.trim() ?? '';
   const proxy = encryptProxyUrl(proxyUrl);
   const result = db.prepare(`
     INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, proxy_encrypted, proxy_iv, proxy_auth_tag)
@@ -1667,10 +1701,8 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
       res.status(404).json({ error: { message: 'Key not found' } });
       return;
     }
-    if (resolveProvider(stored.platform as Platform)?.keyless === true) {
-      res.status(400).json({ error: { message: 'Keyless providers cannot store a credential' } });
-      return;
-    }
+    // Key-optional platforms (Kilo, OVH, AI Horde) accept a real key here like
+    // any other provider: it replaces the anonymous sentinel (#1331).
 
     if (stored.platform === 'cloudflare') {
       const separator = key.indexOf(':');

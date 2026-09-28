@@ -14,6 +14,7 @@ import { RetryHintTracker, retryAfterSeconds } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
 import { reserveProviderCredential } from './provider-credential.js';
 import { proxyFetch } from '../lib/proxy.js';
+import { bearerAuthHeader } from '../lib/credential.js';
 import { customEndpointKeyIds } from './custom-endpoint.js';
 import type { Db } from '../db/types.js';
 import { SPEKA_BASE_URL } from '../providers/speka.js';
@@ -140,7 +141,9 @@ async function openAiStyleEmbed(
   if (dimensions !== undefined) body.dimensions = dimensions;
   const r = await proxyFetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    // A custom endpoint with auth off holds the `no-key` sentinel: omit the
+    // header instead of sending `Bearer no-key` (#1331).
+    headers: { 'Content-Type': 'application/json', ...bearerAuthHeader(key) },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   }, platform, 'embedding', FETCH_TIMEOUT_MS);

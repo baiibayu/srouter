@@ -55,13 +55,15 @@ export function EditKeyDialog({
   const [tokenCap, setTokenCap] = useState(capToInput(apiKey.monthlyTokenCap))
 
   const needsAccountId = apiKey.platform === 'cloudflare'
-  const canEditCredential = !apiKey.keyless
+  // Every row takes a credential, including the anonymous row of a
+  // key-optional platform (Kilo, OVH, AI Horde): a real key replaces the
+  // sentinel there (#1331).
   const provider = PLATFORMS.find(p => p.value === apiKey.platform)
   const credential = useMemo(() => {
-    if (!canEditCredential || !apiKeyValue.trim()) return ''
+    if (!apiKeyValue.trim()) return ''
     if (needsAccountId) return accountId.trim() ? `${accountId.trim()}:${apiKeyValue.trim()}` : ''
     return apiKeyValue.trim()
-  }, [accountId, apiKeyValue, canEditCredential, needsAccountId])
+  }, [accountId, apiKeyValue, needsAccountId])
 
   const credentialError = needsAccountId &&
     (accountId.trim() ? !apiKeyValue.trim() : Boolean(apiKeyValue.trim()))
@@ -142,35 +144,33 @@ export function EditKeyDialog({
               <Label className="text-xs" htmlFor="edit-key-value">
                 {needsAccountId ? t('keys.apiToken') : t('keys.customApiKey')}
               </Label>
-              <code className="font-mono text-[11px] text-muted-foreground">{apiKey.maskedKey}</code>
+              {!apiKey.keyless && (
+                <code className="font-mono text-[11px] text-muted-foreground">{apiKey.maskedKey}</code>
+              )}
             </div>
-            {canEditCredential ? (
-              <>
-                {needsAccountId && (
-                  <Input
-                    value={accountId}
-                    onChange={e => setAccountId(e.target.value)}
-                    placeholder={t('keys.accountId')}
-                    className="font-mono text-xs"
-                    aria-invalid={attempted && Boolean(credentialError)}
-                  />
-                )}
-                <Input
-                  id="edit-key-value"
-                  type="password"
-                  autoComplete="new-password"
-                  value={apiKeyValue}
-                  onChange={e => setApiKeyValue(e.target.value)}
-                  placeholder={needsAccountId ? t('keys.bearerTokenPlaceholder') : t('keys.pasteKeyPlaceholder')}
-                  className="font-mono text-xs"
-                  aria-invalid={attempted && Boolean(credentialError)}
-                />
-                {attempted && <FieldError error={credentialError} />}
-                <p className="text-[11px] text-muted-foreground">{t('keys.editCredentialHint')}</p>
-              </>
-            ) : (
-              <Input value={t('keys.noKeyNeededPlaceholder')} readOnly className="bg-muted/30 font-mono text-xs" />
+            {needsAccountId && (
+              <Input
+                value={accountId}
+                onChange={e => setAccountId(e.target.value)}
+                placeholder={t('keys.accountId')}
+                className="font-mono text-xs"
+                aria-invalid={attempted && Boolean(credentialError)}
+              />
             )}
+            <Input
+              id="edit-key-value"
+              type="password"
+              autoComplete="new-password"
+              value={apiKeyValue}
+              onChange={e => setApiKeyValue(e.target.value)}
+              placeholder={apiKey.keyless ? t('keys.keyOptionalPlaceholder') : (needsAccountId ? t('keys.bearerTokenPlaceholder') : t('keys.pasteKeyPlaceholder'))}
+              className="font-mono text-xs"
+              aria-invalid={attempted && Boolean(credentialError)}
+            />
+            {attempted && <FieldError error={credentialError} />}
+            <p className="text-[11px] text-muted-foreground">
+              {apiKey.keyless ? t('keys.keyOptionalHint') : t('keys.editCredentialHint')}
+            </p>
           </div>
 
           {/* Monthly budget (#1158) stays one collapsed line; it opens by

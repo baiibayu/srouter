@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { OpenAICompatProvider, isAnonymousCredential } from '../../providers/openai-compat.js';
+import { resolveProvider } from '../../providers/index.js';
+import { bearerAuthHeader } from '../../lib/credential.js';
 
 // #1331: a real API key saved on a keyless platform (Kilo, OVH) was silently
 // routed over the anonymous path, and a custom endpoint stored with the
@@ -71,5 +73,52 @@ describe('keyless bearer handling (#1331)', () => {
     expect(isAnonymousCredential('')).toBe(true);
     expect(isAnonymousCredential(undefined)).toBe(true);
     expect(isAnonymousCredential('sk-1')).toBe(false);
+  });
+
+  // The registered key-optional providers, per platform: a real key is sent,
+  // the sentinel is anonymous (AI Horde keeps its documented anonymous key).
+  describe.each([
+    ['kilo', undefined],
+    ['ovh', undefined],
+    ['aihorde', 'Bearer 0000000000'],
+  ] as const)('registered %s provider', (platform, anonymousBearer) => {
+    it('is key-optional', () => {
+      expect(resolveProvider(platform)?.keyless).toBe(true);
+    });
+
+    it('sends the bearer for a real key on chat and on the health check', async () => {
+      const provider = resolveProvider(platform)!;
+      const chat: { headers?: Record<string, string> } = {};
+      okFetch(chat);
+      await provider.chatCompletion(`real-${platform}-key`, [{ role: 'user', content: 'hi' }], 'm');
+      expect(sentBearer(chat.headers)).toBe(`Bearer real-${platform}-key`);
+
+      vi.restoreAllMocks();
+      const health: { headers?: Record<string, string> } = {};
+      okFetch(health);
+      await provider.validateKey(`real-${platform}-key`);
+      expect(sentBearer(health.headers)).toBe(`Bearer real-${platform}-key`);
+    });
+
+    it('stays anonymous for the sentinel on chat and on the health check', async () => {
+      const provider = resolveProvider(platform)!;
+      const chat: { headers?: Record<string, string> } = {};
+      okFetch(chat);
+      await provider.chatCompletion('no-key', [{ role: 'user', content: 'hi' }], 'm');
+      expect(sentBearer(chat.headers)).toBe(anonymousBearer);
+
+      vi.restoreAllMocks();
+      const health: { headers?: Record<string, string> } = {};
+      okFetch(health);
+      await provider.validateKey('no-key');
+      expect(sentBearer(health.headers)).toBe(anonymousBearer);
+    });
+  });
+
+  it('bearerAuthHeader omits the header for the sentinel and trims a real key', () => {
+    expect(bearerAuthHeader('no-key')).toEqual({});
+    expect(bearerAuthHeader('')).toEqual({});
+    expect(bearerAuthHeader(null)).toEqual({});
+    expect(bearerAuthHeader('  sk-abc  ')).toEqual({ Authorization: 'Bearer sk-abc' });
   });
 });

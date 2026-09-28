@@ -377,6 +377,22 @@ describe('embeddings service', () => {
       expect(log.key_id).toBe(keyId);
     });
 
+    it('sends no Authorization header to a custom endpoint holding the no-key sentinel (#1331)', async () => {
+      const keyId = addCustomKey('http://127.0.0.1:8182/v1', 'no-key');
+      getDb().prepare(`
+        INSERT INTO embedding_models
+          (family, platform, model_id, display_name, dimensions, max_input_tokens, priority, enabled, quota_label, key_id)
+        VALUES ('anon-embed', 'custom', 'anon-embed-v1', 'Anon Embed', 3, NULL, 1, 1, '', ?)
+      `).run(keyId);
+      const fetchMock = mockFetch(async () => okEmbeddingResponse(3));
+
+      await runEmbeddings('anon-embed', ['hello']);
+
+      const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+      expect(headers.Authorization).toBeUndefined();
+      expect(headers['Content-Type']).toBe('application/json');
+    });
+
     describe('dimensions parameter (MRL truncation)', () => {
       it('forwards dimensions to NVIDIA NeMo NIM in the request body', async () => {
         addKey('nvidia');
