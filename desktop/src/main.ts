@@ -6,6 +6,7 @@ import { loadConfig, saveConfig } from './config.js';
 import { installFileLogger } from './logger.js';
 import { buildTray, refreshTrayLocale } from './tray.js';
 import { trayIsInMenuBar } from './tray-visibility.js';
+import { shouldOpenDashboardOnLaunch } from './tray-platform.js';
 import { openDashboard } from './window.js';
 import { todayStats, hourlyRequests, successRateToday } from './stats.js';
 import { normalizeLocale, nativeStrings, type NativeLocale } from './i18n.js';
@@ -278,25 +279,44 @@ if (!app.requestSingleInstanceLock()) {
       resolvedPort = port;
       saveConfig({ ...cfg, port });
       sessionToken = ensureSessionToken();
-      const tray = buildTray(
-        port,
-        sessionToken,
-        () => locale,
-        () => loadConfig().lanAccess ?? false,
-        toggleLanAccess,
-        () => loadConfig().showInDock ?? true,
-        toggleShowInDock,
-      );
+      // The server is already up, so a tray that fails to build must not take
+      // the app down with it: fall back to the dashboard window (#1353).
+      let tray: Tray | null = null;
+      try {
+        tray = buildTray(
+          port,
+          sessionToken,
+          () => locale,
+          () => loadConfig().lanAccess ?? false,
+          toggleLanAccess,
+          () => loadConfig().showInDock ?? true,
+          toggleShowInDock,
+        );
+      } catch (err) {
+        console.warn('[desktop] could not create the tray icon:', err);
+      }
       console.log(`[desktop] SRouter running on http://${host}:${port}${cfg.lanAccess ? ' (LAN access enabled)' : ''}`);
       // A tray that macOS refuses to draw still constructs cleanly, so the only
       // way to notice is to look at where the item landed (#807).
-      if (process.platform === 'darwin') setTimeout(() => reportHiddenTray(tray, port), TRAY_PROBE_DELAY_MS);
+      if (tray && process.platform === 'darwin') {
+        const built = tray;
+        setTimeout(() => reportHiddenTray(built, port), TRAY_PROBE_DELAY_MS);
+      }
+
+      const welcomedBefore = loadConfig().launchDashboardShown ?? false;
+      if (
+        !process.env.SROUTER_SHOT
+        && shouldOpenDashboardOnLaunch(process.platform, { trayBuilt: tray !== null, welcomedBefore })
+      ) {
+        openDashboard(port, sessionToken);
+        if (!welcomedBefore) saveConfig({ ...loadConfig(), launchDashboardShown: true });
+      }
 
       // Dev-only UI verification: SROUTER_SHOT=1 opens the popover and the
       // dashboard, captures both to /tmp, and quits. SROUTER_SHOT=hold opens
       // the popover and keeps it pinned (blur ignored) so a real screen
       // capture can include the compositor's vibrancy. Never set when packaged.
-      if (process.env.SROUTER_SHOT && !app.isPackaged) {
+      if (tray && process.env.SROUTER_SHOT && !app.isPackaged) {
         const fs = await import('node:fs');
         const { togglePopover, getPopoverWindow } = await import('./popover.js');
         const { getDashboardWindow } = await import('./window.js');
