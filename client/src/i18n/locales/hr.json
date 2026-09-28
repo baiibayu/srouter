@@ -705,7 +705,12 @@
     "testThrottled": "Pričekajte {seconds}s prije ponovnog testiranja ovog modela.",
     "noModelsForProvider": "Nema konfiguriranih modela za ovog pružatelja.",
     "testModels": "Testiraj modele",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Mjesečno ograničenje zahtjeva",
+    "monthlyTokenCapLabel": "Mjesečno ograničenje tokena",
+    "capUnlimitedPlaceholder": "Neograničeno",
+    "capEditHint": "Ograničenja se resetiraju 1. u 00:00 UTC. Ostavite prazno za neograničeno.",
+    "monthlyUsageLine": "{requests} zahtjeva, {tokens} tokena ovaj mjesec"
   },
   "backups": {
     "title": "Backups",

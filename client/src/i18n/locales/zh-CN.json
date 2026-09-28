@@ -705,7 +705,12 @@
     "testThrottled": "请等待 {seconds} 秒后再测试此模型。",
     "noModelsForProvider": "此提供方尚未配置任何模型。",
     "testModels": "测试模型",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "每月请求上限",
+    "monthlyTokenCapLabel": "每月 Token 上限",
+    "capUnlimitedPlaceholder": "无限制",
+    "capEditHint": "配额在每月 1 日 00:00 UTC 重置。留空表示无限制。",
+    "monthlyUsageLine": "本月 {requests} 次请求，{tokens} tokens"
   },
   "backups": {
     "title": "备份",

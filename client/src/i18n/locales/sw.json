@@ -705,7 +705,12 @@
     "testThrottled": "Tafadhali subiri sekunde {seconds} kabla ya kujaribu muundo huu tena.",
     "noModelsForProvider": "Hakuna miundo iliyowekwa kwa mtoa huduma huyu.",
     "testModels": "Jaribu miundo",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Kikomo cha kila mwezi cha maombi",
+    "monthlyTokenCapLabel": "Kikomo cha kila mwezi cha tokeni",
+    "capUnlimitedPlaceholder": "Bila kikomo",
+    "capEditHint": "Vikomo huwekwa upya tarehe 1 saa 00:00 UTC. Acha wazi bila kikomo.",
+    "monthlyUsageLine": "Maombi {requests}, tokeni {tokens} mwezi huu"
   },
   "backups": {
     "title": "Backups",

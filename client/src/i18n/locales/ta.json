@@ -705,7 +705,12 @@
     "testThrottled": "இந்த மாதிரியை மீண்டும் சோதிக்கும் முன் {seconds} வினாடிகள் காத்திருக்கவும்.",
     "noModelsForProvider": "இந்த வழங்குநருக்கு மாதிரிகள் எதுவும் கட்டமைக்கப்படவில்லை.",
     "testModels": "மாதிரிகளைச் சோதிக்கவும்",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "மாத கோரிக்கை வரம்பு",
+    "monthlyTokenCapLabel": "மாத டோக்கன் வரம்பு",
+    "capUnlimitedPlaceholder": "வரம்பற்றது",
+    "capEditHint": "ஒவ்வொரு மாதம் 1ஆம் தேதி 00:00 UTC-ல் வரம்புகள் மீட்டமைக்கப்படும். வரம்பற்றதாக வெறியே விடவும்.",
+    "monthlyUsageLine": "இந்த மாதம் {requests} கோரிக்கைகள், {tokens} டோக்கன்கள்"
   },
   "backups": {
     "title": "Backups",

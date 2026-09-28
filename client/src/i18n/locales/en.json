@@ -705,7 +705,12 @@
     "testFailed": "Model test failed",
     "testThrottled": "Please wait {seconds}s before testing this model again.",
     "noModelsForProvider": "No models configured for this provider.",
-    "testModels": "Test models"
+    "testModels": "Test models",
+    "monthlyRequestCapLabel": "Monthly request cap",
+    "monthlyTokenCapLabel": "Monthly token cap",
+    "capUnlimitedPlaceholder": "Unlimited",
+    "capEditHint": "Caps reset on the 1st, 00:00 UTC. Leave blank for unlimited.",
+    "monthlyUsageLine": "{requests} requests, {tokens} tokens this month"
   },
   "backups": {
     "title": "Backups",

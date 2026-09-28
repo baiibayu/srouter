@@ -705,7 +705,12 @@
     "testThrottled": "कृपया या मॉडेलची पुन्हा चाचणी घेण्यापूर्वी {seconds} से प्रतीक्षा करा.",
     "noModelsForProvider": "या प्रदात्यासाठी कोणतेही मॉडेल कॉन्फिगर केलेले नाही.",
     "testModels": "मॉडेल तपासा",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "मासिक विनंती मर्यादा",
+    "monthlyTokenCapLabel": "मासिक टोकन मर्यादा",
+    "capUnlimitedPlaceholder": "अमर्याद",
+    "capEditHint": "मर्यादा दर महिन्याच्या 1 रोजी 00:00 UTC ला रीसेट होतात. अमर्यादसाठी रिकामे ठेवा.",
+    "monthlyUsageLine": "या महिन्यात {requests} विनंत्या, {tokens} टोकन"
   },
   "backups": {
     "title": "Backups",

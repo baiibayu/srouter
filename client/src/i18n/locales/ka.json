@@ -705,7 +705,12 @@
     "testThrottled": "გთხოვთ მოიცადოთ {seconds}წმ ამ მოდელის ხელახლა შემოწმებამდე.",
     "noModelsForProvider": "ამ პროვაიდერისთვის მოდელები არ არის კონფიგურირებული.",
     "testModels": "მოდელების ტესტირება",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "თვიური მოთხოვნების ლიმიტი",
+    "monthlyTokenCapLabel": "თვიური ტოკენების ლიმიტი",
+    "capUnlimitedPlaceholder": "შეუზღუდავი",
+    "capEditHint": "ლიმიტები სათითაო თვის 1-ს 00:00 UTC აღდგება. დატოვეთ ცარიელი შეუზღუდავისთვის.",
+    "monthlyUsageLine": "ამ თვეში {requests} მოთხოვნა, {tokens} ტოკენი"
   },
   "backups": {
     "title": "Backups",

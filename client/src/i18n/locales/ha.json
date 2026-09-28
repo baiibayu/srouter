@@ -705,7 +705,12 @@
     "testThrottled": "Da fatan za a jira {seconds}s kafin sake gwada wannan samfurin.",
     "noModelsForProvider": "Babu samfuran da aka saita don wannan mai ba da sabis.",
     "testModels": "Gwada samfura",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Iyakar buƙatota ta wata",
+    "monthlyTokenCapLabel": "Iyakar token ta wata",
+    "capUnlimitedPlaceholder": "Ba iyaka ba",
+    "capEditHint": "Ana saita iyakoki a ranar 1 00:00 UTC. Bara komai don mara iyaka.",
+    "monthlyUsageLine": "Buƙatotu {requests}, token {tokens} wannan wata"
   },
   "backups": {
     "title": "Backups",

@@ -705,7 +705,12 @@
     "testFailed": "Pengujian model gagal",
     "testThrottled": "Harap tunggu {seconds} detik sebelum menguji model ini lagi.",
     "noModelsForProvider": "Tidak ada model yang dikonfigurasi untuk penyedia ini.",
-    "testModels": "Uji model"
+    "testModels": "Uji model",
+    "monthlyRequestCapLabel": "Batas permintaan bulanan",
+    "monthlyTokenCapLabel": "Batas token bulanan",
+    "capUnlimitedPlaceholder": "Tanpa batas",
+    "capEditHint": "Batas disetel ulang pada tanggal 1 pukul 00:00 UTC. Kosongkan untuk tanpa batas.",
+    "monthlyUsageLine": "{requests} permintaan, {tokens} token bulan ini"
   },
   "backups": {
     "title": "Backups",

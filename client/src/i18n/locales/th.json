@@ -705,7 +705,12 @@
     "testThrottled": "โปรดรอ {seconds} วินาทีก่อนที่จะทดสอบโมเดลนี้อีกครั้ง",
     "noModelsForProvider": "ไม่มีการกำหนดค่าโมเดลสำหรับผู้ให้บริการนี้",
     "testModels": "ทดสอบโมเดล",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "ขีดจำกัดคำขอรายเดือน",
+    "monthlyTokenCapLabel": "ขีดจำกัดโทเคนรายเดือน",
+    "capUnlimitedPlaceholder": "ไม่จำกัด",
+    "capEditHint": "ขีดจำกัดจะรีเซ็ตวันที่ 1 เวลา 00:00 UTC เว้นว่างไว้หากไม่จำกัด",
+    "monthlyUsageLine": "เดือนนี้ {requests} คำขอ {tokens} โทเคน"
   },
   "backups": {
     "title": "Backups",

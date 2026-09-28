@@ -705,7 +705,12 @@
     "testThrottled": "Ushbu modelni qayta sinashdan oldin {seconds} soniya kuting.",
     "noModelsForProvider": "Ushbu taʼminotchi uchun modellar sozlanmagan.",
     "testModels": "Modellarni sinab ko‘rish",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Oylik so‘rov chegarasi",
+    "monthlyTokenCapLabel": "Oylik token chegarasi",
+    "capUnlimitedPlaceholder": "Cheksiz",
+    "capEditHint": "Chegaralar har oyning 1-sana 00:00 UTC da tiklanadi. Cheksiz uchun bo‘sh qoldiring.",
+    "monthlyUsageLine": "Bu oy {requests} so‘rov, {tokens} token"
   },
   "backups": {
     "title": "Backups",

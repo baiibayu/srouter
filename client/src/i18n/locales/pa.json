@@ -705,7 +705,12 @@
     "testThrottled": "ਇਸ ਮਾਡਲ ਦੀ ਦੁਬਾਰਾ ਜਾਂਚ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਕਿਰਪਾ ਕਰਕੇ {seconds} ਸਕਿੰਟ ਉਡੀਕ ਕਰੋ।",
     "noModelsForProvider": "ਇਸ ਪ੍ਰਦਾਤਾ ਲਈ ਕੋਈ ਮਾਡਲ ਕੌਂਫਿਗਰ ਨਹੀਂ ਕੀਤਾ ਗਿਆ ਹੈ।",
     "testModels": "ਮਾਡਲ ਟੈਸਟ ਕਰੋ",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "ਮਹੀਨਾਵਾਰੀ ਬੇਨਤੀ ਸੀਮਾ",
+    "monthlyTokenCapLabel": "ਮਹੀਨਾਵਾਰੀ ਟੋਕਨ ਸੀਮਾ",
+    "capUnlimitedPlaceholder": "ਅਸੀਮਤ",
+    "capEditHint": "ਸੀਮਾਵਾਂ ਹਰ ਮਹੀਨੇ 1 ਤਾਰੀਖ਼ ਨੂੰ 00:00 UTC 'ਤੇ ਰੀਸੈੱਟ ਹੁੰਦੀਆਂ ਹਨ। ਅਸੀਮਤ ਲਈ ਖਾਲੀ ਛੱਡੋ।",
+    "monthlyUsageLine": "ਇਸ ਮਹੀਨੇ {requests} ਬੇਨਤੀਆਂ, {tokens} ਟੋਕਨ"
   },
   "backups": {
     "title": "Backups",

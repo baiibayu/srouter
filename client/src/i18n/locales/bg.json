@@ -705,7 +705,12 @@
     "testThrottled": "Моля, изчакайте {seconds} сек преди повторен тест на този модел.",
     "noModelsForProvider": "Няма конфигурирани модели за този доставчик.",
     "testModels": "Тествай моделите",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Месечен лимит на заявки",
+    "monthlyTokenCapLabel": "Месечен лимит на токени",
+    "capUnlimitedPlaceholder": "Неограничен",
+    "capEditHint": "Лимитите се нулират на 1-во число 00:00 UTC. Оставете празно за неограничен.",
+    "monthlyUsageLine": "{requests} заявки, {tokens} токени този месец"
   },
   "backups": {
     "title": "Backups",

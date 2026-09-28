@@ -705,7 +705,12 @@
     "testThrottled": "Vänta {seconds}s innan du testar denna modell igen.",
     "noModelsForProvider": "Inga modeller konfigurerade för denna leverantör.",
     "testModels": "Testa modeller",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Månadslimit för förfrågningar",
+    "monthlyTokenCapLabel": "Månadslimit för tokens",
+    "capUnlimitedPlaceholder": "Obegränsat",
+    "capEditHint": "Gränserna nollställs den 1:a kl 00:00 UTC. Lämna tomt för obegränsat.",
+    "monthlyUsageLine": "{requests} förfrågningar, {tokens} tokens denna månad"
   },
   "backups": {
     "title": "Backups",

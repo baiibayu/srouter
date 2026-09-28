@@ -705,7 +705,12 @@
     "testThrottled": "Kérjük, várjon {seconds} másodpercet a modell újratesztelése előtt.",
     "noModelsForProvider": "Nincsenek konfigurált modellek ennél a szolgáltatónál.",
     "testModels": "Modellek tesztelése",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Havi kérési keret",
+    "monthlyTokenCapLabel": "Havi token keret",
+    "capUnlimitedPlaceholder": "Korlátlan",
+    "capEditHint": "A keretek havonta 1-jén 00:00 UTC-kor nullázódnak. Korlátlanhoz hagyja üresen.",
+    "monthlyUsageLine": "{requests} kérés, {tokens} token ebben a hónapban"
   },
   "backups": {
     "title": "Backups",

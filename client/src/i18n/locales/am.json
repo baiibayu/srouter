@@ -705,7 +705,12 @@
     "testThrottled": "ይህን ሞዴል እንደገና ከመሞከርዎ በፊት እባክዎ {seconds} ሰከንድ ይጠብቁ።",
     "noModelsForProvider": "ለዚህ አቅራቢ የተዋቀረ ሞዴል የለም።",
     "testModels": "ሞዴሎችን ይሞክሩ",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "ወርሃዊ የጥያቄ ገደብ",
+    "monthlyTokenCapLabel": "ወርሃዊ የቶከን ገደብ",
+    "capUnlimitedPlaceholder": "ወሰን የለሽ",
+    "capEditHint": "ገደቦች በእያንዳንዱ ወር 1 ቀን 00:00 UTC ዳግም ይጀምራሉ። ለወሰን አልባ ባዶ ይተዉ።",
+    "monthlyUsageLine": "በዚህ ወር {requests} ጥያቄዎች፣ {tokens} ቶከኖች"
   },
   "backups": {
     "title": "Backups",

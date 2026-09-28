@@ -705,7 +705,12 @@
     "testThrottled": "Wacht {seconds}s voordat u dit model opnieuw test.",
     "noModelsForProvider": "Geen modellen geconfigureerd voor deze provider.",
     "testModels": "Modellen testen",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Maandelijke limiet verzoeken",
+    "monthlyTokenCapLabel": "Maandelijke limiet tokens",
+    "capUnlimitedPlaceholder": "Onbeperkt",
+    "capEditHint": "Limieten worden op de 1e om 00:00 UTC gereset. Laat leeg voor onbeperkt.",
+    "monthlyUsageLine": "{requests} verzoeken, {tokens} tokens deze maand"
   },
   "backups": {
     "title": "Backups",

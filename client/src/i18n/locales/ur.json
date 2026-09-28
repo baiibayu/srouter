@@ -705,7 +705,12 @@
     "testThrottled": "دوبارہ ٹیسٹ کرنے سے پہلے براہ کرم {seconds} سیکنڈ انتظار کریں۔",
     "noModelsForProvider": "اس فراہم کنندہ کے لیے کوئی ماڈل ترتیب نہیں دیا گیا ہے۔",
     "testModels": "ماڈلز کی جانچ کریں",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "ماہانہ درخواستوں کی حد",
+    "monthlyTokenCapLabel": "ماہانہ ٹوکن کی حد",
+    "capUnlimitedPlaceholder": "لامحدود",
+    "capEditHint": "حدیں ہر مہینے کی 1 تاریخ کو 00:00 UTC پر ری سیٹ ہوتی ہیں۔ لامحدود کے لیے خالی چھوڑیں۔",
+    "monthlyUsageLine": "اس مہینے {requests} درخواستیں، {tokens} ٹوکن"
   },
   "backups": {
     "title": "Backups",

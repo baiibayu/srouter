@@ -705,7 +705,12 @@
     "testThrottled": "Veuillez attendre {seconds}s avant de tester à nouveau ce modèle.",
     "noModelsForProvider": "Aucun modèle configuré pour ce fournisseur.",
     "testModels": "Tester les modèles",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Plafond mensuel de requêtes",
+    "monthlyTokenCapLabel": "Plafond mensuel de jetons",
+    "capUnlimitedPlaceholder": "Illimité",
+    "capEditHint": "Les plafonds sont réinitialisés le 1er à 00:00 UTC. Laissez vide pour illimité.",
+    "monthlyUsageLine": "{requests} requêtes, {tokens} jetons ce mois"
   },
   "backups": {
     "title": "Sauvegardes",

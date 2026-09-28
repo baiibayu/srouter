@@ -705,7 +705,12 @@
     "testThrottled": "ഈ മോഡൽ വീണ്ടും പരിശോധിക്കുന്നതിന് മുമ്പ് ദയവായി {seconds} സെക്കൻഡ് കാത്തിരിക്കുക.",
     "noModelsForProvider": "ഈ ദാതാവിനായി മോഡലുകളൊന്നും കോൺഫിഗർ ചെയ്തിട്ടില്ല.",
     "testModels": "മോഡലുകൾ പരീക്ഷിക്കുക",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "മാസിക അഭ്യർത്ഥന പരിധി",
+    "monthlyTokenCapLabel": "മാസിക ടോക്കൺ പരിധി",
+    "capUnlimitedPlaceholder": "പരിധിയില്ല",
+    "capEditHint": "പരിധികൾ ഓരോ മാസവും 1-ന് 00:00 UTC-ന് റീസെറ്റ് ചെയ്യും. പരിധിയില്ലാതെ വെച്ചാൽ മതി.",
+    "monthlyUsageLine": "ഈ മാസം {requests} അഭ്യർത്ഥനകൾ, {tokens} ടോക്കണുകൾ"
   },
   "backups": {
     "title": "Backups",

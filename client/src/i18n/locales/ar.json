@@ -705,7 +705,12 @@
     "testThrottled": "يرجى الانتظار {seconds} ثانية قبل اختبار هذا النموذج مرة أخرى.",
     "noModelsForProvider": "لا توجد نماذج مهيأة لهذا المزود.",
     "testModels": "اختبار النماذج",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "الحد الشهري للطلبات",
+    "monthlyTokenCapLabel": "الحد الشهري للرموز",
+    "capUnlimitedPlaceholder": "غير محدود",
+    "capEditHint": "تُصفَّر الحدود في 1 من الشهر 00:00 بتوقيت UTC. اتركه فارغًا بلا حد.",
+    "monthlyUsageLine": "{requests} طلبًا، {tokens} رمز هذا الشهر"
   },
   "backups": {
     "title": "Backups",

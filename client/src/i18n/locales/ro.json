@@ -705,7 +705,12 @@
     "testThrottled": "Așteptați {seconds}s înainte de a retesta acest model.",
     "noModelsForProvider": "Niciun model configurat pentru acest furnizor.",
     "testModels": "Testează modelele",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Limită lunară de cereri",
+    "monthlyTokenCapLabel": "Limită lunară de tokeni",
+    "capUnlimitedPlaceholder": "Nelimitat",
+    "capEditHint": "Limitele se resetează în ziua 1 la 00:00 UTC. Lasă gol pentru nelimitat.",
+    "monthlyUsageLine": "{requests} cereri, {tokens} tokeni luna aceasta"
   },
   "backups": {
     "title": "Backups",

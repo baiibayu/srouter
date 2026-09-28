@@ -705,7 +705,12 @@
     "testThrottled": "Odczekaj {seconds}s przed ponownym testem tego modelu.",
     "noModelsForProvider": "Brak skonfigurowanych modeli dla tego dostawcy.",
     "testModels": "Testuj modele",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Miesięczny limit żądań",
+    "monthlyTokenCapLabel": "Miesięczny limit tokenów",
+    "capUnlimitedPlaceholder": "Bez limitu",
+    "capEditHint": "Limity resetują się 1. dnia miesiąca o 00:00 UTC. Pozostaw puste, aby bez limitu.",
+    "monthlyUsageLine": "{requests} żądań, {tokens} tokenów w tym miesiącu"
   },
   "backups": {
     "title": "Backups",

@@ -705,7 +705,12 @@
     "testThrottled": "Biko chere {seconds}s tupu ị nwalee ụdị a ọzọ.",
     "noModelsForProvider": "Enweghị ụdị ahaziri maka onye na-enye ọrụ a.",
     "testModels": "Nwalee ụdị",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Oke arịrịọ ọnwa",
+    "monthlyTokenCapLabel": "Oke token ọnwa",
+    "capUnlimitedPlaceholder": "Enweghị oke",
+    "capEditHint": "A na-ebugharị oke ụbọchị nke 1, 00:00 UTC. Hapụ oghere maka enweghị oke.",
+    "monthlyUsageLine": "Arịrịọ {requests}, token {tokens} ọnwa a"
   },
   "backups": {
     "title": "Backups",

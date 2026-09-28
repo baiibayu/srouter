@@ -705,7 +705,12 @@
     "testThrottled": "이 모델을 다시 테스트하기 전에 {seconds}초 동안 기다려 주세요.",
     "noModelsForProvider": "이 제공자에 구성된 모델이 없습니다.",
     "testModels": "모델 테스트",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "월 요청 한도",
+    "monthlyTokenCapLabel": "월 토큰 한도",
+    "capUnlimitedPlaceholder": "무제한",
+    "capEditHint": "한도는 매월 1일 00:00 UTC에 초기화됩니다. 무제한이려면 비워 두세요.",
+    "monthlyUsageLine": "이번 달 요청 {requests}회, 토큰 {tokens}"
   },
   "backups": {
     "title": "Backups",

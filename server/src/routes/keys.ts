@@ -11,7 +11,7 @@ import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../l
 import { assessProviderUrl } from '../lib/url-guard.js';
 import { verifyCredentials } from '../services/auth.js';
 import { getActiveCooldownsForKeys, clearCooldownsForKey } from '../services/ratelimit.js';
-import { getMonthlyBudgetCaps } from '../services/key-budget.js';
+import { getMonthlyBudgetCaps, getMonthlyUsage, nextMonthResetAt } from '../services/key-budget.js';
 import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential } from '../services/custom-endpoint.js';
 import { registerCustomModels, registerCustomChatModels } from '../services/custom-model-register.js';
 import { registerCustomMediaModel } from '../services/custom-media-register.js';
@@ -359,6 +359,10 @@ keysRouter.get('/', (_req: Request, res: Response) => {
     const cooldowns = cooldownsByKeyId.get(Number(row.id)) ?? [];
     const scope = parseModelScope(row.model_scope_json);
     const budgetCaps = getMonthlyBudgetCaps(Number(row.id));
+    // Usage alongside the caps so the dashboard can show "342 of 1,000 this
+    // month" instead of only the cap (OpenRouter's GET /api/v1/key returns
+    // limit_remaining for the same reason).
+    const monthlyUsage = getMonthlyUsage(Number(row.id));
     return {
       id: row.id,
       platform: row.platform,
@@ -367,6 +371,11 @@ keysRouter.get('/', (_req: Request, res: Response) => {
       baseUrl: row.base_url ?? null,
       monthlyRequestCap: budgetCaps.requestCap,
       monthlyTokenCap: budgetCaps.tokenCap,
+      monthlyUsage: {
+        requests: monthlyUsage.requests,
+        tokens: monthlyUsage.tokens,
+        resetsAt: nextMonthResetAt(),
+      },
       status: row.status,
       enabled: row.enabled === 1,
       keyless: resolveProvider(row.platform)?.keyless === true,

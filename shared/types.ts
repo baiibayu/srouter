@@ -330,6 +330,13 @@ export interface ApiKey {
   /** Model ids this key is limited to; null = serves every model of its
    *  platform (#657). */
   modelScope?: string[] | null;
+  /** Per-key monthly request cap (0 = unlimited, #1158). */
+  monthlyRequestCap?: number;
+  /** Per-key monthly token cap (0 = unlimited, #1158). */
+  monthlyTokenCap?: number;
+  /** Current UTC month's successful usage against the caps above, with the
+   *  ISO time of the next monthly reset. */
+  monthlyUsage?: { requests: number; tokens: number; resetsAt: string };
   /** The per-key proxy override with its password masked (#590); '' = none. */
   maskedProxyUrl?: string;
   models?: ApiKeyModel[];

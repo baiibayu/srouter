@@ -705,7 +705,12 @@
     "testThrottled": "Pred ďalším testom tohto modelu počkajte {seconds}s.",
     "noModelsForProvider": "Pre tohto poskytovateľa nie sú nakonfigurované žiadne modely.",
     "testModels": "Otestovať modely",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Mesačný limit požiadaviek",
+    "monthlyTokenCapLabel": "Mesačný limit tokenov",
+    "capUnlimitedPlaceholder": "Neobmedzene",
+    "capEditHint": "Limity sa resetujú 1. dňa o 00:00 UTC. Pre neobmedzene nechajte prázdne.",
+    "monthlyUsageLine": "{requests} požiadaviek, {tokens} tokenov tento mesiac"
   },
   "backups": {
     "title": "Backups",

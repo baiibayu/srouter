@@ -705,7 +705,12 @@
     "testThrottled": "Зачекайте {seconds}с перед повторним тестуванням цієї моделі.",
     "noModelsForProvider": "Для цього постачальника немає налаштованих моделей.",
     "testModels": "Перевірити моделі",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "Місячний ліміт запитів",
+    "monthlyTokenCapLabel": "Місячний ліміт токенів",
+    "capUnlimitedPlaceholder": "Без обмежень",
+    "capEditHint": "Ліміти скидаються 1-го числа о 00:00 UTC. Залиште порожнім для безліміту.",
+    "monthlyUsageLine": "{requests} запитів, {tokens} токенів цього місяця"
   },
   "backups": {
     "title": "Backups",

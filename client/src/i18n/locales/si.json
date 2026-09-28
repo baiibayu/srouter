@@ -705,7 +705,12 @@
     "testThrottled": "මෙම ආකෘතිය නැවත පරීක්ෂා කිරීමට පෙර කරුණාකර තත්පර {seconds} ක් රැඳී සිටින්න.",
     "noModelsForProvider": "මෙම සපයන්නා සඳහා ආකෘති වින්‍යාස කර නොමැත.",
     "testModels": "මාදිලි පරීක්ෂා කරන්න",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "මාසික ඉල්ලීම් සීමාව",
+    "monthlyTokenCapLabel": "මාසික ටෝකන් සීමාව",
+    "capUnlimitedPlaceholder": "සීමා රහිත",
+    "capEditHint": "සීමාවන් සෑම මාසයකම 1 වන දා 00:00 UTC ට යළි සකසයි. සීමා රහිතට හිස්ව තබන්න.",
+    "monthlyUsageLine": "මෙම මාසය ඉල්ලීම් {requests}, ටෝකන් {tokens}"
   },
   "backups": {
     "title": "Backups",

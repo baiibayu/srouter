@@ -705,7 +705,12 @@
     "testThrottled": "এই মডেলটি আবার পরীক্ষা করার আগে অনুগ্রহ করে {seconds} সেকেন্ড অপেক্ষা করুন।",
     "noModelsForProvider": "এই প্রদানকারীর জন্য কোনো মডেল কনফিগার করা হয়নি।",
     "testModels": "মডেল পরীক্ষা করুন",
-    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "monthlyRequestCapLabel": "মাসিক অনুরোধ সীমা",
+    "monthlyTokenCapLabel": "মাসিক টোকেন সীমা",
+    "capUnlimitedPlaceholder": "সীমাহীন",
+    "capEditHint": "সীমা প্রতি মাসের ১ তারিখে ০০:০০ UTC-তে রিসেট হয়। সীমাহীন রাখতে খালি রাখুন।",
+    "monthlyUsageLine": "এই মাসে {requests} অনুরোধ, {tokens} টোকেন"
   },
   "backups": {
     "title": "Backups",
