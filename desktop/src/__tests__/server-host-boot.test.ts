@@ -91,7 +91,6 @@ vi.mock('../../../server/src/services/opencode-free-sync.js', () => ({
     return null;
   }),
 }));
-
 vi.mock('../../../server/src/lib/wake-detect.js', () => ({
   startWakeDetect: vi.fn(() => {
     calls.push('startWakeDetect');
@@ -191,7 +190,7 @@ describe('desktop server boot sequence (#949)', () => {
       'startCooldownProbe',
       'startBackupScheduler',
       'startCustomModelSync',
-      'startOpenCodeFreeSync',
+'startOpenCodeFreeSync',
       'startBuiltinModelDiscovery',
       'startWakeDetect',
     ]);

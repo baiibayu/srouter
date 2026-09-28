@@ -151,7 +151,7 @@ export async function startServer(opts: StartOptions): Promise<ServerHandle> {
   startCooldownProbe(scheduler);
   startBackupScheduler(scheduler);
   startCustomModelSync(getDb(), scheduler);
-  startOpenCodeFreeSync(scheduler);
+startOpenCodeFreeSync(scheduler);
   startBuiltinModelDiscovery(getDb(), scheduler);
   // Post-sleep recovery — the menu-bar app on a laptop is the canonical
   // lid-close case: flush pooled sockets and force-re-probe every key so the
