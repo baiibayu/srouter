@@ -61,7 +61,9 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   // Custom endpoint whose model list is being fetched (#488) — relays change
   // what they serve constantly, so this is a repeat action, not a one-off.
-  const [discoverKeyId, setDiscoverKeyId] = useState<number | null>(null)
+  // `builtin`: a built-in provider key the catalog has no models for (#1348),
+  // whose picks register as discovered rows instead of custom-endpoint models.
+  const [discoverTarget, setDiscoverTarget] = useState<{ keyId: number; builtin: boolean } | null>(null)
   // Custom endpoint taking another credential (#702). Keyed by base URL, since
   // a key joins the pool of an endpoint rather than of the row it was opened
   // from, and every key of that endpoint offers the same action.
@@ -639,6 +641,18 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                                   </Button>
                                 </Tooltip>
                               )}
+                              {k.platform !== 'custom' && k.modelDiscovery && (
+                                <Tooltip text={t('keys.discoverModels')}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={() => setDiscoverTarget({ keyId: k.id, builtin: true })}
+                                    aria-label={t('keys.discoverModels')}
+                                  >
+                                    <ListPlus className="size-3" />
+                                  </Button>
+                                </Tooltip>
+                              )}
                               {k.platform === 'custom' && k.baseUrl && (
                                 <>
                                   <Tooltip text={t('keys.addKey')}>
@@ -655,7 +669,7 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                                     <Button
                                       variant="ghost"
                                       size="icon-xs"
-                                      onClick={() => setDiscoverKeyId(k.id)}
+                                      onClick={() => setDiscoverTarget({ keyId: k.id, builtin: false })}
                                       aria-label={t('keys.discoverModels')}
                                     >
                                       <ListPlus className="size-3" />
@@ -796,11 +810,12 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
         </div>
       )}
 
-      {discoverKeyId !== null && (
+      {discoverTarget !== null && (
         <DiscoverModelsDialog
           open
-          onOpenChange={(open) => { if (!open) setDiscoverKeyId(null) }}
-          endpoint={{ keyId: discoverKeyId }}
+          onOpenChange={(open) => { if (!open) setDiscoverTarget(null) }}
+          endpoint={{ keyId: discoverTarget.keyId }}
+          builtin={discoverTarget.builtin}
         />
       )}
 

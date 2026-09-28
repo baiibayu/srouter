@@ -232,6 +232,7 @@
     "settingsHint": "Suntingan tempatan pada model katalog dikekalkan merentasi penyelarasan katalog. Model katalog yang dipadam akan kekal dipadam sehingga anda menambahnya semula melalui konfigurasi.",
     "catalogModel": "katalog",
     "customModel": "adat",
+    "discoveredModel": "ditemui",
     "localOverride": "penggantian tempatan",
     "displayName": "Nama paparan",
     "sizeLabel": "Tahap keupayaan",

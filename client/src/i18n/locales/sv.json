@@ -232,6 +232,7 @@
     "settingsHint": "Lokala redigeringar av katalogmodeller sparas över katalogsynkningar. Raderade katalogmodeller förblir raderade tills du lägger till dem igen via konfigurationen.",
     "catalogModel": "Katalog",
     "customModel": "Sedvänja",
+    "discoveredModel": "upptäckt",
     "localOverride": "Lokal överstyrning",
     "displayName": "Visningsnamn",
     "sizeLabel": "Kapacitetsnivå",

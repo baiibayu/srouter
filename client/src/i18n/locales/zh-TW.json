@@ -232,6 +232,7 @@
     "settingsHint": "對目錄模型的本地修改會在目錄同步後保留。已刪除的目錄模型會保持刪除狀態，直到您透過設定重新新增。",
     "catalogModel": "目錄",
     "customModel": "自訂",
+    "discoveredModel": "已發現",
     "localOverride": "本地覆蓋",
     "displayName": "顯示名稱",
     "sizeLabel": "能力檔位",

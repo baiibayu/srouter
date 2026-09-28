@@ -232,6 +232,7 @@
     "settingsHint": "Kataloq modellərinə lokal redaktələr kataloq sinxronizasiyaları arasında saxlanılır. Silinmiş kataloq modelləri yenidən konfiqurasiya vasitəsilə əlavə edənə qədər silinmiş qalır.",
     "catalogModel": "Kataloq",
     "customModel": "Adət",
+    "discoveredModel": "aşkarlanmış",
     "localOverride": "Lokal Üstünlüklər",
     "displayName": "Göstərilmə adı",
     "sizeLabel": "Qabiliyyət səviyyəsi",

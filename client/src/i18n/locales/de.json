@@ -232,6 +232,7 @@
     "settingsHint": "Lokale Änderungen an Katalogmodellen bleiben bei allen Katalogsynchronisierungen erhalten. Gelöschte Katalogmodelle bleiben gelöscht, bis Sie sie über die Konfiguration erneut hinzufügen.",
     "catalogModel": "Katalog",
     "customModel": "Brauch",
+    "discoveredModel": "entdeckt",
     "localOverride": "lokale Überschreibung",
     "displayName": "Anzeigename",
     "sizeLabel": "Fähigkeitsstufe",

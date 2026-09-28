@@ -232,6 +232,7 @@
     "settingsHint": "Lokalne zmiany w modelach katalogu są zachowywane podczas synchronizacji katalogów. Usunięte modele katalogowe pozostają usunięte, dopóki nie dodasz ich ponownie za pomocą konfiguracji.",
     "catalogModel": "katalog",
     "customModel": "niestandardowe",
+    "discoveredModel": "wykryty",
     "localOverride": "lokalne obejście",
     "displayName": "Nazwa wyświetlana",
     "sizeLabel": "Poziom możliwości",

@@ -232,6 +232,7 @@
     "settingsHint": "Editările locale la modelele de catalog sunt păstrate între sincronizările de catalog. Modelele șterse din catalog rămân șterse până când le adaugi din nou prin configurare.",
     "catalogModel": "Catalog",
     "customModel": "Personalizat",
+    "discoveredModel": "descoperit",
     "localOverride": "Suprascriere locală",
     "displayName": "Nume afișat",
     "sizeLabel": "Nivel de capacitate",

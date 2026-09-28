@@ -232,6 +232,7 @@
     "settingsHint": "对目录模型的本地修改会在目录同步后保留。已删除的目录模型会保持删除状态，直到您通过配置重新添加。",
     "catalogModel": "目录",
     "customModel": "自定义",
+    "discoveredModel": "已发现",
     "localOverride": "本地覆盖",
     "displayName": "显示名称",
     "sizeLabel": "能力档位",

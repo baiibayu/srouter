@@ -232,6 +232,7 @@
     "settingsHint": "Lokale redigeringer av katalogmodeller beholdes på tvers av katalogsynkroniseringer. Slettede katalogmodeller forblir slettet til du legger dem til igjen via konfigurasjonen.",
     "catalogModel": "Katalog",
     "customModel": "skikk",
+    "discoveredModel": "oppdaget",
     "localOverride": "Lokal overstyring",
     "displayName": "Visningsnavn",
     "sizeLabel": "Kapasitetsnivå",

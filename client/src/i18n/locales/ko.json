@@ -232,6 +232,7 @@
     "settingsHint": "카탈로그 모델에 대한 로컬 편집 내용은 카탈로그 동기화 전반에 걸쳐 유지됩니다. 삭제된 카탈로그 모델은 구성을 통해 다시 추가할 때까지 삭제된 상태로 유지됩니다.",
     "catalogModel": "카탈로그",
     "customModel": "관습",
+    "discoveredModel": "검색됨",
     "localOverride": "로컬 재정의",
     "displayName": "표시 이름",
     "sizeLabel": "역량 티어",

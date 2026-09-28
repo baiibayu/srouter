@@ -232,6 +232,7 @@
     "settingsHint": "Pengeditan lokal pada model katalog disimpan di seluruh sinkronisasi katalog. Model katalog yang dihapus tetap terhapus sampai Anda menambahkannya lagi melalui konfigurasi.",
     "catalogModel": "katalog",
     "customModel": "adat",
+    "discoveredModel": "ditemukan",
     "localOverride": "penggantian lokal",
     "displayName": "Nama tampilan",
     "sizeLabel": "Tingkat kemampuan",

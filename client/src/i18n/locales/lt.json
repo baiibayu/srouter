@@ -232,6 +232,7 @@
     "settingsHint": "Vietiniai katalogo modelių redagavimai saugomi tarp katalogo sinchronizacijų. Ištrinti katalogo modeliai lieka ištrinti, kol juos vėl nepridedate per konfigūraciją.",
     "catalogModel": "Katalogas",
     "customModel": "Paprotys",
+    "discoveredModel": "aptiktas",
     "localOverride": "Vietinis perrašymas",
     "displayName": "Rodymo pavadinimas",
     "sizeLabel": "Gebėjimų lygis",

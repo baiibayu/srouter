@@ -232,6 +232,7 @@
     "settingsHint": "Katalog modellariga mahalliy tahrirlar katalog sinxronlashlarida saqlanadi. O'chirilgan katalog modellari konfiguratsiya orqali ularni qayta qo'shmaguningizcha o'chiriladi.",
     "catalogModel": "katalog",
     "customModel": "odatiy",
+    "discoveredModel": "aniqlangan",
     "localOverride": "mahalliy bekor qilish",
     "displayName": "Ko'rsatilgan nom",
     "sizeLabel": "Qobiliyat darajasi",

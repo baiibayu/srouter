@@ -232,6 +232,7 @@
     "settingsHint": "በካታሎግ ሞዴሎች ላይ የአካባቢ አርትዖቶች በካታሎግ ማመሳሰል ላይ ይቀመጣሉ። የተሰረዙ የካታሎግ ሞዴሎች በማዋቀር እንደገና እስኪጨምሯቸው ድረስ ተሰርዘዋል።",
     "catalogModel": "የመጽሐፍ ዓይነት ዝርዝር",
     "customModel": "ብጁ",
+    "discoveredModel": "የተገኘ",
     "localOverride": "የአካባቢ መሻር",
     "displayName": "የማሳያ ስም",
     "sizeLabel": "የአቅም ደረጃ",

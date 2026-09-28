@@ -232,6 +232,7 @@
     "settingsHint": "Các chỉnh sửa cục bộ đối với mô hình danh mục được lưu giữ trong quá trình đồng bộ hóa danh mục. Các mô hình danh mục đã xóa vẫn bị xóa cho đến khi bạn thêm lại chúng thông qua config.",
     "catalogModel": "danh mục",
     "customModel": "tùy chỉnh",
+    "discoveredModel": "đã phát hiện",
     "localOverride": "ghi đè cục bộ",
     "displayName": "Tên hiển thị",
     "sizeLabel": "Bậc năng lực",

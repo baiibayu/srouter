@@ -232,6 +232,7 @@
     "settingsHint": "Katalog modellerinde yapılan yerel düzenlemeler, katalog senkronizasyonlarında korunur. Silinen katalog modelleri, siz onları config aracılığıyla tekrar ekleyene kadar silinmiş olarak kalır.",
     "catalogModel": "katalog",
     "customModel": "özel",
+    "discoveredModel": "keşfedildi",
     "localOverride": "yerel geçersiz kılma",
     "displayName": "Görünen ad",
     "sizeLabel": "Yetenek kademesi",

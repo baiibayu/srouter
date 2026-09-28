@@ -152,7 +152,7 @@ const MODEL_COLUMNS = `
            m.speed_rank, m.size_label, m.rpm_limit, m.rpd_limit,
            m.tpm_limit, m.tpd_limit, m.context_window,
            m.monthly_token_budget, m.supports_vision, m.supports_tools,
-           m.key_id, m.endpoint_scope, ak.label AS key_label,
+           m.key_id, m.endpoint_scope, m.source AS model_source, ak.label AS key_label,
            mo.overrides_json IS NOT NULL AS has_overrides,
            mo.overrides_json,
            ts.source AS tombstone_source, ts.reason AS tombstone_reason`;
@@ -298,7 +298,11 @@ fallbackRouter.get('/', (req: Request, res: Response) => {
       monthlyTokenBudgetTokens: parseBudget(r.monthly_token_budget) * Math.max(1, keyCountMap.get(r.platform) ?? 1),
       supportsVision: r.supports_vision === 1,
       supportsTools: r.supports_tools === 1,
-      source: r.platform === 'custom' || r.key_id != null ? 'custom' : 'catalog',
+      // 'discovered' (#1348): fetched from a built-in provider's /models because
+      // the catalog carries none for it. Routes like a catalog row.
+      source: r.platform === 'custom' || r.key_id != null
+        ? 'custom'
+        : r.model_source === 'discovered' ? 'discovered' : 'catalog',
       keyId: r.key_id ?? null,
       keyLabel: r.key_label ?? null,
       // Which relay endpoint a custom row belongs to, and the id that names it

@@ -10,6 +10,7 @@ import type { Scheduler } from '../lib/scheduler.js';
 import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
 import { providerLog } from '../lib/server-logs.js';
 import { runPeriodicNotificationChecks } from './notification-emitter.js';
+import { triggerBuiltinModelDiscovery } from './builtin-model-discovery.js';
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const CONSECUTIVE_FAILURES_TO_DISABLE = 3;
@@ -113,6 +114,10 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
 
     if (isValid) {
       failureCount.delete(keyId);
+      // #1348: a healthy key on a built-in platform the catalog does not carry
+      // serves nothing until its models are discovered. Fire-and-forget; the
+      // trigger is a no-op for every other platform, and throttled.
+      triggerBuiltinModelDiscovery(db, row.platform, 'healthy');
     } else {
       providerLog(
         'warn',

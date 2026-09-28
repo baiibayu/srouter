@@ -232,6 +232,7 @@
     "settingsHint": "Paikalliset muokkaukset katalogimalleihin säilytetään katalogin synkronointien yli. Poistetut katalogimallit pysyvät poistettuina, kunnes lisäät ne uudelleen konfiguraatioiden kautta.",
     "catalogModel": "Katalogi",
     "customModel": "Tapana",
+    "discoveredModel": "löydetty",
     "localOverride": "paikallinen ohitus",
     "displayName": "Näyttönimi",
     "sizeLabel": "Kyvykkyystaso",

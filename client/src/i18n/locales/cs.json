@@ -232,6 +232,7 @@
     "settingsHint": "Lokální úpravy katalogových modelů jsou uchovávány napříč synchronizacemi katalogu. Smazané katalogové modely zůstávají smazané, dokud je znovu nepřidáte přes konfiguraci.",
     "catalogModel": "Katalog",
     "customModel": "Zvyk",
+    "discoveredModel": "nalezený",
     "localOverride": "Místní přepsání",
     "displayName": "Zobrazovací název",
     "sizeLabel": "Úroveň schopností",

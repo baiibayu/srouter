@@ -232,6 +232,7 @@
     "settingsHint": "Las ediciones locales a los modelos del catálogo se conservan entre sincronizaciones del catálogo. Los modelos del catálogo eliminados permanecen eliminados hasta que los agregues de nuevo mediante la configuración.",
     "catalogModel": "catálogo",
     "customModel": "personalizado",
+    "discoveredModel": "descubierto",
     "localOverride": "anulación local",
     "displayName": "Nombre visible",
     "sizeLabel": "Nivel de capacidad",

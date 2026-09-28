@@ -232,6 +232,7 @@
     "settingsHint": "Lokale redigeringer af katalogmodeller gemmes på tværs af katalogsynkroniseringer. Slettede katalogmodeller forbliver slettede, indtil du tilføjer dem igen via konfigurationen.",
     "catalogModel": "Katalog",
     "customModel": "skik",
+    "discoveredModel": "fundet",
     "localOverride": "Lokal overstyring",
     "displayName": "Visningsnavn",
     "sizeLabel": "Kapacitetsniveau",

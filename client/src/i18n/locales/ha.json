@@ -232,6 +232,7 @@
     "settingsHint": "gyare-gyare na gida zuwa ƙirar kasida ana kiyaye su a cikin daidaitawar kasida. Samfurin kasidar da aka goge suna kasancewa a goge har sai kun sake ƙara su ta hanyar daidaitawa.",
     "catalogModel": "kasida",
     "customModel": "al'ada",
+    "discoveredModel": "an gano",
     "localOverride": "wuce gona da iri",
     "displayName": "Sunan nuni",
     "sizeLabel": "Matakin iyawa",

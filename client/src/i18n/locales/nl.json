@@ -232,6 +232,7 @@
     "settingsHint": "Lokale bewerkingen van catalogusmodellen worden behouden over catalogus-synchronisaties. Verwijderde catalogusmodellen blijven verwijderd totdat je ze opnieuw toevoegt via de configuratie.",
     "catalogModel": "Catalogus",
     "customModel": "Gewoonte",
+    "discoveredModel": "ontdekt",
     "localOverride": "Lokale overruling",
     "displayName": "Weergavenaam",
     "sizeLabel": "Capaciteitsniveau",

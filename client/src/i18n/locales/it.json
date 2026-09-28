@@ -232,6 +232,7 @@
     "settingsHint": "Le modifiche locali ai modelli del catalogo vengono mantenute tra le sincronizzazioni del catalogo. I modelli del catalogo eliminati restano eliminati finché non li aggiungi di nuovo tramite la configurazione.",
     "catalogModel": "catalogo",
     "customModel": "personalizzato",
+    "discoveredModel": "rilevato",
     "localOverride": "override locale",
     "displayName": "Nome visualizzato",
     "sizeLabel": "Livello di capacità",

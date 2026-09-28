@@ -232,6 +232,7 @@
     "settingsHint": "Lokalne izmjene katalogskih modela čuvaju se kroz kataloške sinkronizacije. Izbrisani kataloški modeli ostaju izbrisani dok ih ponovno ne dodate kroz konfiguraciju.",
     "catalogModel": "Katalog",
     "customModel": "običaj",
+    "discoveredModel": "otkriven",
     "localOverride": "Lokalno nadjačavanje",
     "displayName": "Prikazni naziv",
     "sizeLabel": "Razina sposobnosti",

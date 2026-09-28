@@ -261,7 +261,9 @@ export interface Model {
   enabled: boolean;
   supportsVision: boolean;
   supportsTools: boolean;
-  source?: 'catalog' | 'custom';
+  /** 'discovered': fetched from a built-in provider's own /models because the
+   *  catalog carries no models for it (#1348). */
+  source?: 'catalog' | 'custom' | 'discovered';
   keyId?: number | null;
   endpointScope?: string | null;
 }
@@ -346,6 +348,9 @@ export interface ApiKey {
   maskedProxyUrl?: string;
   models?: ApiKeyModel[];
   cooldowns?: ApiKeyCooldown[];
+  /** True for a built-in provider key whose platform the catalog carries no
+   *  models for, so the dashboard offers Fetch models on it (#1348). */
+  modelDiscovery?: boolean;
 }
 
 export interface ApiKeyCreate {

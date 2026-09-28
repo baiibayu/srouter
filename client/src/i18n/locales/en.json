@@ -232,6 +232,7 @@
     "settingsHint": "Local edits to catalog models are kept across catalog syncs. Deleted catalog models stay deleted until you add them again through config.",
     "catalogModel": "catalog",
     "customModel": "custom",
+    "discoveredModel": "discovered",
     "localOverride": "local override",
     "displayName": "Display name",
     "sizeLabel": "Capability tier",

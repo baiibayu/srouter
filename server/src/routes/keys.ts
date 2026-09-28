@@ -22,6 +22,16 @@ import { syncCatalog } from '../services/catalog-sync.js';
 import { probeEmbeddingDimensions, registerCustomEmbeddingModel } from '../services/embeddings.js';
 import { endpointScopeForBaseUrl, normalizeBaseUrl } from '../lib/endpoint-scope.js';
 import { recordCustomModelTombstone } from '../services/custom-model-tombstone.js';
+import {
+  builtinDiscoveryEligibility,
+  builtinDiscoveryMode,
+  discoverBuiltinModels,
+  ineligibleMessage,
+  isBuiltinDiscoveryEligible,
+  registerDiscoveredModels,
+  registeredModelIds,
+  triggerBuiltinModelDiscovery,
+} from '../services/builtin-model-discovery.js';
 import type { Db } from '../db/types.js';
 import type { Platform } from '@srouter/shared/types.js';
 import { parseModelScope } from '../lib/model-scope.js';
@@ -236,6 +246,15 @@ function openAICompatBaseUrl(platform: string): string | null {
 // custom-provider route where it works.
 function noModelsNotice(platform: string): string | undefined {
   if (enabledModelCount(platform) > 0) return undefined;
+  // #1348: a built-in provider the catalog does not carry fills its model list
+  // from its own /models, so the Premium and custom-provider advice below
+  // would send the operator the wrong way.
+  if (isBuiltinDiscoveryEligible(getDb(), platform)) {
+    return builtinDiscoveryMode() === 'auto'
+      ? `Key saved. The catalog does not list ${platform} models, so they are being fetched from ${platform}'s own model list. ` +
+        `Use Fetch models on the key to review them or add more.`
+      : `Key saved. The catalog does not list ${platform} models. Use Fetch models on the key to pick which ones to use.`;
+  }
   const baseUrl = openAICompatBaseUrl(platform);
   const customRoute = baseUrl
     ? `add ${platform} as a custom OpenAI-compatible provider with base URL ${baseUrl}`
@@ -348,6 +367,15 @@ keysRouter.get('/', (_req: Request, res: Response) => {
   // so surface the cooldowns that explain the idleness. (#P0-7)
   const cooldownsByKeyId = getActiveCooldownsForKeys(rows.map(row => Number(row.id)));
 
+  // #1348: which built-in platforms may fill their model list from their own
+  // /models, so the dashboard offers Fetch models on those key rows only.
+  const discoverable = new Map<string, boolean>();
+  const canDiscover = (platform: string) => {
+    if (platform === 'custom') return false;
+    if (!discoverable.has(platform)) discoverable.set(platform, isBuiltinDiscoveryEligible(db, platform));
+    return discoverable.get(platform)!;
+  };
+
   const keys = rows.map(row => {
     let maskedKey = '****';
     let realKey = '';
@@ -397,6 +425,7 @@ keysRouter.get('/', (_req: Request, res: Response) => {
       // its own exit, without handing the proxy credentials back out.
       maskedProxyUrl: maskProxyUrl(decryptProxyUrl(row)),
       models: row.platform === 'custom' ? (modelsByEndpoint.get(endpointOf(Number(row.id))) ?? []) : undefined,
+      modelDiscovery: canDiscover(row.platform),
       cooldowns: cooldowns.map(c => ({
         modelId: c.modelId,
         expiresAtMs: c.expiresAtMs,
@@ -700,6 +729,9 @@ keysRouter.post('/', async (req: Request, res: Response) => {
     try { await autoDiscoverModels(platform); } catch {}
     modelsAvailable = enabledModelCount(platform);
   }
+  // #1348: fetch the provider's models in the background when the catalog
+  // carries none for it. No-op for every other platform.
+  triggerBuiltinModelDiscovery(db, platform, 'key_added');
 
   res.status(201).json({
     id: result.lastInsertRowid,
@@ -933,6 +965,16 @@ keysRouter.post('/custom/discover-models', async (req: Request, res: Response) =
     return;
   }
 
+  // #1348: a keyId naming a BUILT-IN key asks that provider's own /models,
+  // through its registered adapter, for platforms the catalog does not carry.
+  if (parsed.data.keyId !== undefined && parsed.data.baseUrl === undefined) {
+    const builtin = builtinKeyRow(parsed.data.keyId);
+    if (builtin) {
+      await discoverForBuiltinKey(builtin, parsed.data.apiKey, res);
+      return;
+    }
+  }
+
   let endpoint: CustomEndpointRef;
   try {
     endpoint = resolveEndpointRef(parsed.data);
@@ -982,6 +1024,100 @@ keysRouter.post('/custom/discover-models', async (req: Request, res: Response) =
     }
     res.status(502).json({ error: { message: `Model discovery failed: ${err?.message ?? 'unknown error'}` } });
   }
+});
+
+// ── Built-in provider discovery (#1348) ─────────────────────────────────────
+// The same Fetch models flow as a custom endpoint, for built-in platforms the
+// catalog carries no models for (see services/builtin-model-discovery.ts for
+// the eligibility rules). The catalog stays authoritative: an ineligible
+// platform is refused, and registered rows are marked source='discovered' so
+// a later catalog adopts or retires them.
+
+interface BuiltinKeyRow {
+  id: number;
+  platform: string;
+  encrypted_key: string;
+  iv: string;
+  auth_tag: string;
+  proxy_encrypted?: string | null;
+  proxy_iv?: string | null;
+  proxy_auth_tag?: string | null;
+}
+
+function builtinKeyRow(keyId: number): BuiltinKeyRow | undefined {
+  const row = getDb().prepare(`
+    SELECT id, platform, encrypted_key, iv, auth_tag, proxy_encrypted, proxy_iv, proxy_auth_tag
+      FROM api_keys WHERE id = ?
+  `).get(keyId) as BuiltinKeyRow | undefined;
+  return row && row.platform !== 'custom' ? row : undefined;
+}
+
+async function discoverForBuiltinKey(key: BuiltinKeyRow, apiKey: string | undefined, res: Response): Promise<void> {
+  const db = getDb();
+  const eligibility = builtinDiscoveryEligibility(db, key.platform);
+  if (!eligibility.eligible || !eligibility.provider) {
+    res.status(400).json({ error: { message: ineligibleMessage(key.platform, eligibility.reason) } });
+    return;
+  }
+  try {
+    const discovered = await discoverBuiltinModels(eligibility.provider, key, apiKey);
+    const registeredIds = registeredModelIds(db, key.platform);
+    const models = discovered.map(m => ({ ...m, registered: registeredIds.has(m.id) }));
+    res.json({
+      platform: key.platform,
+      baseUrl: eligibility.provider.modelsUrl.replace(/\/models\/?$/, ''),
+      keyId: key.id,
+      models,
+      total: models.length,
+      registeredCount: models.filter(m => m.registered).length,
+    });
+  } catch (err: any) {
+    if (err instanceof ModelDiscoveryError) {
+      // upstream_error, never authentication_error: see the custom route.
+      res.status(err.status).json({ error: { message: err.message, type: 'upstream_error' } });
+      return;
+    }
+    res.status(502).json({ error: { message: `Model discovery failed: ${err?.message ?? 'unknown error'}` } });
+  }
+}
+
+const registerDiscoveredSchema = z.object({
+  keyId: z.number().int().positive(),
+  models: z.array(z.string().trim().min(1).max(256)).min(1).max(500),
+});
+
+// Register the models the operator ticked in Fetch models for a built-in key.
+// Chat models only: the built-in adapters route media and embeddings through
+// the catalog's own tables, so a non-chat id is reported back, not stored.
+keysRouter.post('/discovered-models', (req: Request, res: Response) => {
+  const parsed = registerDiscoveredSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: parsed.error.errors.map(e => e.message).join(', ') } });
+    return;
+  }
+  const key = builtinKeyRow(parsed.data.keyId);
+  if (!key) {
+    res.status(400).json({ error: { message: 'keyId does not name a built-in provider key' } });
+    return;
+  }
+  const db = getDb();
+  const eligibility = builtinDiscoveryEligibility(db, key.platform);
+  if (!eligibility.eligible) {
+    res.status(400).json({ error: { message: ineligibleMessage(key.platform, eligibility.reason) } });
+    return;
+  }
+
+  const ids = [...new Set(parsed.data.models)];
+  const nonChat = ids.filter(id => classifyModelId(id) !== undefined);
+  const chat = ids.filter(id => classifyModelId(id) === undefined);
+  const result = registerDiscoveredModels(db, key.platform, chat.map(modelId => ({ modelId })), { explicit: true });
+  res.json({
+    platform: key.platform,
+    created: result.created.length,
+    registered: result.created,
+    existing: result.existing,
+    skippedNonChat: nonChat,
+  });
 });
 
 // POST /custom/probe — fire one minimal real chat request at the endpoint so an

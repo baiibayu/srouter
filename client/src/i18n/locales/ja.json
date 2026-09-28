@@ -232,6 +232,7 @@
     "settingsHint": "カタログ モデルに対するローカル編集は、カタログ同期全体で保持されます。削除されたカタログ モデルは、構成を通じて再度追加するまで削除されたままになります。",
     "catalogModel": "カタログ",
     "customModel": "カスタム",
+    "discoveredModel": "検出",
     "localOverride": "ローカルオーバーライド",
     "displayName": "表示名",
     "sizeLabel": "能力ティア",

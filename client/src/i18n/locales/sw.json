@@ -232,6 +232,7 @@
     "settingsHint": "Uhariri wa ndani kwa miundo ya katalogi huwekwa katika usawazishaji wa katalogi. Miundo ya katalogi iliyofutwa husalia kufutwa hadi uiongeze tena kupitia usanidi.",
     "catalogModel": "katalogi",
     "customModel": "desturi",
+    "discoveredModel": "imegunduliwa",
     "localOverride": "ubatilishaji wa ndani",
     "displayName": "Jina la kuonyesha",
     "sizeLabel": "Kiwango cha uwezo",

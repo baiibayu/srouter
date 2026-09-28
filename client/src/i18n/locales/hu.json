@@ -232,6 +232,7 @@
     "settingsHint": "A helyi szerkesztések a katalógusmodelleken a katalógus szinkronizációin keresztül maradnak fenn. A törölt katalógusmodellek törölve maradnak, amíg újra hozzá nem adod őket a konfiguráción keresztül.",
     "catalogModel": "Katalógus",
     "customModel": "Egyedi",
+    "discoveredModel": "felfedezett",
     "localOverride": "Helyi felülbírálás",
     "displayName": "Bemutató név",
     "sizeLabel": "Képességi szint",

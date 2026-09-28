@@ -232,6 +232,7 @@
     "settingsHint": "Ang mga lokal na edit sa mga modelo ng katalogo ay pinananatili sa mga sync ng katalogo. Ang mga tinanggal na catalog model ay mananatiling nabubura hanggang sa idagdag mo ito muli sa pamamagitan ng config.",
     "catalogModel": "katalogo",
     "customModel": "kaugalian",
+    "discoveredModel": "natuklasan",
     "localOverride": "lokal na pag-override",
     "displayName": "Display name",
     "sizeLabel": "Antas ng kakayahan",
