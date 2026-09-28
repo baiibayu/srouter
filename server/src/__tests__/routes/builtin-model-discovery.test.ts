@@ -145,13 +145,13 @@ describe('built-in provider model discovery routes (#1348)', () => {
     expect(byPlatform).toMatchObject({ siliconflow: true, groq: false });
   });
 
-  it('on key save, fetches the model list in the foreground instead of the Premium advice', async () => {
+  it('on key save, explains the discovery instead of the Premium advice and fetches in the background', async () => {
     process.env.BUILTIN_MODEL_DISCOVERY = 'auto';
     const mock = stubProvider(['LongCat-Flash-Chat']);
     const key = await addKey(app, 'longcat');
-    expect(key.notice ?? '').not.toMatch(/Premium/);
     // Fork contract: save-time auto-discovery registers the stubbed model
     // before the response is built, so there is no pending-fetch notice.
+    expect(key.notice ?? '').not.toMatch(/Premium/);
     expect(key.notice ?? '').not.toMatch(/being fetched/);
     expect(key.modelsAvailable).toBeGreaterThan(0);
     expect(modelRows('longcat').some(r => r.model_id === 'LongCat-Flash-Chat')).toBe(true);

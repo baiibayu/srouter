@@ -282,7 +282,7 @@
     "catalogModel": "katalog",
     "customModel": "özel",
     "discoveredModel": "keşfedildi",
-    "localOverride": "yerel özelleştirme",
+    "localOverride": "yerel geçersiz kılma", (feat(keys): discover models for built-in providers the catalog does not carry (#1357))
     "displayName": "Görünen ad",
     "sizeLabel": "Yetenek kademesi",
     "sizeLabelHint": "Frontier/Large/Medium/Small, zekâ eksenini belirler: üst kademe her zaman alt kademeden öndedir ve aynı kademe içinde zekâ sıralaması puanı etkilemeye devam eder. Tanınan bir kademesi olmayan model bu eksende en düşük puanı alır; ancak zekâ üç eksenden yalnızca biridir. Güvenilirliği ve hızı yüksekse yine de yönlendirmede öne çıkabilir.",
