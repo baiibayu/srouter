@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GITHUB_MAX_INPUT_TOKENS, contentToString, estimateInputTokens, flattenMessageContent, messageHasImage, normalizeOutboundContent, sanitizeResponse, stripImagesFromMessages, truncateMessagesForGithub } from '../../lib/content.js';
+import { contentToString, estimateInputTokens, flattenMessageContent, messageHasImage, normalizeOutboundContent, sanitizeResponse, stripImagesFromMessages } from '../../lib/content.js';
 import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 
 describe('contentToString', () => {
