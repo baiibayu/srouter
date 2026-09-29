@@ -1105,7 +1105,7 @@ anthropicRouter.post('/messages/count_tokens', (req: Request, res: Response) => 
     tools,
     recordStats: false,
   });
-  res.setHeader('x-srouter-Compress', formatCompressionHeader(compressionResult));
+res.setHeader('x-srouter-Compress', formatCompressionHeader(compressionResult));
   res.json({ input_tokens: estimateInputTokens(compressionResult.messages, tools) });
 });
 
