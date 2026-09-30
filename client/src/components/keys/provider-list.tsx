@@ -22,6 +22,7 @@ import type { ApiKey, ApiKeyModel } from '../../../../shared/types'
 import { formatSqliteUtcToLocalTime } from '@/lib/utils'
 import { useI18n } from '@/i18n'
 import { toast } from '@/lib/toast'
+import { keyMatchesQuery } from '@/lib/key-search'
 import {
   PLATFORMS,
   CUSTOM_GROUP,
@@ -301,15 +302,15 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
   }
 
   // Search narrows either whole groups (label match) or the keys within them
-  // (label / masked-key match); the status filter then trims the result set.
+  // (label / masked-key / endpoint-URL match); the status filter then trims
+  // the result set. The baseUrl term is #1056's lesson applied here: a custom
+  // row renders "api.unorouter.com" on screen, so searching that host must
+  // find the row the same way the fallback table's search does.
   const visibleGroups = grouped
     .map(group => {
       if (!q) return group
       if (group.label.toLowerCase().includes(q)) return group
-      const matchingKeys = group.keys.filter(k =>
-        (k.label ?? '').toLowerCase().includes(q) ||
-        (k.maskedKey ?? '').toLowerCase().includes(q),
-      )
+      const matchingKeys = group.keys.filter(k => keyMatchesQuery(k, q))
       return { ...group, keys: matchingKeys }
     })
     .filter(group => group.keys.length > 0 && matchStatus(group))
