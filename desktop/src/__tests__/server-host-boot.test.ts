@@ -85,6 +85,13 @@ vi.mock('../../../server/src/services/builtin-model-discovery.js', () => ({
   }),
 }));
 
+vi.mock('../../../server/src/services/opencode-free-sync.js', () => ({
+  startOpenCodeFreeSync: vi.fn(() => {
+    calls.push('startOpenCodeFreeSync');
+    return null;
+  }),
+}));
+
 vi.mock('../../../server/src/lib/wake-detect.js', () => ({
   startWakeDetect: vi.fn(() => {
     calls.push('startWakeDetect');
@@ -115,6 +122,13 @@ vi.mock('../../../server/src/services/health.js', () => ({
 vi.mock('../../../server/src/services/catalog-sync.js', () => ({
   startCatalogSync: vi.fn(() => {
     calls.push('startCatalogSync');
+  }),
+}));
+
+vi.mock('../../../server/src/services/auto-discover.js', () => ({
+  startModelRefresh: vi.fn(() => {
+    calls.push('startModelRefresh');
+    return null;
   }),
 }));
 
@@ -173,9 +187,11 @@ describe('desktop server boot sequence (#949)', () => {
       'listen',
       'startHealthChecker',
       'startCatalogSync',
+      'startModelRefresh',
       'startCooldownProbe',
       'startBackupScheduler',
       'startCustomModelSync',
+      'startOpenCodeFreeSync',
       'startBuiltinModelDiscovery',
       'startWakeDetect',
     ]);

@@ -14,9 +14,11 @@ import { initDb, getDb, getUnifiedApiKey } from '../../server/src/db/index.js';
 import { restoreProxySettings, flushProxyCache } from '../../server/src/lib/proxy.js';
 import { startHealthChecker, checkAllKeys } from '../../server/src/services/health.js';
 import { startCatalogSync } from '../../server/src/services/catalog-sync.js';
+import { startModelRefresh } from '../../server/src/services/auto-discover.js';
 import { startCooldownProbe } from '../../server/src/services/cooldown-probe.js';
 import { startCustomModelSync } from '../../server/src/services/custom-model-sync.js';
 import { startBuiltinModelDiscovery } from '../../server/src/services/builtin-model-discovery.js';
+import { startOpenCodeFreeSync } from '../../server/src/services/opencode-free-sync.js';
 import { startBackupScheduler } from '../../server/src/services/backups.js';
 import { cleanupExpiredCooldowns } from '../../server/src/services/ratelimit.js';
 import { loadCacheFromDb } from '../../server/src/services/cache.js';
@@ -110,9 +112,11 @@ export async function startServer(opts: StartOptions): Promise<ServerHandle> {
   const scheduler = new NodeScheduler();
   startHealthChecker(scheduler);
   startCatalogSync(scheduler);
+  startModelRefresh(scheduler);
   startCooldownProbe(scheduler);
   startBackupScheduler(scheduler);
   startCustomModelSync(getDb(), scheduler);
+  startOpenCodeFreeSync(scheduler);
   startBuiltinModelDiscovery(getDb(), scheduler);
   // Post-sleep recovery — the menu-bar app on a laptop is the canonical
   // lid-close case: flush pooled sockets and force-re-probe every key so the
