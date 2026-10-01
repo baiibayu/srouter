@@ -64,6 +64,7 @@ import openclaudeImg from '@/assets/agents/openclaude.png'
 //   openclaw  OpenClaw     openclaw.ai/favicon.svg (the lobster mark: body, claws and         MIT (openclaw/openclaw)
 //                          antennae); the eyes are dropped with the gradient, as every
 //                          mark here is painted flat in one brand colour
+
 //   hermes    Hermes Agent repo-assets/agents/hermes-agent.png (the published raster),       Nous Research TM, nominative use
 //                          background baked to transparency; glyph inverts on dark
 //   pi        Pi           pi.dev/favicon.svg (the monochrome mark; the press kit's       Earendil TM, nominative use
@@ -108,6 +109,7 @@ import openclaudeImg from '@/assets/agents/openclaude.png'
 //                                                               #FF4D4D to #991B1B, and each tile takes the
 //                                                               stop that clears on it (the light stop is
 //                                                               3.00 on the light tile, right at the line)
+
 //   hermes    #000000           19.26  #FFFFFF           17.22  PNG artwork on baked transparency; glyph inverts
 //                                                               on the dark tile
 //   pi        #111111           17.32  #F6F6F6           15.94  published pair (the favicon's own light and
@@ -336,10 +338,8 @@ const brands: Record<string, Brand> = {
       </g>
     ),
   },
-  // Any other OpenAI-compatible client: our own terminal glyph, not a brand
-  // mark, so it keeps the page foreground colour on both tiles.
   generic: {
-    tint: '',
+    tint: "",
     art: (
       <g fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
         <rect x="2.8" y="4.3" width="18.4" height="15.4" rx="3.6" />

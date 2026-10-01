@@ -43,6 +43,7 @@ context windows.
 
 | Agent | Automated command | Manual base URL | Wire |
 | --- | --- | --- | --- |
+
 | **Claude Code** | `setup-claude` or credential-free-on-disk `launch` | `http://localhost:20268` | Anthropic Messages |
 | **Codex CLI** | `setup-codex` or `launch-codex` | `http://localhost:20268/v1` | Responses (`wire_api = "responses"`) |
 | **Cline** | `setup-cline` | `http://localhost:20268/v1` | OpenAI Chat |
@@ -69,6 +70,7 @@ context windows.
 The root-vs-`/v1` distinction matters: Claude Code expects the server root
 because it appends the Anthropic Messages path. OpenAI-compatible clients in
 this table—including Cline, Aider, Goose, Codex, Continue, OpenCode, Qwen,
+
 Roo, Kilo, Crush, MiMo Code, Oh My Pi, OpenClaw, Hermes Agent, Pi, Factory Droid, Reasonix, QwenPaw, and DeepSeek Harness—expect their configured
 base URL to include `/v1`.
 
@@ -214,6 +216,7 @@ page's "seen recently" badge keys on. `HERMES_HOME` is honoured when set.
 
 [Pi](https://pi.dev) is a minimal terminal agent harness you extend with your
 own extensions, skills and prompt templates. Endpoints it does not ship are
+
 provider entries in `~/.pi/agent/models.json`. `setup-pi` adds a `srouter`
 provider there — `api: openai-completions`, the gateway's `/v1` as `baseUrl`,
 and every model in the live catalog with its context window, the chosen model
@@ -224,12 +227,14 @@ created with mode 0600. Other providers and settings in both files are left
 as they were.
 
 ```bash
+
 srouter setup-pi --url http://localhost:20268 --api-key <unified-key>
 npm install -g @earendil-works/pi-coding-agent
 pi -p "Say hello"
 ```
 
 A running session reloads `models.json` when `/model` is opened.
+
 `--profile <name>` adds a `srouter-<name>` provider instead, picked with
 `pi --model srouter-<name>/<model>` or from `/model`, and leaves the
 default model alone; `--model <id>` pins the default. Models are declared
@@ -238,6 +243,7 @@ text-only with `reasoning: false`. To send images to a vision model, add
 so the provider carries `headers: { "User-Agent": "pi-coding-agent" }`, which
 is what the Agents page's "seen recently" badge keys on.
 `PI_CODING_AGENT_DIR` is honoured when set.
+
 
 ### Factory Droid (`droid`)
 

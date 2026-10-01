@@ -86,6 +86,7 @@ describe('client agent classification', () => {
     }))).not.toBe('pi');
   });
 
+
   it('recognizes Reasonix by the UA it sends to every endpoint', () => {
     expect(classifyClientAgent(request('/v1/chat/completions', {
       'user-agent': 'Reasonix/2.29.0',

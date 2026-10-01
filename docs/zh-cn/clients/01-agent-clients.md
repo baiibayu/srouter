@@ -37,6 +37,7 @@ srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
 
 | 智能体 | 自动化命令 | 手动 base URL | 线上协议 |
 | --- | --- | --- | --- |
+
 | **Claude Code** | `setup-claude` 或免凭证 `launch` | `http://localhost:20268` | Anthropic Messages |
 | **Codex CLI** | `setup-codex` 或 `launch-codex` | `http://localhost:20268/v1` | Responses (`wire_api = "responses"`) |
 | **Cline** | `setup-cline` | `http://localhost:20268/v1` | OpenAI Chat |
@@ -143,6 +144,18 @@ reasonix -p "Say hello"
 ```
 
 目录中的每个模型都会以 `srouter/<id>` 出现在 `/model` 中。`--profile <name>` 改为添加 `srouter-<name>` 条目——用 `reasonix --model srouter-<name>/<model>` 选择——不改动默认模型；`--model <id>` 固定默认模型。设置了 `[desktop].provider_access` 时，Reasonix Studio 只列出其中的 provider，请把 `"srouter"` 加进去（或在 设置 → 模型 → 访问 中添加）。Reasonix 的 User-Agent 为 `Reasonix/<version>`，Agents 页面的"最近出现"徽章据此识别。
+
+### Pi（`pi`）
+
+[Pi](https://pi.dev) 是一个极简的终端智能体框架，可用你自己的扩展、技能和提示词模板来定制。Pi 未内置的端点写在 `~/.pi/agent/models.json` 的 provider 条目里。`setup-pi` 在其中添加 `srouter` provider——`api: openai-completions`、网关的 `/v1` 作为 `baseUrl`，并列出实时目录中的全部模型及其上下文窗口（所选模型排在最前）——再在 `~/.pi/agent/settings.json` 中设置 `defaultProvider` 和 `defaultModel`，让全新启动的 `pi` 直接使用它。Pi 不会自行加载 `.env` 文件，所以密钥直接写入 `models.json`（以 0600 权限创建）。两个文件中的其他 provider 和设置保持原样。
+
+```bash
+npx srouter setup-pi --url http://localhost:3001 --api-key <统一密钥>
+npm install -g @earendil-works/pi-coding-agent
+pi -p "Say hello"
+```
+
+正在运行的会话在打开 `/model` 时会重新加载 `models.json`。`--profile <name>` 改为添加 `srouter-<name>` provider——用 `pi --model srouter-<name>/<model>` 或在 `/model` 中选择——不改动默认模型；`--model <id>` 固定默认模型。模型声明为纯文本、`reasoning: false`；要给视觉模型发送图片，在其 `input` 中加上 `"image"`。Pi 对自定义端点只发送 SDK 的通用 User-Agent，所以该 provider 带有 `headers: { "User-Agent": "pi-coding-agent" }`，Agents 页面的"最近出现"徽章据此识别。设置了 `PI_CODING_AGENT_DIR` 时会被尊重。
 
 ### QwenPaw
 

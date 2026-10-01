@@ -214,6 +214,7 @@ SRouter includes automated configuration generators (`setup-*`) that inspect you
 </div>
 
 
+
 ```bash
 # Automatic setup with your SRouter instance
 srouter setup-claude --url http://localhost:20268 --api-key <your-unified-key>
@@ -242,6 +243,7 @@ _Not installed? Run the same command with `npx @baiibayu/srouter` in place of `s
 # Injects credentials directly into child process without writing keys to disk
 srouter launch
 ```
+
 
 ### Cursor / Windsurf Settings
 ```json

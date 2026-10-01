@@ -855,6 +855,7 @@ function hermes(ctx: GenerateContext): Generation {
 // alone only adds models to `/model`: the startup choice is `defaultProvider`
 // plus `defaultModel` in settings.json, which a named profile leaves alone.
 function piAgentDir(homeDir: string): string {
+
   return process.env.PI_CODING_AGENT_DIR?.trim() || posixPath(homeDir, '.pi', 'agent');
 }
 
@@ -862,6 +863,7 @@ function pi(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   const dir = piAgentDir(ctx.homeDir);
   const provider = ctx.profile === 'default'
+
     ? 'srouter'
     : `srouter-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
   const roster = catalogModels(ctx.models);
@@ -878,12 +880,14 @@ function pi(ctx: GenerateContext): Generation {
       maxTokens: outputLimit(entry),
     }));
   const files: Generation['files'] = [{
+
     path: posixPath(dir, 'models.json'),
     format: 'json',
     sensitive: true,
     value: {
       providers: {
         [provider]: {
+
           name: ctx.profile === 'default' ? 'SRouter' : `SRouter (${ctx.profile})`,
           baseUrl: v1Url(ctx.url),
           api: 'openai-completions',
@@ -900,6 +904,7 @@ function pi(ctx: GenerateContext): Generation {
   }];
   if (ctx.profile === 'default') {
     files.push({
+
       path: posixPath(dir, 'settings.json'),
       format: 'json',
       value: { defaultProvider: provider, defaultModel: model.id },
@@ -917,6 +922,7 @@ function pi(ctx: GenerateContext): Generation {
     ],
   };
 }
+
 
 // Reasonix (reasonix.io, esengine/DeepSeek-Reasonix) reads one global TOML
 // document, <Reasonix home>/config.toml — ~/.reasonix, %APPDATA%\reasonix on
@@ -1126,6 +1132,7 @@ function generic(ctx: GenerateContext): Generation {
 }
 
 const metadata = [
+
   ['claude', 'Claude Code', 'code', 'file', 'Anthropic Messages', 'root', 'setup-claude', 'https://docs.anthropic.com/en/docs/claude-code', 'default', claude],
   ['codex', 'Codex CLI', 'code', 'file', 'OpenAI Responses', '/v1', 'setup-codex', 'https://developers.openai.com/codex', 'default', codex],
   ['cline', 'Cline', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-cline', 'https://docs.cline.bot', 'default', cline],

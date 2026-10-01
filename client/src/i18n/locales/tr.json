@@ -282,7 +282,7 @@
     "catalogModel": "katalog",
     "customModel": "özel",
     "discoveredModel": "keşfedildi",
-    "localOverride": "yerel geçersiz kılma", (feat(keys): discover models for built-in providers the catalog does not carry (#1357))
+    "localOverride": "yerel geçersiz kılma",
     "displayName": "Görünen ad",
     "sizeLabel": "Yetenek kademesi",
     "sizeLabelHint": "Frontier/Large/Medium/Small, zekâ eksenini belirler: üst kademe her zaman alt kademeden öndedir ve aynı kademe içinde zekâ sıralaması puanı etkilemeye devam eder. Tanınan bir kademesi olmayan model bu eksende en düşük puanı alır; ancak zekâ üç eksenden yalnızca biridir. Güvenilirliği ve hızı yüksekse yine de yönlendirmede öne çıkabilir.",
@@ -1233,7 +1233,7 @@
       "generic": "OpenAI API'sini konuşan diğer her araç; temel URL ve anahtarla elle kurulur.",
       "openclaw": "Kendi makinenizden WhatsApp, Telegram, Discord ve daha fazlasında yanıt veren, her zaman açık bir kişisel asistan.",
       "hermes": "Nous Research'ün kendini geliştiren ajanı; kalıcı bellek ve becerilerle, terminalde ya da sohbet uygulamalarında.",
-      "pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
+"pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
       "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
       "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
@@ -1342,3 +1342,4 @@
     "offline": "İnternet bağlantınızı kontrol edip tekrar deneyin."
   }
 }
+

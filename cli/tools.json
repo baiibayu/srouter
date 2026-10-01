@@ -1,4 +1,5 @@
 [
+
   {"id":"claude","name":"Claude Code","category":"code","configType":"file","protocol":"Anthropic Messages","baseUrlSupport":"root","command":"setup-claude","docsUrl":"https://docs.anthropic.com/en/docs/claude-code","modelBehavior":"default"},
   {"id":"codex","name":"Codex CLI","category":"code","configType":"file","protocol":"OpenAI Responses","baseUrlSupport":"/v1","command":"setup-codex","docsUrl":"https://developers.openai.com/codex","modelBehavior":"default"},
   {"id":"cline","name":"Cline","category":"code","configType":"file","protocol":"OpenAI Chat","baseUrlSupport":"/v1","command":"setup-cline","docsUrl":"https://docs.cline.bot","modelBehavior":"default"},

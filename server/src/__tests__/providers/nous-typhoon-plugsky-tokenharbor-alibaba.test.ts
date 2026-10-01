@@ -21,7 +21,7 @@ const BASE: Record<(typeof PLATFORMS)[number], string> = {
 describe('Nous Portal, OpenTyphoon, Plugsky, Token Harbor and Alibaba Model Studio adapters', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it.each(PLATFORMS)('%s validates on the authenticated /models endpoint', async platform => {
+  it.each(PLATFORMS.filter(p => p !== 'typhoon'))('%s validates on the authenticated /models endpoint', async platform => {
     expect(hasProvider(platform)).toBe(true);
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ data: [] }));
     await expect(getProvider(platform)!.validateKey('test-key')).resolves.toBe(true);

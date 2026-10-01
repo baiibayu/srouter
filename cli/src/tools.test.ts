@@ -16,6 +16,7 @@ beforeEach(() => {
   vi.stubEnv('OPENCLAW_CONFIG_PATH', '');
   vi.stubEnv('HERMES_HOME', '');
   vi.stubEnv('PI_CODING_AGENT_DIR', '');
+
   vi.stubEnv('REASONIX_HOME', '');
 });
 afterEach(() => {
@@ -494,6 +495,7 @@ describe('tool generators', () => {
     expect(models.path).toBe('/home/tester/.pi/agent/models.json');
     expect(models.format).toBe('json');
     expect(models.sensitive).toBe(true);
+
     const provider = (models.value as { providers: Record<string, any> }).providers.srouter;
     expect(provider).toMatchObject({
       name: 'SRouter',
@@ -514,6 +516,7 @@ describe('tool generators', () => {
     });
     expect(settings.path).toBe('/home/tester/.pi/agent/settings.json');
     expect(settings.sensitive).toBeUndefined();
+
     expect(settings.value).toEqual({ defaultProvider: 'srouter', defaultModel: 'fast-coder' });
   });
 
@@ -523,6 +526,7 @@ describe('tool generators', () => {
       models: [{ id: 'auto', name: 'Auto', available: true, context_window: 200_000 }, ...context.models],
     };
     const [models, settings] = tools.find(tool => tool.id === 'pi')!.generate(liveContext).files;
+
     const provider = (models.value as { providers: Record<string, { models: { id: string }[] }> }).providers.srouter;
     expect(provider.models.map(model => model.id)).toEqual(['auto', 'fast-coder', 'reasoning-model']);
     expect(settings.value).toEqual({ defaultProvider: 'srouter', defaultModel: 'auto' });
@@ -534,6 +538,7 @@ describe('tool generators', () => {
     expect(files).toHaveLength(1);
     expect(files[0].path).toBe('/srv/pi/models.json');
     const providers = (files[0].value as { providers: Record<string, { name: string }> }).providers;
+
     expect(Object.keys(providers)).toEqual(['srouter-work-box']);
     expect(providers['srouter-work-box'].name).toBe('SRouter (Work Box)');
   });

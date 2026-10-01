@@ -50,6 +50,7 @@ installing).
 | `setup-openclaw` | OpenClaw |
 | `setup-hermes` | Hermes Agent (`hermes`) |
 | `setup-pi` | Pi (`pi`) |
+
 | `setup-droid` | Factory Droid (`droid`) |
 | `setup-reasonix` | Reasonix (`reasonix`) |
 | `setup-cursor` | Cursor |

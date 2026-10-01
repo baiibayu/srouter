@@ -18,6 +18,7 @@ export const CLIENT_AGENTS = [
   'openclaw',
   'hermes-agent',
   'pi',
+
   'reasonix',
   'cursor',
   'gemini-cli',
@@ -78,6 +79,7 @@ export function classifyClientAgent(req: Request): ClientAgent {
   // header sends `pi-coding-agent`, and Pi's own UA is
   // `pi/<version> (<platform>; node/<version>; <arch>)`.
   if (/\bpi-coding-agent\b|^pi\/\d/.test(ua)) return 'pi';
+
   // Reasonix sends `Reasonix/<version>` to every endpoint on its own.
   if (/^reasonix\//.test(ua)) return 'reasonix';
   if (/opencode/.test(ua)) return 'opencode';
