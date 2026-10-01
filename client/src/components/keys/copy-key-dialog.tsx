@@ -13,12 +13,12 @@ import { toast } from '@/lib/toast'
 // #786: the desktop build has no user-set password (its machine user's
 // password is random and never shown), so the re-verification dialog would
 // lock desktop users out of copying a full key. The desktop server skips
-// re-auth (FREEAPI_DESKTOP) for local requests, so here we just hide the
+// re-auth (SROUTER_DESKTOP) for local requests, so here we just hide the
 // password field. Only the Electron preload sets this flag, so a browser
 // reaching the same desktop server over LAN still gets the field — and the
 // server still demands the password from it.
 const isDesktopApp = typeof window !== 'undefined'
-  && (window as Window & { __FREEAPI_DESKTOP__?: boolean }).__FREEAPI_DESKTOP__ === true
+  && (window as Window & { __SROUTER_DESKTOP__?: boolean }).__SROUTER_DESKTOP__ === true
 
 // #705: the list only ever shows a masked key, and the sole way to read one
 // back was to export every key to a file. This narrows that to one key, behind

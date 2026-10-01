@@ -25,7 +25,7 @@ describe('CLōD, Speechify and BlazeAPI adapters', () => {
     expect(new Headers(fetch.mock.calls[0][1]?.headers).get('Authorization')).toBe('Bearer test-key');
     if (platform === 'clod') {
       // Cloudflare challenges Node's default UA from datacenter IPs (#1298).
-      expect(new Headers(fetch.mock.calls[0][1]?.headers).get('user-agent')).toBe('FreeLLMAPI/1.0');
+      expect(new Headers(fetch.mock.calls[0][1]?.headers).get('user-agent')).toBe('srouter/1.0');
     }
     fetch.mockResolvedValue(json({ error: 'Invalid key' }, 401));
     await expect(getProvider(platform)!.validateKey('test-key')).resolves.toMatchObject({ valid: false });

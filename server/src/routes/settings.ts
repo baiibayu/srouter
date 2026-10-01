@@ -3,8 +3,8 @@ import type { Request, Response } from 'express';
 import { getUnifiedApiKey, regenerateUnifiedKey, getSetting, setSetting, getDb } from '../db/index.js';
 import { applyProxyUrl, applyProxyMode, applyProxyEnabled, applyProxyBypass, applyFetchRelayToken, encodeFetchRelayToken, isProxyActive, getProxyUrl, getProxyMode, getFetchRelayToken, isProxyEnabled, getProxyBypassPlatforms, probeProxyUrl, fetchRelayUrlError, DEFAULT_PROXY_PROBE_TARGET, PROXY_MODES, PROXY_SCHEMES } from '../lib/proxy.js';
 import { getProvider } from '../providers/index.js';
-import type { Platform } from '@freellmapi/shared/types.js';
-import type { ProxyMode } from '@freellmapi/shared/types.js';
+import type { Platform } from '@srouter/shared/types.js';
+import type { ProxyMode } from '@srouter/shared/types.js';
 import { getSavedFusionConfig, setSavedFusionConfig, savedFusionConfigSchema, getFusionMaxK } from '../services/fusion.js';
 import { isUnifyEnabled, setUnifyEnabled, getUnifyOverrides, setUnifyOverrides, unifyOverridesSchema } from '../services/model-groups.js';
 import { getClaudeModelMap, setClaudeModelMap } from '../services/anthropic-map.js';
@@ -32,6 +32,15 @@ import {
   UNIFIED_MAX_TOKENS_AUTO,
   unifiedMaxTokensCap,
 } from '../lib/sampling-params.js';
+import {
+  getSyncIntervalHours,
+  setSyncIntervalHours,
+  updateSyncSchedule,
+  getNotifications,
+  markNotificationsRead,
+  unreadNotificationCount,
+  type SyncInterval,
+} from '../services/catalog-sync.js';
 
 export const settingsRouter = Router();
 
@@ -572,4 +581,53 @@ settingsRouter.post('/proxy/test', async (req: Request, res: Response) => {
       : getFetchRelayToken(),
   });
   res.json(result);
+});
+
+// ── Sync schedule ─────────────────────────────────────────────
+// GET/PUT /api/settings/sync-schedule — configurable model catalog sync interval.
+
+// Accept both number and string forms (the client's OptionBar sends strings).
+const syncScheduleSchema = z.object({
+  interval: z.union([
+    z.literal('off'),
+    z.union([z.literal(6), z.literal('6')]),
+    z.union([z.literal(12), z.literal('12')]),
+    z.union([z.literal(24), z.literal('24')]),
+  ]),
+}).strict();
+
+settingsRouter.get('/sync-schedule', (_req: Request, res: Response) => {
+  res.json({ interval: getSyncIntervalHours() });
+});
+
+settingsRouter.put('/sync-schedule', (req: Request, res: Response) => {
+  const parsed = syncScheduleSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: {
+        message: `Invalid sync schedule: ${parsed.error.errors.map(e => e.message).join(', ')}`,
+        type: 'invalid_request_error',
+      },
+    });
+    return;
+  }
+  // Normalize string hours ("12") to number (12) for storage.
+  const raw = parsed.data.interval;
+  const normalized: SyncInterval = raw === 'off' ? 'off' : (Number(raw) as SyncInterval);
+  setSyncIntervalHours(normalized);
+  updateSyncSchedule();
+  res.json({ interval: getSyncIntervalHours() });
+});
+
+// ── Notifications ─────────────────────────────────────────────
+// GET /api/notifications — list sync notifications
+// POST /api/notifications/read — mark all as read
+
+settingsRouter.get('/notifications', (_req: Request, res: Response) => {
+  res.json({ notifications: getNotifications(), unread: unreadNotificationCount() });
+});
+
+settingsRouter.post('/notifications/read', (_req: Request, res: Response) => {
+  markNotificationsRead();
+  res.json({ unread: 0 });
 });

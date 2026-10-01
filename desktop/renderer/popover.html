@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -184,7 +184,7 @@
         </svg>
       </div>
       <div>
-        <div class="title">FreeLLMAPI</div>
+        <div class="title">SRouter</div>
         <div class="addr" id="addr">127.0.0.1:…</div>
       </div>
       <div class="status"><span class="dot"></span><span id="status-label">running</span></div>
@@ -260,7 +260,7 @@
 
   let loginOn = false;
   async function refresh() {
-    const s = await window.freeapi.snapshot();
+    const s = await window.srouter.snapshot();
     S = s.strings || {};
     document.body.classList.toggle('light', s.theme === 'light');
     // Localize the static labels.
@@ -292,17 +292,17 @@
     setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1100);
   }
 
-  $('open').addEventListener('click', () => window.freeapi.openDashboard());
-  $('copyurl').addEventListener('click', (e) => { window.freeapi.copyBaseUrl(); flash(e.target, S.copied || 'Copied ✓'); });
-  $('copykey').addEventListener('click', (e) => { window.freeapi.copyApiKey(); flash(e.target, S.copied || 'Copied ✓'); });
-  $('quit').addEventListener('click', () => window.freeapi.quit());
+  $('open').addEventListener('click', () => window.srouter.openDashboard());
+  $('copyurl').addEventListener('click', (e) => { window.srouter.copyBaseUrl(); flash(e.target, S.copied || 'Copied ✓'); });
+  $('copykey').addEventListener('click', (e) => { window.srouter.copyApiKey(); flash(e.target, S.copied || 'Copied ✓'); });
+  $('quit').addEventListener('click', () => window.srouter.quit());
   $('login').addEventListener('click', () => {
     loginOn = !loginOn;
     $('login').classList.toggle('on', loginOn);
-    window.freeapi.setLoginItem(loginOn);
+    window.srouter.setLoginItem(loginOn);
   });
 
-  window.freeapi.onRefresh(refresh);
+  window.srouter.onRefresh(refresh);
   refresh();
 </script>
 </body>

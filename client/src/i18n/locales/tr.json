@@ -16,7 +16,9 @@
     "modelsMenu": "Model türlerine göz atın",
     "agents": "Ajanlar",
     "logs": "Günlükler",
-    "analyticsMenu": "Analitik sayfaları"
+    "analyticsMenu": "Analitik sayfaları",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Hesabınızı oluşturun",
@@ -60,7 +62,7 @@
     "emailChanged": "E-posta değiştirildi.",
     "passwordReset": "Şifre sıfırlandı. Lütfen giriş yapın.",
     "resetCodeDockerHint": "Docker içinde mi çalışıyor? Kod konteyner günlüğündedir: docker logs <container>.",
-    "desktopSessionFailed": "Kontrol paneli yerel sunucuya giriş yapamadı. FreeLLMAPI uygulamasını kapatıp yeniden açın."
+    "desktopSessionFailed": "Kontrol paneli yerel sunucuya giriş yapamadı. SRouter uygulamasını kapatıp yeniden açın."
   },
   "common": {
     "save": "Kaydet",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Otomatik güncelleme denetimi",
     "autoUpdateCheckHelp": "Yeni bir sürüm için günde bir kez GitHub'ı denetler ve bir hatırlatma gösterir. Varsayılan olarak kapalıdır.",
     "openReleases": "GitHub Sürümlerini Aç",
-    "restartAfterUpdate": "Derleme tamamlandıktan sonra FreeLLMAPI'yi yeniden başlatın."
+    "restartAfterUpdate": "Derleme tamamlandıktan sonra SRouter'yi yeniden başlatın.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modeller",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Aylık jeton bütçesi",
     "remaining": "kalan",
     "used": "kullanılmış",
-    "usedScopeHint": "Yalnızca bu takvim ayının başından bu yana yapılan sohbet istekleri; etkin zincirdeki tüm modeller (özel uç noktalar dâhil) toplanır. FreeLLMAPI dışından sağlayıcıya gönderdiğiniz trafik sayılmaz.",
+    "usedScopeHint": "Yalnızca bu takvim ayının başından bu yana yapılan sohbet istekleri; etkin zincirdeki tüm modeller (özel uç noktalar dâhil) toplanır. SRouter dışından sağlayıcıya gönderdiğiniz trafik sayılmaz.",
     "legendRemainingTitle": "{name} ({platform}) için kalan / aylık bütçe",
     "noPublishedQuota": "+{count} yayımlanmış kotası olmayan",
     "noPublishedQuotaTitle": "Bu modellerin belgelenmiş aylık jeton bütçesi yok, bu yüzden gösterilecek kalan miktar da yok.",
@@ -517,6 +525,23 @@
     "providerActions": "Sağlayıcı eylemleri",
     "routeViaProxy": "Proxy aracılığıyla yönlendirme",
     "checkNow": "Şimdi kontrol et",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Ayrıca aracılığıyla yapılandırılabilir",
     "proxyEnvHintAfter": "ortam değişkeni (öncelik alır). Devre dışı bırakmak için boş bırakın. Örnekler:",
     "importKeys": "Sağlayıcı anahtarlarını içe aktar",
@@ -679,7 +704,8 @@
     "testFailed": "Model testi başarısız oldu",
     "testThrottled": "Bu modeli yeniden test etmeden önce lütfen {seconds} saniye bekleyin.",
     "noModelsForProvider": "Bu sağlayıcı için yapılandırılmış model yok.",
-    "testModels": "Modelleri test et"
+    "testModels": "Modelleri test et",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

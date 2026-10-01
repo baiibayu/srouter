@@ -728,7 +728,7 @@ export default function AnalyticsPage() {
 
       <div className="space-y-6">
         {/* Summary stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {summaryLoading ? (
             // Same count as the cards below, cache card included, so the row
             // does not reflow when the summary lands.
@@ -913,7 +913,7 @@ export default function AnalyticsPage() {
             {errors.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">{t('analytics.noErrors')}</p>
             ) : (
-              <div className="max-h-[240px] overflow-y-auto -mx-4">
+              <div className="max-h-[240px] overflow-auto -mx-4">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -991,7 +991,7 @@ export default function AnalyticsPage() {
               {!recentCalls?.rows?.length ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData')}</p>
               ) : (
-                <div className="max-h-[420px] overflow-y-auto -mx-4">
+                <div className="max-h-[420px] overflow-auto -mx-4">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1056,7 +1056,7 @@ export default function AnalyticsPage() {
               {byPlatform.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData')}</p>
               ) : (
-                <div className="max-h-[360px] overflow-y-auto -mx-4">
+                <div className="max-h-[360px] overflow-auto -mx-4">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1106,7 +1106,7 @@ export default function AnalyticsPage() {
               {byModel.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData')}</p>
               ) : (
-                <div className="max-h-[360px] overflow-y-auto -mx-4">
+                <div className="max-h-[360px] overflow-auto -mx-4">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1146,7 +1146,7 @@ export default function AnalyticsPage() {
           {byKey.length > 0 && (
             <div className="lg:col-span-2">
               <Panel icon={KeyRound} title={t('analytics.usageByKey')}>
-                <div className="max-h-[360px] overflow-y-auto -mx-4">
+                <div className="max-h-[360px] overflow-auto -mx-4">
                   <Table>
                     <TableHeader>
                       <TableRow>

@@ -33,7 +33,8 @@ export function up(db: Db): void {
   migrateModelsV23FreeTierAudit(db);
   migrateModelsV24ZenRefresh(db);
   migrateModelsV25ZenDeadPromos(db);
-  // V25 is the LAST model-data migration. Since the Premium live catalog
+  migrateModelsV26OpenCodeFree(db);
+  // V26 is the LAST model-data migration. Since the Premium live catalog
   // shipped (June 2026), model/limit DATA is maintained in the published
   // catalog (served signed by the catalog service) and reaches installs via
   // catalog-sync — premium on the live tier within ~12h, free at the monthly
@@ -1954,6 +1955,35 @@ function migrateModelsV25ZenDeadPromos(db: Db) {
 // 'nvidia-credits-based' → 'nvidia-rate-limited' replacement; the stale slug
 // is cleaned up below in migrateQuirksV1 itself).
 
+/**
+ * V26 (2026-09): seed the opencode-free platform — keyless, identity-spoofed
+ * access to OpenCode's zen free tier. Since 2026-09 the free roster is gated
+ * on OpenCode CLI headers; the opencode-free provider forges them so the proxy
+ * can serve free models without requiring users to hold an OpenCode account key.
+ *
+ * Models: the roster mirrors the V18/V24 OpenCode Zen seeds (same upstream
+ * model IDs), but on the new 'opencode-free' platform. Limits are conservative
+ * (20 RPM / 200 RPD — same as the original Zen seeds); the upstream has not
+ * published official limits for the CLI-bypass path. Idempotent (INSERT OR IGNORE).
+ */
+function migrateModelsV26OpenCodeFree(db: Db) {
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, size_label, rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, context_window, enabled, supports_vision, supports_tools)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const additions: Array<[string, string, string, number, number, string, number | null, number | null, number | null, number | null, string, number | null, number, number, number]> = [
+    ['opencode-free', 'big-pickle',            'Big Pickle (OpenCode Free)',            10, 4, 'Large',    20, 200, null, null, 'promo (free)', 131072, 1, 0, 1],
+    ['opencode-free', 'mimo-v2.5-free',        'MiMo-V2.5 Free (OpenCode Free)',       14, 4, 'Medium',   20, 200, null, null, 'promo (free)', 131072, 1, 0, 1],
+    ['opencode-free', 'deepseek-v4-flash-free','DeepSeek V4 Flash Free (OpenCode Free)', 4, 4, 'Frontier', 20, 200, null, null, 'promo (free)', 131072, 1, 0, 1],
+  ];
+
+  const apply = db.transaction(() => {
+    for (const a of additions) insert.run(...a);
+    backfillFallback(db);
+  });
+  apply();
+}
+
 // Embeddings V1 (2026-06): per-family embedding catalog. A "family" is one
 // model identity + dimension — vectors from different families live in
 // incompatible spaces, so /v1/embeddings only ever fails over WITHIN a family
@@ -2236,7 +2266,7 @@ function backfillFallback(db: Db) {
 function ensureUnifiedKey(db: Db) {
   const existing = db.prepare("SELECT value FROM settings WHERE key = 'unified_api_key'").get() as { value: string } | undefined;
   if (!existing) {
-    const key = `freellmapi-${crypto.randomBytes(24).toString('hex')}`;
+    const key = `srouter-${crypto.randomBytes(24).toString('hex')}`;
     db.prepare("INSERT INTO settings (key, value) VALUES ('unified_api_key', ?)").run(key);
     // A direct stdout write bypasses the process-wide console redaction, so it
     // is only safe for a deliberate local-development session with an attached

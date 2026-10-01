@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
-import { ChevronDown, CircleAlert, Copy, ExternalLink, FlaskConical, KeyRound, Layers, ListFilter, ListPlus, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Sparkles, Trash2, Zap } from 'lucide-react'
+import { ChevronDown, CircleAlert, Copy, ExternalLink, FlaskConical, KeyRound, Layers, ListFilter, ListPlus, MoreHorizontal, Pencil, Plus, RefreshCcw, RefreshCw, Search, Sparkles, Trash2, Zap } from 'lucide-react'
 import type { ApiKey, ApiKeyModel } from '../../../../shared/types'
 import { formatSqliteUtcToLocalTime } from '@/lib/utils'
 import { useI18n } from '@/i18n'
@@ -126,6 +126,29 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['health'] })
       queryClient.invalidateQueries({ queryKey: ['keys'] })
+    },
+  })
+
+  // Re-verify this platform's model list against its live upstream — the same
+  // sweep the twice-daily timer runs, on demand. Upstream rosters drift (and a
+  // model can flip behind a paid gate upstream) without any health check
+  // noticing, because the health check probes KEYS, never the model list.
+  const syncModels = useMutation({
+    mutationFn: (platform: string) =>
+      apiFetch<{ platform: string; registered: number; modelsAvailable: number }>(
+        `/api/keys/platform/${platform}/refresh-models`,
+        { method: 'POST' },
+      ),
+    onSuccess: (data) => {
+      for (const key of ['keys', 'models', 'fallback', 'routing']) {
+        queryClient.invalidateQueries({ queryKey: [key] })
+      }
+      toast.success(
+        t('keys.syncModelsResult', { added: data.registered, total: data.modelsAvailable }),
+      )
+    },
+    onError: (error) => {
+      toast.error(t('keys.syncModelsFailed', { reason: error instanceof Error ? error.message : String(error) }))
     },
   })
 
@@ -487,7 +510,7 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                 })()}
 
                 {expanded && (
-                  <div className="rounded-2xl border divide-y bg-card overflow-hidden">
+                  <div className="rounded-xl border divide-y bg-card overflow-hidden sm:rounded-2xl">
                     {group.keys.map(k => {
                       const status = statusOf(k)
                       const health = healthKeyMap.get(k.id)
@@ -499,7 +522,7 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                       const isChecking = checkKey.isPending && checkKey.variables === k.id
                       return (
                         <div key={k.id} className="bg-card">
-                          <div className="group/krow flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors">
+                          <div className="group/krow flex items-center gap-2 px-3 py-2.5 hover:bg-muted/40 transition-colors sm:gap-3 sm:px-4 sm:py-3">
                             {/* #787: bulk-select checkbox — enabling the row-level
                                 batch bar below. Deliberately secondary: the switch
                                 stays the primary per-key control, and a checkbox on
@@ -555,12 +578,12 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                               type="button"
                               onClick={() => startEditing(k)}
                               title={t('keys.editKey')}
-                              className={`max-w-[220px] truncate rounded text-xs hover:text-foreground hover:underline underline-offset-2 ${k.label ? 'text-muted-foreground' : 'text-muted-foreground/50'} ${k.enabled ? '' : 'opacity-50'}`}
+                              className={`max-w-[140px] truncate rounded text-xs hover:text-foreground hover:underline underline-offset-2 sm:max-w-[220px] ${k.label ? 'text-muted-foreground' : 'text-muted-foreground/50'} ${k.enabled ? '' : 'opacity-50'}`}
                             >
                               {k.label || t('keys.editKey')}
                             </button>
                             {k.baseUrl && (
-                              <code className={`text-[11px] text-muted-foreground font-mono truncate max-w-[260px] ${k.enabled ? '' : 'opacity-50'}`} title={k.baseUrl}>
+                              <code className={`text-[11px] text-muted-foreground font-mono truncate max-w-[150px] sm:max-w-[260px] ${k.enabled ? '' : 'opacity-50'}`} title={k.baseUrl}>
                                 {k.baseUrl}
                               </code>
                             )}
@@ -688,6 +711,17 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                                   </Button>
                                 </Tooltip>
                               )}
+                              <Tooltip text={t('keys.syncModels')}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={() => syncModels.mutate(k.platform)}
+                                  disabled={syncModels.isPending}
+                                  aria-label={t('keys.syncModels')}
+                                >
+                                  <RefreshCcw className={`size-3 ${syncModels.isPending && syncModels.variables === k.platform ? 'animate-spin' : ''}`} />
+                                </Button>
+                              </Tooltip>
                               <Tooltip text={t('keys.checkNow')}>
                                 <Button
                                   variant="ghost"
@@ -715,13 +749,13 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                             </div>
                           </div>
                           {lastHealthError && (
-                            <div className="flex items-start gap-2 px-4 pb-3 pl-8 text-xs text-destructive" role="status">
+                            <div className="flex items-start gap-2 px-3 pb-3 pl-6 text-xs text-destructive sm:px-4 sm:pl-8" role="status">
                               <CircleAlert className="mt-0.5 size-3.5 flex-shrink-0" />
                               <span className="break-words" title={lastHealthError}>{lastHealthError}</span>
                             </div>
                           )}
                           {hasCustomModels && isExpanded && (
-                            <div className="flex flex-wrap gap-2 border-t bg-muted/20 px-4 py-3 pl-12">
+                            <div className="flex flex-wrap gap-1.5 border-t bg-muted/20 px-3 py-2.5 pl-8 sm:gap-2 sm:px-4 sm:py-3 sm:pl-12">
                               {customModels.map(model => {
                                 const modelKey = customModelDeleteKey(model)
                                 return (

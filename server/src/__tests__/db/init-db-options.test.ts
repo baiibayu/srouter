@@ -17,7 +17,7 @@ describe('initDb ensureDir option', () => {
 
     // A non-memory path in a directory that (mocked) doesn't exist; ensureDir:
     // false means initDb must not check or create the parent directory.
-    const dbPath = path.join('/tmp', `freeapi-missing-${Date.now()}-${Math.random()}`, 'freeapi.db');
+    const dbPath = path.join('/tmp', `srouter-missing-${Date.now()}-${Math.random()}`, 'srouter.db');
     try { initDb(dbPath, { ensureDir: false }); } catch { /* DB open will fail */ }
 
     expect(mkdirSpy).not.toHaveBeenCalled();
@@ -33,8 +33,8 @@ describe('initDb ensureDir option', () => {
     const { initDb } = await import('../../db/index.js');
 
     // A fake on-disk path — existsSync returns false so mkdirSync should be called.
-    const dir = path.join('/tmp', `freeapi-missing-${Date.now()}-${Math.random()}`);
-    const dbPath = path.join(dir, 'freeapi.db');
+    const dir = path.join('/tmp', `srouter-missing-${Date.now()}-${Math.random()}`);
+    const dbPath = path.join(dir, 'srouter.db');
     try { initDb(dbPath, { ensureDir: true }); } catch { /* DB open will fail */ }
 
     expect(mkdirSpy).toHaveBeenCalledWith(dir, { recursive: true });

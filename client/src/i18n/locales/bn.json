@@ -16,7 +16,9 @@
     "modelsMenu": "মডেলের ধরন ব্রাউজ করুন",
     "agents": "এজেন্ট",
     "logs": "লগ",
-    "analyticsMenu": "বিশ্লেষণ পৃষ্ঠা"
+    "analyticsMenu": "বিশ্লেষণ পৃষ্ঠা",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "আপনার অ্যাকাউন্ট তৈরি করুন",
@@ -60,7 +62,7 @@
     "emailChanged": "ইমেল সফলভাবে পরিবর্তিত হয়েছে।",
     "passwordReset": "পাসওয়ার্ড রিসেট হয়েছে। সাইন ইন করুন।",
     "resetCodeDockerHint": "Docker-এ চালাচ্ছেন? কোডটি কন্টেইনার লগে আছে: docker logs <container>।",
-    "desktopSessionFailed": "ড্যাশবোর্ড লোকাল সার্ভারে সাইন ইন করতে পারেনি। FreeLLMAPI বন্ধ করে আবার খুলুন।"
+    "desktopSessionFailed": "ড্যাশবোর্ড লোকাল সার্ভারে সাইন ইন করতে পারেনি। SRouter বন্ধ করে আবার খুলুন।"
   },
   "common": {
     "save": "সংরক্ষণ করুন",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "স্বয়ংক্রিয় আপডেট পরীক্ষা",
     "autoUpdateCheckHelp": "দিনে একবার নতুন রিলিজের জন্য GitHub পরীক্ষা করে এবং একটি অনুস্মারক দেখায়। ডিফল্টভাবে বন্ধ।",
     "openReleases": "GitHub রিলিজ খুলুন",
-    "restartAfterUpdate": "বিল্ড সম্পূর্ণ হওয়ার পর FreeLLMAPI পুনরায় চালু করুন।"
+    "restartAfterUpdate": "বিল্ড সম্পূর্ণ হওয়ার পর SRouter পুনরায় চালু করুন।",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "মডেল",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "মাসিক টোকেন বাজেট",
     "remaining": "অবশিষ্ট",
     "used": "ব্যবহৃত",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "প্রদানকারী কর্ম",
     "routeViaProxy": "প্রক্সি মাধ্যমে রুট",
     "checkNow": "এখন পরীক্ষা করুন",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "এছাড়াও মাধ্যমে কনফিগারযোগ্য",
     "proxyEnvHintAfter": "পরিবেশ পরিবর্তনশীল (অগ্রাধিকার নেয়)। নিষ্ক্রিয় করতে ফাঁকা ছেড়ে দিন। উদাহরণ:",
     "importKeys": "সরবরাহকারী কী আমদানি করুন",
@@ -679,7 +704,8 @@
     "testFailed": "মডেল পরীক্ষা ব্যর্থ হয়েছে",
     "testThrottled": "এই মডেলটি আবার পরীক্ষা করার আগে অনুগ্রহ করে {seconds} সেকেন্ড অপেক্ষা করুন।",
     "noModelsForProvider": "এই প্রদানকারীর জন্য কোনো মডেল কনফিগার করা হয়নি।",
-    "testModels": "মডেল পরীক্ষা করুন"
+    "testModels": "মডেল পরীক্ষা করুন",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

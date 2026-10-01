@@ -103,7 +103,7 @@ describe('POST /v1/audio/transcriptions', () => {
     const { status, body } = await postTranscription(app, {
       file: { bytes: AUDIO, name: 'a.wav' },
       fields: { model: 'whisper-1' },
-      auth: 'freellmapi-wrong-key',
+      auth: 'srouter-wrong-key',
     });
     expect(status).toBe(401);
     expect(body.error.type).toBe('authentication_error');

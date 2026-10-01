@@ -1,6 +1,6 @@
 [English](../en/README.md) · **简体中文**
 
-# FreeLLMAPI 文档
+# SRouter 文档
 
 这里是用户入口 —— 从这里开始安装网关、调用兼容 OpenAI 的 API、接入编程智能体并了解整体架构。根目录的 [README](../../README.zh-cn.md) 是产品总览；这份索引帮你把服务跑起来。
 

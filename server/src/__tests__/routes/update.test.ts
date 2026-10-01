@@ -120,8 +120,8 @@ describe('Update API', () => {
       const execMock = vi.fn(async () => ({ stdout: `${REMOTE_SHA}\n` }));
       const { app } = createTestApp({
         env: {
-          FREELLMAPI_COMMIT_SHA: LOCAL_SHA.toUpperCase(),
-          FREELLMAPI_INSTALL_METHOD: 'docker',
+          SROUTER_COMMIT_SHA: LOCAL_SHA.toUpperCase(),
+          SROUTER_INSTALL_METHOD: 'docker',
         },
         fetch: fetchMock,
         execFile: execMock,
@@ -137,7 +137,7 @@ describe('Update API', () => {
     it('uses an explicitly configured update-check token for authenticated rate limits', async () => {
       const fetchMock = vi.fn(async () => response(compareBody('identical')));
       const { app } = createTestApp({
-        env: { FREELLMAPI_UPDATE_GITHUB_TOKEN: 'test-token' },
+        env: { SROUTER_UPDATE_GITHUB_TOKEN: 'test-token' },
         fetch: fetchMock,
       });
 
@@ -172,7 +172,7 @@ describe('Update API', () => {
         return response(compareBody('identical'));
       });
       const { app } = createTestApp({
-        env: { FREELLMAPI_INSTALL_METHOD: 'desktop', FREELLMAPI_COMMIT_SHA: LOCAL_SHA },
+        env: { SROUTER_INSTALL_METHOD: 'desktop', SROUTER_COMMIT_SHA: LOCAL_SHA },
         fetch: fetchMock,
       });
 
@@ -198,7 +198,7 @@ describe('Update API', () => {
         return response(compareBody('ahead'));
       });
       const { app } = createTestApp({
-        env: { FREELLMAPI_INSTALL_METHOD: 'desktop', FREELLMAPI_COMMIT_SHA: LOCAL_SHA },
+        env: { SROUTER_INSTALL_METHOD: 'desktop', SROUTER_COMMIT_SHA: LOCAL_SHA },
         fetch: fetchMock,
       });
 
@@ -213,7 +213,7 @@ describe('Update API', () => {
         return response(compareBody('ahead'));
       });
       const { app } = createTestApp({
-        env: { FREELLMAPI_INSTALL_METHOD: 'desktop', FREELLMAPI_COMMIT_SHA: LOCAL_SHA },
+        env: { SROUTER_INSTALL_METHOD: 'desktop', SROUTER_COMMIT_SHA: LOCAL_SHA },
         fetch: fetchMock,
       });
 
@@ -235,7 +235,7 @@ describe('Update API', () => {
         return response({ message: 'rate limited' }, 403);
       });
       const { app } = createTestApp({
-        env: { FREELLMAPI_INSTALL_METHOD: 'desktop', FREELLMAPI_COMMIT_SHA: LOCAL_SHA },
+        env: { SROUTER_INSTALL_METHOD: 'desktop', SROUTER_COMMIT_SHA: LOCAL_SHA },
         fetch: fetchMock,
       });
 
@@ -251,7 +251,7 @@ describe('Update API', () => {
       const fetchMock = vi.fn();
       const execMock = vi.fn(async () => ({ stdout: `${LOCAL_SHA}\n` }));
       const { app, logger } = createTestApp({
-        env: { FREELLMAPI_UPDATE_CHECK: ' OFF ' },
+        env: { SROUTER_UPDATE_CHECK: ' OFF ' },
         fetch: fetchMock,
         execFile: execMock,
       });
@@ -401,7 +401,7 @@ describe('Update API', () => {
     it('resolves Git identity lazily from the current working directory', async () => {
       const execMock = vi.fn(async () => ({ stdout: `${LOCAL_SHA}\n` }));
       const { app } = createTestApp({
-        env: { FREELLMAPI_COMMIT_SHA: 'invalid' },
+        env: { SROUTER_COMMIT_SHA: 'invalid' },
         execFile: execMock,
       });
       expect(execMock).not.toHaveBeenCalled();
@@ -453,7 +453,7 @@ describe('Update API', () => {
       const fetchMock = vi.fn();
       const execMock = vi.fn(async () => ({ stdout: `${LOCAL_SHA}\n` }));
       const { app } = createTestApp({
-        env: { FREELLMAPI_INSTALL_METHOD: 'docker' },
+        env: { SROUTER_INSTALL_METHOD: 'docker' },
         fetch: fetchMock,
         execFile: execMock,
       });
@@ -530,7 +530,7 @@ describe('Update API', () => {
       const fetchMock = vi.fn();
       const execMock = vi.fn(async () => ({ stdout: `${LOCAL_SHA}\n` }));
       const { app } = createTestApp({
-        env: { FREELLMAPI_UPDATE_CHECK: 'off' },
+        env: { SROUTER_UPDATE_CHECK: 'off' },
         fetch: fetchMock,
         execFile: execMock,
       });

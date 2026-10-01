@@ -16,7 +16,9 @@
     "modelsMenu": "ಮಾದರಿ ಪ್ರಕಾರಗಳನ್ನು ಬ್ರೌಸ್ ಮಾಡಿ",
     "agents": "ಏಜೆಂಟ್‌ಗಳು",
     "logs": "ಲಾಗ್‌ಗಳು",
-    "analyticsMenu": "ಅನಾಲಿಟಿಕ್ಸ್ ಪುಟಗಳು"
+    "analyticsMenu": "ಅನಾಲಿಟಿಕ್ಸ್ ಪುಟಗಳು",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "ನಿಮ್ಮ ಖಾತೆಯನ್ನು ರಚಿಸಿ",
@@ -60,7 +62,7 @@
     "emailChanged": "ಇಮೇಲ್ ಯಶಸ್ವಿಯಾಗಿ ಬದಲಾಯಿಸಲಾಗಿದೆ.",
     "passwordReset": "ಪಾಸ್‌ವರ್ಡ್ ಮರುಹೊಂದಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಸೈನ್ ಇನ್ ಮಾಡಿ.",
     "resetCodeDockerHint": "Docker ನಲ್ಲಿ ಚಾಲನೆಯಲ್ಲಿದೆಯೇ? ಕೋಡ್ ಕಂಟೈನರ್ ಲಾಗ್‌ನಲ್ಲಿದೆ: docker logs <container>.",
-    "desktopSessionFailed": "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಸ್ಥಳೀಯ ಸರ್ವರ್‌ಗೆ ಸೈನ್ ಇನ್ ಆಗಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. FreeLLMAPI ಅನ್ನು ಮುಚ್ಚಿ ಮತ್ತೆ ತೆರೆಯಿರಿ."
+    "desktopSessionFailed": "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಸ್ಥಳೀಯ ಸರ್ವರ್‌ಗೆ ಸೈನ್ ಇನ್ ಆಗಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. SRouter ಅನ್ನು ಮುಚ್ಚಿ ಮತ್ತೆ ತೆರೆಯಿರಿ."
   },
   "common": {
     "save": "ಉಳಿಸಿ",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "ಸ್ವಯಂಚಾಲಿತ ನವೀಕರಣ ಪರಿಶೀಲನೆ",
     "autoUpdateCheckHelp": "ದಿನಕ್ಕೊಮ್ಮೆ ಹೊಸ ಬಿಡುಗಡೆಗಾಗಿ GitHub ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತದೆ ಮತ್ತು ಜ್ಞಾಪನೆ ತೋರಿಸುತ್ತದೆ. ಪೂರ್ವನಿಯೋಜಿತವಾಗಿ ಆಫ್ ಆಗಿದೆ.",
     "openReleases": "GitHub ಬಿಡುಗಡೆಗಳನ್ನು ತೆರೆಯಿರಿ",
-    "restartAfterUpdate": "ಬಿಲ್ಡ್ ಪೂರ್ಣಗೊಂಡ ನಂತರ FreeLLMAPI ಅನ್ನು ಮರುಪ್ರಾರಂಭಿಸಿ."
+    "restartAfterUpdate": "ಬಿಲ್ಡ್ ಪೂರ್ಣಗೊಂಡ ನಂತರ SRouter ಅನ್ನು ಮರುಪ್ರಾರಂಭಿಸಿ.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "ಮಾದರಿಗಳು",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "ಮಾಸಿಕ ಟೋಕನ್ ಬಜೆಟ್",
     "remaining": "ಉಳಿದಿದೆ",
     "used": "ಬಳಸಲಾಗಿದೆ",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "ಪೂರೈಕೆದಾರರ ಕ್ರಮಗಳು",
     "routeViaProxy": "ಪ್ರಾಕ್ಸಿ ಮೂಲಕ ಮಾರ್ಗ",
     "checkNow": "ಈಗ ಪರಿಶೀಲಿಸಿ",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "ಮೂಲಕ ಕಾನ್ಫಿಗರ್ ಮಾಡಬಹುದು",
     "proxyEnvHintAfter": "ಪರಿಸರ ವೇರಿಯಬಲ್ (ಆದ್ಯತೆಯನ್ನು ತೆಗೆದುಕೊಳ್ಳುತ್ತದೆ). ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ಖಾಲಿ ಬಿಡಿ. ಉದಾಹರಣೆಗಳು:",
     "importKeys": "ಪೂರೈಕೆದಾರರ ಕೀಲಿಗಳನ್ನು ಆಮದು ಮಾಡಿ",
@@ -679,7 +704,8 @@
     "testFailed": "ಮಾದರಿ ಪರೀಕ್ಷೆ ವಿಫಲವಾಗಿದೆ",
     "testThrottled": "ದಯವಿಟ್ಟು ಈ ಮಾದರಿಯನ್ನು ಮತ್ತೆ ಪರೀಕ್ಷಿಸುವ ಮೊದಲು {seconds} ಸೆಕೆಂಡುಗಳು ಕಾಯಿರಿ.",
     "noModelsForProvider": "ಈ ಒದಗಿಸುವವರಿಗಾಗಿ ಯಾವುದೇ ಮಾದರಿಗಳನ್ನು ಕಾನ್ಫಿಗರ್ ಮಾಡಲಾಗಿಲ್ಲ.",
-    "testModels": "ಮಾದರಿಗಳನ್ನು ಪರೀಕ್ಷಿಸಿ"
+    "testModels": "ಮಾದರಿಗಳನ್ನು ಪರೀಕ್ಷಿಸಿ",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

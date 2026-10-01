@@ -19,7 +19,7 @@ import { z } from 'zod';
 // questions mid-session: which free models are usable right now and with
 // which parameters, how healthy the provider pool is, what the routing
 // strategy is, and how much quota the cache has saved — plus one control
-// knob (switching the routing strategy). The ask_freellmapi tool also lets
+// knob (switching the routing strategy). The ask_srouter tool also lets
 // ChatGPT and other MCP clients run a non-streaming inference through the same
 // /v1/chat/completions path as every OpenAI-compatible client.
 //
@@ -196,7 +196,7 @@ function setStrategy(args: Record<string, unknown>): unknown {
 const DEFAULT_MCP_INFERENCE_TIMEOUT_MS = 120_000;
 const MAX_MCP_INFERENCE_TIMEOUT_MS = 300_000;
 
-const askFreeLlmApiSchema = z.object({
+const asksrouterSchema = z.object({
   prompt: z.string().min(1).max(400_000),
   system: z.string().min(1).max(50_000).optional(),
   model: z.string().min(1).max(256).optional(),
@@ -226,7 +226,7 @@ function mcpInferenceTimeoutMs(): number {
 
 function loopbackChatCompletionsUrl(req: Request): string {
   const port = req.socket.localPort;
-  if (!port) throw new Error('Cannot determine the local FreeLLMAPI port for inference');
+  if (!port) throw new Error('Cannot determine the local srouter port for inference');
 
   let address = (req.socket.localAddress || '127.0.0.1').split('%')[0];
   if (address === '0.0.0.0') address = '127.0.0.1';
@@ -245,14 +245,14 @@ function assistantText(payload: any): string {
     .join('');
 }
 
-async function askFreeLlmApi(args: Record<string, unknown>, req: Request, res: Response): Promise<unknown> {
-  const parsed = askFreeLlmApiSchema.safeParse(args);
+async function asksrouter(args: Record<string, unknown>, req: Request, res: Response): Promise<unknown> {
+  const parsed = asksrouterSchema.safeParse(args);
   if (!parsed.success) {
     const detail = parsed.error.errors
       .map(error => `${error.path.join('.') || 'arguments'}: ${error.message}`)
       .slice(0, 5)
       .join(', ');
-    throw new Error(`Invalid ask_freellmapi arguments: ${detail}`);
+    throw new Error(`Invalid ask_srouter arguments: ${detail}`);
   }
 
   const input = parsed.data;
@@ -291,17 +291,17 @@ async function askFreeLlmApi(args: Record<string, unknown>, req: Request, res: R
     try {
       payload = raw ? JSON.parse(raw) : null;
     } catch {
-      throw new Error(`FreeLLMAPI inference returned non-JSON data (HTTP ${response.status})`);
+      throw new Error(`srouter inference returned non-JSON data (HTTP ${response.status})`);
     }
 
     if (!response.ok) {
       const upstreamMessage = payload?.error?.message ?? payload?.message ?? `HTTP ${response.status}`;
-      throw new Error(`FreeLLMAPI inference failed (${response.status}): ${sanitizeProviderErrorMessage(upstreamMessage)}`);
+      throw new Error(`srouter inference failed (${response.status}): ${sanitizeProviderErrorMessage(upstreamMessage)}`);
     }
 
     const answer = assistantText(payload);
     if (!answer) {
-      throw new Error(`FreeLLMAPI inference returned no assistant text (finish_reason: ${payload?.choices?.[0]?.finish_reason ?? 'unknown'})`);
+      throw new Error(`srouter inference returned no assistant text (finish_reason: ${payload?.choices?.[0]?.finish_reason ?? 'unknown'})`);
     }
 
     return {
@@ -322,7 +322,7 @@ async function askFreeLlmApi(args: Record<string, unknown>, req: Request, res: R
     };
   } catch (error: any) {
     if (error?.name === 'AbortError') {
-      throw new Error(`FreeLLMAPI inference timed out or was cancelled after ${timeoutMs}ms`);
+      throw new Error(`srouter inference timed out or was cancelled after ${timeoutMs}ms`);
     }
     throw error;
   } finally {
@@ -373,15 +373,15 @@ interface McpTool {
 const READ_ONLY_LOCAL = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
 
 const TOOLS: Record<string, McpTool> = {
-  ask_freellmapi: {
-    title: 'Ask FreeLLMAPI',
-    description: 'Use this when the user explicitly wants a FreeLLMAPI model to answer, analyze, rewrite, summarize, or generate text. Routes through the configured free-provider pool. Defaults to the server\'s MCP_INFERENCE_DEFAULT_MODEL (auto when unset). Returns the answer plus model, routing, cache, execution, and token-usage metadata.',
+  ask_srouter: {
+    title: 'Ask SRouter',
+    description: 'Use this when the user explicitly wants an SRouter model to answer, analyze, rewrite, summarize, or generate text. Routes through the configured free-provider pool. Defaults to the server\'s MCP_INFERENCE_DEFAULT_MODEL (auto when unset). Returns the answer plus model, routing, cache, execution, and token-usage metadata.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
       properties: {
-        prompt: { type: 'string', minLength: 1, maxLength: 400_000, description: 'The complete task or question for the selected FreeLLMAPI model.' },
-        system: { type: 'string', minLength: 1, maxLength: 50_000, description: 'Optional system instructions for the FreeLLMAPI model.' },
+        prompt: { type: 'string', minLength: 1, maxLength: 400_000, description: 'The complete task or question for the selected SRouter model.' },
+        system: { type: 'string', minLength: 1, maxLength: 50_000, description: 'Optional system instructions for the SRouter model.' },
         model: { type: 'string', minLength: 1, maxLength: 256, description: 'Model id, named chain, or auto. Omit to use MCP_INFERENCE_DEFAULT_MODEL.' },
         temperature: { type: 'number', minimum: 0, maximum: 2 },
         max_tokens: { type: 'integer', minimum: 1, maximum: 32_768 },
@@ -407,18 +407,18 @@ const TOOLS: Record<string, McpTool> = {
       required: ['answer', 'requested_model', 'model', 'finish_reason', 'usage', 'routed_via', 'fallback_trail', 'cache', 'compression', 'execution_id'],
     },
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
-    run: (args, req, res) => askFreeLlmApi(args, req, res),
+    run: (args, req, res) => asksrouter(args, req, res),
   },
   healthcheck: {
-    title: 'Check FreeLLMAPI readiness',
-    description: 'Check whether FreeLLMAPI is ready for ChatGPT calls, including MCP state, configured/healthy providers, available models, and the default MCP inference model. This does not spend provider quota.',
+    title: 'Check SRouter readiness',
+    description: 'Check whether SRouter is ready for ChatGPT calls, including MCP state, configured/healthy providers, available models, and the default MCP inference model. This does not spend provider quota.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     annotations: READ_ONLY_LOCAL,
     run: () => healthcheck(),
   },
   list_models: {
-    title: 'List FreeLLMAPI models',
-    description: 'List the models this FreeLLMAPI router can serve, with context windows, tool support, and the parameters each model honors (supported_parameters). Defaults to only models that are usable right now.',
+    title: 'List SRouter models',
+    description: 'List the models this SRouter router can serve, with context windows, tool support, and the parameters each model honors (supported_parameters). Defaults to only models that are usable right now.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -436,7 +436,7 @@ const TOOLS: Record<string, McpTool> = {
     run: () => providerHealth(),
   },
   usage_summary: {
-    title: 'Summarize FreeLLMAPI usage',
+    title: 'Summarize SRouter usage',
     description: 'Request/token totals, success rate, and the top models by traffic for a recent window.',
     inputSchema: {
       type: 'object',
@@ -503,8 +503,8 @@ async function dispatchRpc(msg: JsonRpcRequest, id: number | string | null, req:
       return rpcResult(id, {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: 'freellmapi', version: '1.0.0' },
-        instructions: 'Use ask_freellmapi when the user explicitly asks FreeLLMAPI or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, usage_summary, cache_stats, compression_stats, and routing_info for diagnostics. set_routing_strategy changes server state.',
+        serverInfo: { name: 'srouter', version: '1.0.0' },
+        instructions: 'Use ask_srouter when the user explicitly asks srouter or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, usage_summary, cache_stats, compression_stats, and routing_info for diagnostics. set_routing_strategy changes server state.',
       });
     }
     case 'ping':

@@ -4,11 +4,11 @@
 
 ## 范围
 
-本域文档记录 FreeLLMAPI 安装 CLI（`cli/`）—— 通过 `npx freellmapi` 一键将编程智能体接入本地网关的生成器集合。每个生成器（`setup-claude`、`setup-codex` 等）都会拉取实时目录、备份已有配置、绝不覆盖无关键，并为 `freellmapi launch` / `launch-codex` 零持久化启动器以及 `freellmapi doctor` 记录 `tools.json` 元数据。
+本域文档记录 SRouter 安装 CLI（`cli/`）—— 通过 `npx srouter` 一键将编程智能体接入本地网关的生成器集合。每个生成器（`setup-claude`、`setup-codex` 等）都会拉取实时目录、备份已有配置、绝不覆盖无关键，并为 `srouter launch` / `launch-codex` 零持久化启动器以及 `srouter doctor` 记录 `tools.json` 元数据。
 
 权威来源：[`cli/src/tools.ts`](../../../cli/src/tools.ts)（全部 `Xxx()` 生成器函数）、[`cli/tools.json`](../../../cli/tools.json)（注册表）、[`cli/src/config-files.ts`](../../../cli/src/config-files.ts)（合并 + `0600` + 带时间戳备份）、[`cli/README.md`](../../../cli/README.md)、[`client/src/data/agent-tools.json`](../../../client/src/data/agent-tools.json)。
 
-关于按智能体的一对一接入配方与 MCP/无头客户端的说明，见[客户端与编程智能体](../clients/OVERVIEW.md)。关于 CLI 注入的环境变量（`FREELLMAPI_API_KEY`、`FREELLMAPI_MODEL`），见 [env/](../env/OVERVIEW.md)。
+关于按智能体的一对一接入配方与 MCP/无头客户端的说明，见[客户端与编程智能体](../clients/OVERVIEW.md)。关于 CLI 注入的环境变量（`SROUTER_API_KEY`、`SROUTER_MODEL`），见 [env/](../env/OVERVIEW.md)。
 
 ## 文件索引
 

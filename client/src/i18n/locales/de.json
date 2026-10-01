@@ -16,7 +16,9 @@
     "modelsMenu": "Durchsuchen Sie Modelltypen",
     "agents": "Agenten",
     "logs": "Protokoll",
-    "analyticsMenu": "Analytik-Seiten"
+    "analyticsMenu": "Analytik-Seiten",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Erstellen Sie Ihr Konto",
@@ -60,7 +62,7 @@
     "emailChanged": "E-Mail erfolgreich geändert.",
     "passwordReset": "Passwort zurückgesetzt. Bitte melden Sie sich an.",
     "resetCodeDockerHint": "Läuft der Server in Docker? Der Code steht im Container-Log: docker logs <container>.",
-    "desktopSessionFailed": "Das Dashboard konnte sich nicht am lokalen Server anmelden. Beenden Sie FreeLLMAPI und öffnen Sie es erneut."
+    "desktopSessionFailed": "Das Dashboard konnte sich nicht am lokalen Server anmelden. Beenden Sie SRouter und öffnen Sie es erneut."
   },
   "common": {
     "save": "Speichern",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Automatische Updateprüfung",
     "autoUpdateCheckHelp": "Prüft einmal täglich auf GitHub, ob es eine neue Version gibt, und zeigt eine Erinnerung an. Standardmäßig deaktiviert.",
     "openReleases": "GitHub-Releases öffnen",
-    "restartAfterUpdate": "FreeLLMAPI nach Abschluss des Builds neu starten."
+    "restartAfterUpdate": "SRouter nach Abschluss des Builds neu starten.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modelle",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Monatliches Token-Budget",
     "remaining": "verbleibend",
     "used": "verwendet",
-    "usedScopeHint": "Nur Chat-Anfragen, seit Beginn dieses Kalendermonats, über alle Modelle der aktiven Kette summiert – benutzerdefinierte Endpunkte eingeschlossen. Datenverkehr, den Sie außerhalb von FreeLLMAPI an einen Anbieter senden, wird nicht gezählt.",
+    "usedScopeHint": "Nur Chat-Anfragen, seit Beginn dieses Kalendermonats, über alle Modelle der aktiven Kette summiert – benutzerdefinierte Endpunkte eingeschlossen. Datenverkehr, den Sie außerhalb von SRouter an einen Anbieter senden, wird nicht gezählt.",
     "legendRemainingTitle": "Verbleibend / Monatsbudget von {name} ({platform})",
     "noPublishedQuota": "+{count} ohne veröffentlichtes Kontingent",
     "noPublishedQuotaTitle": "Für diese Modelle ist kein monatliches Token-Budget dokumentiert, daher gibt es keinen Restwert anzuzeigen.",
@@ -517,6 +525,23 @@
     "providerActions": "Anbieteraktionen",
     "routeViaProxy": "Route über Proxy",
     "checkNow": "Jetzt prüfen",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Auch konfigurierbar über die",
     "proxyEnvHintAfter": "Umgebungsvariable (hat Vorrang). Zum Deaktivieren leer lassen. Beispiele:",
     "importKeys": "Anbieterschlüssel importieren",
@@ -679,7 +704,8 @@
     "testFailed": "Modelltest fehlgeschlagen",
     "testThrottled": "Bitte warten Sie {seconds}s, bevor Sie dieses Modell erneut testen.",
     "noModelsForProvider": "Keine Modelle für diesen Anbieter konfiguriert.",
-    "testModels": "Modelle testen"
+    "testModels": "Modelle testen",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

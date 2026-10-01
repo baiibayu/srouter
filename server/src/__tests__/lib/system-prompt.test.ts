@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 import { initDb, getDb, getUnifiedApiKey } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
 import {

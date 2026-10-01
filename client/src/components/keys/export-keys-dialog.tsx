@@ -30,7 +30,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 // Only the Electron preload sets this flag: a browser reaching the same desktop
 // server over LAN still walks through the step, and the server still checks it.
 const isDesktopApp = typeof window !== 'undefined'
-  && (window as Window & { __FREEAPI_DESKTOP__?: boolean }).__FREEAPI_DESKTOP__ === true
+  && (window as Window & { __SROUTER_DESKTOP__?: boolean }).__SROUTER_DESKTOP__ === true
 
 async function downloadExport(format: ExportFormat, healthyOnly: boolean, password: string) {
   const token = getToken()
@@ -49,7 +49,7 @@ async function downloadExport(format: ExportFormat, healthyOnly: boolean, passwo
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `freellmapi-keys.${ext}`
+  a.download = `srouter-keys.${ext}`
   a.click()
   URL.revokeObjectURL(url)
 }

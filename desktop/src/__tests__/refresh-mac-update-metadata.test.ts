@@ -8,15 +8,15 @@ import { rewriteUpdateMetadata, describesFile } from '../../scripts/refresh-mac-
 
 const sample = `version: 0.8.8
 files:
-  - url: FreeLLMAPI-0.8.8-arm64.dmg
+  - url: srouter-0.8.8-arm64.dmg
     sha512: OLDHASH==
     size: 111
-path: FreeLLMAPI-0.8.8-arm64.dmg
+path: srouter-0.8.8-arm64.dmg
 sha512: OLDHASH==
 releaseDate: '2026-08-25T20:25:58.884Z'
 `;
 
-const fresh = { fileName: 'FreeLLMAPI-0.8.8-arm64.dmg', sha512: 'NEWHASH==', size: 222 };
+const fresh = { fileName: 'srouter-0.8.8-arm64.dmg', sha512: 'NEWHASH==', size: 222 };
 
 describe('rewriteUpdateMetadata', () => {
   it('re-stamps both the files[] entry and the top-level pair', () => {
@@ -32,8 +32,8 @@ describe('rewriteUpdateMetadata', () => {
     const out = rewriteUpdateMetadata(sample, fresh).split('\n');
     expect(out[0]).toBe('version: 0.8.8');
     expect(out[1]).toBe('files:');
-    expect(out[2]).toBe('  - url: FreeLLMAPI-0.8.8-arm64.dmg');
-    expect(out[5]).toBe('path: FreeLLMAPI-0.8.8-arm64.dmg');
+    expect(out[2]).toBe('  - url: srouter-0.8.8-arm64.dmg');
+    expect(out[5]).toBe('path: srouter-0.8.8-arm64.dmg');
     // releaseDate keeps its quoting — a YAML round trip would have restyled it.
     expect(out[7]).toBe("releaseDate: '2026-08-25T20:25:58.884Z'");
   });
@@ -41,13 +41,13 @@ describe('rewriteUpdateMetadata', () => {
   it('only touches the entry whose url matches', () => {
     const twoFiles = `version: 0.8.8
 files:
-  - url: FreeLLMAPI-0.8.8-arm64.dmg
+  - url: srouter-0.8.8-arm64.dmg
     sha512: OLDHASH==
     size: 111
-  - url: FreeLLMAPI-0.8.8-x64.dmg
+  - url: srouter-0.8.8-x64.dmg
     sha512: OTHER==
     size: 999
-path: FreeLLMAPI-0.8.8-arm64.dmg
+path: srouter-0.8.8-arm64.dmg
 sha512: OLDHASH==
 `;
     const out = rewriteUpdateMetadata(twoFiles, fresh);
@@ -59,10 +59,10 @@ sha512: OLDHASH==
   it('does not touch the top-level pair when it names a different file', () => {
     const zipTopLevel = `version: 0.8.8
 files:
-  - url: FreeLLMAPI-0.8.8-arm64.dmg
+  - url: srouter-0.8.8-arm64.dmg
     sha512: OLDHASH==
     size: 111
-path: FreeLLMAPI-0.8.8-arm64.zip
+path: srouter-0.8.8-arm64.zip
 sha512: ZIPHASH==
 size: 333
 `;
@@ -91,14 +91,14 @@ size: 333
 
 describe('describesFile', () => {
   it('finds the artifact by its files[] url and by the top-level path', () => {
-    expect(describesFile(sample, 'FreeLLMAPI-0.8.8-arm64.dmg')).toBe(true);
-    expect(describesFile('path: FreeLLMAPI-0.8.8-arm64.dmg\n', 'FreeLLMAPI-0.8.8-arm64.dmg')).toBe(
+    expect(describesFile(sample, 'srouter-0.8.8-arm64.dmg')).toBe(true);
+    expect(describesFile('path: srouter-0.8.8-arm64.dmg\n', 'srouter-0.8.8-arm64.dmg')).toBe(
       true,
     );
   });
 
   it('is false when the manifest names a different artifact', () => {
-    expect(describesFile(sample, 'FreeLLMAPI-0.8.8-x64.dmg')).toBe(false);
+    expect(describesFile(sample, 'srouter-0.8.8-x64.dmg')).toBe(false);
   });
 
   it('does not match on a partial name', () => {

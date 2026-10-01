@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { PageHeader } from '@/components/page-header'
 import type { ApiKey, Platform } from '../../../shared/types'
-import { Plus, Download } from 'lucide-react'
+import { Plus, Download, RefreshCcw } from 'lucide-react'
 import { useI18n } from '@/i18n'
+import { toast } from '@/lib/toast'
 import type { HealthData } from '@/components/keys/shared'
 import { QuotaSignalsSection } from '@/components/keys/quota-signals-section'
 import { UnifiedKeySection } from '@/components/keys/unified-key-section'
@@ -19,6 +20,7 @@ import { ProviderChecklistSection } from '@/components/keys/provider-checklist-s
 import { AddKeyDialog } from '@/components/keys/add-key-dialog'
 import { ExportKeysDialog } from '@/components/keys/export-keys-dialog'
 import { AgentCompatibilitySection } from '@/components/keys/agent-compatibility-section'
+import { SyncAllResultsDialog, type SyncAllResult } from '@/components/keys/sync-all-results-dialog'
 
 type KeysTab = 'providers' | 'quotaSignals' | 'apiKey' | 'anthropic' | 'agents'
 const KEYS_TABS: { id: KeysTab; labelKey: string }[] = [
@@ -38,6 +40,8 @@ export default function KeysPage() {
   // entered from a checklist chip rather than the generic Add key button.
   const [addPlatform, setAddPlatform] = useState<Platform | ''>('')
   const [exportOpen, setExportOpen] = useState(false)
+  const [syncResult, setSyncResult] = useState<SyncAllResult | null>(null)
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false)
 
   const openAddKey = (platform: Platform | '' = '') => {
     setAddPlatform(platform)
@@ -65,6 +69,38 @@ export default function KeysPage() {
     },
   })
 
+  const syncAll = useMutation({
+    mutationFn: () =>
+      apiFetch<SyncAllResult>(
+        '/api/keys/refresh-all-models',
+        { method: 'POST' },
+      ),
+    onSuccess: (data) => {
+      for (const key of ['keys', 'models', 'fallback', 'routing']) {
+        queryClient.invalidateQueries({ queryKey: [key] })
+      }
+      const hasChanges = data.totalRegistered + data.totalRefreshed + data.totalRetired > 0
+      const hasErrors = data.results.some(r => r.error)
+
+      if (hasChanges) {
+        toast.success(t('keys.syncAllResult', { count: data.platforms, registered: data.totalRegistered }))
+      } else {
+        toast.success(t('keys.syncAllNoChanges'))
+      }
+      if (hasErrors) {
+        for (const e of data.results.filter(r => r.error)) {
+          toast.error(`${e.platform}: ${e.error}`)
+        }
+      }
+      // Show the detailed results dialog
+      setSyncResult(data)
+      setSyncDialogOpen(true)
+    },
+    onError: (error) => {
+      toast.error(t('keys.syncAllFailed', { reason: error instanceof Error ? error.message : String(error) }))
+    },
+  })
+
   return (
     <div>
       <PageHeader
@@ -75,6 +111,12 @@ export default function KeysPage() {
             {(tab === 'providers' || tab === 'quotaSignals') && keys.length > 0 && (
               <Button variant="outline" size="sm" onClick={() => checkAll.mutate()} disabled={checkAll.isPending}>
                 {checkAll.isPending ? t('keys.checking') : t('keys.checkAll')}
+              </Button>
+            )}
+            {tab === 'providers' && keys.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => syncAll.mutate()} disabled={syncAll.isPending}>
+                <RefreshCcw className={`size-3.5 ${syncAll.isPending ? 'animate-spin' : ''}`} />
+                {syncAll.isPending ? t('keys.syncAllPending') : t('keys.syncAllModels')}
               </Button>
             )}
             {keys.length > 0 && (
@@ -89,13 +131,15 @@ export default function KeysPage() {
                 {t('keys.addKey')}
               </Button>
             )}
-            <SegmentedControl
-              value={tab}
-              onValueChange={setTab}
-              options={KEYS_TABS.map(tb => ({ value: tb.id, label: t(tb.labelKey) }))}
-              ariaLabel={t('keys.pageTitle')}
-            />
           </>
+        }
+        tabs={
+          <SegmentedControl
+            value={tab}
+            onValueChange={setTab}
+            options={KEYS_TABS.map(tb => ({ value: tb.id, label: t(tb.labelKey) }))}
+            ariaLabel={t('keys.pageTitle')}
+          />
         }
       />
 
@@ -128,6 +172,7 @@ export default function KeysPage() {
       {/* Mounted only while open so the export flow always starts at step one
           and never retains a previously typed password. */}
       {exportOpen && <ExportKeysDialog open={exportOpen} onOpenChange={setExportOpen} />}
+      <SyncAllResultsDialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen} result={syncResult} />
     </div>
   )
 }

@@ -1,18 +1,17 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
-import { initDb, getDb, getSetting, setSetting } from '../../db/index.js';
-import { applyDeclarativeConfig, applyDeclarativeConfigFromEnv, activateConfiguredLicense } from '../../services/declarative-config.js';
+import { initDb, getDb } from '../../db/index.js';
+import { applyDeclarativeConfig, applyDeclarativeConfigFromEnv } from '../../services/declarative-config.js';
 import { getRoutingStrategy } from '../../services/router.js';
 import { userCount, verifyCredentials } from '../../services/auth.js';
-import { SETTING_LICENSE_KEY } from '../../services/catalog-sync.js';
 
-const ORIGINAL_CONFIG_JSON = process.env.FREEAPI_CONFIG_JSON;
-const ORIGINAL_CONFIG_PATH = process.env.FREEAPI_CONFIG_PATH;
+const ORIGINAL_CONFIG_JSON = process.env.SROUTER_CONFIG_JSON;
+const ORIGINAL_CONFIG_PATH = process.env.SROUTER_CONFIG_PATH;
 
 function restoreEnv() {
-  if (ORIGINAL_CONFIG_JSON === undefined) delete process.env.FREEAPI_CONFIG_JSON;
-  else process.env.FREEAPI_CONFIG_JSON = ORIGINAL_CONFIG_JSON;
-  if (ORIGINAL_CONFIG_PATH === undefined) delete process.env.FREEAPI_CONFIG_PATH;
-  else process.env.FREEAPI_CONFIG_PATH = ORIGINAL_CONFIG_PATH;
+  if (ORIGINAL_CONFIG_JSON === undefined) delete process.env.SROUTER_CONFIG_JSON;
+  else process.env.SROUTER_CONFIG_JSON = ORIGINAL_CONFIG_JSON;
+  if (ORIGINAL_CONFIG_PATH === undefined) delete process.env.SROUTER_CONFIG_PATH;
+  else process.env.SROUTER_CONFIG_PATH = ORIGINAL_CONFIG_PATH;
 }
 
 describe('declarative config import', () => {
@@ -22,8 +21,8 @@ describe('declarative config import', () => {
   });
 
   beforeEach(() => {
-    delete process.env.FREEAPI_CONFIG_JSON;
-    delete process.env.FREEAPI_CONFIG_PATH;
+    delete process.env.SROUTER_CONFIG_JSON;
+    delete process.env.SROUTER_CONFIG_PATH;
     getDb().prepare('DELETE FROM api_keys').run();
   });
 
@@ -97,8 +96,8 @@ describe('declarative config import', () => {
     `).get(target.platform, target.model_id) as { fallback_enabled: number }).fallback_enabled).toBe(0);
   });
 
-  it('applies inline JSON from FREEAPI_CONFIG_JSON idempotently', () => {
-    process.env.FREEAPI_CONFIG_JSON = JSON.stringify({
+  it('applies inline JSON from SROUTER_CONFIG_JSON idempotently', () => {
+    process.env.SROUTER_CONFIG_JSON = JSON.stringify({
       keys: [{ platform: 'groq', key: 'gsk_config_key', label: 'config' }],
     });
 
@@ -137,7 +136,7 @@ describe('declarative config import', () => {
   it('boot apply (FromEnv) survives a legacy keyless pollinations entry', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      process.env.FREEAPI_CONFIG_JSON = JSON.stringify({
+      process.env.SROUTER_CONFIG_JSON = JSON.stringify({
         keys: [
           { platform: 'pollinations', label: 'legacy' },
           { platform: 'groq', key: 'gsk_config_key', label: 'config' },
@@ -189,7 +188,7 @@ describe('declarative config import', () => {
       .toThrow(/invalid declarative config/);
     expect(() => applyDeclarativeConfig({ keys: [{ platform: 'unknown-platform', key: 'x' }] }))
       .toThrow(/unknown provider platform/);
-    process.env.FREEAPI_CONFIG_JSON = '{ not json';
+    process.env.SROUTER_CONFIG_JSON = '{ not json';
     expect(() => applyDeclarativeConfigFromEnv()).toThrow();
   });
 });
@@ -209,8 +208,8 @@ describe('declarative config with two relays serving one model id', () => {
   });
 
   beforeEach(() => {
-    delete process.env.FREEAPI_CONFIG_JSON;
-    delete process.env.FREEAPI_CONFIG_PATH;
+    delete process.env.SROUTER_CONFIG_JSON;
+    delete process.env.SROUTER_CONFIG_PATH;
     const db = getDb();
     db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = 'custom')").run();
     db.prepare("DELETE FROM profile_models WHERE model_db_id IN (SELECT id FROM models WHERE platform = 'custom')").run();
@@ -283,11 +282,10 @@ describe('declarative config with two relays serving one model id', () => {
   });
 });
 
-// admin + license: the two declarative fields that touch the dashboard account
-// and the Premium catalog feed. The admin entry must only ever create the
+// admin: the declarative field that touches the dashboard account.
+// The admin entry must only ever create the
 // FIRST account — once a user exists it degrades to a warning so a config
-// file can never take over a claimed install. The license entry goes through
-// the same validate-then-store contract as POST /api/premium/key.
+// file can never take over a claimed install.
 describe('declarative config admin', () => {
   beforeEach(() => {
     getDb().prepare('DELETE FROM users').run();
@@ -326,69 +324,5 @@ describe('declarative config admin', () => {
       admin: { email: 'a@b.co', password: 'short' },
     })).toThrow(/invalid declarative config/);
     expect(userCount()).toBe(0);
-  });
-});
-
-describe('declarative config license', () => {
-  function mockLicenseService(over: Record<string, unknown> = {}) {
-    return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = input instanceof Request ? input.url : String(input);
-      if (url.endsWith('/v1/license/activate')) {
-        return new Response(JSON.stringify({
-          valid: true, plan: 'premium', status: 'active', expiresAt: null, ...over,
-        }));
-      }
-      if (url.endsWith('/v1/license/check')) {
-        return new Response(JSON.stringify({ plan: 'premium', status: 'active', expiresAt: null }));
-      }
-      // /v1/latest catalog fetch from the kicked sync — fail it on purpose;
-      // syncCatalog catches, logs, and records the error without throwing.
-      return new Response('no catalog in tests', { status: 500 });
-    });
-  }
-
-  beforeEach(() => {
-    getDb().prepare("DELETE FROM settings WHERE key IN ('premium_license_key', 'premium_license_status')").run();
-  });
-
-  afterEach(() => vi.restoreAllMocks());
-
-  it('validates and stores a configured license key, then kicks a live sync', async () => {
-    const fetchMock = mockLicenseService();
-    const result = applyDeclarativeConfig({ license: 'flk_valid_test_key' });
-    expect(result.license).toBe(true);
-    await vi.waitFor(() => expect(getSetting(SETTING_LICENSE_KEY)).toBe('flk_valid_test_key'));
-    const called = fetchMock.mock.calls.map(c => String(c[0] instanceof Request ? c[0].url : c[0]));
-    expect(called.some(u => u.endsWith('/v1/license/activate'))).toBe(true);
-  });
-
-  it('does not store a rejected license key', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    mockLicenseService({ valid: false, reason: 'unknown_key' });
-    await activateConfiguredLicense('flk_rejected_key');
-    expect(getSetting(SETTING_LICENSE_KEY)).toBeUndefined();
-    expect(warn.mock.calls.some(c => String(c[0]).includes('rejected'))).toBe(true);
-  });
-
-  it('leaves settings untouched when the license service is unreachable', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('ECONNREFUSED'));
-    await activateConfiguredLicense('flk_offline_key');
-    expect(getSetting(SETTING_LICENSE_KEY)).toBeUndefined();
-    expect(warn.mock.calls.some(c => String(c[0]).includes('could not reach'))).toBe(true);
-  });
-
-  it('skips activation entirely when the stored key already matches', async () => {
-    setSetting(SETTING_LICENSE_KEY, 'flk_already_stored');
-    const fetchMock = vi.spyOn(globalThis, 'fetch');
-    await activateConfiguredLicense('flk_already_stored');
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('re-activates when the configured key differs from the stored one (rotation)', async () => {
-    setSetting(SETTING_LICENSE_KEY, 'flk_old_key_1');
-    mockLicenseService();
-    await activateConfiguredLicense('flk_new_key_2');
-    expect(getSetting(SETTING_LICENSE_KEY)).toBe('flk_new_key_2');
   });
 });

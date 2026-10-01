@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import type { ChatMessage, ChatToolCall, TokenUsage } from '@freellmapi/shared/types.js';
+import type { ChatMessage, ChatToolCall, TokenUsage } from '@srouter/shared/types.js';
 import { type RouteResult, type ResolvedChain, type ChainRow, routeRequest, resolveRoutingChain, resolveModelGroupCandidates, resolveStickyPreference, hasEnabledVisionModel, hasEnabledToolsModel, routingReserveTokens } from '../services/router.js';
 import { secondsUntilNextMonth } from '../services/key-budget.js';
 import { runEmbeddings, EmbeddingsError } from '../services/embeddings.js';
@@ -30,7 +30,7 @@ import { routedViaValue, safeHeaderValue } from '../lib/header-value.js';
 import { applyTokenBudget, tokenBudgetMessage } from '../lib/guardrails.js';
 import { samplingParamSchemaFields, pickSamplingParams, supportedParametersForPlatforms } from '../lib/sampling-params.js';
 import { enforceJsonContent } from '../lib/structured-output.js';
-import type { Platform } from '@freellmapi/shared/types.js';
+import type { Platform } from '@srouter/shared/types.js';
 import { inferQuotaPoolKey, type QuotaObservationContext } from '../services/provider-quota.js';
 import { isUnifyEnabled, getModelGroups, resolveRequestedIdForDispatch } from '../services/model-groups.js';
 import { buildModelListing, type NormalizedModel } from '../services/model-listing.js';
@@ -40,7 +40,7 @@ import { compressRequest, formatCompressionHeader } from '../services/compressio
 export const proxyRouter = Router();
 
 // Virtual "auto" model. Clients like Hermes require a non-empty `model` field
-// on every request, but freellmapi's whole point is to pick the model itself.
+// on every request, but srouter's whole point is to pick the model itself.
 // Requesting this id means "let the router decide" — identical to omitting
 // `model` entirely.
 const AUTO_MODEL_ID = 'auto';
@@ -377,7 +377,7 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         id: a.id,
         object: 'model' as const,
         created: 0,
-        owned_by: 'freellmapi',
+        owned_by: 'srouter',
         name: a.displayName,
         context_window: autoContextWindow,
         context_length: autoContextWindow,
@@ -407,7 +407,7 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         id: AUTO_MODEL_ID,
         object: 'model',
         created: 0,
-        owned_by: 'freellmapi',
+        owned_by: 'srouter',
         name: 'Auto (router picks the best available model)',
         context_window: autoContextWindow,
         // `context_length` is OpenRouter's field name and the one most
@@ -421,7 +421,7 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         id: FUSION_MODEL_ID,
         object: 'model',
         created: 0,
-        owned_by: 'freellmapi',
+        owned_by: 'srouter',
         name: 'Fusion (panel of models answer in parallel, a judge synthesizes one answer)',
         context_window: autoContextWindow,
         context_length: autoContextWindow,
@@ -434,7 +434,7 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         id: `auto:${p.name.toLowerCase()}`,
         object: 'model',
         created: 0,
-        owned_by: 'freellmapi',
+        owned_by: 'srouter',
         name: `Auto: ${p.name} (named fallback chain)`,
         context_window: p.max_ctx,
         context_length: p.max_ctx,

@@ -5,8 +5,10 @@ import { startHealthChecker, checkAllKeys } from './services/health.js';
 import { restoreProxySettings, flushProxyCache } from './lib/proxy.js';
 import { startWakeDetect } from './lib/wake-detect.js';
 import { startCatalogSync } from './services/catalog-sync.js';
+import { startModelRefresh } from './services/auto-discover.js';
 import { startCooldownProbe } from './services/cooldown-probe.js';
 import { startCustomModelSync } from './services/custom-model-sync.js';
+import { startOpenCodeFreeSync } from './services/opencode-free-sync.js';
 import { installProcessSafetyNet } from './lib/process-safety-net.js';
 import { NodeScheduler } from './lib/scheduler.js';
 import { loadConfig } from './lib/config.js';
@@ -81,10 +83,15 @@ async function main() {
     console.log(`Proxy endpoint: http://${display}:${PORT}/v1/chat/completions`);
     startHealthChecker(scheduler);
     startCatalogSync(scheduler);
+    // Re-verify discovery-owned model rosters (e.g. xkiro) twice a day — a key
+    // health check never looks at the model list, so a model that went paid
+    // upstream would otherwise linger until a manual sync.
+    startModelRefresh(scheduler);
     startCooldownProbe(scheduler);
     startDbBackupPump(getDb(), scheduler, config.dbPath ?? undefined);
     startBackupScheduler(scheduler);
     startCustomModelSync(getDb(), scheduler);
+    startOpenCodeFreeSync(scheduler);
 
     // Post-sleep recovery: while the host was suspended (laptop lid, VM
     // pause) timers and keep-alive sockets froze, so the first requests after

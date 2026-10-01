@@ -62,7 +62,7 @@ function safeSetting(): string | undefined {
 }
 
 function envMode(): CompressionMode {
-  const raw = process.env.FREELLMAPI_COMPRESSION?.trim().toLowerCase();
+  const raw = process.env.SROUTER_COMPRESSION?.trim().toLowerCase();
   return (COMPRESSION_MODES as readonly string[]).includes(raw ?? '')
     ? raw as CompressionMode
     : 'off';

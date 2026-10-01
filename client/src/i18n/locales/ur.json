@@ -16,7 +16,9 @@
     "modelsMenu": "ماڈل کی اقسام کو براؤز کریں۔",
     "agents": "ایجنٹس",
     "logs": "لاگز",
-    "analyticsMenu": "تجزیات کے صفحات"
+    "analyticsMenu": "تجزیات کے صفحات",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "اپنا اکاؤنٹ بنائیں",
@@ -60,7 +62,7 @@
     "emailChanged": "ای میل کامیابی سے تبدیل ہوگئی۔",
     "passwordReset": "پاس ورڈ ری سیٹ ہوگیا۔ براہ کرم سائن اِن کریں۔",
     "resetCodeDockerHint": "Docker میں چلا رہے ہیں؟ کوڈ کنٹینر لاگ میں ہے: docker logs <container>۔",
-    "desktopSessionFailed": "ڈیش بورڈ لوکل سرور میں سائن اِن نہیں کر سکا۔ FreeLLMAPI بند کر کے دوبارہ کھولیں۔"
+    "desktopSessionFailed": "ڈیش بورڈ لوکل سرور میں سائن اِن نہیں کر سکا۔ SRouter بند کر کے دوبارہ کھولیں۔"
   },
   "common": {
     "save": "محفوظ کریں۔",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "خودکار اپ ڈیٹ جانچ",
     "autoUpdateCheckHelp": "دن میں ایک بار نئی ریلیز کے لیے GitHub کی جانچ کرتا ہے اور یاد دہانی دکھاتا ہے۔ بطور ڈیفالٹ بند ہے۔",
     "openReleases": "GitHub ریلیزز کھولیں",
-    "restartAfterUpdate": "بلڈ مکمل ہونے کے بعد FreeLLMAPI کو دوبارہ شروع کریں۔"
+    "restartAfterUpdate": "بلڈ مکمل ہونے کے بعد SRouter کو دوبارہ شروع کریں۔",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "ماڈلز",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "ماہانہ ٹوکن بجٹ",
     "remaining": "باقی",
     "used": "استعمال کیا جاتا ہے",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "فراہم کنندہ کے اعمال",
     "routeViaProxy": "پراکسی کے ذریعے راستہ",
     "checkNow": "ابھی چیک کریں۔",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "کے ذریعے بھی قابل ترتیب",
     "proxyEnvHintAfter": "ماحولیاتی متغیر (ترجیح لیتا ہے)۔ غیر فعال کرنے کے لیے خالی چھوڑ دیں۔ مثالیں:",
     "importKeys": "فراہم کنندہ کیز درآمد کریں۔",
@@ -679,7 +704,8 @@
     "testFailed": "ماڈل ٹیسٹ ناکام ہو گیا",
     "testThrottled": "دوبارہ ٹیسٹ کرنے سے پہلے براہ کرم {seconds} سیکنڈ انتظار کریں۔",
     "noModelsForProvider": "اس فراہم کنندہ کے لیے کوئی ماڈل ترتیب نہیں دیا گیا ہے۔",
-    "testModels": "ماڈلز کی جانچ کریں"
+    "testModels": "ماڈلز کی جانچ کریں",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

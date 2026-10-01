@@ -4,7 +4,7 @@ import type {
   ChatToolCall,
   ChatToolChoice,
   ChatToolDefinition,
-} from '@freellmapi/shared/types.js';
+} from '@srouter/shared/types.js';
 import type { ReasoningEffort, ResponseFormat } from './sampling-params.js';
 import type { InboundChatResult } from './inbound-chat.js';
 

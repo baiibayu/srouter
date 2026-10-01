@@ -16,7 +16,9 @@
     "switchToEnglish": "Switch to English",
     "modelsMenu": "Browse model types",
     "logs": "Logs",
-    "analyticsMenu": "Analytics pages"
+    "analyticsMenu": "Analytics pages",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Create your account",
@@ -60,7 +62,7 @@
     "emailChanged": "Email changed successfully.",
     "passwordReset": "Password reset successfully. Please sign in.",
     "resetCodeDockerHint": "Running in Docker? The code is in the container log: docker logs <container>.",
-    "desktopSessionFailed": "The dashboard could not sign in to the local server. Quit FreeLLMAPI and open it again."
+    "desktopSessionFailed": "The dashboard could not sign in to the local server. Quit SRouter and open it again."
   },
   "common": {
     "save": "Save",
@@ -119,6 +121,12 @@
     "compressionLossless": "Lossless",
     "compressionStandard": "Standard",
     "compressionAggressive": "Aggressive",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h",
     "compressionLossy": "Lossy",
     "compressionEngines": "Engines",
     "compressionEnginesHelp": "Each engine is one rewriting step. The mode decides which engines run; switching one off here keeps it out of every mode.",
@@ -166,7 +174,7 @@
     "autoUpdateCheck": "Automatic update check",
     "autoUpdateCheckHelp": "Checks GitHub once a day for a new release and shows a reminder. Off by default.",
     "openReleases": "Open GitHub Releases",
-    "restartAfterUpdate": "Restart FreeLLMAPI after the build completes."
+    "restartAfterUpdate": "Restart SRouter after the build completes."
   },
   "models": {
     "title": "Models",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Monthly token budget",
     "remaining": "remaining",
     "used": "used",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -555,6 +563,24 @@
     "providerActions": "Provider actions",
     "routeViaProxy": "Route via proxy",
     "checkNow": "Check now",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Also configurable via the ",
     "proxyEnvHintAfter": " environment variable (takes precedence). Leave blank to disable. Examples:",
     "importKeys": "Import provider keys",

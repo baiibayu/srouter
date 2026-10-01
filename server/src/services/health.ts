@@ -3,12 +3,13 @@ import { resolveProvider } from '../providers/index.js';
 import { decrypt } from '../lib/crypto.js';
 import { decryptProxyUrl } from '../lib/key-proxy.js';
 import { withKeyProxy } from '../lib/proxy.js';
-import type { Platform, KeyStatus } from '@freellmapi/shared/types.js';
+import type { Platform, KeyStatus } from '@srouter/shared/types.js';
 import { inferQuotaPoolKey } from './provider-quota.js';
 import { updateDegradationState } from './degradation.js';
 import type { Scheduler } from '../lib/scheduler.js';
 import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
 import { providerLog } from '../lib/server-logs.js';
+import { runPeriodicNotificationChecks } from './notification-emitter.js';
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const CONSECUTIVE_FAILURES_TO_DISABLE = 3;
@@ -67,11 +68,6 @@ function recordInvalidFailure(keyId: number, platform?: string): void {
 
   if (count >= CONSECUTIVE_FAILURES_TO_DISABLE) {
     getDb().prepare('UPDATE api_keys SET enabled = 0 WHERE id = ?').run(keyId);
-    // providerLog, not console.log: losing a key is the event an operator is
-    // most likely to be looking for after the fact, so it goes to the dashboard
-    // log viewer (where warn/error survive a restart) as well as to stdout —
-    // which providerLog still writes, so nothing here is only visible behind a
-    // login. Raised to warn for the same reason.
     providerLog(
       'warn',
       `[Health] Auto-disabled key ${keyId} after ${count} consecutive failures`,
@@ -134,7 +130,7 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
     // Include platform + base_url so a flapping CloudFront edge or DNS failure is
     // attributable to the responsible provider in one log read. The leading
     // "[Health] Key N (" prefix is preserved so the 12-hourly crash watchdog
-    // (cron bff5ae167d28) that scrapes /tmp/freellmapi.log for these lines
+    // (cron bff5ae167d28) that scrapes /tmp/srouter.log for these lines
     // continues to match unchanged.
     const lastError = sanitizeProviderErrorMessage(err?.message ?? err);
     console.error(
@@ -380,6 +376,11 @@ async function runHealthPass(opts: HealthPassOptions): Promise<HealthPassResult>
   await Promise.all(workers);
 
   console.log(`[Health] Check complete.`);
+
+  // Run periodic notification checks (quota warnings, update availability)
+  // alongside the health pass so no extra timer is needed.
+  runPeriodicNotificationChecks();
+
   return { checkedKeyIds, skippedKeyIds };
 }
 

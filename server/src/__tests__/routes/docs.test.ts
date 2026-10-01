@@ -31,7 +31,7 @@ describe('OpenAPI docs routes', () => {
 
     const spec = JSON.parse(raw); // throws (fails the test) if not valid JSON
     expect(spec.openapi).toMatch(/^3\.0\./);
-    expect(spec.info?.title).toBe('FreeLLMAPI');
+    expect(spec.info?.title).toBe('SRouter');
     expect(Object.keys(spec.paths).length).toBeGreaterThan(0);
   });
 

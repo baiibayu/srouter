@@ -61,7 +61,7 @@ export function setClaudeModelMap(input: unknown): AnthropicModelMap {
 // Claude alias at all (a concrete catalog id meant to pin directly).
 export function classifyClaudeFamily(model?: string): ClaudeFamily | null {
   const m = (model ?? '').trim().toLowerCase();
-  if (!m || m === 'auto' || m === 'default' || m === 'freellmapi-auto') return 'default';
+  if (!m || m === 'auto' || m === 'default' || m === 'srouter-auto') return 'default';
   // Claude Code's planning alias is opus-ish by name but must hit the catch-all,
   // so match it before the substring family checks below.
   if (m === 'opusplan' || m === 'opusplan-4') return 'default';

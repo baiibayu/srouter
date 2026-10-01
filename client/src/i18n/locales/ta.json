@@ -16,7 +16,9 @@
     "modelsMenu": "மாதிரி வகைகளை உலாவவும்",
     "agents": "முகவர்கள்",
     "logs": "பதிவுகள்",
-    "analyticsMenu": "பகுப்பாய்வு பக்கங்கள்"
+    "analyticsMenu": "பகுப்பாய்வு பக்கங்கள்",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "உங்கள் கணக்கை உருவாக்கவும்",
@@ -60,7 +62,7 @@
     "emailChanged": "மின்னஞ்சல் வெற்றிகரமாக மாற்றப்பட்டது.",
     "passwordReset": "கடவுச்சொல் மீட்டமைக்கப்பட்டது. உள்நுழையவும்.",
     "resetCodeDockerHint": "Docker-இல் இயக்குகிறீர்களா? குறியீடு கண்டெய்னர் பதிவில் உள்ளது: docker logs <container>.",
-    "desktopSessionFailed": "டாஷ்போர்டால் உள்ளூர் சேவையகத்தில் உள்நுழைய முடியவில்லை. FreeLLMAPI-ஐ மூடிவிட்டு மீண்டும் திறக்கவும்."
+    "desktopSessionFailed": "டாஷ்போர்டால் உள்ளூர் சேவையகத்தில் உள்நுழைய முடியவில்லை. SRouter-ஐ மூடிவிட்டு மீண்டும் திறக்கவும்."
   },
   "common": {
     "save": "சேமிக்கவும்",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "தானியங்கு புதுப்பிப்புச் சரிபார்ப்பு",
     "autoUpdateCheckHelp": "நாளொன்றுக்கு ஒருமுறை புதிய வெளியீட்டிற்காக GitHub-ஐச் சரிபார்த்து நினைவூட்டலைக் காட்டும். இயல்பாக அணைக்கப்பட்டுள்ளது.",
     "openReleases": "GitHub வெளியீடுகளைத் திற",
-    "restartAfterUpdate": "உருவாக்கம் முடிந்ததும் FreeLLMAPI-ஐ மறுதொடக்கம் செய்யவும்."
+    "restartAfterUpdate": "உருவாக்கம் முடிந்ததும் SRouter-ஐ மறுதொடக்கம் செய்யவும்.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "மாதிரிகள்",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "மாதாந்திர டோக்கன் பட்ஜெட்",
     "remaining": "மீதமுள்ள",
     "used": "பயன்படுத்தப்பட்டது",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "வழங்குநர் நடவடிக்கைகள்",
     "routeViaProxy": "ப்ராக்ஸி வழியாக வழி",
     "checkNow": "இப்போது சரிபார்க்கவும்",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "வழியாகவும் கட்டமைக்க முடியும்",
     "proxyEnvHintAfter": "சூழல் மாறி (முன்னுரிமை பெறுகிறது). முடக்குவதற்கு காலியாக விடவும். எடுத்துக்காட்டுகள்:",
     "importKeys": "வழங்குநர் விசைகளை இறக்குமதி செய்யவும்",
@@ -679,7 +704,8 @@
     "testFailed": "மாதிரி சோதனை தோல்வியடைந்தது",
     "testThrottled": "இந்த மாதிரியை மீண்டும் சோதிக்கும் முன் {seconds} வினாடிகள் காத்திருக்கவும்.",
     "noModelsForProvider": "இந்த வழங்குநருக்கு மாதிரிகள் எதுவும் கட்டமைக்கப்படவில்லை.",
-    "testModels": "மாதிரிகளைச் சோதிக்கவும்"
+    "testModels": "மாதிரிகளைச் சோதிக்கவும்",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

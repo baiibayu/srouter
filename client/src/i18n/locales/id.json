@@ -16,7 +16,9 @@
     "modelsMenu": "Telusuri jenis model",
     "agents": "Agen",
     "logs": "Log",
-    "analyticsMenu": "Halaman analisis"
+    "analyticsMenu": "Halaman analisis",
+    "notifications": "Notifikasi",
+    "noNotifications": "Belum ada notifikasi"
   },
   "auth": {
     "createYourAccount": "Buat akun Anda",
@@ -60,7 +62,7 @@
     "emailChanged": "E-mail berhasil diubah.",
     "passwordReset": "Kata sandi telah direset. Silakan masuk.",
     "resetCodeDockerHint": "Menjalankan di Docker? Kode ada di log container: docker logs <container>.",
-    "desktopSessionFailed": "Dasbor tidak dapat masuk ke server lokal. Tutup FreeLLMAPI lalu buka lagi."
+    "desktopSessionFailed": "Dasbor tidak dapat masuk ke server lokal. Tutup SRouter lalu buka lagi."
   },
   "common": {
     "save": "Simpan",
@@ -119,6 +121,12 @@
     "compressionLossless": "Tanpa kehilangan",
     "compressionStandard": "Standar",
     "compressionAggressive": "Agresif",
+    "syncSchedule": "Sinkron Model",
+    "syncScheduleHint": "Seberapa sering katalog model diperbarui dari server",
+    "syncIntervalOff": "Mati",
+    "syncInterval6h": "Setiap 6 jam",
+    "syncInterval12h": "Setiap 12 jam",
+    "syncInterval24h": "Setiap 24 jam",
     "compressionLossy": "Dengan kehilangan",
     "compressionEngines": "Mesin",
     "compressionEnginesHelp": "Setiap mesin adalah satu langkah penulisan ulang. Mode menentukan mesin mana yang berjalan; mematikan salah satunya di sini membuatnya tidak dipakai pada mode mana pun.",
@@ -166,7 +174,7 @@
     "autoUpdateCheck": "Pemeriksaan pembaruan otomatis",
     "autoUpdateCheckHelp": "Memeriksa GitHub sekali sehari untuk rilis baru dan menampilkan pengingat. Nonaktif secara bawaan.",
     "openReleases": "Buka Rilis GitHub",
-    "restartAfterUpdate": "Mulai ulang FreeLLMAPI setelah proses build selesai."
+    "restartAfterUpdate": "Mulai ulang SRouter setelah proses build selesai."
   },
   "models": {
     "title": "Model",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Anggaran token bulanan",
     "remaining": "tersisa",
     "used": "digunakan",
-    "usedScopeHint": "Hanya permintaan chat, sejak awal bulan kalender ini, dijumlahkan atas semua model dalam rantai aktif — termasuk endpoint kustom. Lalu lintas yang Anda kirim ke penyedia di luar FreeLLMAPI tidak dihitung.",
+    "usedScopeHint": "Hanya permintaan chat, sejak awal bulan kalender ini, dijumlahkan atas semua model dalam rantai aktif — termasuk endpoint kustom. Lalu lintas yang Anda kirim ke penyedia di luar SRouter tidak dihitung.",
     "legendRemainingTitle": "Sisa / anggaran bulanan untuk {name} ({platform})",
     "noPublishedQuota": "+{count} tanpa kuota yang dipublikasikan",
     "noPublishedQuotaTitle": "Model-model ini tidak memiliki anggaran token bulanan yang terdokumentasi, jadi tidak ada sisa yang bisa ditampilkan.",
@@ -517,6 +525,24 @@
     "providerActions": "Tindakan penyedia",
     "routeViaProxy": "Rute melalui proxy",
     "checkNow": "Periksa sekarang",
+    "syncModels": "Sinkronkan model dengan upstream",
+    "syncModelsResult": "Daftar model disinkronkan: {added} ditambahkan, {total} aktif",
+    "syncModelsFailed": "Sinkronisasi model gagal: {reason}",
+    "syncAllModels": "Sinkronkan semua provider",
+    "syncAllPending": "Menyinkronkan…",
+    "syncAllResult": "Sinkron {count} provider: {registered} model terdaftar",
+    "syncAllFailed": "Sinkron semua gagal: {reason}",
+    "syncAllNoChanges": "Semua daftar model sudah terbaru",
+    "syncAllCatalog": "Katalog: +{inserted} ditambahkan, ~{updated} diperbarui, -{removed} dihapus",
+    "syncAllDialogTitle": "Hasil Sinkronisasi",
+    "syncAllDialogSummary": "Perubahan terdeteksi di {changed} dari {total} provider",
+    "syncAllNew": "+{count} baru",
+    "syncAllUpdated": "{count} diperbarui",
+    "syncAllRetired": "{count} dinonaktifkan",
+    "syncAllNewModels": "Model baru",
+    "syncAllUpdatedModels": "Model diperbarui",
+    "syncAllRetiredModels": "Model dinonaktifkan",
+    "syncAllDialogClose": "Selesai",
     "proxyEnvHintBefore": "Juga dapat dikonfigurasi melalui",
     "proxyEnvHintAfter": "variabel lingkungan (diutamakan). Biarkan kosong untuk menonaktifkan. Contoh:",
     "importKeys": "Impor kunci penyedia",

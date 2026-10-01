@@ -1,7 +1,7 @@
 name: CLI release
 
-# Publishes the `freellmapi` CLI to npm. Closes #671 — the README and
-# docs/clients/01-agent-clients.md have always documented `npx freellmapi setup-claude`, but the
+# Publishes the `srouter` CLI to npm. Closes #671 — the README and
+# docs/clients/01-agent-clients.md have always documented `npx srouter setup-claude`, but the
 # package was never pushed to the registry, so every one of those commands died
 # with npm E404.
 #
@@ -23,7 +23,7 @@ name: CLI release
 #
 # One-time setup on npmjs.com (Package settings → Trusted Publisher):
 #   Organization or user: tashfeenahmed
-#   Repository:           freellmapi
+#   Repository:           srouter
 #   Workflow filename:    cli-release.yml
 # Trusted publishing cannot bootstrap a package that does not exist yet — npm
 # has no package settings page to configure until the first version is up — so
@@ -68,12 +68,12 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           # `npm view` exits non-zero for an unpublished name/version; an empty
           # result is the signal to publish, not an error.
-          PUBLISHED=$(npm view "freellmapi@$VERSION" version 2>/dev/null || true)
+          PUBLISHED=$(npm view "srouter@$VERSION" version 2>/dev/null || true)
           if [ -n "$PUBLISHED" ]; then
-            echo "freellmapi@$VERSION is already on the registry — nothing to do."
+            echo "srouter@$VERSION is already on the registry — nothing to do."
             echo "should-publish=false" >> "$GITHUB_OUTPUT"
           else
-            echo "freellmapi@$VERSION is not published yet."
+            echo "srouter@$VERSION is not published yet."
             echo "should-publish=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -96,8 +96,8 @@ jobs:
           mkdir -p "$WORKDIR" && cd "$WORKDIR"
           npm init -y >/dev/null
           npm install "$RUNNER_TEMP/$TARBALL" >/dev/null
-          npx freellmapi --help
-          npx freellmapi list >/dev/null
+          npx srouter --help
+          npx srouter list >/dev/null
 
       # No NODE_AUTH_TOKEN: the OIDC credential comes from id-token: write.
       # Provenance is attached automatically under trusted publishing.
@@ -110,7 +110,7 @@ jobs:
         run: |
           V="${{ steps.version.outputs.version }}"
           if [ "${{ steps.version.outputs.should-publish }}" = "true" ]; then
-            echo "Published freellmapi@$V" >> "$GITHUB_STEP_SUMMARY"
+            echo "Published srouter@$V" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "freellmapi@$V is already on the registry — skipped." >> "$GITHUB_STEP_SUMMARY"
+            echo "srouter@$V is already on the registry — skipped." >> "$GITHUB_STEP_SUMMARY"
           fi

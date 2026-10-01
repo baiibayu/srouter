@@ -4,7 +4,7 @@ import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 
 export const SPEKA_BASE_URL = 'https://speka.me/v1';
-const VALIDATION_MODEL = '__freellmapi_key_validation__';
+const VALIDATION_MODEL = '__srouter_key_validation__';
 
 /** OpenAI-compatible chat; model rows are delivered only by the signed catalog.
  * Free's $1/month is shared across chat and embeddings, not a per-model grant.

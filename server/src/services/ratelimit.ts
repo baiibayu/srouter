@@ -3,6 +3,7 @@
 import { getDb, getSetting, setSetting } from '../db/index.js';
 import { isLoopbackOrPrivateUrl } from '../lib/url-guard.js';
 import { parseModelScope, scopeAllows } from '../lib/model-scope.js';
+// notification-emitter removed — cooldowns are handled internally, no user notif needed
 
 interface Window {
   timestamps: number[];

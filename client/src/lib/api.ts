@@ -1,5 +1,5 @@
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const TOKEN_KEY = 'freellmapi_dashboard_token';
+const TOKEN_KEY = 'srouter_dashboard_token';
 
 // Dashboard session token (#35). Stored in localStorage; sent as a Bearer on
 // every /api request and cleared on a 401.
@@ -13,7 +13,7 @@ export function clearToken(): void {
   try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
 }
 
-export const UNAUTHORIZED_EVENT = 'freellmapi:unauthorized';
+export const UNAUTHORIZED_EVENT = 'srouter:unauthorized';
 
 // Error thrown by apiFetch on a non-2xx response. Carries the HTTP status and
 // the server's machine-readable `error.type` so callers can branch on them.

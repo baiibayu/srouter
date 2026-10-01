@@ -10,7 +10,7 @@
 
 **Fix:** Use `host.docker.internal` (Docker Desktop) or `172.17.0.1` / host's LAN IP (Linux), and ensure the proxy (Clash/v2rayN/sing-box) listens on `0.0.0.0` not `127.0.0.1`. Compose `host-gateway` mapping: `extra_hosts: ["host.docker.internal:host-gateway"]`.
 
-**Diagnose:** `docker exec freellmapi curl -v http://host.docker.internal:11434/api/tags`.
+**Diagnose:** `docker exec SRouter curl -v http://host.docker.internal:11434/api/tags`.
 
 ## Empty chain `400`
 
@@ -48,7 +48,7 @@
 
 **Cause:** Finder/Explorer-launched Electron has no attached `stdout`.
 
-**Fix:** Open tray → `Open Logs Folder` → `freeapi.log` (`desktop/src/logger.ts` tee, `installFileLogger` before server boot). Or use `docker logs`.
+**Fix:** Open tray → `Open Logs Folder` → `srouter.log` (`desktop/src/logger.ts` tee, `installFileLogger` before server boot). Or use `docker logs`.
 
 ## Update-check shows no update / unsigned build won't auto-update
 
@@ -68,6 +68,6 @@
 
 ## Related
 
-- [Desktop](../desktop/OVERVIEW.md) — `freeapi.log` rotation.
+- [Desktop](../desktop/OVERVIEW.md) — `srouter.log` rotation.
 - [Proxy transports](../proxy/OVERVIEW.md) — fetch-relay protocol.
 - [Env vars](../env/01-variables.md) — all knobs.

@@ -115,7 +115,7 @@ describe('/mcp lifecycle gate (#925)', () => {
     const get = await request(app, 'GET', '/mcp', undefined, unifiedKey);
     expect(get.status).toBe(405);
 
-    const bad = await request(app, 'POST', '/mcp', { jsonrpc: '2.0', id: 2, method: 'ping' }, 'freellmapi-not-the-key');
+    const bad = await request(app, 'POST', '/mcp', { jsonrpc: '2.0', id: 2, method: 'ping' }, 'srouter-not-the-key');
     expect(bad.status).toBe(401);
 
     await request(app, 'PUT', '/api/settings/enable-mcp', { enabled: false }, token);

@@ -7,7 +7,7 @@ import path from 'node:path';
 // prints it to a stdout nobody is attached to. The fix is a file log, so the
 // thing worth asserting is that the reset code actually reaches the file.
 
-const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-logger-'));
+const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-logger-'));
 
 vi.mock('electron', () => ({
   app: { getPath: () => userData },
@@ -31,20 +31,20 @@ describe('desktop file sink', () => {
   let dir: string;
 
   beforeEach(() => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-sink-'));
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-sink-'));
   });
 
   afterEach(() => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it('appends lines to freeapi.log, creating the directory', () => {
+  it('appends lines to srouter.log, creating the directory', () => {
     const nested = path.join(dir, 'logs');
     const sink = createFileSink(nested);
     sink.write('first');
     sink.write('second');
     sink.close();
-    expect(fs.readFileSync(path.join(nested, 'freeapi.log'), 'utf8')).toBe('first\nsecond\n');
+    expect(fs.readFileSync(path.join(nested, 'srouter.log'), 'utf8')).toBe('first\nsecond\n');
   });
 
   it('keeps appending across sink instances rather than truncating', () => {
@@ -54,18 +54,18 @@ describe('desktop file sink', () => {
     const second = createFileSink(dir);
     second.write('two');
     second.close();
-    expect(fs.readFileSync(path.join(dir, 'freeapi.log'), 'utf8')).toBe('one\ntwo\n');
+    expect(fs.readFileSync(path.join(dir, 'srouter.log'), 'utf8')).toBe('one\ntwo\n');
   });
 
-  it('rotates to freeapi.log.1 at the size limit and keeps only two files', () => {
+  it('rotates to srouter.log.1 at the size limit and keeps only two files', () => {
     const sink = createFileSink(dir, 40);
     sink.write('a'.repeat(30)); // 31 bytes
     sink.write('b'.repeat(30)); // would cross 40 → rotate first
     sink.write('c'.repeat(30)); // crosses again → rotate again, dropping the a's
     sink.close();
-    expect(fs.readFileSync(path.join(dir, 'freeapi.log'), 'utf8')).toBe(`${'c'.repeat(30)}\n`);
-    expect(fs.readFileSync(path.join(dir, 'freeapi.log.1'), 'utf8')).toBe(`${'b'.repeat(30)}\n`);
-    expect(fs.readdirSync(dir).sort()).toEqual(['freeapi.log', 'freeapi.log.1']);
+    expect(fs.readFileSync(path.join(dir, 'srouter.log'), 'utf8')).toBe(`${'c'.repeat(30)}\n`);
+    expect(fs.readFileSync(path.join(dir, 'srouter.log.1'), 'utf8')).toBe(`${'b'.repeat(30)}\n`);
+    expect(fs.readdirSync(dir).sort()).toEqual(['srouter.log', 'srouter.log.1']);
   });
 
   it('swallows filesystem errors instead of throwing at the caller', () => {

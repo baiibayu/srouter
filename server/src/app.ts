@@ -20,7 +20,6 @@ import { analyticsRouter } from './routes/analytics.js';
 import { healthRouter } from './routes/health.js';
 import { freeTierRouter } from './routes/free-tier.js';
 import { settingsRouter } from './routes/settings.js';
-import { premiumRouter } from './routes/premium.js';
 import { backupsRouter } from './routes/backups.js';
 import { cacheRouter } from './routes/cache.js';
 import { compressionRouter } from './routes/compression.js';
@@ -29,6 +28,7 @@ import { docsRouter } from './routes/docs.js';
 import { mcpRouter } from './routes/mcp.js';
 import { statusRouter, providersRouter } from './routes/status.js';
 import { geminiRouter } from './routes/gemini.js';
+import { syncCatalog, getSyncState } from './services/catalog-sync.js';
 import { ollamaRouter } from './routes/ollama.js';
 import { urlTokenRouter } from './routes/url-tokens.js';
 import { updateRouter } from './routes/update.js';
@@ -55,7 +55,7 @@ const DEFAULT_DASHBOARD_ORIGINS = [
 // must run before first paint. Kept as a literal so the CSP header stays a
 // constant string; csp-inline-bootstrap.test.ts recomputes it from the real
 // index.html (source and build) and fails if the two ever drift apart.
-export const INLINE_BOOTSTRAP_SHA = "'sha256-4Mz/yZAENQGlTAAeE1WqXruXCripvlvl0s+Q9S1VS4A='";
+export const INLINE_BOOTSTRAP_SHA = "'sha256-1OTmTnZneXffbmIPwWo5eUgYng1kx7QMYftxJ/QGmvw='";
 
 // A build asset is safe to cache forever+immutable when its URL is
 // content-addressed. Vite parks every hashed chunk (JS, CSS, fonts, images)
@@ -261,7 +261,6 @@ export function createApp(config?: Config) {
   app.use('/api/health', requireAuth, healthRouter);
   app.use('/api/free-tier', requireAuth, freeTierRouter);
   app.use('/api/settings', requireAuth, settingsRouter);
-  app.use('/api/premium', requireAuth, premiumRouter);
   // Database dumps and restores. Dashboard-session gated: the dump files carry
   // encrypted provider keys and every routing setting, so the unified /v1 key
   // must not open this surface.
@@ -269,6 +268,27 @@ export function createApp(config?: Config) {
   app.use('/api/cache', requireAuth, cacheRouter);
   app.use('/api/compression', requireAuth, compressionRouter);
   app.use('/api/update', requireAuth, updateRouter);
+
+  // Catalog sync — lightweight endpoint that triggers an immediate catalog
+  // sync AND auto-discover, then returns the current sync state. Replaces
+  // the old /api/premium/sync route that was removed with the premium/license
+  // system. Running both ensures all model types (catalog + user-key-discovered)
+  // are refreshed in one go.
+  app.post('/api/catalog/sync', requireAuth, async (_req, res) => {
+    try {
+      const catalogResult = await syncCatalog(true);
+      // Also run auto-discover to refresh models from user API keys
+      try {
+        const { autoDiscoverAll } = await import('./services/auto-discover.js');
+        await autoDiscoverAll();
+      } catch (err) {
+        console.warn(`[api] auto-discover during sync-all failed: ${err instanceof Error ? err.message : err}`);
+      }
+      res.json({ ...catalogResult, state: getSyncState() });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err?.message ?? String(err) });
+    }
+  });
 
   // Health check — no auth required.
   app.get('/api/ping', (_req, res) => {
@@ -365,7 +385,16 @@ export function createApp(config?: Config) {
       }
       // Same no-cache policy as the statically-served index.html: SPA deep
       // links must revalidate so a redeploy propagates new asset URLs.
-      res.sendFile(path.join(clientDist, 'index.html'), {
+      //
+      // Send a path RELATIVE to `root` rather than an absolute one. `send`
+      // (behind res.sendFile) rejects any request path containing a dotted
+      // segment — including segments of an absolute path — so an install under
+      // e.g. `C:\Users\me\.srouter` would 404 every deep link while `/` and
+      // /assets/* kept working (express.static passes `root` internally). With
+      // `root` set, only the relative part is inspected, so a dotted install
+      // directory resolves normally.
+      res.sendFile('index.html', {
+        root: clientDist,
         headers: { 'Cache-Control': 'no-cache' },
       });
     });

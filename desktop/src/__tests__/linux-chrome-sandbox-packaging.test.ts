@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 // #1229: the Linux .deb ships chrome-sandbox as 755. Electron then aborts:
 // "The SUID sandbox helper binary was found, but is not configured correctly.
-// You need to make sure that /opt/FreeLLMAPI/chrome-sandbox is owned by root
+// You need to make sure that /opt/srouter/chrome-sandbox is owned by root
 // and has mode 4755." afterPack chmod's the helper before fpm packs the deb.
 
 const yaml = createRequire(import.meta.url)('js-yaml');

@@ -21,9 +21,9 @@ export interface DbBackupResult {
 }
 
 function backupTarget(): string | null {
-  const raw = process.env.FREEAPI_DB_BACKUP_TARGET
-    ?? process.env.FREEAPI_DB_BACKUP_URL
-    ?? process.env.FREEAPI_DB_BACKUP_PATH
+  const raw = process.env.SROUTER_DB_BACKUP_TARGET
+    ?? process.env.SROUTER_DB_BACKUP_URL
+    ?? process.env.SROUTER_DB_BACKUP_PATH
     ?? '';
   const trimmed = raw.trim();
   return trimmed.length > 0 ? trimmed : null;
@@ -34,7 +34,7 @@ export function isDbBackupConfigured(): boolean {
 }
 
 function backupIntervalMs(): number {
-  const raw = process.env.FREEAPI_DB_BACKUP_INTERVAL_MS;
+  const raw = process.env.SROUTER_DB_BACKUP_INTERVAL_MS;
   if (!raw) return DEFAULT_INTERVAL_MS;
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_INTERVAL_MS;
@@ -45,9 +45,9 @@ function isHttpTarget(target: string): boolean {
 }
 
 function parseBackupKey(): Buffer {
-  const raw = (process.env.FREEAPI_DB_BACKUP_KEY || process.env.ENCRYPTION_KEY || '').trim();
+  const raw = (process.env.SROUTER_DB_BACKUP_KEY || process.env.ENCRYPTION_KEY || '').trim();
   if (!raw || raw === PLACEHOLDER_KEY || !/^[0-9a-fA-F]{64}$/.test(raw)) {
-    throw new Error('FREEAPI_DB_BACKUP_KEY or ENCRYPTION_KEY must be a 64-character hex key when DB backup is enabled');
+    throw new Error('SROUTER_DB_BACKUP_KEY or ENCRYPTION_KEY must be a 64-character hex key when DB backup is enabled');
   }
   return Buffer.from(raw, 'hex');
 }
@@ -84,7 +84,7 @@ function decryptBackup(payload: Buffer): Buffer {
  * A HF repo serves downloads at `/{type}/{ns}/{repo}/resolve/{rev}/{path}`, but
  * that route is read-only: a PUT to it is answered 404/405 and the blob never
  * lands. Writes go through the commit API instead. Both halves are derived from
- * the one URL the operator configures, so FREEAPI_DB_BACKUP_TARGET stays the
+ * the one URL the operator configures, so SROUTER_DB_BACKUP_TARGET stays the
  * plain download URL they can paste into a browser.
  *
  * Models are the type with no prefix segment (`/{ns}/{repo}/resolve/...`);
@@ -163,7 +163,7 @@ function decodeHuggingFacePayload(raw: Buffer): Buffer {
 async function readTarget(target: string): Promise<Buffer | null> {
   if (isHttpTarget(target)) {
     const headers: Record<string, string> = {};
-    const token = process.env.FREEAPI_DB_BACKUP_TOKEN?.trim();
+    const token = process.env.SROUTER_DB_BACKUP_TOKEN?.trim();
     if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch(target, { method: 'GET', headers, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (res.status === 404 || res.status === 204) return null;
@@ -178,12 +178,12 @@ async function readTarget(target: string): Promise<Buffer | null> {
 
 async function writeTarget(target: string, payload: Buffer): Promise<void> {
   if (isHttpTarget(target)) {
-    const token = process.env.FREEAPI_DB_BACKUP_TOKEN?.trim();
+    const token = process.env.SROUTER_DB_BACKUP_TOKEN?.trim();
     const huggingFace = parseHuggingFaceTarget(target);
     if (huggingFace) {
       // Anonymous writes do not exist on HF; without a token every upload would
       // 401 on a schedule and only ever be noticed as an empty restore.
-      if (!token) throw new Error('FREEAPI_DB_BACKUP_TOKEN is required to upload a backup to Hugging Face');
+      if (!token) throw new Error('SROUTER_DB_BACKUP_TOKEN is required to upload a backup to Hugging Face');
       await uploadToHuggingFace(huggingFace.commitUrl, huggingFace.filePath, payload, token);
       return;
     }
@@ -202,7 +202,7 @@ async function writeTarget(target: string, payload: Buffer): Promise<void> {
 
   fs.mkdirSync(path.dirname(path.resolve(target)), { recursive: true });
   // Encrypted, but not therefore safe to leave world-readable: the key is
-  // FREEAPI_DB_BACKUP_KEY or ENCRYPTION_KEY, which on a normal install sits in a
+  // SROUTER_DB_BACKUP_KEY or ENCRYPTION_KEY, which on a normal install sits in a
   // .env file on the same host. The mode covers creation; restrictToOwner covers
   // the overwrite case, where an existing file keeps the mode it already had —
   // and covers Windows, where the mode argument is a no-op.

@@ -6,7 +6,7 @@ import type {
   ChatToolChoice,
   Platform,
   TokenUsage,
-} from '@freellmapi/shared/types.js';
+} from '@srouter/shared/types.js';
 import {
   BaseProvider,
   providerHttpError,
@@ -80,7 +80,7 @@ interface SailProviderOptions {
  * Completions. Every request is submitted with `background: true`, then polled
  * until terminal. That is required for its flex-only models and avoids proxy
  * timeouts for core models that spend several minutes queued. The completed
- * Responses object is normalized back into FreeLLMAPI's Chat Completions shape;
+ * Responses object is normalized back into srouter's Chat Completions shape;
  * streaming callers receive a small synthesized role/content/finish sequence.
  */
 export class SailProvider extends BaseProvider {

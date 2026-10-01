@@ -16,7 +16,9 @@
     "modelsMenu": "Bincika nau'ikan samfuri",
     "agents": "Wakilai",
     "logs": "Logs",
-    "analyticsMenu": "Shafukan bincike"
+    "analyticsMenu": "Shafukan bincike",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Ƙirƙiri asusun ku",
@@ -60,7 +62,7 @@
     "emailChanged": "An canza imel.",
     "passwordReset": "An sake saita kalmar sirri. Da fatan shiga.",
     "resetCodeDockerHint": "Kana amfani da Docker? Lambar tana cikin tarihin kwantena: docker logs <container>.",
-    "desktopSessionFailed": "Dashboard ɗin bai iya shiga uwar garken gida ba. Rufe FreeLLMAPI ka sake buɗe shi."
+    "desktopSessionFailed": "Dashboard ɗin bai iya shiga uwar garken gida ba. Rufe SRouter ka sake buɗe shi."
   },
   "common": {
     "save": "Ajiye",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Duba sabuntawa ta atomatik",
     "autoUpdateCheckHelp": "Yana duba GitHub sau ɗaya a rana don sabon fitowa kuma yana nuna tunatarwa. A kashe ta tsohuwa.",
     "openReleases": "Buɗe sakin GitHub",
-    "restartAfterUpdate": "Sake kunna FreeLLMAPI bayan an gama build ɗin."
+    "restartAfterUpdate": "Sake kunna SRouter bayan an gama build ɗin.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Samfura",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Kasafin kudin alamar wata-wata",
     "remaining": "saura",
     "used": "amfani",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Ayyukan mai bayarwa",
     "routeViaProxy": "Hanya ta hanyar wakili",
     "checkNow": "Duba yanzu",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Hakanan ana iya daidaitawa ta hanyar",
     "proxyEnvHintAfter": "canjin yanayi (yana ɗaukar fifiko). Bar komai don kashewa. Misalai:",
     "importKeys": "Shigo maɓallan mai bayarwa",
@@ -679,7 +704,8 @@
     "testFailed": "Gwajin samfurin ya fadi",
     "testThrottled": "Da fatan za a jira {seconds}s kafin sake gwada wannan samfurin.",
     "noModelsForProvider": "Babu samfuran da aka saita don wannan mai ba da sabis.",
-    "testModels": "Gwada samfura"
+    "testModels": "Gwada samfura",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

@@ -1,5 +1,5 @@
-appId: com.freellmapi.desktop
-productName: FreeLLMAPI
+appId: com.srouter.desktop
+productName: SRouter
 directories:
   output: dist-electron
 files:
@@ -17,7 +17,7 @@ files:
 publish:
   provider: github
   owner: tashfeenahmed
-  repo: freellmapi
+  repo: srouter
 asar: true
 # Linux chrome-sandbox must be mode 4755 (setuid) in the .deb; otherwise
 # Electron aborts at launch (#1229). Path is relative to desktop/.

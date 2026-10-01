@@ -16,7 +16,9 @@
     "modelsMenu": "Видове модели за разглеждане",
     "agents": "Агенти",
     "logs": "Логове",
-    "analyticsMenu": "Страници с аналитика"
+    "analyticsMenu": "Страници с аналитика",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Създайте свой акаунт",
@@ -60,7 +62,7 @@
     "emailChanged": "Имейлът е сменен.",
     "passwordReset": "Паролата е нулирана. Влезте отново.",
     "resetCodeDockerHint": "Работите в Docker? Кодът е в лога на контейнера: docker logs <container>.",
-    "desktopSessionFailed": "Таблото не успя да влезе в локалния сървър. Затворете FreeLLMAPI и го отворете отново."
+    "desktopSessionFailed": "Таблото не успя да влезе в локалния сървър. Затворете SRouter и го отворете отново."
   },
   "common": {
     "save": "Запази",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Автоматична проверка за актуализации",
     "autoUpdateCheckHelp": "Проверява GitHub веднъж дневно за ново издание и показва напомняне. По подразбиране е изключено.",
     "openReleases": "Отвори изданията в GitHub",
-    "restartAfterUpdate": "Рестартирайте FreeLLMAPI след завършване на компилацията."
+    "restartAfterUpdate": "Рестартирайте SRouter след завършване на компилацията.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Модели",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Месечен бюджет за жетони",
     "remaining": "Останали",
     "used": "Употребявана",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Действия на доставчика",
     "routeViaProxy": "Маршрут чрез прокси",
     "checkNow": "Провери сега",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Също така може да се конфигурира чрез",
     "proxyEnvHintAfter": "променлива на околната среда (има предимство). Оставете празно за деактивиране. Примери:",
     "importKeys": "Ключове за доставчик на импорт",
@@ -679,7 +704,8 @@
     "testFailed": "Тестът на модела е неуспешен",
     "testThrottled": "Моля, изчакайте {seconds} сек преди повторен тест на този модел.",
     "noModelsForProvider": "Няма конфигурирани модели за този доставчик.",
-    "testModels": "Тествай моделите"
+    "testModels": "Тествай моделите",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

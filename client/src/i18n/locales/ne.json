@@ -16,7 +16,9 @@
     "modelsMenu": "नमूना प्रकार ब्राउज गर्नुहोस्",
     "agents": "एजेन्टहरू",
     "logs": "लग",
-    "analyticsMenu": "एनालिटिक्स पृष्ठहरू"
+    "analyticsMenu": "एनालिटिक्स पृष्ठहरू",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "तपाईँको खाता सिर्जना गर्नुहोस्",
@@ -60,7 +62,7 @@
     "emailChanged": "इमेल सफलतापूर्वक परिवर्तन भयो।",
     "passwordReset": "पासवर्ड रिसेट भयो। कृपया साइन इन गर्नुहोस्।",
     "resetCodeDockerHint": "Docker मा चलाइरहनुभएको छ? कोड कन्टेनर लगमा छ: docker logs <container>।",
-    "desktopSessionFailed": "ड्यासबोर्डले लोकल सर्भरमा साइन इन गर्न सकेन। FreeLLMAPI बन्द गरेर फेरि खोल्नुहोस्।"
+    "desktopSessionFailed": "ड्यासबोर्डले लोकल सर्भरमा साइन इन गर्न सकेन। SRouter बन्द गरेर फेरि खोल्नुहोस्।"
   },
   "common": {
     "save": "बचत गर्नुहोस्",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "स्वचालित अद्यावधिक जाँच",
     "autoUpdateCheckHelp": "दिनमा एक पटक नयाँ रिलिजका लागि GitHub जाँच गर्छ र सम्झना देखाउँछ। पूर्वनिर्धारित रूपमा बन्द।",
     "openReleases": "GitHub रिलीजहरू खोल्नुहोस्",
-    "restartAfterUpdate": "बिल्ड पूरा भएपछि FreeLLMAPI पुनः सुरु गर्नुहोस्।"
+    "restartAfterUpdate": "बिल्ड पूरा भएपछि SRouter पुनः सुरु गर्नुहोस्।",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "नमूनाहरू",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "मासिक टोकन बजेट",
     "remaining": "बाँकी[सम्पादन गर्ने]",
     "used": "प्रयोग गरियो",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "प्रदायक कार्यहरू",
     "routeViaProxy": "प्रोक्सी हुँदै मार्ग",
     "checkNow": "अहिले जाँच गर्नुहोस्",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "मार्फत पनि कन्फिगर गर्न सकिने",
     "proxyEnvHintAfter": "वातावरण चर (प्राथमिकता लिन्छ)। अक्षम पार्नका लागि खाली छोड्नुहोस् । उदाहरणहरू:",
     "importKeys": "प्रदायक कुञ्जीहरू आयात गर्नुहोस्",
@@ -679,7 +704,8 @@
     "testFailed": "मोडेल परीक्षण असफल भयो",
     "testThrottled": "कृपया यो मोडेल पुन: परीक्षण गर्नु अघि {seconds} सेकेन्ड पर्खनुहोस्।",
     "noModelsForProvider": "यस प्रदायकको लागि कुनै मोडेल कन्फिगर गरिएको छैन।",
-    "testModels": "मोडेलहरू परीक्षण गर्नुहोस्"
+    "testModels": "मोडेलहरू परीक्षण गर्नुहोस्",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

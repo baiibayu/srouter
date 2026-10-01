@@ -50,15 +50,15 @@ describe('Backups API', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     // Backups anchor to the database's directory, so point the default DB path
     // at a scratch directory rather than writing dumps into the repo.
-    dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-backups-'));
-    process.env.FREEAPI_DB_PATH = path.join(dataDir, 'freeapi.db');
+    dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-backups-'));
+    process.env.SROUTER_DB_PATH = path.join(dataDir, 'srouter.db');
     initDb(':memory:');
     app = createApp();
     dashToken = mintDashboardToken();
   });
 
   afterAll(() => {
-    delete process.env.FREEAPI_DB_PATH;
+    delete process.env.SROUTER_DB_PATH;
     fs.rmSync(dataDir, { recursive: true, force: true });
   });
 
@@ -224,7 +224,7 @@ describe('Backups API', () => {
   });
 
   it('rejects a backup path outside the database directory', async () => {
-    for (const backupPath of ['../escape', '/tmp/freeapi-escape', '../../etc']) {
+    for (const backupPath of ['../escape', '/tmp/srouter-escape', '../../etc']) {
       const put = await request(app, 'PUT', '/api/backups/schedule', {
         enabled: false,
         time: '03:00',

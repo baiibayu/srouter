@@ -29,7 +29,7 @@ $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $packageJson = Join-Path $ProjectRoot 'package.json'
 $lockfile = Join-Path $ProjectRoot 'package-lock.json'
 $nodeModules = Join-Path $ProjectRoot 'node_modules'
-$lockStamp = Join-Path $nodeModules '.freellmapi-bootstrap-lock'
+$lockStamp = Join-Path $nodeModules '.srouter-bootstrap-lock'
 $envFile = Join-Path $ProjectRoot '.env'
 
 if (-not (Test-Path -LiteralPath $packageJson) -or -not (Test-Path -LiteralPath $lockfile)) {

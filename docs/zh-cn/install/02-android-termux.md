@@ -2,9 +2,9 @@
 
 # Android（Termux）安装
 
-> 实验性功能，由社区维护。FreeLLMAPI 直接运行在 Android 设备本地。
+> 实验性功能，由社区维护。SRouter 直接运行在 Android 设备本地。
 
-FreeLLMAPI 可以在 [Termux](https://termux.dev/) 中运行，无需 Android NDK 工具链。在 Android 上，服务器使用 Node 内置的 SQLite 驱动，而不是原生的 `better-sqlite3` 包。
+SRouter 可以在 [Termux](https://termux.dev/) 中运行，无需 Android NDK 工具链。在 Android 上，服务器使用 Node 内置的 SQLite 驱动，而不是原生的 `better-sqlite3` 包。
 
 ## 要求
 
@@ -31,11 +31,11 @@ pkg install -y nodejs-lts git
 node --version
 ```
 
-然后克隆并启动 FreeLLMAPI：
+然后克隆并启动 SRouter：
 
 ```bash
 git clone https://github.com/tashfeenahmed/freellmapi.git
-cd freellmapi
+cd SRouter
 npm install --no-audit --no-fund
 npm run dev
 ```

@@ -16,13 +16,13 @@ export function FloatingBar({ show, children }: { show: boolean; children: React
   if (!render) return null
   return (
     <div
-      className={`fixed inset-x-0 bottom-6 z-50 flex justify-center px-6 pointer-events-none duration-300 ${
+      className={`fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 pointer-events-none duration-300 sm:bottom-6 sm:px-6 ${
         show
           ? 'animate-in slide-in-from-bottom-4 fade-in'
           : 'animate-out slide-out-to-bottom-4 fade-out fill-mode-forwards'
       }`}
     >
-      <div className="pointer-events-auto flex items-center gap-3 rounded-full border bg-card px-4 py-2 shadow-lg">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border bg-card px-3 py-1.5 shadow-lg ring-1 ring-foreground/5 sm:gap-3 sm:rounded-full sm:px-4 sm:py-2">
         {children}
       </div>
     </div>

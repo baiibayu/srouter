@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@srouter/shared/types.js';
 import { providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import type { QuotaObservationContext } from '../services/provider-quota.js';
 import { OpenAICompatProvider } from './openai-compat.js';
@@ -26,7 +26,7 @@ export class ClodProvider extends OpenAICompatProvider {
     // IPs (#1298); a product UA gets the real 401/200 answer.
     super({
       platform: 'clod', name: 'CLōD', baseUrl: 'https://api.clod.io/v1',
-      extraHeaders: { 'User-Agent': 'FreeLLMAPI/1.0' },
+      extraHeaders: { 'User-Agent': 'srouter/1.0' },
     });
   }
 

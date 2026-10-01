@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@srouter/shared/types.js';
 import type { CompletionOptions } from './base.js';
 import type { QuotaObservationContext } from '../services/provider-quota.js';
 import { OpenAICompatProvider } from './openai-compat.js';
@@ -21,7 +21,7 @@ export class SeptorProvider extends OpenAICompatProvider {
     // on self-hosted VPS installs (#1298). A product UA passes.
     super({
       platform: 'septor', name: 'Septor Labs', baseUrl: 'https://api.septorlabs.com/v1',
-      extraHeaders: { 'User-Agent': 'FreeLLMAPI/1.0' },
+      extraHeaders: { 'User-Agent': 'srouter/1.0' },
     });
   }
 

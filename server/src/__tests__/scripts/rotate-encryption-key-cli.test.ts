@@ -34,7 +34,7 @@ let dbPath: string;
 /** A real on-disk DB with the production schema, seeded under the OLD key. */
 function seedTempDb(): void {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rotate-cli-'));
-  dbPath = path.join(tmpDir, 'freeapi.db');
+  dbPath = path.join(tmpDir, 'srouter.db');
 
   // Set before initDb so crypto.ts takes the env key and never writes a
   // .encryption-key file next to the temp DB.

@@ -13,7 +13,7 @@ export function ModelsTabs() {
       isActive ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
     }`
   return (
-    <div className="inline-flex gap-1 rounded-xl border p-1">
+    <div className="inline-flex gap-0.5 sm:gap-1 rounded-xl border p-1 overflow-x-auto">
       <NavLink to="/models/chat" className={({ isActive }) => tab(isActive)}>{t('models.chatModelsTab')}</NavLink>
       <NavLink to="/models/embeddings" className={({ isActive }) => tab(isActive)}>{t('models.embeddingsTab')}</NavLink>
       <NavLink to="/models/image" className={({ isActive }) => tab(isActive)}>{t('models.imageTab')}</NavLink>

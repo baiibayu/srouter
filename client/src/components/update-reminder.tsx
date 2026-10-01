@@ -18,11 +18,11 @@ const RELEASES_URL = 'https://github.com/tashfeenahmed/freellmapi/releases'
  *  answer for six hours on top of this, and does not call GitHub at all while
  *  the check is switched off. */
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
-const STORAGE_KEY = 'freellmapi.update_reminder'
+const STORAGE_KEY = 'srouter.update_reminder'
 
 /** Fired by Settings when the opt-in is toggled, so the pill appears or
  *  disappears there and then instead of on the next reload. */
-export const UPDATE_CHECK_CHANGED_EVENT = 'freellmapi:update-check-changed'
+export const UPDATE_CHECK_CHANGED_EVENT = 'srouter:update-check-changed'
 
 /** The server's mapped shape (GET /api/update/release). */
 interface LatestRelease {
@@ -95,7 +95,7 @@ export function UpdateReminder() {
   // render rather than assigned from an effect; a browser or container install
   // asks the server. Both may be empty → no reminder.
   const shellVersion = typeof window !== 'undefined'
-    ? (window as { __FREEAPI_VERSION__?: string | null }).__FREEAPI_VERSION__ ?? null
+    ? (window as { __SROUTER_VERSION__?: string | null }).__SROUTER_VERSION__ ?? null
     : null
   const [serverVersion, setServerVersion] = useState<string | null>(null)
   const [release, setRelease] = useState<LatestRelease | null>(null)

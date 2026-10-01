@@ -1,5 +1,5 @@
 {
-  "name": "@freellmapi/monorepo",
+  "name": "@srouter/monorepo",
   "private": true,
   "workspaces": [
     "shared",

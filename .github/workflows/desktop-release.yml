@@ -316,8 +316,8 @@ jobs:
           set -euo pipefail
           app_dir=desktop/dist-electron/mac
           if [ "$EXPECTED_ARCH" = arm64 ]; then app_dir="$app_dir-arm64"; fi
-          app="$app_dir/FreeLLMAPI.app"
-          ELECTRON_RUN_AS_NODE=1 "$app/Contents/MacOS/FreeLLMAPI" \
+          app="$app_dir/SRouter.app"
+          ELECTRON_RUN_AS_NODE=1 "$app/Contents/MacOS/SRouter" \
             desktop/scripts/smoke-mac-package.mjs "$app" "$EXPECTED_ARCH"
 
       # electron-builder notarizes and staples the .app, then wraps it in a DMG

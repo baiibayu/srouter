@@ -16,7 +16,9 @@
     "modelsMenu": "Semak jenis model",
     "agents": "Ejen",
     "logs": "Log",
-    "analyticsMenu": "Halaman analitik"
+    "analyticsMenu": "Halaman analitik",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Cipta akaun anda",
@@ -60,7 +62,7 @@
     "emailChanged": "E-mel berjaya ditukar.",
     "passwordReset": "Kata laluan telah ditetapkan semula. Sila log masuk.",
     "resetCodeDockerHint": "Berjalan dalam Docker? Kod berada dalam log kontena: docker logs <container>.",
-    "desktopSessionFailed": "Papan pemuka tidak dapat log masuk ke pelayan tempatan. Tutup FreeLLMAPI dan buka semula."
+    "desktopSessionFailed": "Papan pemuka tidak dapat log masuk ke pelayan tempatan. Tutup SRouter dan buka semula."
   },
   "common": {
     "save": "Simpan",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Semakan kemas kini automatik",
     "autoUpdateCheckHelp": "Menyemak GitHub sekali sehari untuk keluaran baharu dan memaparkan peringatan. Dimatikan secara lalai.",
     "openReleases": "Buka Keluaran GitHub",
-    "restartAfterUpdate": "Mulakan semula FreeLLMAPI selepas binaan selesai."
+    "restartAfterUpdate": "Mulakan semula SRouter selepas binaan selesai.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Model",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Bajet token bulanan",
     "remaining": "baki",
     "used": "digunakan",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Tindakan penyedia",
     "routeViaProxy": "Laluan melalui proksi",
     "checkNow": "Semak sekarang",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Juga boleh dikonfigurasikan melalui",
     "proxyEnvHintAfter": "pembolehubah persekitaran (diberi keutamaan). Biarkan kosong untuk dinyahaktifkan. Contoh:",
     "importKeys": "Import kunci penyedia",
@@ -679,7 +704,8 @@
     "testFailed": "Ujian model gagal",
     "testThrottled": "Sila tunggu {seconds}s sebelum menguji model ini semula.",
     "noModelsForProvider": "Tiada model dikonfigurasikan untuk pembekal ini.",
-    "testModels": "Uji model"
+    "testModels": "Uji model",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

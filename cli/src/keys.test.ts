@@ -12,7 +12,7 @@ beforeEach(() => {
   keys = [{ ...key }];
   output = '';
   calls.length = 0;
-  vi.stubEnv('FREELLMAPI_DASHBOARD_TOKEN', token);
+  vi.stubEnv('SROUTER_DASHBOARD_TOKEN', token);
   vi.spyOn(process.stdout, 'write').mockImplementation(chunk => { output += String(chunk); return true; });
   vi.stubGlobal('fetch', vi.fn(async (input: string, init: RequestInit = {}) => {
     const path = new URL(input).pathname;
@@ -154,9 +154,9 @@ describe('provider key commands', () => {
   });
 
   it('requires a dashboard token rather than using the unified API key', async () => {
-    vi.stubEnv('FREELLMAPI_DASHBOARD_TOKEN', '');
-    vi.stubEnv('FREELLMAPI_API_KEY', 'unified-secret');
-    await expect(main(['keys', 'list'])).rejects.toThrow('FREELLMAPI_DASHBOARD_TOKEN');
+    vi.stubEnv('SROUTER_DASHBOARD_TOKEN', '');
+    vi.stubEnv('SROUTER_API_KEY', 'unified-secret');
+    await expect(main(['keys', 'list'])).rejects.toThrow('SROUTER_DASHBOARD_TOKEN');
     expect(calls).toEqual([]);
   });
 
@@ -201,10 +201,10 @@ describe('provider key commands', () => {
   });
 
   it('shows key-specific help without requiring credentials or making requests', async () => {
-    vi.stubEnv('FREELLMAPI_DASHBOARD_TOKEN', '');
+    vi.stubEnv('SROUTER_DASHBOARD_TOKEN', '');
     expect(await main(['keys', '--help'])).toBe(0);
     expect(output).toContain('keys add <platform>');
-    expect(output).toContain('FREELLMAPI_DASHBOARD_TOKEN');
+    expect(output).toContain('SROUTER_DASHBOARD_TOKEN');
     expect(calls).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-// `freellmapi doctor` — does this tool's traffic actually reach this gateway?
+// `srouter doctor` — does this tool's traffic actually reach this gateway?
 //
 // The load-bearing constraint: the verdict must be computed in a process that
 // INHERITS THE USER'S SESSION ENVIRONMENT. The server cannot answer this
@@ -345,7 +345,7 @@ export async function probeGateway(
 }
 
 export interface DoctorOptions {
-  /** The gateway the user believes they are using (--url / FREELLMAPI_URL). */
+  /** The gateway the user believes they are using (--url / SROUTER_URL). */
   expectedUrl: string;
   env?: NodeJS.ProcessEnv;
   homeDir?: string;

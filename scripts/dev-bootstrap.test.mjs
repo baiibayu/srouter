@@ -12,7 +12,7 @@ const projectRoot = resolve(import.meta.dirname, '..');
 const powershell = process.platform === 'win32' ? 'powershell.exe' : null;
 
 async function makeFixture(t) {
-  const fixture = await mkdtemp(join(tmpdir(), 'freellmapi-bootstrap-'));
+  const fixture = await mkdtemp(join(tmpdir(), 'srouter-bootstrap-'));
   const lockfile = join(fixture, 'package-lock.json');
   const lockContents = '{"name":"bootstrap-fixture","lockfileVersion":3}\n';
   const lockHash = createHash('sha256').update(lockContents).digest('hex');
@@ -20,7 +20,7 @@ async function makeFixture(t) {
   await writeFile(join(fixture, 'package.json'), '{"name":"bootstrap-fixture"}\n');
   await writeFile(lockfile, lockContents);
   await mkdir(join(fixture, 'node_modules'));
-  await writeFile(join(fixture, 'node_modules', '.freellmapi-bootstrap-lock'), lockHash);
+  await writeFile(join(fixture, 'node_modules', '.srouter-bootstrap-lock'), lockHash);
   t.after(() => rm(fixture, { force: true, recursive: true }));
   return { fixture, lockfile };
 }
@@ -40,13 +40,13 @@ async function assertEnvIsCreatedAndPreserved(runBootstrap, t) {
 
 async function assertMissingStampInstalls(runBootstrap, t) {
   const { fixture, lockfile } = await makeFixture(t);
-  await rm(join(fixture, 'node_modules', '.freellmapi-bootstrap-lock'));
+  await rm(join(fixture, 'node_modules', '.srouter-bootstrap-lock'));
 
   await runBootstrap(fixture);
 
   const lockHash = createHash('sha256').update(await readFile(lockfile)).digest('hex');
   assert.equal(
-    (await readFile(join(fixture, 'node_modules', '.freellmapi-bootstrap-lock'), 'utf8')).trim(),
+    (await readFile(join(fixture, 'node_modules', '.srouter-bootstrap-lock'), 'utf8')).trim(),
     lockHash,
   );
 }

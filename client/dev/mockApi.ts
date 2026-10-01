@@ -76,7 +76,7 @@ function readBody(req: any): Promise<any> {
 
 export function mockApiPlugin(): Plugin {
   return {
-    name: 'freellmapi-dev-mock',
+    name: 'srouter-dev-mock',
     configureServer(server) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
         const url = (req.url || '').split('?')[0]

@@ -57,7 +57,7 @@ export default function EmbeddingDetailPage() {
 
   return (
     <div>
-      <PageHeader title={family || t('models.providersHeading')} description={t('models.providersHeading')} divider={false} actions={<ModelsTabs />} />
+      <PageHeader title={family || t('models.providersHeading')} description={t('models.providersHeading')} divider={false} tabs={<ModelsTabs />} />
 
       <div className="space-y-6">
         <Link to="/models/embeddings" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -67,7 +67,7 @@ export default function EmbeddingDetailPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
         ) : !fam ? (
-          <div className="rounded-3xl border border-dashed p-8 text-center">
+          <div className="rounded-3xl border border-dashed p-6 sm:p-8 text-center">
             <p className="text-sm text-muted-foreground">{t('models.modelNotFound')}</p>
           </div>
         ) : (

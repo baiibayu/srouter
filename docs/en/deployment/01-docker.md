@@ -2,7 +2,7 @@
 
 # Docker
 
-The production image, the Compose quickstart, and everything about running FreeLLMAPI in a container: persistence, ports, health, and the networking gotchas.
+The production image, the Compose quickstart, and everything about running SRouter in a container: persistence, ports, health, and the networking gotchas.
 
 - [The image](#the-image)
 - [Compose quickstart](#compose-quickstart)
@@ -15,7 +15,7 @@ The production image, the Compose quickstart, and everything about running FreeL
 
 ## The image
 
-FreeLLMAPI publishes a single production image containing the Express server and the built React dashboard:
+SRouter publishes a single production image containing the Express server and the built React dashboard:
 
 ```bash
 docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # or pin a release, e.g. :v1.2.3
@@ -26,8 +26,8 @@ Published tags: `latest` (default branch), `v*.*.*` (git release tags), and `sha
 Build shape ([Dockerfile](../../../Dockerfile)):
 
 - Three stages on the `node:20-bookworm-slim` base (`deps` → `build` → `runtime`); only already-built artifacts are copied into the runtime stage.
-- The runtime sets `NODE_ENV=production`, `PORT=3001`, and `FREELLMAPI_INSTALL_METHOD=docker`; the process is `node server/dist/index.js`.
-- A `FREELLMAPI_COMMIT_SHA` ARG/ENV pair sits deliberately after all `COPY` layers: the SHA changes every commit, and placing it higher would invalidate the layer cache for the whole image on each build.
+- The runtime sets `NODE_ENV=production`, `PORT=3001`, and `SROUTER_INSTALL_METHOD=docker`; the process is `node server/dist/index.js`.
+- A `SROUTER_COMMIT_SHA` ARG/ENV pair sits deliberately after all `COPY` layers: the SHA changes every commit, and placing it higher would invalidate the layer cache for the whole image on each build.
 - The runtime also copies `desktop/package.json` (a 400-byte manifest) so a container install can name its own release version (#703).
 - `.dockerignore` keeps secrets and local state out of the build context: `.env`, `.env.*`, `*.db` (+ `-wal`/`-shm` sidecars), `.encryption-key`, and `server/data` never enter an image.
 
@@ -37,7 +37,7 @@ Prerequisites: Docker, Docker Compose, OpenSSL. macOS/Linux:
 
 ```bash
 git clone https://github.com/tashfeenahmed/freellmapi.git
-cd freellmapi
+cd SRouter
 
 # Generate an encryption key for at-rest key storage
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
@@ -49,7 +49,7 @@ docker compose up -d
 Windows PowerShell variant and a curl one-liner bootstrap live in [docs/en/install/01-install.md#docker-compose](../install/01-install.md#docker-compose). Then follow the logs:
 
 ```bash
-docker compose logs -f freellmapi
+docker compose logs -f srouter
 ```
 
 Open http://localhost:3001, add provider keys on the **Keys** page, and grab your unified API key from that page's header — that key is what your OpenAI SDK points at.
@@ -66,7 +66,7 @@ Only do this on a trusted network — the proxy is single-user and guarded only 
 
 ## Volumes & persistence
 
-SQLite data lives in the named volume `freellmapi-data`, mounted at `/app/server/data`. Keep the same `.env` `ENCRYPTION_KEY` and the same volume when upgrading, because provider keys are encrypted at rest. If your host only persists one specific directory, point the database there with `FREEAPI_DB_PATH=/that/path/freellmapi.db`.
+SQLite data lives in the named volume `srouter-data`, mounted at `/app/server/data`. Keep the same `.env` `ENCRYPTION_KEY` and the same volume when upgrading, because provider keys are encrypted at rest. If your host only persists one specific directory, point the database there with `SROUTER_DB_PATH=/that/path/srouter.db`.
 
 The Dockerfile declares **no** `VOLUME` for `/app/server/data` on purpose. Persistence is the deployment's job — the compose file maps the named volume there, and plain `docker run` takes `-v`. Declaring it in the image instead would create an ANONYMOUS volume on every container that doesn't override it: PaaS runtimes that build from the Dockerfile (Railway, Render, Coolify, Dokploy, CapRover) would then either refuse the image or silently hand each redeploy a fresh empty volume, and the declaration would also shadow a bind mount made at the same path.
 
@@ -97,11 +97,11 @@ A related packaging subtlety: npm nests some production packages under the works
 
 Providers unreachable from the container, but fine from the host? A container has its own network stack, so two things that work on your machine do not carry over:
 
-- **A proxy on `127.0.0.1` is not your machine.** Inside the container, loopback is the container itself. If you reach providers through a proxy client on the host (Clash, v2rayN, sing-box, a corporate proxy), point FreeLLMAPI at the host instead: `PROXY_URL=socks5h://host.docker.internal:7890`. The bundled `docker-compose.yml` maps `host.docker.internal` to the host gateway via `extra_hosts`, so this works on plain Linux Docker as well as Docker Desktop. The proxy also has to accept connections from outside loopback (in Clash, `allow-lan: true`). More detail in [03-outbound-proxies.md](../env/03-outbound-proxies.md#docker-127001-is-the-container).
+- **A proxy on `127.0.0.1` is not your machine.** Inside the container, loopback is the container itself. If you reach providers through a proxy client on the host (Clash, v2rayN, sing-box, a corporate proxy), point SRouter at the host instead: `PROXY_URL=socks5h://host.docker.internal:7890`. The bundled `docker-compose.yml` maps `host.docker.internal` to the host gateway via `extra_hosts`, so this works on plain Linux Docker as well as Docker Desktop. The proxy also has to accept connections from outside loopback (in Clash, `allow-lan: true`). More detail in [03-outbound-proxies.md](../env/03-outbound-proxies.md#docker-127001-is-the-container).
 - **An IPv6-only host needs IPv6 enabled in Docker.** The default bridge network is IPv4-only, so on a host with no IPv4 route the container cannot reach anything, DNS included. Enable it in `/etc/docker/daemon.json` with `"ipv6": true`, `"ip6tables": true` and a `"fixed-cidr-v6"` range, then restart Docker.
 
 To see which case you are hitting, ask the container directly:
 
 ```bash
-docker compose exec freellmapi node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```

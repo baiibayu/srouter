@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { startWakeDetect, stopWakeDetect, _resetForTests } from '../../lib/wake-detect.js';
 
-// Ported with the module from @Naster17's fork (freellmapi-pro@4c43cf2a);
+// Ported with the module from @Naster17's fork (srouter-pro@4c43cf2a);
 // the drift test is ours (his suite only covered the signal path).
 
 describe('wake-detect', () => {

@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@srouter/shared/types.js';
 import { providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import type { QuotaObservationContext } from '../services/provider-quota.js';
 import { OpenAICompatProvider } from './openai-compat.js';
@@ -19,8 +19,8 @@ export class LogfareProvider extends OpenAICompatProvider {
 
   constructor() {
     // Responses carry `reasoning_content` (handled by the shared fold) and an
-    // extra `neurons` usage field that is passed through untouched. Premium
-    // routes answer 403 and surface as a provider error, never as a retry.
+    // extra `neurons` usage field that is passed through untouched.
+    // Paid-gated models answer 403 and surface as a provider error, never as a retry.
     super({ platform: 'logfare', name: 'Logfare', baseUrl: 'https://logfare.ai/v1' });
   }
 

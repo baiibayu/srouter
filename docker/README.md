@@ -1,6 +1,6 @@
 # Docker Guide
 
-Docker Compose is the recommended way to run FreeLLMAPI for personal use. The container serves the Express API and the built React dashboard from one process on port 3001, with SQLite persisted in a named volume.
+Docker Compose is the recommended way to run SRouter for personal use. The container serves the Express API and the built React dashboard from one process on port 3001, with SQLite persisted in a named volume.
 
 ## Prerequisites
 
@@ -23,17 +23,17 @@ Start the app:
 docker compose up -d
 ```
 
-Open http://localhost:3001, add provider keys on the **Keys** page, then use the generated `freellmapi-...` key with any OpenAI-compatible client.
+Open http://localhost:3001, add provider keys on the **Keys** page, then use the generated `srouter-...` key with any OpenAI-compatible client.
 
 ## Example API Call
 
 ```bash
 curl http://localhost:3001/v1/chat/completions \
-  -H "Authorization: Bearer freellmapi-your-unified-key" \
+  -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "auto",
-    "messages": [{"role": "user", "content": "Say hello from FreeLLMAPI."}]
+    "messages": [{"role": "user", "content": "Say hello from SRouter."}]
   }'
 ```
 
@@ -48,7 +48,7 @@ docker compose ps
 Tail logs:
 
 ```bash
-docker compose logs -f freellmapi
+docker compose logs -f srouter
 ```
 
 Stop the app:
@@ -76,17 +76,17 @@ docker compose up -d --build
 | --- | --- | --- | --- |
 | `ENCRYPTION_KEY` | Yes | None | 64-character hex key used to encrypt provider API keys at rest. Generate it once and keep it stable. |
 | `PORT` | No | `3001` | Host port exposed by Docker Compose. The container listens on port 3001. |
-| `FREEAPI_DB_PATH` | No | `/app/server/data/freellmapi.db` | SQLite file path. Set this when your host only persists one mounted directory. |
-| `FREEAPI_DB_BACKUP_PATH` | No | None | Local encrypted backup file. Restored on startup if the DB file is missing, then refreshed while the app runs. |
-| `FREEAPI_DB_BACKUP_URL` | No | None | HTTP(S) encrypted backup target. Startup uses `GET`; periodic backups use `PUT`. |
-| `FREEAPI_DB_BACKUP_TOKEN` | No | None | Optional bearer token for `FREEAPI_DB_BACKUP_URL`. |
-| `FREEAPI_DB_BACKUP_KEY` | No | `ENCRYPTION_KEY` | 64-character hex key for backup encryption. Use a separate stable key if possible. |
-| `FREEAPI_CONFIG_PATH` | No | None | JSON config file applied idempotently after migrations on every boot. |
-| `FREEAPI_CONFIG_JSON` | No | None | Inline JSON config. Takes precedence over `FREEAPI_CONFIG_PATH`. |
+| `SROUTER_DB_PATH` | No | `/app/server/data/srouter.db` | SQLite file path. Set this when your host only persists one mounted directory. |
+| `SROUTER_DB_BACKUP_PATH` | No | None | Local encrypted backup file. Restored on startup if the DB file is missing, then refreshed while the app runs. |
+| `SROUTER_DB_BACKUP_URL` | No | None | HTTP(S) encrypted backup target. Startup uses `GET`; periodic backups use `PUT`. |
+| `SROUTER_DB_BACKUP_TOKEN` | No | None | Optional bearer token for `SROUTER_DB_BACKUP_URL`. |
+| `SROUTER_DB_BACKUP_KEY` | No | `ENCRYPTION_KEY` | 64-character hex key for backup encryption. Use a separate stable key if possible. |
+| `SROUTER_CONFIG_PATH` | No | None | JSON config file applied idempotently after migrations on every boot. |
+| `SROUTER_CONFIG_JSON` | No | None | Inline JSON config. Takes precedence over `SROUTER_CONFIG_PATH`. |
 
-The `freellmapi-data` volume stores SQLite data at `/app/server/data`. Keep the same volume and `ENCRYPTION_KEY` when upgrading, otherwise existing encrypted provider keys cannot be decrypted.
+The `srouter-data` volume stores SQLite data at `/app/server/data`. Keep the same volume and `ENCRYPTION_KEY` when upgrading, otherwise existing encrypted provider keys cannot be decrypted.
 
-Example `freellmapi.config.json`:
+Example `srouter.config.json`:
 
 ```json
 {

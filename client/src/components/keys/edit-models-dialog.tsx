@@ -47,7 +47,7 @@ export function EditModelsDialog({
 
   const syncCatalog = useMutation({
     meta: { silenceToast: true },
-    mutationFn: () => apiFetch('/api/premium/sync', { method: 'POST' }),
+    mutationFn: () => apiFetch('/api/catalog/sync', { method: 'POST' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fallback'] })
       queryClient.invalidateQueries({ queryKey: ['models'] })

@@ -2,7 +2,7 @@
 
 # Docker
 
-生产镜像、Compose 快速开始，以及在容器里运行 FreeLLMAPI 的一切：持久化、端口、健康检查和网络坑点。
+生产镜像、Compose 快速开始，以及在容器里运行 SRouter 的一切：持久化、端口、健康检查和网络坑点。
 
 - [镜像](#镜像)
 - [Compose 快速开始](#compose-快速开始)
@@ -15,7 +15,7 @@
 
 ## 镜像
 
-FreeLLMAPI 发布单个生产镜像，内含 Express 服务器和构建好的 React 仪表盘：
+SRouter 发布单个生产镜像，内含 Express 服务器和构建好的 React 仪表盘：
 
 ```bash
 docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # 或固定到某个发布版本，如 :v1.2.3
@@ -26,8 +26,8 @@ docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # 或固定到某个发布
 构建形态（[Dockerfile](../../../Dockerfile)）：
 
 - 基于 `node:20-bookworm-slim` 的三个阶段（`deps` → `build` → `runtime`）；只有已构建完成的产物会被复制进 runtime 阶段。
-- runtime 阶段设置 `NODE_ENV=production`、`PORT=3001` 和 `FREELLMAPI_INSTALL_METHOD=docker`；进程为 `node server/dist/index.js`。
-- 一对 `FREELLMAPI_COMMIT_SHA` ARG/ENV 刻意放在所有 `COPY` 层之后：SHA 每次提交都会变，放得更高会让每次构建都使整个镜像的层缓存失效。
+- runtime 阶段设置 `NODE_ENV=production`、`PORT=3001` 和 `SROUTER_INSTALL_METHOD=docker`；进程为 `node server/dist/index.js`。
+- 一对 `SROUTER_COMMIT_SHA` ARG/ENV 刻意放在所有 `COPY` 层之后：SHA 每次提交都会变，放得更高会让每次构建都使整个镜像的层缓存失效。
 - runtime 还会复制 `desktop/package.json`（一个约 400 字节的清单），让容器安装能报出自己的发布版本（#703）。
 - `.dockerignore` 把秘密和本地状态挡在构建上下文之外：`.env`、`.env.*`、`*.db`（含 `-wal`/`-shm` 边车文件）、`.encryption-key` 以及 `server/data` 永远不会进入镜像。
 
@@ -37,7 +37,7 @@ docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # 或固定到某个发布
 
 ```bash
 git clone https://github.com/tashfeenahmed/freellmapi.git
-cd freellmapi
+cd SRouter
 
 # 生成用于静态存储密钥的加密密钥
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
@@ -49,7 +49,7 @@ docker compose up -d
 Windows PowerShell 版本和 curl 一行命令引导见 [docs/zh-cn/install/01-install.md#docker-compose](../install/01-install.md#docker-compose)。然后跟踪日志：
 
 ```bash
-docker compose logs -f freellmapi
+docker compose logs -f srouter
 ```
 
 打开 http://localhost:3001 ，在「密钥」页添加提供方密钥，并从该页顶部拿到你的统一 API 密钥——你的 OpenAI SDK 要指向的就是它。
@@ -66,7 +66,7 @@ HOST_BIND=0.0.0.0 docker compose up -d
 
 ## 卷与持久化
 
-SQLite 数据存放在命名卷 `freellmapi-data` 中，挂载于 `/app/server/data`。升级时保持同一个 `.env` 的 `ENCRYPTION_KEY` 和同一个卷，因为提供方密钥是静态加密的。如果你的主机只有一个特定目录做了持久化，用 `FREEAPI_DB_PATH=/that/path/freellmapi.db` 把数据库指过去。
+SQLite 数据存放在命名卷 `srouter-data` 中，挂载于 `/app/server/data`。升级时保持同一个 `.env` 的 `ENCRYPTION_KEY` 和同一个卷，因为提供方密钥是静态加密的。如果你的主机只有一个特定目录做了持久化，用 `SROUTER_DB_PATH=/that/path/srouter.db` 把数据库指过去。
 
 Dockerfile 有意不为 `/app/server/data` 声明 `VOLUME`。持久化是部署方的职责——Compose 文件在那里映射命名卷，普通 `docker run` 则用 `-v`。改在镜像里声明的话，每个没有覆盖它的容器都会创建一个匿名卷：从 Dockerfile 构建的 PaaS 运行时（Railway、Render、Coolify、Dokploy、CapRover）要么拒绝该镜像，要么悄悄给每次重新部署发一个全新的空卷；这条声明还会遮蔽挂载在同一路径的 bind mount。
 
@@ -97,11 +97,11 @@ runtime 阶段在 `EXPOSE 3001` 之前切换到 `USER node`。服务器数据目
 
 宿主机一切正常，容器里的提供方却不可达？容器有自己独立的网络栈，有两件在你机器上顺理成章的事不会自动延续过去：
 
-- **`127.0.0.1` 上的代理不是你的机器。** 在容器内部，环回地址指容器自己。如果你经由宿主机上的代理客户端（Clash、v2rayN、sing-box 或公司代理）访问提供方，就让 FreeLLMAPI 指向宿主机：`PROXY_URL=socks5h://host.docker.internal:7890`。随附的 `docker-compose.yml` 通过 `extra_hosts` 把 `host.docker.internal` 映射到宿主机网关，所以在原生 Linux Docker 上和 Docker Desktop 里都可用。代理还得接受来自环回之外的连接（在 Clash 里是 `allow-lan: true`）。更多细节见 [../env/03-outbound-proxies.md](../env/03-outbound-proxies.md#docker127001-指的是容器)。
+- **`127.0.0.1` 上的代理不是你的机器。** 在容器内部，环回地址指容器自己。如果你经由宿主机上的代理客户端（Clash、v2rayN、sing-box 或公司代理）访问提供方，就让 SRouter 指向宿主机：`PROXY_URL=socks5h://host.docker.internal:7890`。随附的 `docker-compose.yml` 通过 `extra_hosts` 把 `host.docker.internal` 映射到宿主机网关，所以在原生 Linux Docker 上和 Docker Desktop 里都可用。代理还得接受来自环回之外的连接（在 Clash 里是 `allow-lan: true`）。更多细节见 [../env/03-outbound-proxies.md](../env/03-outbound-proxies.md#docker127001-指的是容器)。
 - **纯 IPv6 的宿主机需要在 Docker 里启用 IPv6。** 默认桥接网络只有 IPv4，所以在没有 IPv4 路由的主机上容器什么都够不着，DNS 也一样。在 `/etc/docker/daemon.json` 中以 `"ipv6": true`、`"ip6tables": true` 和一段 `"fixed-cidr-v6"` 网段启用，然后重启 Docker。
 
 想分辨自己撞上的是哪种情况，直接问容器本身：
 
 ```bash
-docker compose exec freellmapi node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```

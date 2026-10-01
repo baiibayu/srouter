@@ -4,7 +4,7 @@
 
 ## Scope
 
-This domain covers all installation paths for FreeLLMAPI — standard and platform-specific.
+This domain covers all installation paths for SRouter — standard and platform-specific.
 
 Start with [Install & deploy](01-install.md) for the standard paths: the one-liner Docker quick start, Docker Compose, local development, declarative startup config, the Docker image, and the desktop app. The guides below cover unusual platforms or form factors.
 

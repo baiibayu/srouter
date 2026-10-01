@@ -19,7 +19,7 @@ describe('macOS release metadata', () => {
     const dir = join(directory, arch);
     mkdirSync(dir);
     const files = ['zip', 'dmg'].map((extension) => {
-      const url = `FreeLLMAPI-0.10.0-${arch}.${extension}`;
+      const url = `srouter-0.10.0-${arch}.${extension}`;
       const bytes = Buffer.from(`${arch} ${extension} package`);
       writeFileSync(join(dir, url), bytes);
       return { url, sha512: hashFile(join(dir, url)), size: bytes.length };
@@ -48,16 +48,16 @@ describe('macOS release metadata', () => {
   it('includes both architectures without losing the legacy ZIP or release date', () => {
     const merged: any = yaml.load(mergeMacUpdateMetadata(arm64, x64));
     expect(merged.files.map((file: any) => file.url)).toEqual([
-      'FreeLLMAPI-0.10.0-arm64.zip', 'FreeLLMAPI-0.10.0-arm64.dmg',
-      'FreeLLMAPI-0.10.0-x64.zip', 'FreeLLMAPI-0.10.0-x64.dmg',
+      'srouter-0.10.0-arm64.zip', 'srouter-0.10.0-arm64.dmg',
+      'srouter-0.10.0-x64.zip', 'srouter-0.10.0-x64.dmg',
     ]);
-    expect(merged.path).toBe('FreeLLMAPI-0.10.0-arm64.zip');
+    expect(merged.path).toBe('srouter-0.10.0-arm64.zip');
     expect(merged.sha512).toBe(merged.files[0].sha512);
     expect(merged.releaseDate).toBe('2026-09-15T12:00:00.000Z');
   });
 
   it('accepts a stapled DMG only after its hash and size have been refreshed', () => {
-    const fileName = 'FreeLLMAPI-0.10.0-x64.dmg';
+    const fileName = 'srouter-0.10.0-x64.dmg';
     const bytes = Buffer.from('Intel DMG with its new notarization ticket');
     const path = join(x64, fileName);
     writeFileSync(path, bytes);
@@ -74,7 +74,7 @@ describe('macOS release metadata', () => {
   });
 
   it('rejects a checksum mismatch even when the file length is unchanged', () => {
-    const path = join(x64, 'FreeLLMAPI-0.10.0-x64.zip');
+    const path = join(x64, 'srouter-0.10.0-x64.zip');
     writeFileSync(path, Buffer.alloc(readFileSync(path).length));
     expect(() => mergeMacUpdateMetadata(arm64, x64)).toThrow('Hash or size mismatch');
   });

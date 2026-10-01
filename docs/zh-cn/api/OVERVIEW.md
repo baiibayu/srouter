@@ -2,7 +2,7 @@
 
 # API 域 —— 概览与文件索引
 
-本目录镜像 FreeLLMAPI 的 OpenAI 兼容 HTTP 接口及 Anthropic/Gemini 兼容适配层的英文文档。
+本目录镜像 SRouter 的 OpenAI 兼容 HTTP 接口及 Anthropic/Gemini 兼容适配层的英文文档。
 
 ## 文件索引
 

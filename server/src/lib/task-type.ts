@@ -9,7 +9,7 @@
 // chain are untouched, and `undefined` means "leave the preset weights alone".
 
 import type { Request } from 'express';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 import { contentToString } from './content.js';
 
 export type TaskType = 'code' | 'chat' | 'auto';

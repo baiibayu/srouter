@@ -120,7 +120,7 @@ describe('secure-context-only headers (#734)', () => {
   });
 
   it('keeps them on loopback, which is a secure context over plain HTTP', async () => {
-    for (const host of ['localhost:3001', '127.0.0.1:3001', 'freellmapi.localhost']) {
+    for (const host of ['localhost:3001', '127.0.0.1:3001', 'srouter.localhost']) {
       const headers = await getHeaders(app, '/api/ping', undefined, host);
       expect(headers.get('cross-origin-opener-policy'), host).toBe('same-origin');
       expect(headers.get('origin-agent-cluster'), host).toBe('?1');

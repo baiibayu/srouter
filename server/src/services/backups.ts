@@ -192,7 +192,7 @@ interface DumpHeader {
 
 function renderHeader(db: Db, tables: string[], createdAt: string): string {
   return [
-    '-- freellmapi database backup',
+    '-- srouter database backup',
     `-- format: ${DUMP_FORMAT}`,
     `-- created: ${createdAt}`,
     `-- schema: ${schemaVersion(db)}`,
@@ -214,7 +214,7 @@ function parseHeader(sql: string): DumpHeader {
   const keyFingerprint = readHeaderField(sql, 'key-fingerprint');
   const tablesLine = readHeaderField(sql, 'tables');
   if (!Number.isInteger(format) || schema === null || keyFingerprint === null) {
-    throw httpError('This file is not a freellmapi backup (its header is missing or damaged).', 400);
+    throw httpError('This file is not a srouter backup (its header is missing or damaged).', 400);
   }
   return {
     format,

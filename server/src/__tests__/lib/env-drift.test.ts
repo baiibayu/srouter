@@ -34,7 +34,7 @@ describe('env drift warnings', () => {
         'ENCRYPTION_KEY=your-key',
         'PORT=3001',
         'REQUEST_ANALYTICS_RETENTION_DAYS=90',
-        '# FREELLMAPI_CONTEXT_HANDOFF=on_model_switch',
+        '# SROUTER_CONTEXT_HANDOFF=on_model_switch',
       ].join('\n'),
     );
 
@@ -73,7 +73,7 @@ describe('env drift warnings', () => {
   });
 
   it('logs once per formatted line when both files exist', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-env-drift-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-env-drift-'));
     const envPath = path.join(dir, '.env');
     const examplePath = path.join(dir, '.env.example');
     fs.writeFileSync(envPath, 'ENCRYPTION_KEY=abc\nPORT=3001\nOLD_FLAG=true\n');
@@ -91,7 +91,7 @@ describe('env drift warnings', () => {
   });
 
   it('stays quiet when .env is absent', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-env-drift-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-env-drift-'));
     const logger = { warn: vi.fn() };
 
     expect(warnOnEnvDrift({

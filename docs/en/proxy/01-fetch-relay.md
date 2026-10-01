@@ -2,13 +2,13 @@
 
 # Fetch Relay transport
 
-FreeLLMAPI can route provider HTTP requests through an application-layer
+SRouter can route provider HTTP requests through an application-layer
 Fetch Relay, such as a Cloudflare Worker. Unlike a CONNECT/SOCKS forward proxy,
 the relay receives an ordinary authenticated HTTP request, fetches the target,
 and streams the response back.
 
 ```text
-FreeLLMAPI -> Fetch Relay -> provider
+SRouter -> Fetch Relay -> provider
 ```
 
 Select `fetch-relay` under **Keys -> Outbound proxy**, enter the Relay URL and
@@ -26,7 +26,7 @@ unless `fetch-relay` is explicitly selected.
 
 ## Protocol
 
-FreeLLMAPI sends the original method, body, provider headers, and cancellation
+SRouter sends the original method, body, provider headers, and cancellation
 signal to `PROXY_URL`, with two hop-specific control headers:
 
 ```http
@@ -37,7 +37,7 @@ Authorization: Bearer <provider-key>
 
 The Relay authentication and provider authentication are deliberately
 separate. The query-string and `{url}` compatibility formats are not supported.
-FreeLLMAPI overwrites caller-supplied Relay control headers, does not buffer the
+SRouter overwrites caller-supplied Relay control headers, does not buffer the
 response body, and requests manual redirect handling so a redirect cannot turn
 into an accidental direct provider request.
 

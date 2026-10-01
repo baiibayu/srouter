@@ -6,6 +6,14 @@ import type {
   ToolDefinition,
 } from './types.js';
 
+/** Generated config-file paths (and any path echoed into notes) are always
+ *  POSIX-style on every platform. Node's fs accepts `/` on Windows, every
+ *  tool being configured reads it fine, and the golden snapshots pin this
+ *  form — path.join() would emit the host separator and break them. */
+function posixPath(...segments: string[]): string {
+  return path.join(...segments).split(path.sep).join('/');
+}
+
 function rootUrl(url: string): string {
   return url.trim().replace(/\/+$/, '').replace(/\/v1$/i, '');
 }
@@ -52,11 +60,11 @@ function yamlString(value: string): string {
 function claude(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   const directory = ctx.profile === 'default'
-    ? path.join(ctx.homeDir, '.claude')
-    : path.join(ctx.homeDir, '.claude', 'profiles', ctx.profile);
+    ? posixPath(ctx.homeDir, '.claude')
+    : posixPath(ctx.homeDir, '.claude', 'profiles', ctx.profile);
   return {
     files: [{
-      path: path.join(directory, 'settings.json'),
+      path: posixPath(directory, 'settings.json'),
       format: 'json',
       sensitive: true,
       value: {
@@ -76,7 +84,7 @@ function claude(ctx: GenerateContext): Generation {
       ctx.profile === 'default'
         ? 'Claude Code will read this configuration automatically.'
         : `Launch with CLAUDE_CONFIG_DIR=${directory} claude`,
-      'For zero-persistence credentials, prefer: freellmapi launch',
+      'For zero-persistence credentials, prefer: srouter launch',
     ],
   };
 }
@@ -85,11 +93,11 @@ function codex(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   const compact = Math.max(16_000, Math.floor(contextWindow(model) * 0.9));
   const providerTable = [
-    '[model_providers.freellmapi]',
-    'name = "FreeLLMAPI"',
+    '[model_providers.srouter]',
+    'name = "SRouter"',
     `base_url = ${JSON.stringify(v1Url(ctx.url))}`,
     'wire_api = "responses"',
-    'env_key = "FREELLMAPI_API_KEY"',
+    'env_key = "SROUTER_API_KEY"',
     'requires_openai_auth = false',
   ];
   // Codex reads exactly one file, ~/.codex/config.toml. Named profiles are
@@ -97,35 +105,35 @@ function codex(ctx: GenerateContext): Generation {
   // `codex --profile NAME`; separate per-profile files are never read.
   const content = ctx.profile === 'default'
     ? [
-      '# freellmapi:start',
+      '# srouter:start',
       `model = ${JSON.stringify(model.id)}`,
-      'model_provider = "freellmapi"',
+      'model_provider = "srouter"',
       `model_context_window = ${contextWindow(model)}`,
       `model_auto_compact_token_limit = ${compact}`,
       'tool_output_token_limit = 20000',
       '',
       ...providerTable,
-      '# freellmapi:end',
+      '# srouter:end',
       '',
     ]
     : [
-      '# freellmapi:start',
+      '# srouter:start',
       ...providerTable,
       '',
       `[profiles.${/^[A-Za-z0-9_-]+$/.test(ctx.profile) ? ctx.profile : JSON.stringify(ctx.profile)}]`,
       `model = ${JSON.stringify(model.id)}`,
-      'model_provider = "freellmapi"',
-      '# freellmapi:end',
+      'model_provider = "srouter"',
+      '# srouter:end',
       '',
     ];
   return {
     files: [{
-      path: path.join(ctx.homeDir, '.codex', 'config.toml'),
+      path: posixPath(ctx.homeDir, '.codex', 'config.toml'),
       format: 'toml',
       content: content.join('\n'),
     }],
     notes: [
-      'Export FREELLMAPI_API_KEY before running codex; the key is not written to config.toml.',
+      'Export SROUTER_API_KEY before running codex; the key is not written to config.toml.',
       ...(ctx.profile === 'default'
         ? []
         : [`Activate this profile with: codex --profile ${ctx.profile}`]),
@@ -138,7 +146,7 @@ function cline(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   return {
     files: [{
-      path: path.join(ctx.homeDir, '.cline', 'data', 'settings', 'providers.json'),
+      path: posixPath(ctx.homeDir, '.cline', 'data', 'settings', 'providers.json'),
       format: 'json',
       sensitive: true,
       value: {
@@ -172,24 +180,24 @@ function continueDev(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   return {
     files: [{
-      path: path.join(ctx.homeDir, '.continue', 'config.yaml'),
+      path: posixPath(ctx.homeDir, '.continue', 'config.yaml'),
       format: 'yaml',
       content: [
-        '# freellmapi:start',
-        'name: FreeLLMAPI',
+        '# srouter:start',
+        'name: SRouter',
         'version: 1.0.0',
         'schema: v1',
         'models:',
-        '  - name: FreeLLMAPI',
+        '  - name: SRouter',
         '    provider: openai',
         `    model: ${yamlString(model.id)}`,
         `    apiBase: ${yamlString(v1Url(ctx.url))}`,
-        '    apiKey: ${{ secrets.FREELLMAPI_API_KEY }}',
+        '    apiKey: ${{ secrets.SROUTER_API_KEY }}',
         '    capabilities:',
         '      - tool_use',
         '    defaultCompletionOptions:',
         `      contextLength: ${contextWindow(model)}`,
-        '# freellmapi:end',
+        '# srouter:end',
         '',
       ].join('\n'),
     },
@@ -199,10 +207,10 @@ function continueDev(ctx: GenerateContext): Generation {
     // shell environment, so ~/.continue/.env is the one place that serves the
     // CLI and the extensions alike — and it keeps the raw key out of the YAML.
     {
-      path: path.join(ctx.homeDir, '.continue', '.env'),
+      path: posixPath(ctx.homeDir, '.continue', '.env'),
       format: 'env',
       sensitive: true,
-      content: `FREELLMAPI_API_KEY=${ctx.apiKey}\n`,
+      content: `SROUTER_API_KEY=${ctx.apiKey}\n`,
     }],
     notes: [
       'The key is in ~/.continue/.env (read by the Continue CLI and the IDE extensions); config.yaml references it as a secret.',
@@ -215,15 +223,15 @@ function aider(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   return {
     files: [{
-      path: path.join(ctx.homeDir, '.aider.conf.yml'),
+      path: posixPath(ctx.homeDir, '.aider.conf.yml'),
       format: 'yaml',
       sensitive: true,
       content: [
-        '# freellmapi:start',
+        '# srouter:start',
         `openai-api-base: ${yamlString(v1Url(ctx.url))}`,
         `openai-api-key: ${yamlString(ctx.apiKey)}`,
         `model: ${yamlString(`openai/${model.id}`)}`,
-        '# freellmapi:end',
+        '# srouter:end',
         '',
       ].join('\n'),
     }],
@@ -250,18 +258,18 @@ function opencode(ctx: GenerateContext): Generation {
   );
   return {
     files: [{
-      path: path.join(ctx.homeDir, '.config', 'opencode', 'opencode.json'),
+      path: posixPath(ctx.homeDir, '.config', 'opencode', 'opencode.json'),
       format: 'json',
       value: {
         $schema: 'https://opencode.ai/config.json',
-        model: `freellmapi/${model.id}`,
+        model: `srouter/${model.id}`,
         provider: {
-          freellmapi: {
+          srouter: {
             npm: '@ai-sdk/openai-compatible',
-            name: 'FreeLLMAPI',
+            name: 'SRouter',
             options: {
               baseURL: v1Url(ctx.url),
-              apiKey: '{env:FREELLMAPI_API_KEY}',
+              apiKey: '{env:SROUTER_API_KEY}',
             },
             models: modelEntries,
           },
@@ -269,8 +277,8 @@ function opencode(ctx: GenerateContext): Generation {
       },
     }],
     notes: [
-      'Export FREELLMAPI_API_KEY before starting OpenCode.',
-      `freellmapi/${model.id} is now the default model.`,
+      'Export SROUTER_API_KEY before starting OpenCode.',
+      `srouter/${model.id} is now the default model.`,
     ],
   };
 }
@@ -287,20 +295,20 @@ function goose(ctx: GenerateContext): Generation {
   return {
     files: [
       {
-        path: path.join(
+        path: posixPath(
           ctx.homeDir,
           '.config',
           'goose',
           'custom_providers',
-          'freellmapi.json',
+          'srouter.json',
         ),
         format: 'json',
         value: {
-          name: 'freellmapi',
+          name: 'srouter',
           engine: 'openai',
-          display_name: 'FreeLLMAPI',
-          description: 'FreeLLMAPI OpenAI-compatible gateway',
-          api_key_env: 'FREELLMAPI_API_KEY',
+          display_name: 'SRouter',
+          description: 'SRouter OpenAI-compatible gateway',
+          api_key_env: 'SROUTER_API_KEY',
           base_url: v1Url(ctx.url),
           models,
           supports_streaming: true,
@@ -310,24 +318,24 @@ function goose(ctx: GenerateContext): Generation {
         },
       },
       {
-        path: path.join(ctx.homeDir, '.config', 'goose', 'config.yaml'),
+        path: posixPath(ctx.homeDir, '.config', 'goose', 'config.yaml'),
         format: 'yaml',
         content: [
-          '# freellmapi:start',
-          'GOOSE_PROVIDER: freellmapi',
+          '# srouter:start',
+          'GOOSE_PROVIDER: srouter',
           `GOOSE_MODEL: ${yamlString(model.id)}`,
-          '# freellmapi:end',
+          '# srouter:end',
           '',
         ].join('\n'),
       },
     ],
-    notes: ['Export FREELLMAPI_API_KEY before starting Goose.'],
+    notes: ['Export SROUTER_API_KEY before starting Goose.'],
   };
 }
 
 function qwen(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
-  const dir = path.join(ctx.homeDir, '.qwen');
+  const dir = posixPath(ctx.homeDir, '.qwen');
   // Qwen Code looks the selected model up in the provider list and, finding
   // nothing, silently falls back to the FIRST listed model — with `auto`
   // filtered out of the roster that was `fusion`, a multi-model fan-out. The
@@ -336,7 +344,7 @@ function qwen(ctx: GenerateContext): Generation {
   const models = [model, ...roster.filter(entry => entry.id !== model.id)].map(entry => ({
     id: entry.id,
     name: entry.name ?? entry.id,
-    envKey: 'FREELLMAPI_API_KEY',
+    envKey: 'SROUTER_API_KEY',
     baseUrl: v1Url(ctx.url),
     generationConfig: {
       contextWindowSize: contextWindow(entry),
@@ -345,7 +353,7 @@ function qwen(ctx: GenerateContext): Generation {
   return {
     files: [
       {
-        path: path.join(dir, 'settings.json'),
+        path: posixPath(dir, 'settings.json'),
         format: 'json',
         value: {
           model: { name: model.id },
@@ -359,10 +367,10 @@ function qwen(ctx: GenerateContext): Generation {
         },
       },
       {
-        path: path.join(dir, '.env'),
+        path: posixPath(dir, '.env'),
         format: 'env',
         sensitive: true,
-        content: `FREELLMAPI_API_KEY=${ctx.apiKey}\n`,
+        content: `SROUTER_API_KEY=${ctx.apiKey}\n`,
       },
     ],
     notes: [
@@ -382,8 +390,8 @@ function qwen(ctx: GenerateContext): Generation {
 // ~/.vscode-mock/global-storage/global-state.json.
 function roo(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
-  const importPath = path.join(ctx.homeDir, '.roo', 'freellmapi.json');
-  const cliImportPath = path.join(ctx.homeDir, '.roo', 'freellmapi-cli.json');
+  const importPath = posixPath(ctx.homeDir, '.roo', 'srouter.json');
+  const cliImportPath = posixPath(ctx.homeDir, '.roo', 'srouter-cli.json');
   const cliProfile = {
     apiProvider: 'openrouter',
     openRouterBaseUrl: v1Url(ctx.url),
@@ -398,9 +406,9 @@ function roo(ctx: GenerateContext): Generation {
         sensitive: true,
         value: {
           providerProfiles: {
-            currentApiConfigName: 'freellmapi',
+            currentApiConfigName: 'srouter',
             apiConfigs: {
-              freellmapi: {
+              srouter: {
                 apiProvider: 'openai',
                 openAiBaseUrl: v1Url(ctx.url),
                 openAiApiKey: ctx.apiKey,
@@ -412,7 +420,7 @@ function roo(ctx: GenerateContext): Generation {
                   supportsPromptCache: false,
                 },
               },
-              'freellmapi-cli': cliProfile,
+              'srouter-cli': cliProfile,
             },
           },
           globalSettings: {},
@@ -424,8 +432,8 @@ function roo(ctx: GenerateContext): Generation {
         sensitive: true,
         value: {
           providerProfiles: {
-            currentApiConfigName: 'freellmapi-cli',
-            apiConfigs: { 'freellmapi-cli': cliProfile },
+            currentApiConfigName: 'srouter-cli',
+            apiConfigs: { 'srouter-cli': cliProfile },
           },
           globalSettings: {},
         },
@@ -435,13 +443,13 @@ function roo(ctx: GenerateContext): Generation {
       // shadowed in Roo CLI 0.1.x by the -m flag's built-in default, so -m is
       // still needed on the command line until Roo fixes that.
       {
-        path: path.join(ctx.homeDir, '.roo', 'cli-settings.json'),
+        path: posixPath(ctx.homeDir, '.roo', 'cli-settings.json'),
         format: 'json',
         value: { provider: 'openrouter', model: model.id },
       },
     ],
     notes: [
-      `VS Code: add "roo-cline.autoImportSettingsPath": "${importPath}" to settings.json and reload (or Roo Settings → Import); the freellmapi profile becomes current.`,
+      `VS Code: add "roo-cline.autoImportSettingsPath": "${importPath}" to settings.json and reload (or Roo Settings → Import); the srouter profile becomes current.`,
       `Roo CLI: merge {"roo-cline.autoImportSettingsPath": "${cliImportPath}"} into ~/.vscode-mock/global-storage/global-state.json (create it if missing), then:`,
       `  export OPENROUTER_API_KEY=<unified-key>   # the CLI refuses to start without it, even with the key in the profile`,
       `  roo -m ${model.id} "Say hello"            # -m is required: the CLI's built-in default model shadows cli-settings.json`,
@@ -467,7 +475,7 @@ function kilo(ctx: GenerateContext): Generation {
   ]));
   return {
     files: [{
-      path: path.join(ctx.homeDir, '.config', 'kilo', 'kilo.jsonc'),
+      path: posixPath(ctx.homeDir, '.config', 'kilo', 'kilo.jsonc'),
       format: 'json',
       value: {
         $schema: 'https://app.kilo.ai/config.json',
@@ -475,7 +483,7 @@ function kilo(ctx: GenerateContext): Generation {
         provider: {
           'openai-compatible': {
             options: {
-              apiKey: '{env:FREELLMAPI_API_KEY}',
+              apiKey: '{env:SROUTER_API_KEY}',
               baseURL: v1Url(ctx.url),
             },
             models,
@@ -484,7 +492,7 @@ function kilo(ctx: GenerateContext): Generation {
       },
     }],
     notes: [
-      'Export FREELLMAPI_API_KEY before starting Kilo; global config is trusted for {env:…} expansion.',
+      'Export SROUTER_API_KEY before starting Kilo; global config is trusted for {env:…} expansion.',
       `One-shot check: kilo run "Say hello" — openai-compatible/${model.id} is the default model.`,
     ],
   };
@@ -513,28 +521,28 @@ function crush(ctx: GenerateContext): Generation {
   }));
   return {
     files: [{
-      path: path.join(ctx.homeDir, '.config', 'crush', 'crush.json'),
+      path: posixPath(ctx.homeDir, '.config', 'crush', 'crush.json'),
       format: 'json',
       value: {
         $schema: 'https://charm.land/crush.json',
         models: {
-          large: { provider: 'freellmapi', model: model.id },
-          small: { provider: 'freellmapi', model: model.id },
+          large: { provider: 'srouter', model: model.id },
+          small: { provider: 'srouter', model: model.id },
         },
         providers: {
-          freellmapi: {
-            name: 'FreeLLMAPI',
+          srouter: {
+            name: 'SRouter',
             type: 'openai-compat',
             base_url: v1Url(ctx.url),
-            api_key: '$FREELLMAPI_API_KEY',
+            api_key: '$SROUTER_API_KEY',
             models,
           },
         },
       },
     }],
     notes: [
-      'Export FREELLMAPI_API_KEY before starting Crush.',
-      `freellmapi/${model.id} is now the large and small model.`,
+      'Export SROUTER_API_KEY before starting Crush.',
+      `srouter/${model.id} is now the large and small model.`,
     ],
   };
 }
@@ -553,13 +561,13 @@ function dsh(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   // DSH_HOME relocates the whole harness home; nothing else about the
   // layout changes, so honour it the way dsh itself does.
-  const home = process.env.DSH_HOME?.trim() || path.join(ctx.homeDir, '.dsh');
+  const home = process.env.DSH_HOME?.trim() || posixPath(ctx.homeDir, '.dsh');
   // A route id is permanent in DSH (sessions, defaults, and credential refs
   // name it) and must be lowercase; a named profile becomes a second route
   // beside the default one rather than replacing it.
   const route = ctx.profile === 'default'
-    ? 'freellmapi'
-    : `freellmapi-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+    ? 'srouter'
+    : `srouter-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
   const roster = catalogModels(ctx.models);
   const entries = [model, ...roster.filter(entry => entry.id !== model.id)]
     .map(entry => ({
@@ -571,14 +579,14 @@ function dsh(ctx: GenerateContext): Generation {
   return {
     files: [
       {
-        path: path.join(home, 'settings.yaml'),
+        path: posixPath(home, 'settings.yaml'),
         format: 'yaml',
         value: {
           'llm-pi-ai': {
             providers: {
               [route]: {
-                displayName: ctx.profile === 'default' ? 'FreeLLMAPI' : `FreeLLMAPI (${ctx.profile})`,
-                apiKeyEnv: 'FREELLMAPI_API_KEY',
+                displayName: ctx.profile === 'default' ? 'SRouter' : `SRouter (${ctx.profile})`,
+                apiKeyEnv: 'SROUTER_API_KEY',
                 api: 'openai-completions',
                 baseURL: v1Url(ctx.url),
                 models: entries,
@@ -602,10 +610,10 @@ function dsh(ctx: GenerateContext): Generation {
         },
       },
       {
-        path: path.join(home, '.env'),
+        path: posixPath(home, '.env'),
         format: 'env',
         sensitive: true,
-        content: `FREELLMAPI_API_KEY=${ctx.apiKey}\n`,
+        content: `SROUTER_API_KEY=${ctx.apiKey}\n`,
       },
     ],
     notes: [
@@ -637,12 +645,12 @@ function dsh(ctx: GenerateContext): Generation {
 function mimo(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   const configDir = process.env.MIMOCODE_HOME?.trim()
-    ? path.join(process.env.MIMOCODE_HOME.trim(), 'config')
-    : path.join(
-      process.env.XDG_CONFIG_HOME?.trim() || path.join(ctx.homeDir, '.config'),
+    ? posixPath(process.env.MIMOCODE_HOME.trim(), 'config')
+    : posixPath(
+      process.env.XDG_CONFIG_HOME?.trim() || posixPath(ctx.homeDir, '.config'),
       'mimocode',
     );
-  // The default model is named as `freellmapi/<id>`, so it has to exist in the
+  // The default model is named as `srouter/<id>`, so it has to exist in the
   // provider's own `models` map — `auto`, the usual default, is filtered out
   // of the plain catalog roster, so put the chosen model back at the front.
   const roster = catalogModels(ctx.models);
@@ -654,28 +662,28 @@ function mimo(ctx: GenerateContext): Generation {
   );
   return {
     files: [{
-      path: path.join(configDir, 'config.json'),
+      path: posixPath(configDir, 'config.json'),
       format: 'json',
       value: {
         $schema: 'https://mimo.xiaomi.com/mimocode/config.json',
         provider: {
-          freellmapi: {
+          srouter: {
             npm: '@ai-sdk/openai-compatible',
-            name: 'FreeLLMAPI',
+            name: 'SRouter',
             options: {
               baseURL: v1Url(ctx.url),
-              apiKey: '{env:FREELLMAPI_API_KEY}',
+              apiKey: '{env:SROUTER_API_KEY}',
             },
             models: modelEntries,
           },
         },
-        model: `freellmapi/${model.id}`,
+        model: `srouter/${model.id}`,
       },
     }],
     notes: [
       'Install MiMo Code with: curl -fsSL https://mimo.xiaomi.com/install | bash',
-      'Export FREELLMAPI_API_KEY before starting MiMo Code.',
-      `Start it with \`mimo\` — freellmapi/${model.id} is the default model.`,
+      'Export SROUTER_API_KEY before starting MiMo Code.',
+      `Start it with \`mimo\` — srouter/${model.id} is the default model.`,
       'One-shot check: mimo run "Say hello"',
     ],
   };
@@ -689,28 +697,28 @@ function mimo(ctx: GenerateContext): Generation {
 // gateway with a per-user live catalog is. `api: openai-completions` is the
 // adapter for a /v1/chat/completions backend; OpenClaw already strips the
 // developer role and attribution headers for a custom origin, so no `compat`
-// switches are needed. The key travels as `${FREELLMAPI_API_KEY}`, OpenClaw's
+// switches are needed. The key travels as `${SROUTER_API_KEY}`, OpenClaw's
 // own env substitution, and the value lands in $OPENCLAW_STATE_DIR/.env (0600),
 // the global env file OpenClaw loads on its own — so the route works with
-// nothing exported. The default model is `freellmapi/<id>` under
+// nothing exported. The default model is `srouter/<id>` under
 // `agents.defaults.model.primary`; the patch keeps any `fallbacks` already
 // declared beside it.
 function openclawStateDir(homeDir: string): string {
   return process.env.OPENCLAW_STATE_DIR?.trim()
-    || path.join(process.env.OPENCLAW_HOME?.trim() || homeDir, '.openclaw');
+    || posixPath(process.env.OPENCLAW_HOME?.trim() || homeDir, '.openclaw');
 }
 
 function openclaw(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   const stateDir = openclawStateDir(ctx.homeDir);
   const configPath = process.env.OPENCLAW_CONFIG_PATH?.trim()
-    || path.join(stateDir, 'openclaw.json');
+    || posixPath(stateDir, 'openclaw.json');
   // A provider id is referenced by every model ref (`<provider>/<model>`) and
   // by session state, so it is permanent; a named profile becomes a second
   // provider beside the default one rather than replacing it.
   const provider = ctx.profile === 'default'
-    ? 'freellmapi'
-    : `freellmapi-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+    ? 'srouter'
+    : `srouter-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
   const roster = catalogModels(ctx.models);
   const entries = [model, ...roster.filter(entry => entry.id !== model.id)]
     .map(entry => ({
@@ -735,7 +743,7 @@ function openclaw(ctx: GenerateContext): Generation {
             providers: {
               [provider]: {
                 baseUrl: v1Url(ctx.url),
-                apiKey: '${FREELLMAPI_API_KEY}',
+                apiKey: '${SROUTER_API_KEY}',
                 api: 'openai-completions',
                 // OpenClaw attaches its own `openclaw/<version>` identity only
                 // to endpoints it recognises; a custom origin gets the bare
@@ -750,10 +758,10 @@ function openclaw(ctx: GenerateContext): Generation {
         },
       },
       {
-        path: path.join(stateDir, '.env'),
+        path: posixPath(stateDir, '.env'),
         format: 'env',
         sensitive: true,
-        content: `FREELLMAPI_API_KEY=${ctx.apiKey}\n`,
+        content: `SROUTER_API_KEY=${ctx.apiKey}\n`,
       },
     ],
     notes: [
@@ -772,7 +780,7 @@ function openclaw(ctx: GenerateContext): Generation {
 // endpoint: OPENAI_BASE_URL is deliberately ignored for anything but
 // api.openai.com, and OPENAI_API_KEY is only sent to OpenAI hosts. So the
 // gateway goes into the `model` block as `provider: custom` with `base_url`,
-// and the key travels as `api_key: "${FREELLMAPI_API_KEY}"` — Hermes's own
+// and the key travels as `api_key: "${SROUTER_API_KEY}"` — Hermes's own
 // substitution — with the value in $HERMES_HOME/.env (0600), the file Hermes
 // loads on its own, so nothing needs exporting. A fresh install ships
 // `model: ""` (a "not configured" sentinel); replacing it with the mapping is
@@ -782,8 +790,8 @@ function openclaw(ctx: GenerateContext): Generation {
 // default model alone.
 function hermes(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
-  const home = process.env.HERMES_HOME?.trim() || path.join(ctx.homeDir, '.hermes');
-  const provider = `freellmapi-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+  const home = process.env.HERMES_HOME?.trim() || posixPath(ctx.homeDir, '.hermes');
+  const provider = `srouter-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
   // Hermes only identifies itself to hosts it knows; a custom endpoint gets the
   // bare openai-python user agent. `default_headers` is its documented way to
   // override that, and it is what lets the gateway's analytics name the client.
@@ -794,7 +802,7 @@ function hermes(ctx: GenerateContext): Generation {
         provider: 'custom',
         default: model.id,
         base_url: v1Url(ctx.url),
-        api_key: '${FREELLMAPI_API_KEY}',
+        api_key: '${SROUTER_API_KEY}',
         api_mode: 'chat_completions',
         context_length: contextWindow(model),
         default_headers: headers,
@@ -807,9 +815,9 @@ function hermes(ctx: GenerateContext): Generation {
     : {
       providers: {
         [provider]: {
-          name: `FreeLLMAPI (${ctx.profile})`,
+          name: `SRouter (${ctx.profile})`,
           api: v1Url(ctx.url),
-          api_key: '${FREELLMAPI_API_KEY}',
+          api_key: '${SROUTER_API_KEY}',
           transport: 'chat_completions',
           default_model: model.id,
           context_length: contextWindow(model),
@@ -819,12 +827,12 @@ function hermes(ctx: GenerateContext): Generation {
     };
   return {
     files: [
-      { path: path.join(home, 'config.yaml'), format: 'yaml', value },
+      { path: posixPath(home, 'config.yaml'), format: 'yaml', value },
       {
-        path: path.join(home, '.env'),
+        path: posixPath(home, '.env'),
         format: 'env',
         sensitive: true,
-        content: `FREELLMAPI_API_KEY=${ctx.apiKey}\n`,
+        content: `SROUTER_API_KEY=${ctx.apiKey}\n`,
       },
     ],
     notes: [
@@ -852,20 +860,20 @@ function cursor(_ctx: GenerateContext): Generation {
 
 function atomcode(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
-  const configDir = path.join(ctx.homeDir, '.atomcode');
+  const configDir = posixPath(ctx.homeDir, '.atomcode');
   // AtomCode picks its provider by name: a root `default_provider` key names
   // one `[providers.<id>]` table, and `type = "openai"` is what makes that
   // table speak the OpenAI-compatible wire. Root key first, table second, so
   // mergeToml can slot the key above any tables already in the file.
   return {
     files: [{
-      path: path.join(configDir, 'config.toml'),
+      path: posixPath(configDir, 'config.toml'),
       format: 'toml',
       sensitive: true,
       content: [
-        'default_provider = "freellmapi"',
+        'default_provider = "srouter"',
         '',
-        '[providers.freellmapi]',
+        '[providers.srouter]',
         'type = "openai"',
         `base_url = ${JSON.stringify(v1Url(ctx.url))}`,
         `api_key = ${JSON.stringify(ctx.apiKey)}`,
@@ -875,7 +883,7 @@ function atomcode(ctx: GenerateContext): Generation {
     }],
     notes: [
       'AtomCode reads ~/.atomcode/config.toml; other [providers.*] tables in it are kept.',
-      `default_provider now points at [providers.freellmapi] with ${model.id} as its model.`,
+      `default_provider now points at [providers.srouter] with ${model.id} as its model.`,
       'Point base_url at the unified /v1 endpoint; api_key is the unified key shown on the Agents page.',
       'One-shot check: atomcode -p "Say hello" (telemetry is on by default: atomcode telemetry disable).',
     ],

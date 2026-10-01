@@ -66,8 +66,8 @@ function modelShape(model: NormalizedModel | null, autoContextWindow: number | n
     name: `models/${model?.id ?? id}`,
     displayName: model?.name ?? 'Auto (router picks the best available model)',
     description: model
-      ? `FreeLLMAPI catalog model served by ${model.ownedBy}`
-      : 'FreeLLMAPI automatically selects the best available model',
+      ? `srouter catalog model served by ${model.ownedBy}`
+      : 'srouter automatically selects the best available model',
     inputTokenLimit: context,
     // The current catalog does not yet carry a separate output ceiling. Keep a
     // conservative interoperable value instead of inventing per-model limits.

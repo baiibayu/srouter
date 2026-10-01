@@ -2,7 +2,7 @@
 // Control-Center popover. These live outside the React dashboard (the menu is
 // built in the main process; the popover is a file:// page), so they can't read
 // the dashboard's i18n. The active locale is mirrored from the dashboard via the
-// `freeapi:locale-changed` IPC (preload watches <html lang>) and persisted in
+// `srouter:locale-changed` IPC (preload watches <html lang>) and persisted in
 // config, exactly like the theme. Keep these keys in sync with the six locales
 // shipped by the client (client/src/i18n/locales).
 
@@ -25,14 +25,14 @@ type Strings = Record<string, string>;
 
 const STRINGS: Record<NativeLocale, Strings> = {
   en: {
-    tooltip: 'FreeLLMAPI — local LLM router',
+    tooltip: 'SRouter — local LLM router',
     runningOn: 'Running on {addr}',
     openDashboard: 'Open Dashboard',
     lanAccess: 'Allow LAN access (0.0.0.0)',
     showInDock: 'Show in Dock',
     openLogs: 'Open Logs Folder',
     openBackups: 'Open Backups Folder',
-    quitApp: 'Quit FreeLLMAPI',
+    quitApp: 'Quit srouter',
     running: 'running',
     requestsToday: 'Requests today',
     tokensToday: 'Tokens today',
@@ -48,14 +48,14 @@ const STRINGS: Record<NativeLocale, Strings> = {
     successSuffix: '{n}% success',
   },
   'zh-CN': {
-    tooltip: 'FreeLLMAPI — 本地 LLM 路由器',
+    tooltip: 'SRouter — 本地 LLM 路由器',
     runningOn: '运行于 {addr}',
     openDashboard: '打开仪表板',
     lanAccess: '允许局域网访问 (0.0.0.0)',
     showInDock: '在程序坞中显示',
     openLogs: '打开日志文件夹',
     openBackups: '打开备份文件夹',
-    quitApp: '退出 FreeLLMAPI',
+    quitApp: '退出 srouter',
     running: '运行中',
     requestsToday: '今日请求',
     tokensToday: '今日 token',
@@ -71,14 +71,14 @@ const STRINGS: Record<NativeLocale, Strings> = {
     successSuffix: '{n}% 成功',
   },
   fr: {
-    tooltip: 'FreeLLMAPI — routeur LLM local',
+    tooltip: 'SRouter — routeur LLM local',
     runningOn: 'En cours sur {addr}',
     openDashboard: 'Ouvrir le tableau de bord',
     lanAccess: 'Autoriser l\'accès LAN (0.0.0.0)',
     showInDock: 'Afficher dans le Dock',
     openLogs: 'Ouvrir le dossier des journaux',
     openBackups: 'Ouvrir le dossier des sauvegardes',
-    quitApp: 'Quitter FreeLLMAPI',
+    quitApp: 'Quitter srouter',
     running: 'en cours',
     requestsToday: "Requêtes aujourd'hui",
     tokensToday: "Tokens aujourd'hui",
@@ -94,14 +94,14 @@ const STRINGS: Record<NativeLocale, Strings> = {
     successSuffix: '{n} % de réussite',
   },
   es: {
-    tooltip: 'FreeLLMAPI — enrutador LLM local',
+    tooltip: 'SRouter — enrutador LLM local',
     runningOn: 'En ejecución en {addr}',
     openDashboard: 'Abrir el panel',
     lanAccess: 'Permitir acceso LAN (0.0.0.0)',
     showInDock: 'Mostrar en el Dock',
     openLogs: 'Abrir la carpeta de registros',
     openBackups: 'Abrir la carpeta de copias de seguridad',
-    quitApp: 'Salir de FreeLLMAPI',
+    quitApp: 'Salir de srouter',
     running: 'en ejecución',
     requestsToday: 'Solicitudes hoy',
     tokensToday: 'Tokens hoy',
@@ -117,14 +117,14 @@ const STRINGS: Record<NativeLocale, Strings> = {
     successSuffix: '{n}% de aciertos',
   },
   'pt-BR': {
-    tooltip: 'FreeLLMAPI — roteador LLM local',
+    tooltip: 'SRouter — roteador LLM local',
     runningOn: 'Em execução em {addr}',
     openDashboard: 'Abrir o painel',
     lanAccess: 'Permitir acesso LAN (0.0.0.0)',
     showInDock: 'Mostrar no Dock',
     openLogs: 'Abrir a pasta de logs',
     openBackups: 'Abrir a pasta de backups',
-    quitApp: 'Sair do FreeLLMAPI',
+    quitApp: 'Sair do srouter',
     running: 'em execução',
     requestsToday: 'Solicitações hoje',
     tokensToday: 'Tokens hoje',
@@ -140,14 +140,14 @@ const STRINGS: Record<NativeLocale, Strings> = {
     successSuffix: '{n}% de sucesso',
   },
   it: {
-    tooltip: 'FreeLLMAPI — router LLM locale',
+    tooltip: 'SRouter — router LLM locale',
     runningOn: 'In esecuzione su {addr}',
     openDashboard: 'Apri il pannello',
     lanAccess: 'Consenti accesso LAN (0.0.0.0)',
     showInDock: 'Mostra nel Dock',
     openLogs: 'Apri la cartella dei log',
     openBackups: 'Apri la cartella dei backup',
-    quitApp: 'Esci da FreeLLMAPI',
+    quitApp: 'Esci da srouter',
     running: 'in esecuzione',
     requestsToday: 'Richieste oggi',
     tokensToday: 'Token oggi',

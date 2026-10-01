@@ -9,7 +9,7 @@ import {
   normalizeIdempotencyKey,
   idempotencyTtlMs,
 } from '../../services/idempotency.js';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 
 const IDEM_ENV = ['IDEMPOTENCY_TTL_MS'] as const;
 

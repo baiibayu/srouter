@@ -46,7 +46,7 @@ const PATTERNS: Array<[RegExp, string]> = [
   [/\bcpk_[A-Za-z0-9.]{16,}/g, REDACTED],              // Chutes
   [/\balv2_[A-Za-z0-9]{16,}/g, REDACTED],              // Aion Labs
   [/\brqsty-sk-[A-Za-z0-9_\-/+=]{16,}/g, REDACTED],    // Requesty
-  [/\bfreellmapi-[A-Za-z0-9_\-]{8,}/g, REDACTED],      // Keys this gateway issues
+  [/\bsrouter-[A-Za-z0-9_\-]{8,}/g, REDACTED],      // Keys this gateway issues
 
   // Authorization headers, in prose or serialised objects. The (?!\[redacted)
   // guard keeps a value an earlier pattern already replaced from being matched a

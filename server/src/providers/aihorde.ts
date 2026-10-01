@@ -4,7 +4,7 @@ import type {
   ChatCompletionResponse,
   ChatCompletionChunk,
   Platform,
-} from '@freellmapi/shared/types.js';
+} from '@srouter/shared/types.js';
 import { BaseProvider, providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';

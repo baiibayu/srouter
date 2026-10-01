@@ -16,7 +16,9 @@
     "modelsMenu": "Sfoglia i tipi di modello",
     "agents": "Agenti",
     "logs": "Log",
-    "analyticsMenu": "Pagine di analisi"
+    "analyticsMenu": "Pagine di analisi",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Crea il tuo account",
@@ -60,7 +62,7 @@
     "emailChanged": "Email modificata con successo.",
     "passwordReset": "Password reimpostata con successo. Accedi di nuovo.",
     "resetCodeDockerHint": "Usi Docker? Il codice è nel log del container: docker logs <container>.",
-    "desktopSessionFailed": "La dashboard non è riuscita ad accedere al server locale. Chiudi FreeLLMAPI e riaprilo."
+    "desktopSessionFailed": "La dashboard non è riuscita ad accedere al server locale. Chiudi SRouter e riaprilo."
   },
   "common": {
     "save": "Salva",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Controllo automatico degli aggiornamenti",
     "autoUpdateCheckHelp": "Controlla GitHub una volta al giorno per una nuova versione e mostra un promemoria. Disattivato per impostazione predefinita.",
     "openReleases": "Apri le release di GitHub",
-    "restartAfterUpdate": "Riavvia FreeLLMAPI al termine della build."
+    "restartAfterUpdate": "Riavvia SRouter al termine della build.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modelli",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Budget mensile di token",
     "remaining": "rimanenti",
     "used": "usati",
-    "usedScopeHint": "Solo richieste di chat, dall'inizio di questo mese solare, sommate su tutti i modelli della catena attiva, endpoint personalizzati inclusi. Il traffico inviato a un provider al di fuori di FreeLLMAPI non viene conteggiato.",
+    "usedScopeHint": "Solo richieste di chat, dall'inizio di questo mese solare, sommate su tutti i modelli della catena attiva, endpoint personalizzati inclusi. Il traffico inviato a un provider al di fuori di SRouter non viene conteggiato.",
     "legendRemainingTitle": "Residuo / budget mensile di {name} ({platform})",
     "noPublishedQuota": "+{count} senza quota pubblicata",
     "noPublishedQuotaTitle": "Questi modelli non hanno un budget mensile di token documentato, quindi non c'è un residuo da mostrare.",
@@ -517,6 +525,23 @@
     "providerActions": "Azioni fornitore",
     "routeViaProxy": "Instrada tramite proxy",
     "checkNow": "Controlla ora",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Configurabile anche tramite la variabile d'ambiente ",
     "proxyEnvHintAfter": " (ha precedenza). Lascia vuoto per disabilitare. Esempi:",
     "importKeys": "Importa chiavi provider",
@@ -679,7 +704,8 @@
     "testFailed": "Test del modello non riuscito",
     "testThrottled": "Attendi {seconds}s prima di testare nuovamente questo modello.",
     "noModelsForProvider": "Nessun modello configurato per questo provider.",
-    "testModels": "Testa i modelli"
+    "testModels": "Testa i modelli",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

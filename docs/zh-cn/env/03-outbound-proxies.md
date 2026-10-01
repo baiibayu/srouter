@@ -2,7 +2,7 @@
 
 # 出站代理
 
-FreeLLMAPI 如何把发往提供方的流量经由代理转发、多个变量同时设置时谁说了算，以及随之而来的 Docker 网络坑点。
+SRouter 如何把发往提供方的流量经由代理转发、多个变量同时设置时谁说了算，以及随之而来的 Docker 网络坑点。
 
 来源：[`.env.example`](../../../.env.example)（代理配置块）、[`docker-compose.yml`](../../../docker-compose.yml)，以及 [docs/zh-cn/install/01-install.md](../install/01-install.md) 中的容器网络说明。
 
@@ -24,7 +24,7 @@ PROXY_URL → dashboard setting → ALL_PROXY → HTTPS_PROXY → HTTP_PROXY
 
 | 变量 | 在链中的角色 |
 | --- | --- |
-| `PROXY_URL` | FreeLLMAPI 显式的代理设置；最高优先级。 |
+| `PROXY_URL` | SRouter 显式的代理设置；最高优先级。 |
 | 仪表盘设置 | 密钥 → 出站代理；胜过通用的环境变量。 |
 | `ALL_PROXY` | 标准的兜底代理变量。 |
 | `HTTPS_PROXY` / `HTTP_PROXY` | 常规的按协议变量，优先级最低。 |
@@ -55,7 +55,7 @@ NO_PROXY=localhost,127.0.0.1,.internal.corp
 
 在容器内部，`127.0.0.1` 是容器自己——不是你的机器（#733）。如果你的代理客户端跑在宿主机上（Clash、v2rayN、sing-box 或公司代理），需要两处调整：
 
-1. 让 FreeLLMAPI 指向宿主机的地址而不是环回地址：
+1. 让 SRouter 指向宿主机的地址而不是环回地址：
 
    ```env
    PROXY_URL=socks5h://host.docker.internal:7890
@@ -75,12 +75,12 @@ extra_hosts:
 想分辨自己撞上的是哪种情况，直接问容器本身：
 
 ```bash
-docker compose exec freellmapi node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```
 
 ## 相关的入站限流旋钮
 
-虽然都带「proxy」这个名字，下面这两个变量限的是「进入」FreeLLMAPI 自身的流量，而不是发往提供方的出站调用：
+虽然都带「proxy」这个名字，下面这两个变量限的是「进入」SRouter 自身的流量，而不是发往提供方的出站调用：
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |

@@ -1,40 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
-import { apiFetch } from '@/lib/api'
-
-export interface LicenseStatus {
-  valid: boolean
-  plan: 'annual' | 'lifetime' | null
-  status: string | null
-  expiresAt: string | null
-  cancelAtPeriodEnd?: boolean
-  reason?: string
-  checkedAtMs: number
-}
-
-export interface CatalogSyncState {
-  baseUrl: string
-  appliedVersion: string | null
-  appliedTier: string | null
-  lastSyncMs: number | null
-  lastError: string | null
-}
-
-export interface PremiumStatus {
-  hasKey: boolean
-  maskedKey: string | null
-  license: LicenseStatus | null
-  catalog: CatalogSyncState
-  siteUrl: string
-}
+// Premium/license system was removed. This hook is kept as a no-op stub
+// so existing imports don't break. All callers see `licensed: true`.
 
 export function usePremium() {
-  const query = useQuery<PremiumStatus>({
-    queryKey: ['premium'],
-    queryFn: () => apiFetch('/api/premium'),
-  })
-
   return {
-    ...query,
-    licensed: Boolean(query.data?.hasKey && query.data.license?.valid),
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    licensed: true,
   }
 }

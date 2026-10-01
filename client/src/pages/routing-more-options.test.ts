@@ -30,7 +30,7 @@ describe('routing strategy "More options" disclosure', () => {
   })
 
   it('is collapsed by default and remembered per browser', () => {
-    expect(page).toContain("const OPTIONS_COLLAPSED_KEY = 'freellmapi.routingMoreOptions.collapsed'")
+    expect(page).toContain("const OPTIONS_COLLAPSED_KEY = 'srouter.routingMoreOptions.collapsed'")
     // Same shape as the chain manager and the penalty inspector below it.
     expect(page).toMatch(/stored === null \? true : stored === '1'/)
     expect(page).toContain('localStorage.setItem(OPTIONS_COLLAPSED_KEY')

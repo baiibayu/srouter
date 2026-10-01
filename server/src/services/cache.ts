@@ -37,7 +37,7 @@
 
 import crypto from 'crypto';
 import { getSetting, getDb } from '../db/index.js';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 
 // ── Config (read on each call so tests and the dashboard can toggle live) ──
 

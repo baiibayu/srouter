@@ -4,7 +4,7 @@
 
 [← 返回 README](../README.md) · [文档索引](../README.md) · [API 参考](../api/01-rest-api.md)
 
-长的编程智能体会话反复发送系统提示词、文件读取、命令输出和工具 schema。FreeLLMAPI 能在缓存查找、词元预算和路由之前先压缩请求上下文，这样路由器看到的是缩减后的估算值，更多小上下文模型就能保持符合条件。提供方响应绝不重写。
+长的编程智能体会话反复发送系统提示词、文件读取、命令输出和工具 schema。SRouter 能在缓存查找、词元预算和路由之前先压缩请求上下文，这样路由器看到的是缩减后的估算值，更多小上下文模型就能保持符合条件。提供方响应绝不重写。
 
 同一条管线跑在 Chat Completions、Responses、Anthropic Messages 和 Anthropic 词元计数上。压缩**默认关闭**。
 
@@ -13,7 +13,7 @@
 在仪表盘 **设置 → 提示词压缩** 里选个模式，或用环境变量引导初始模式：
 
 ```env
-FREELLMAPI_COMPRESSION=lossless
+SROUTER_COMPRESSION=lossless
 ```
 
 一旦仪表盘里保存过设置，存储的设置优先于环境变量。
@@ -70,8 +70,8 @@ X-FreeLLM-Compress: standard; saved~=1840
 
 额外的 JSON 过滤器定义可从下列位置加载：
 
-- `~/.freellmapi/filters/*.json` 供用户自有过滤器；
-- 项目里的 `.freellmapi/filters.json`，仅当**信任项目过滤器文件**启用时。
+- `~/.SRouter/filters/*.json` 供用户自有过滤器；
+- 项目里的 `.SRouter/filters.json`，仅当**信任项目过滤器文件**启用时。
 
 项目过滤器默认关闭，因为仓库可能不受信。
 

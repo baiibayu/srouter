@@ -12,11 +12,11 @@ const itWindows = it.skipIf(!isWindows);
 const created: string[] = [];
 const createdDirs: string[] = [];
 
-const ORIGINAL_DIR_HARDENING = process.env.FREEAPI_DB_DIR_HARDENING;
-const ORIGINAL_DB_PATH = process.env.FREEAPI_DB_PATH;
+const ORIGINAL_DIR_HARDENING = process.env.SROUTER_DB_DIR_HARDENING;
+const ORIGINAL_DB_PATH = process.env.SROUTER_DB_PATH;
 
 function tempDbPath(): string {
-  const p = path.join(os.tmpdir(), `freeapi-hardening-${Date.now()}-${Math.random()}.db`);
+  const p = path.join(os.tmpdir(), `srouter-hardening-${Date.now()}-${Math.random()}.db`);
   created.push(p);
   return p;
 }
@@ -24,7 +24,7 @@ function tempDbPath(): string {
 /** A directory that already exists, like a mounted volume or a shared temp dir:
  *  connectDb finds it rather than creating it. */
 function existingDir(): string {
-  const p = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-hardening-existing-'));
+  const p = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-hardening-existing-'));
   createdDirs.push(p);
   return p;
 }
@@ -32,17 +32,17 @@ function existingDir(): string {
 /** A path connectDb has to create, which is what earns it the right to harden
  *  it. Returns the not-yet-existent directory and the DB path inside it. */
 function unbornDataDir(): { dataDir: string; dbPath: string } {
-  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-hardening-parent-'));
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-hardening-parent-'));
   createdDirs.push(parent);
   const dataDir = path.join(parent, 'data');
-  return { dataDir, dbPath: path.join(dataDir, 'freeapi.db') };
+  return { dataDir, dbPath: path.join(dataDir, 'srouter.db') };
 }
 
 afterEach(() => {
-  if (ORIGINAL_DIR_HARDENING === undefined) delete process.env.FREEAPI_DB_DIR_HARDENING;
-  else process.env.FREEAPI_DB_DIR_HARDENING = ORIGINAL_DIR_HARDENING;
-  if (ORIGINAL_DB_PATH === undefined) delete process.env.FREEAPI_DB_PATH;
-  else process.env.FREEAPI_DB_PATH = ORIGINAL_DB_PATH;
+  if (ORIGINAL_DIR_HARDENING === undefined) delete process.env.SROUTER_DB_DIR_HARDENING;
+  else process.env.SROUTER_DB_DIR_HARDENING = ORIGINAL_DIR_HARDENING;
+  if (ORIGINAL_DB_PATH === undefined) delete process.env.SROUTER_DB_PATH;
+  else process.env.SROUTER_DB_PATH = ORIGINAL_DB_PATH;
 
   for (const p of created.splice(0)) {
     for (const suffix of ['', '-wal', '-shm']) {
@@ -175,12 +175,12 @@ describe('data directory hardening policy', () => {
     // An install that predates this change already has server/data, so it never
     // hits the "we created it" case. Without this leg the fix would reach new
     // installs only.
-    delete process.env.FREEAPI_DB_PATH;
+    delete process.env.SROUTER_DB_PATH;
     expect(shouldHardenDataDir(path.dirname(getDefaultDbPath()), false)).toBe(true);
   });
 
   it('matches the default directory case-insensitively on Windows', () => {
-    delete process.env.FREEAPI_DB_PATH;
+    delete process.env.SROUTER_DB_PATH;
     const defaultDir = path.dirname(getDefaultDbPath());
     expect(shouldHardenDataDir(defaultDir.toUpperCase(), false, 'win32')).toBe(true);
     // POSIX paths really are case-sensitive; the same leniency there would be a bug.
@@ -188,24 +188,24 @@ describe('data directory hardening policy', () => {
   });
 
   it('refuses a pre-existing directory it was merely pointed at', () => {
-    // The whole reason this predicate exists: FREEAPI_DB_PATH=/tmp/freeapi.db
+    // The whole reason this predicate exists: SROUTER_DB_PATH=/tmp/srouter.db
     // must never end in chmod 0700 /tmp.
     expect(shouldHardenDataDir(os.tmpdir(), false)).toBe(false);
     expect(shouldHardenDataDir(existingDir(), false)).toBe(false);
   });
 
   it('lets an operator force it on for a directory of their own', () => {
-    process.env.FREEAPI_DB_DIR_HARDENING = '1';
+    process.env.SROUTER_DB_DIR_HARDENING = '1';
     expect(shouldHardenDataDir(os.tmpdir(), false)).toBe(true);
   });
 
   it('lets an operator force it off even where the default would apply', () => {
-    process.env.FREEAPI_DB_DIR_HARDENING = '0';
+    process.env.SROUTER_DB_DIR_HARDENING = '0';
     expect(shouldHardenDataDir(existingDir(), true)).toBe(false);
   });
 
   it('ignores a value it cannot interpret rather than guessing', () => {
-    process.env.FREEAPI_DB_DIR_HARDENING = 'maybe';
+    process.env.SROUTER_DB_DIR_HARDENING = 'maybe';
     expect(shouldHardenDataDir(os.tmpdir(), false)).toBe(false);
     expect(shouldHardenDataDir(existingDir(), true)).toBe(true);
   });
@@ -271,7 +271,7 @@ describe('WAL sidecars on a normal start', () => {
     // shared directory must come out of connectDb unchanged.
     const dir = existingDir();
     fs.chmodSync(dir, 0o755);
-    connectAndWrite(path.join(dir, 'freeapi.db'));
+    connectAndWrite(path.join(dir, 'srouter.db'));
 
     expect(fs.statSync(dir).mode & 0o777).toBe(0o755);
   });
@@ -279,8 +279,8 @@ describe('WAL sidecars on a normal start', () => {
   itPosix('hardens that same directory once the operator opts in', () => {
     const dir = existingDir();
     fs.chmodSync(dir, 0o755);
-    process.env.FREEAPI_DB_DIR_HARDENING = '1';
-    connectAndWrite(path.join(dir, 'freeapi.db'));
+    process.env.SROUTER_DB_DIR_HARDENING = '1';
+    connectAndWrite(path.join(dir, 'srouter.db'));
 
     expect(fs.statSync(dir).mode & 0o777).toBe(0o700);
   });

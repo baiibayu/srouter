@@ -80,7 +80,7 @@ const RENDER_CHUNK = 50
 // alone. Collapse state is remembered per browser, the same way the chain
 // manager and the penalty inspector below remember theirs; a fresh install
 // (no stored value) starts collapsed.
-const OPTIONS_COLLAPSED_KEY = 'freellmapi.routingMoreOptions.collapsed'
+const OPTIONS_COLLAPSED_KEY = 'srouter.routingMoreOptions.collapsed'
 
 function readOptionsCollapsed(): boolean {
   try {
@@ -335,7 +335,7 @@ export default function FallbackPage() {
         title={t('models.title')}
         description={t('strategies.description')}
         divider={false}
-        actions={<ModelsTabs />}
+        tabs={<ModelsTabs />}
       />
 
       <div className="space-y-6">
@@ -346,7 +346,7 @@ export default function FallbackPage() {
         {tokenUsage && tokenUsage.totalBudget > 0 && <TokenUsageBar data={tokenUsage} />}
 
         {/* Strategy selector */}
-        <section className="rounded-3xl border bg-card p-5">
+        <section className="rounded-3xl border bg-card p-4 sm:p-5">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-sm font-medium">{t('strategies.title')}</h2>
             {routing?.weights && (

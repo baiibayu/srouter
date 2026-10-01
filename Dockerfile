@@ -34,7 +34,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3001
-ENV FREELLMAPI_INSTALL_METHOD=docker
+ENV SROUTER_INSTALL_METHOD=docker
 
 COPY --from=build --chown=node:node /app/package.json /app/package-lock.json ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
@@ -61,8 +61,8 @@ COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # Deliberately last of the runtime layers: the SHA changes on every commit, and
 # an ARG/ENV above the COPYs invalidates the cache for all of them on each build.
-ARG FREELLMAPI_COMMIT_SHA
-ENV FREELLMAPI_COMMIT_SHA=${FREELLMAPI_COMMIT_SHA}
+ARG SROUTER_COMMIT_SHA
+ENV SROUTER_COMMIT_SHA=${SROUTER_COMMIT_SHA}
 
 # Runs as root so docker-entrypoint.sh can chown a root-owned volume mount on
 # PaaS runtimes; the entrypoint drops back to the node user before exec'ing CMD.
@@ -73,7 +73,7 @@ ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 EXPOSE 3001
 
 # No VOLUME for /app/server/data on purpose. Persistence is the deployment's
-# job — docker-compose.yml maps the named `freellmapi-data` volume there, and a
+# job — docker-compose.yml maps the named `srouter-data` volume there, and a
 # plain `docker run` takes -v. Declaring it here instead creates an ANONYMOUS
 # volume on every container that doesn't override it: PaaS runtimes that build
 # from the Dockerfile (Railway, Render, Coolify, Dokploy, CapRover) then either

@@ -2,7 +2,7 @@
 
 # 安全与密钥处理
 
-FreeLLMAPI 如何保护你存进来的提供方 API 密钥，以及让这层保护真正生效的 `ENCRYPTION_KEY` 是如何生成、存储和迁移的。
+SRouter 如何保护你存进来的提供方 API 密钥，以及让这层保护真正生效的 `ENCRYPTION_KEY` 是如何生成、存储和迁移的。
 
 来源：[`.env.example`](../../../.env.example)（密钥生命周期注释）、[`server/src/lib/crypto.ts`](../../../server/src/lib/crypto.ts) 与 [`server/src/db/index.ts`](../../../server/src/db/index.ts)。
 
@@ -58,18 +58,18 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 - **重启和升级时保持同一个 `ENCRYPTION_KEY`。** 丢失它意味着每一条已存的提供方密钥都无法解密；没有任何恢复途径。
 - 仪表盘的密钥导出功能是为备份而存在的；它的限流被刻意设置得远比常规 `/api` 防洪水闸严格（见 [01-variables.md](01-variables.md#限流)）。
-- 可选的加密数据库备份（[../deployment/02-updates-and-backup.md](../deployment/02-updates-and-backup.md)）的信封密钥默认取 `ENCRYPTION_KEY`；`FREEAPI_DB_BACKUP_KEY` 可以用一个单独的 64 位十六进制密钥覆盖它。
+- 可选的加密数据库备份（[../deployment/02-updates-and-backup.md](../deployment/02-updates-and-backup.md)）的信封密钥默认取 `ENCRYPTION_KEY`；`SROUTER_DB_BACKUP_KEY` 可以用一个单独的 64 位十六进制密钥覆盖它。
 
 ## 数据目录加固（WAL 边车文件）
 
-SQLite 在第一次写入时创建 `-wal` 和 `-shm` 边车文件，并在最后一次干净关闭时删除它们——所以启动那一刻那里可能什么都没有、无从 chmod，这些文件的保护只能来自它们所在的目录。因此 FreeLLMAPI 在打开连接之前就把存放数据库的目录限制为仅属主账户可见（Windows 上 ACL 是继承的，所以先加固目录意味着数据库文件一出生就受到保护，而不是带着父目录给的 ACL 度过最初一段时间）。
+SQLite 在第一次写入时创建 `-wal` 和 `-shm` 边车文件，并在最后一次干净关闭时删除它们——所以启动那一刻那里可能什么都没有、无从 chmod，这些文件的保护只能来自它们所在的目录。因此 SRouter 在打开连接之前就把存放数据库的目录限制为仅属主账户可见（Windows 上 ACL 是继承的，所以先加固目录意味着数据库文件一出生就受到保护，而不是带着父目录给的 ACL 度过最初一段时间）。
 
-由于锁死一个不属于我们的目录会比它防住的泄漏更糟（把数据库指到 `/tmp/freeapi.db` 绝不能 chmod `0700` 整个 `/tmp`），加固按照「构造上即属主」的原则执行：
+由于锁死一个不属于我们的目录会比它防住的泄漏更糟（把数据库指到 `/tmp/srouter.db` 绝不能 chmod `0700` 整个 `/tmp`），加固按照「构造上即属主」的原则执行：
 
 1. 该目录刚刚由本进程创建；或者
 2. 它是内置的默认数据目录（`server/data`），发布时就属于我们。
 
-把 `FREEAPI_DB_PATH` 指向某个专用既有目录的运维者可以用 `FREEAPI_DB_DIR_HARDENING=1` 显式加入，也可以用 `=0` 彻底退出。默认行为是「安全处默认开启」而不是一个必填开关：只在有人记得开口时才执行的加固，和没人察觉已经停摆的加固，属于同一类失败。
+把 `SROUTER_DB_PATH` 指向某个专用既有目录的运维者可以用 `SROUTER_DB_DIR_HARDENING=1` 显式加入，也可以用 `=0` 彻底退出。默认行为是「安全处默认开启」而不是一个必填开关：只在有人记得开口时才执行的加固，和没人察觉已经停摆的加固，属于同一类失败。
 
 ## 首次运行的安装码
 

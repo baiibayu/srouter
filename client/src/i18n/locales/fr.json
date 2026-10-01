@@ -16,7 +16,9 @@
     "modelsMenu": "Parcourir les types de modèles",
     "agents": "Agents",
     "logs": "Journaux",
-    "analyticsMenu": "Pages d'analytique"
+    "analyticsMenu": "Pages d'analytique",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Créez votre compte",
@@ -60,7 +62,7 @@
     "emailChanged": "Adresse e-mail modifiée avec succès.",
     "passwordReset": "Mot de passe réinitialisé avec succès. Veuillez vous connecter.",
     "resetCodeDockerHint": "Vous utilisez Docker ? Le code se trouve dans le journal du conteneur : docker logs <container>.",
-    "desktopSessionFailed": "Le tableau de bord n'a pas pu se connecter au serveur local. Quittez FreeLLMAPI et rouvrez-le."
+    "desktopSessionFailed": "Le tableau de bord n'a pas pu se connecter au serveur local. Quittez SRouter et rouvrez-le."
   },
   "common": {
     "save": "Enregistrer",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Vérification automatique des mises à jour",
     "autoUpdateCheckHelp": "Consulte GitHub une fois par jour pour détecter une nouvelle version et affiche un rappel. Désactivé par défaut.",
     "openReleases": "Ouvrir les versions GitHub",
-    "restartAfterUpdate": "Redémarrez FreeLLMAPI une fois le build terminé."
+    "restartAfterUpdate": "Redémarrez SRouter une fois le build terminé.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modèles",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Budget mensuel de tokens",
     "remaining": "restant",
     "used": "utilisés",
-    "usedScopeHint": "Uniquement les requêtes de chat, depuis le début de ce mois civil, cumulées sur tous les modèles de la chaîne active, endpoints personnalisés compris. Le trafic envoyé à un fournisseur en dehors de FreeLLMAPI n'est pas compté.",
+    "usedScopeHint": "Uniquement les requêtes de chat, depuis le début de ce mois civil, cumulées sur tous les modèles de la chaîne active, endpoints personnalisés compris. Le trafic envoyé à un fournisseur en dehors de SRouter n'est pas compté.",
     "legendRemainingTitle": "Restant / budget mensuel de {name} ({platform})",
     "noPublishedQuota": "+{count} sans quota publié",
     "noPublishedQuotaTitle": "Ces modèles n'ont pas de budget mensuel de jetons documenté ; il n'y a donc pas de restant à afficher.",
@@ -517,6 +525,23 @@
     "providerActions": "Actions du fournisseur",
     "routeViaProxy": "Acheminer via le proxy",
     "checkNow": "Vérifier maintenant",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Également configurable via la variable d'environnement ",
     "proxyEnvHintAfter": " (prioritaire). Laissez vide pour désactiver. Exemples :",
     "importKeys": "Importer des clés de fournisseur",
@@ -679,7 +704,8 @@
     "testFailed": "Échec du test du modèle",
     "testThrottled": "Veuillez attendre {seconds}s avant de tester à nouveau ce modèle.",
     "noModelsForProvider": "Aucun modèle configuré pour ce fournisseur.",
-    "testModels": "Tester les modèles"
+    "testModels": "Tester les modèles",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Sauvegardes",

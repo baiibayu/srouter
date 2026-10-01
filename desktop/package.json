@@ -1,7 +1,7 @@
 {
-  "name": "freellmapi-desktop",
+  "name": "srouter-desktop",
   "version": "0.12.0",
-  "description": "FreeLLMAPI menu-bar app — local OpenAI-compatible LLM router",
+  "description": "SRouter menu-bar app — local OpenAI-compatible LLM router",
   "author": {
     "name": "tashfeenahmed",
     "email": "tashfene@gmail.com",

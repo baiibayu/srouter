@@ -2,9 +2,9 @@
 
 # Android (Termux) installation
 
-> Experimental and community-supported. FreeLLMAPI runs locally on the Android device.
+> Experimental and community-supported. SRouter runs locally on the Android device.
 
-FreeLLMAPI can run in [Termux](https://termux.dev/) without an Android NDK toolchain. On Android, the server uses Node's built-in SQLite driver instead of the native `better-sqlite3` package.
+SRouter can run in [Termux](https://termux.dev/) without an Android NDK toolchain. On Android, the server uses Node's built-in SQLite driver instead of the native `better-sqlite3` package.
 
 ## Requirements
 
@@ -31,11 +31,11 @@ Confirm that Node is new enough for `node:sqlite`:
 node --version
 ```
 
-Then clone and start FreeLLMAPI:
+Then clone and start SRouter:
 
 ```bash
 git clone https://github.com/tashfeenahmed/freellmapi.git
-cd freellmapi
+cd SRouter
 npm install --no-audit --no-fund
 npm run dev
 ```

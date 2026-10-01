@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 // — it is what the release recipe bumps and what the installers are named for.
 //
 // Order:
-//   1. FREEAPI_VERSION — the desktop shell sets it from app.getVersion(); a
+//   1. SROUTER_VERSION — the desktop shell sets it from app.getVersion(); a
 //      packaged/self-hosted deployment can set it too.
 //   2. desktop/package.json, found by walking up from this module. Present in a
 //      source checkout, and the Docker runtime image copies it in for this.
@@ -50,7 +50,7 @@ let cached: string | null | undefined;
 /** The released app version, or null when it cannot be established honestly. */
 export function getAppVersion(): string | null {
   if (cached !== undefined) return cached;
-  const fromEnv = process.env.FREEAPI_VERSION?.trim();
+  const fromEnv = process.env.SROUTER_VERSION?.trim();
   cached = fromEnv ? fromEnv : findDesktopVersion();
   return cached;
 }

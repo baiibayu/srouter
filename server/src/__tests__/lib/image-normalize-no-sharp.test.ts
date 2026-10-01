@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 
 // sharp is a NATIVE module. It is loaded with a dynamic import precisely so a
 // missing or mismatched prebuilt libvips cannot take the gateway down at

@@ -9,7 +9,7 @@ export default function NotFoundPage() {
   const { t } = useI18n()
   return (
     <div className="flex justify-center py-16">
-      <div className="w-full max-w-md rounded-3xl border bg-card p-8 text-center">
+      <div className="w-full max-w-md rounded-3xl border bg-card p-6 sm:p-8 text-center">
         <Compass className="mx-auto size-8 text-muted-foreground" />
         <h1 className="mt-4 text-lg font-semibold">{t('notFound.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('notFound.description')}</p>

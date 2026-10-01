@@ -6,24 +6,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { backupDbNow, parseHuggingFaceTarget, restoreDbBackupIfNeeded } from '../../lib/db-backup.js';
 import { aclEntries } from '../helpers/acl.js';
 
-const ORIGINAL_BACKUP_PATH = process.env.FREEAPI_DB_BACKUP_PATH;
-const ORIGINAL_BACKUP_TARGET = process.env.FREEAPI_DB_BACKUP_TARGET;
-const ORIGINAL_BACKUP_URL = process.env.FREEAPI_DB_BACKUP_URL;
-const ORIGINAL_BACKUP_KEY = process.env.FREEAPI_DB_BACKUP_KEY;
-const ORIGINAL_BACKUP_TOKEN = process.env.FREEAPI_DB_BACKUP_TOKEN;
+const ORIGINAL_BACKUP_PATH = process.env.SROUTER_DB_BACKUP_PATH;
+const ORIGINAL_BACKUP_TARGET = process.env.SROUTER_DB_BACKUP_TARGET;
+const ORIGINAL_BACKUP_URL = process.env.SROUTER_DB_BACKUP_URL;
+const ORIGINAL_BACKUP_KEY = process.env.SROUTER_DB_BACKUP_KEY;
+const ORIGINAL_BACKUP_TOKEN = process.env.SROUTER_DB_BACKUP_TOKEN;
 const ORIGINAL_ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 
 function restoreEnv() {
-  if (ORIGINAL_BACKUP_PATH === undefined) delete process.env.FREEAPI_DB_BACKUP_PATH;
-  else process.env.FREEAPI_DB_BACKUP_PATH = ORIGINAL_BACKUP_PATH;
-  if (ORIGINAL_BACKUP_TARGET === undefined) delete process.env.FREEAPI_DB_BACKUP_TARGET;
-  else process.env.FREEAPI_DB_BACKUP_TARGET = ORIGINAL_BACKUP_TARGET;
-  if (ORIGINAL_BACKUP_URL === undefined) delete process.env.FREEAPI_DB_BACKUP_URL;
-  else process.env.FREEAPI_DB_BACKUP_URL = ORIGINAL_BACKUP_URL;
-  if (ORIGINAL_BACKUP_KEY === undefined) delete process.env.FREEAPI_DB_BACKUP_KEY;
-  else process.env.FREEAPI_DB_BACKUP_KEY = ORIGINAL_BACKUP_KEY;
-  if (ORIGINAL_BACKUP_TOKEN === undefined) delete process.env.FREEAPI_DB_BACKUP_TOKEN;
-  else process.env.FREEAPI_DB_BACKUP_TOKEN = ORIGINAL_BACKUP_TOKEN;
+  if (ORIGINAL_BACKUP_PATH === undefined) delete process.env.SROUTER_DB_BACKUP_PATH;
+  else process.env.SROUTER_DB_BACKUP_PATH = ORIGINAL_BACKUP_PATH;
+  if (ORIGINAL_BACKUP_TARGET === undefined) delete process.env.SROUTER_DB_BACKUP_TARGET;
+  else process.env.SROUTER_DB_BACKUP_TARGET = ORIGINAL_BACKUP_TARGET;
+  if (ORIGINAL_BACKUP_URL === undefined) delete process.env.SROUTER_DB_BACKUP_URL;
+  else process.env.SROUTER_DB_BACKUP_URL = ORIGINAL_BACKUP_URL;
+  if (ORIGINAL_BACKUP_KEY === undefined) delete process.env.SROUTER_DB_BACKUP_KEY;
+  else process.env.SROUTER_DB_BACKUP_KEY = ORIGINAL_BACKUP_KEY;
+  if (ORIGINAL_BACKUP_TOKEN === undefined) delete process.env.SROUTER_DB_BACKUP_TOKEN;
+  else process.env.SROUTER_DB_BACKUP_TOKEN = ORIGINAL_BACKUP_TOKEN;
   if (ORIGINAL_ENCRYPTION_KEY === undefined) delete process.env.ENCRYPTION_KEY;
   else process.env.ENCRYPTION_KEY = ORIGINAL_ENCRYPTION_KEY;
 }
@@ -32,11 +32,11 @@ describe('encrypted SQLite backup', () => {
   afterEach(() => restoreEnv());
 
   it('backs up and restores a SQLite file from a configured path', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-db-backup-'));
-    const dbPath = path.join(dir, 'freeapi.db');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-db-backup-'));
+    const dbPath = path.join(dir, 'srouter.db');
     const backupPath = path.join(dir, 'backup.bin');
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-    process.env.FREEAPI_DB_BACKUP_PATH = backupPath;
+    process.env.SROUTER_DB_BACKUP_PATH = backupPath;
 
     const db = new Database(dbPath);
     db.exec('CREATE TABLE items (name TEXT NOT NULL); INSERT INTO items (name) VALUES (\'survived\')');
@@ -72,10 +72,10 @@ describe('backup file permissions', () => {
   afterEach(() => restoreEnv());
 
   async function backupInto(dir: string): Promise<string> {
-    const dbPath = path.join(dir, 'freeapi.db');
+    const dbPath = path.join(dir, 'srouter.db');
     const backupPath = path.join(dir, 'backup.bin');
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-    process.env.FREEAPI_DB_BACKUP_PATH = backupPath;
+    process.env.SROUTER_DB_BACKUP_PATH = backupPath;
 
     const db = new Database(dbPath);
     db.exec('CREATE TABLE items (name TEXT NOT NULL)');
@@ -85,7 +85,7 @@ describe('backup file permissions', () => {
   }
 
   itPosix('writes the backup blob owner-only', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-backup-perms-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-backup-perms-'));
     const backupPath = await backupInto(dir);
 
     expect(fs.statSync(backupPath).mode & 0o077).toBe(0);
@@ -96,7 +96,7 @@ describe('backup file permissions', () => {
     // every backup after the first overwrites a file that keeps whatever mode
     // it already had. Without the explicit restrict call this is the case that
     // stays group-readable forever.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-backup-perms-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-backup-perms-'));
     const backupPath = path.join(dir, 'backup.bin');
     fs.writeFileSync(backupPath, 'stale');
     // chmod rather than a creation mode: the mode argument is filtered through
@@ -111,8 +111,8 @@ describe('backup file permissions', () => {
   });
 
   itPosix('writes the restored database owner-only', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-backup-perms-'));
-    const dbPath = path.join(dir, 'freeapi.db');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-backup-perms-'));
+    const dbPath = path.join(dir, 'srouter.db');
     await backupInto(dir);
     fs.rmSync(dbPath);
 
@@ -123,7 +123,7 @@ describe('backup file permissions', () => {
   });
 
   itWindows('replaces the inherited ACL on the backup blob', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-backup-perms-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-backup-perms-'));
     const backupPath = await backupInto(dir);
 
     const entries = aclEntries(backupPath);
@@ -134,29 +134,29 @@ describe('backup file permissions', () => {
 
 describe('parseHuggingFaceTarget', () => {
   it('maps a dataset download URL onto the commit API', () => {
-    expect(parseHuggingFaceTarget('https://huggingface.co/datasets/acme/state/resolve/main/backups/freeapi.db.enc')).toEqual({
+    expect(parseHuggingFaceTarget('https://huggingface.co/datasets/acme/state/resolve/main/backups/srouter.db.enc')).toEqual({
       commitUrl: 'https://huggingface.co/api/datasets/acme/state/commit/main',
-      filePath: 'backups/freeapi.db.enc',
+      filePath: 'backups/srouter.db.enc',
     });
   });
 
   it('treats the prefix-less repo path as a model repo', () => {
-    expect(parseHuggingFaceTarget('https://huggingface.co/acme/state/resolve/main/freeapi.db.enc')).toEqual({
+    expect(parseHuggingFaceTarget('https://huggingface.co/acme/state/resolve/main/srouter.db.enc')).toEqual({
       commitUrl: 'https://huggingface.co/api/models/acme/state/commit/main',
-      filePath: 'freeapi.db.enc',
+      filePath: 'srouter.db.enc',
     });
   });
 
   it('maps a space download URL', () => {
-    expect(parseHuggingFaceTarget('https://huggingface.co/spaces/acme/app/resolve/main/data/freeapi.db.enc')?.commitUrl)
+    expect(parseHuggingFaceTarget('https://huggingface.co/spaces/acme/app/resolve/main/data/srouter.db.enc')?.commitUrl)
       .toBe('https://huggingface.co/api/spaces/acme/app/commit/main');
   });
 
   it('leaves every other target alone', () => {
-    expect(parseHuggingFaceTarget('https://example.com/acme/state/resolve/main/freeapi.db.enc')).toBeNull();
+    expect(parseHuggingFaceTarget('https://example.com/acme/state/resolve/main/srouter.db.enc')).toBeNull();
     // A HF URL that is not a /resolve/ download has no commit route to derive.
     expect(parseHuggingFaceTarget('https://huggingface.co/acme/state')).toBeNull();
-    expect(parseHuggingFaceTarget('/var/backups/freeapi.db.enc')).toBeNull();
+    expect(parseHuggingFaceTarget('/var/backups/srouter.db.enc')).toBeNull();
   });
 });
 
@@ -166,7 +166,7 @@ describe('Hugging Face backup target', () => {
   // host restored nothing on its next cold start. Uploads go through the commit
   // API, and the blob travels as base64 text because repos on Xet storage reject
   // binary pushed through that route.
-  const TARGET = 'https://huggingface.co/datasets/acme/state/resolve/main/backups/freeapi.db.enc';
+  const TARGET = 'https://huggingface.co/datasets/acme/state/resolve/main/backups/srouter.db.enc';
 
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -174,7 +174,7 @@ describe('Hugging Face backup target', () => {
   });
 
   function seedDb(dir: string): string {
-    const dbPath = path.join(dir, 'freeapi.db');
+    const dbPath = path.join(dir, 'srouter.db');
     const db = new Database(dbPath);
     db.exec('CREATE TABLE items (name TEXT NOT NULL); INSERT INTO items (name) VALUES (\'survived\')');
     db.close();
@@ -182,11 +182,11 @@ describe('Hugging Face backup target', () => {
   }
 
   it('uploads through the commit API as base64 and restores it', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-hf-backup-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-hf-backup-'));
     const dbPath = seedDb(dir);
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-    process.env.FREEAPI_DB_BACKUP_TARGET = TARGET;
-    process.env.FREEAPI_DB_BACKUP_TOKEN = 'hf_token';
+    process.env.SROUTER_DB_BACKUP_TARGET = TARGET;
+    process.env.SROUTER_DB_BACKUP_TOKEN = 'hf_token';
 
     let stored = '';
     const fetchMock = vi.fn(async (url: string, init: RequestInit) => {
@@ -209,9 +209,9 @@ describe('Hugging Face backup target', () => {
     expect((uploadInit.headers as Record<string, string>).Authorization).toBe('Bearer hf_token');
 
     const [header, file] = String(uploadInit.body).split('\n').map(line => JSON.parse(line));
-    expect(header).toEqual({ key: 'header', value: { summary: 'chore: update backups/freeapi.db.enc' } });
+    expect(header).toEqual({ key: 'header', value: { summary: 'chore: update backups/srouter.db.enc' } });
     expect(file.key).toBe('file');
-    expect(file.value.path).toBe('backups/freeapi.db.enc');
+    expect(file.value.path).toBe('backups/srouter.db.enc');
     // Base64 text, not bytes — 'base64' here would make HF write the binary back.
     expect(file.value.encoding).toBe('utf-8');
     expect(file.value.content).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
@@ -232,19 +232,19 @@ describe('Hugging Face backup target', () => {
     // Anything a previous build managed to land is raw ciphertext. Sniffing the
     // magic header keeps that path recoverable instead of base64-decoding it
     // into garbage.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-hf-legacy-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-hf-legacy-'));
     const dbPath = seedDb(dir);
     const blobPath = path.join(dir, 'backup.bin');
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-    process.env.FREEAPI_DB_BACKUP_PATH = blobPath;
+    process.env.SROUTER_DB_BACKUP_PATH = blobPath;
 
     const db = new Database(dbPath);
     await backupDbNow(db, dbPath);
     db.close();
     const raw = fs.readFileSync(blobPath);
 
-    delete process.env.FREEAPI_DB_BACKUP_PATH;
-    process.env.FREEAPI_DB_BACKUP_TARGET = TARGET;
+    delete process.env.SROUTER_DB_BACKUP_PATH;
+    process.env.SROUTER_DB_BACKUP_TARGET = TARGET;
     vi.stubGlobal('fetch', vi.fn(async () => new Response(raw, { status: 200 })));
 
     fs.rmSync(dbPath);
@@ -255,27 +255,27 @@ describe('Hugging Face backup target', () => {
   });
 
   it('refuses to upload without a token rather than 401ing on a schedule', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-hf-token-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-hf-token-'));
     const dbPath = seedDb(dir);
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-    process.env.FREEAPI_DB_BACKUP_TARGET = TARGET;
-    delete process.env.FREEAPI_DB_BACKUP_TOKEN;
+    process.env.SROUTER_DB_BACKUP_TARGET = TARGET;
+    delete process.env.SROUTER_DB_BACKUP_TOKEN;
 
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
     const db = new Database(dbPath);
-    await expect(backupDbNow(db, dbPath)).rejects.toThrow(/FREEAPI_DB_BACKUP_TOKEN is required/);
+    await expect(backupDbNow(db, dbPath)).rejects.toThrow(/SROUTER_DB_BACKUP_TOKEN is required/);
     db.close();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('surfaces a rejected commit', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-hf-error-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-hf-error-'));
     const dbPath = seedDb(dir);
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-    process.env.FREEAPI_DB_BACKUP_TARGET = TARGET;
-    process.env.FREEAPI_DB_BACKUP_TOKEN = 'hf_token';
+    process.env.SROUTER_DB_BACKUP_TARGET = TARGET;
+    process.env.SROUTER_DB_BACKUP_TOKEN = 'hf_token';
     vi.stubGlobal('fetch', vi.fn(async () => new Response('repo not found', { status: 404 })));
 
     const db = new Database(dbPath);
@@ -284,11 +284,11 @@ describe('Hugging Face backup target', () => {
   });
 
   it('leaves a plain HTTP target on the PUT path', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-http-backup-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-http-backup-'));
     const dbPath = seedDb(dir);
     process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-    process.env.FREEAPI_DB_BACKUP_TARGET = 'https://storage.example.com/freeapi.db.enc';
-    process.env.FREEAPI_DB_BACKUP_TOKEN = 'plain_token';
+    process.env.SROUTER_DB_BACKUP_TARGET = 'https://storage.example.com/srouter.db.enc';
+    process.env.SROUTER_DB_BACKUP_TOKEN = 'plain_token';
 
     const fetchMock = vi.fn(async () => new Response('', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
@@ -298,7 +298,7 @@ describe('Hugging Face backup target', () => {
     db.close();
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('https://storage.example.com/freeapi.db.enc');
+    expect(url).toBe('https://storage.example.com/srouter.db.enc');
     expect(init.method).toBe('PUT');
     expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/octet-stream');
     expect(Buffer.isBuffer(init.body)).toBe(true);

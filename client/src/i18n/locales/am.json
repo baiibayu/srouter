@@ -16,7 +16,9 @@
     "modelsMenu": "የሞዴል አይነቶችን ያስሱ",
     "agents": "ወኪሎች",
     "logs": "መዝገቦች",
-    "analyticsMenu": "የአፈጻጸም ገጾች"
+    "analyticsMenu": "የአፈጻጸም ገጾች",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "መለያዎን ይፍጠሩ",
@@ -60,7 +62,7 @@
     "emailChanged": "ኢሜይል በተሳካ ሁኔታ ተቀይሯል።",
     "passwordReset": "የይለፍ ቃል ዳግም ተጀምሯል። እባክዎ ይግቡ።",
     "resetCodeDockerHint": "በ Docker ውስጥ እየሮጠ ነው? ኮዱ በኮንቴይነሩ መዝገብ ውስጥ ነው፦ docker logs <container>።",
-    "desktopSessionFailed": "ዳሽቦርዱ ወደ አካባቢያዊ አገልጋዩ መግባት አልቻለም። FreeLLMAPI ን ዘግተው እንደገና ይክፈቱት።"
+    "desktopSessionFailed": "ዳሽቦርዱ ወደ አካባቢያዊ አገልጋዩ መግባት አልቻለም። SRouter ን ዘግተው እንደገና ይክፈቱት።"
   },
   "common": {
     "save": "አስቀምጥ",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "ራስ-ሰር የዝማኔ ፍተሻ",
     "autoUpdateCheckHelp": "በቀን አንድ ጊዜ ለአዲስ ልቀት GitHubን ይፈትሻል እና ማስታወሻ ያሳያል። በነባሪነት ጠፍቷል።",
     "openReleases": "የGitHub ልቀቶችን ክፈት",
-    "restartAfterUpdate": "ግንባታው ከተጠናቀቀ በኋላ FreeLLMAPIን እንደገና ያስጀምሩ።"
+    "restartAfterUpdate": "ግንባታው ከተጠናቀቀ በኋላ srouterን እንደገና ያስጀምሩ።",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "ሞዴሎች",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "ወርሃዊ ማስመሰያ በጀት",
     "remaining": "የቀረው",
     "used": "ጥቅም ላይ ውሏል",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "የአቅራቢዎች እርምጃዎች",
     "routeViaProxy": "በፕሮክሲ በኩል የሚደረግ መንገድ",
     "checkNow": "አሁን ይመልከቱ",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "እንዲሁም በ በኩል ሊዋቀር ይችላል",
     "proxyEnvHintAfter": "የአካባቢ ተለዋዋጭ (ቅድሚያ ይሰጣል). ለማሰናከል ባዶውን ይተዉት። ምሳሌዎች",
     "importKeys": "የአቅራቢ ቁልፎችን አስመጣ",
@@ -679,7 +704,8 @@
     "testFailed": "የሞዴል ሙከራ አልተሳካም",
     "testThrottled": "ይህን ሞዴል እንደገና ከመሞከርዎ በፊት እባክዎ {seconds} ሰከንድ ይጠብቁ።",
     "noModelsForProvider": "ለዚህ አቅራቢ የተዋቀረ ሞዴል የለም።",
-    "testModels": "ሞዴሎችን ይሞክሩ"
+    "testModels": "ሞዴሎችን ይሞክሩ",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

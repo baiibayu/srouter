@@ -1,7 +1,7 @@
 import type { QuotaObservationView } from './provider-quota.js';
 import { getQuotaStateForKeys, inferPoolForPlatform } from './provider-quota.js';
 import { getDb } from '../db/index.js';
-import type { Platform } from '@freellmapi/shared/types.js';
+import type { Platform } from '@srouter/shared/types.js';
 
 // Daily free-tier balance forecast (#1104). Free tiers reset on a per-account
 // window (usually UTC midnight) and the only way to know how much headroom is

@@ -29,14 +29,14 @@ interface ModelRow {
 export function keysHelp(): string {
   return [
     'Provider key management (dashboard authentication):',
-    '  freellmapi keys add <platform> [--key KEY]',
-    '  freellmapi keys list',
-    '  freellmapi keys remove <platform> [--id ID]',
-    '  freellmapi keys test <platform> [--id ID]',
+    '  srouter keys add <platform> [--key KEY]',
+    '  srouter keys list',
+    '  srouter keys remove <platform> [--id ID]',
+    '  srouter keys test <platform> [--id ID]',
     '',
     'Options: --url URL, --token TOKEN, --timeout MS (default 30000)',
-    'Use FREELLMAPI_DASHBOARD_TOKEN or --token for the dashboard session token.',
-    'The unified --api-key / FREELLMAPI_API_KEY is not dashboard authentication.',
+    'Use SROUTER_DASHBOARD_TOKEN or --token for the dashboard session token.',
+    'The unified --api-key / SROUTER_API_KEY is not dashboard authentication.',
     'Omit --key for hidden terminal input. Keyless providers do not prompt.',
     'remove requires --id when a platform has multiple keys; test checks all matches.',
     'list shows enabled chat model counts, respecting each key\'s model scope.',
@@ -84,7 +84,7 @@ export async function runKeys(
   const platform = rawPlatform?.toLowerCase();
   if (platform && !/^[a-z][a-z0-9_-]*$/.test(platform)) throw new Error('Invalid provider platform identifier');
   const token = options.token?.trim();
-  if (!token) throw new Error('Set FREELLMAPI_DASHBOARD_TOKEN or pass --token with a dashboard session token');
+  if (!token) throw new Error('Set SROUTER_DASHBOARD_TOKEN or pass --token with a dashboard session token');
   const root = gatewayRoot(options.url);
   const timeout = options.timeoutMs ?? 30_000;
   if (!Number.isSafeInteger(timeout) || timeout <= 0 || timeout > 2_147_483_647) {
@@ -108,7 +108,7 @@ export async function runKeys(
     // Provider error bodies may contain credentials. Only report the HTTP
     // status, never echo arbitrary response bodies or transport errors.
     if (response.status === 401 || response.status === 403) {
-      throw new Error('Dashboard authentication failed. Supply a current dashboard session token with --token or FREELLMAPI_DASHBOARD_TOKEN.');
+      throw new Error('Dashboard authentication failed. Supply a current dashboard session token with --token or SROUTER_DASHBOARD_TOKEN.');
     }
     if (!response.ok) throw new Error(`Dashboard request failed (HTTP ${response.status})`);
     if (response.status === 204) return undefined as T;

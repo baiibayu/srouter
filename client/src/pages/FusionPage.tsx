@@ -134,7 +134,7 @@ export default function FusionPage() {
         title={t('fusion.title')}
         description={t('fusion.description')}
         divider={false}
-        actions={<ModelsTabs />}
+        tabs={<ModelsTabs />}
       />
 
       {isLoading ? (

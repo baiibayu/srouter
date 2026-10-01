@@ -27,7 +27,7 @@ export function loadCustomFilters(trustProjectFilters: boolean): ToolFilterRule[
   const key = `${process.cwd()}:${trustProjectFilters}`;
   if (key === cacheKey) return cached;
   const filters: ToolFilterRule[] = [];
-  const userDir = path.join(os.homedir(), '.freellmapi', 'filters');
+  const userDir = path.join(os.homedir(), '.srouter', 'filters');
   try {
     for (const name of fs.readdirSync(userDir).filter(name => name.endsWith('.json')).sort()) {
       filters.push(...readFilterFile(path.join(userDir, name)));
@@ -36,7 +36,7 @@ export function loadCustomFilters(trustProjectFilters: boolean): ToolFilterRule[
     // Optional directory.
   }
   if (trustProjectFilters) {
-    filters.push(...readFilterFile(path.resolve(process.cwd(), '.freellmapi', 'filters.json')));
+    filters.push(...readFilterFile(path.resolve(process.cwd(), '.srouter', 'filters.json')));
   }
   cacheKey = key;
   cached = filters.slice(0, 100);

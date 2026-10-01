@@ -1,5 +1,5 @@
 services:
-  freellmapi:
+  srouter:
     image: ghcr.io/tashfeenahmed/freellmapi:latest
     build:
       context: .
@@ -9,12 +9,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-    # Bound to localhost by default — FreeLLMAPI is single-user and must not be
+    # Bound to localhost by default — SRouter is single-user and must not be
     # exposed to the internet. Set HOST_BIND=0.0.0.0 to reach it from your LAN.
     ports:
       - "${HOST_BIND:-127.0.0.1}:${PORT:-3001}:3001"
     volumes:
-      - freellmapi-data:/app/server/data
+      - srouter-data:/app/server/data
     # Makes `host.docker.internal` resolve to the host from inside the
     # container. Docker Desktop provides it already; plain Docker on Linux does
     # not, and without it the documented way to reach a proxy running on the
@@ -36,4 +36,4 @@ services:
       retries: 3
 
 volumes:
-  freellmapi-data:
+  srouter-data:

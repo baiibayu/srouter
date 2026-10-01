@@ -234,7 +234,7 @@ export default function ModelDetailPage() {
 
   return (
     <div>
-      <PageHeader title={label} description={t('models.providersHeading')} divider={false} actions={<ModelsTabs />} />
+      <PageHeader title={label} description={t('models.providersHeading')} divider={false} tabs={<ModelsTabs />} />
 
       <div className="space-y-6">
         <Link to="/models/chat" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -244,7 +244,7 @@ export default function ModelDetailPage() {
         {isLoading ? (
           <TableSkeleton rows={3} />
         ) : members.length === 0 ? (
-          <div className="rounded-3xl border border-dashed p-8 text-center">
+          <div className="rounded-3xl border border-dashed p-6 sm:p-8 text-center">
             <p className="text-sm text-muted-foreground">{t('models.modelNotFound')}</p>
           </div>
         ) : (

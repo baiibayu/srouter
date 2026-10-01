@@ -87,7 +87,7 @@ describe('#687 custom endpoints survive an export/import round trip', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     // Private addresses must stay importable — a custom endpoint is usually a
     // box on the LAN. The SSRF guard only blocks them when this is set.
-    delete process.env.FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS;
+    delete process.env.SROUTER_BLOCK_PRIVATE_PROVIDER_URLS;
     initDb(':memory:');
     app = createApp();
     dashToken = mintDashboardToken();
@@ -153,7 +153,7 @@ describe('#687 custom endpoints survive an export/import round trip', () => {
   });
 
   it('an import file naming a blocked address is refused, not stored', async () => {
-    process.env.FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS = '1';
+    process.env.SROUTER_BLOCK_PRIVATE_PROVIDER_URLS = '1';
     try {
       getDb().prepare('DELETE FROM api_keys').run();
       const { body } = await importFile(
@@ -164,7 +164,7 @@ describe('#687 custom endpoints survive an export/import round trip', () => {
       expect(body.errors[0].error).toMatch(/baseUrl rejected/);
       expect(getDb().prepare('SELECT COUNT(*) AS c FROM api_keys').get()).toEqual({ c: 0 });
     } finally {
-      delete process.env.FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS;
+      delete process.env.SROUTER_BLOCK_PRIVATE_PROVIDER_URLS;
     }
   });
 

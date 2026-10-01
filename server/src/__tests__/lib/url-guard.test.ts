@@ -4,10 +4,10 @@ import { classifyIp, assessProviderUrl, isLoopbackOrPrivateUrl, isLoopbackOrPriv
 // SSRF guard for user-supplied custom-provider base URLs (#440). Metadata and
 // link-local targets must never be reachable; loopback/private stay allowed by
 // default (local Ollama / LM Studio is the app's primary documented use case)
-// and flip to blocked under FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS.
+// and flip to blocked under SROUTER_BLOCK_PRIVATE_PROVIDER_URLS.
 
 afterEach(() => {
-  delete process.env.FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS;
+  delete process.env.SROUTER_BLOCK_PRIVATE_PROVIDER_URLS;
 });
 
 describe('classifyIp', () => {
@@ -109,8 +109,8 @@ describe('assessProviderUrl', () => {
     expect((await assessProviderUrl('http://192.168.1.20:11434/v1')).allowed).toBe(true);
   });
 
-  it('blocks loopback and private targets under FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS', async () => {
-    process.env.FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS = 'true';
+  it('blocks loopback and private targets under SROUTER_BLOCK_PRIVATE_PROVIDER_URLS', async () => {
+    process.env.SROUTER_BLOCK_PRIVATE_PROVIDER_URLS = 'true';
     expect((await assessProviderUrl('http://127.0.0.1:8080/v1')).allowed).toBe(false);
     expect((await assessProviderUrl('http://192.168.1.20:11434/v1')).allowed).toBe(false);
     expect((await assessProviderUrl('http://10.0.0.5:3000/v1')).allowed).toBe(false);

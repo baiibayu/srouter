@@ -11,7 +11,7 @@ level counts and clear endpoints, configuration via environment variables,
 integration with the log redaction pipeline, and the React client implementation.
 
 For the implementation internals (ingest path, structured provider-log metadata,
-boot preload, the underlying database schema, and the desktop `freeapi.log` file
+boot preload, the underlying database schema, and the desktop `srouter.log` file
 logger), see the [Observability deep-dive](../architecture/06-observability.md).
 
 ## File index

@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk } from '@srouter/shared/types.js';
 
 // Inline `<think>…</think>` extraction (DeepSeek-style reasoning models).
 //

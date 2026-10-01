@@ -12,7 +12,7 @@
 | `c3f538e` | 2026-08-11 | feat(routing): per-model weight overrides via MODEL_ROUTING_OVERRIDES (#747) — introduced the routing override variable. |
 | `ba39318` | 2026-08-11 | feat(dashboard): automatic update check w/ release-notes dialog (#782) — automatic release reminder behind the update-checker settings. |
 | `8cb75ac` | 2026-08-10 | feat(proxy): opt-in X-Fallback-Detail header (#792) — introduced `FALLBACK_DETAIL_HEADER`. |
-| `a6f7718` | 2026-08-06 | fix(db): harden data dir so WAL sidecars are covered (#795) — data-directory restriction and `FREEAPI_DB_DIR_HARDENING`. |
-| `29eb340` | 2026-08-06 | feat: in-dashboard update checker (#635) — `FREELLMAPI_UPDATE_CHECK` and related variables. |
+| `a6f7718` | 2026-08-06 | fix(db): harden data dir so WAL sidecars are covered (#795) — data-directory restriction and `SROUTER_DB_DIR_HARDENING`. |
+| `29eb340` | 2026-08-06 | feat: in-dashboard update checker (#635) — `SROUTER_UPDATE_CHECK` and related variables. |
 
 Regenerate with `git log --oneline -- .env.example`.

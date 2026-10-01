@@ -18,9 +18,9 @@ const openDbs: Database.Database[] = [];
 const tempDirs: string[] = [];
 
 function fileDb(): { db: Database.Database; keyFile: string } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-keyfile-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-keyfile-'));
   tempDirs.push(dir);
-  const db = new Database(path.join(dir, 'freeapi.db'));
+  const db = new Database(path.join(dir, 'srouter.db'));
   db.exec('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
   openDbs.push(db);
   return { db, keyFile: path.join(dir, '.encryption-key') };

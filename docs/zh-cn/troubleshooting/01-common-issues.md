@@ -10,7 +10,7 @@
 
 **修复：** 在 Docker Desktop 上使用 `host.docker.internal`，Linux 上使用 `172.17.0.1` 或宿主机局域网 IP，并确保代理（Clash / v2rayN / sing-box）监听 `0.0.0.0` 而非 `127.0.0.1`。Compose 的 `host-gateway` 映射：`extra_hosts: ["host.docker.internal:host-gateway"]`。
 
-**诊断：** `docker exec freellmapi curl -v http://host.docker.internal:11434/api/tags`。
+**诊断：** `docker exec SRouter curl -v http://host.docker.internal:11434/api/tags`。
 
 ## 空链 `400`
 
@@ -48,7 +48,7 @@
 
 **原因：** 从 Finder / Explorer 启动的 Electron 没有附加 `stdout`。
 
-**修复：** 打开托盘 → `Open Logs Folder` → `freeapi.log`（`desktop/src/logger.ts` 的 tee，`installFileLogger` 在 server 启动前安装）。或使用 `docker logs`。
+**修复：** 打开托盘 → `Open Logs Folder` → `srouter.log`（`desktop/src/logger.ts` 的 tee，`installFileLogger` 在 server 启动前安装）。或使用 `docker logs`。
 
 ## 更新检查显示无更新 / 未签名构建无法自动更新
 
@@ -68,6 +68,6 @@
 
 ## 相关
 
-- [桌面端](../desktop/OVERVIEW.md) — `freeapi.log` 轮转。
+- [桌面端](../desktop/OVERVIEW.md) — `srouter.log` 轮转。
 - [代理传输](../proxy/OVERVIEW.md) — fetch-relay 协议。
 - [环境变量](../env/01-variables.md) — 全部配置项。

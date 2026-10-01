@@ -34,7 +34,7 @@ export function contextWindowOf(model: CatalogModel): number | undefined {
  * choose per request; a launch pins one id into ANTHROPIC_MODEL for the whole
  * session, and naming a concrete model there is what makes the session's model
  * visible and reproducible. Unifying the two silently changes what
- * `freellmapi launch` runs.
+ * `srouter launch` runs.
  */
 export function defaultModelId(models: CatalogModel[]): string {
   return models.find(model => model.id !== 'auto' && model.available !== false)?.id ?? 'auto';
@@ -67,7 +67,7 @@ export function resolveLaunchModel(
     throw new UnknownModelError(
       `No model '${id}' in this gateway's catalog.`
       + (suggestions.length ? ` Did you mean: ${suggestions.join(', ')}?` : '')
-      + ' Run `freellmapi list-models` to see what is registered.',
+      + ' Run `srouter list-models` to see what is registered.',
     );
   }
 

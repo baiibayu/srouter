@@ -16,7 +16,9 @@
     "modelsMenu": "Explorar tipos de modelo",
     "agents": "Agentes",
     "logs": "Logs",
-    "analyticsMenu": "Páginas de análises"
+    "analyticsMenu": "Páginas de análises",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Crie sua conta",
@@ -60,7 +62,7 @@
     "emailChanged": "E-mail alterado com sucesso.",
     "passwordReset": "Senha redefinida com sucesso. Por favor, entre novamente.",
     "resetCodeDockerHint": "Está usando Docker? O código está no log do contêiner: docker logs <container>.",
-    "desktopSessionFailed": "O painel não conseguiu entrar no servidor local. Feche o FreeLLMAPI e abra-o novamente."
+    "desktopSessionFailed": "O painel não conseguiu entrar no servidor local. Feche o SRouter e abra-o novamente."
   },
   "common": {
     "save": "Salvar",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Verificação automática de atualizações",
     "autoUpdateCheckHelp": "Consulta o GitHub uma vez por dia em busca de uma nova versão e exibe um lembrete. Desativado por padrão.",
     "openReleases": "Abrir releases no GitHub",
-    "restartAfterUpdate": "Reinicie o FreeLLMAPI após a conclusão da build."
+    "restartAfterUpdate": "Reinicie o SRouter após a conclusão da build.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modelos",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Orçamento mensal de tokens",
     "remaining": "restante",
     "used": "usados",
-    "usedScopeHint": "Somente requisições de chat, desde o início deste mês civil, somadas em todos os modelos da cadeia ativa, incluindo endpoints personalizados. O tráfego enviado a um provedor fora do FreeLLMAPI não é contado.",
+    "usedScopeHint": "Somente requisições de chat, desde o início deste mês civil, somadas em todos os modelos da cadeia ativa, incluindo endpoints personalizados. O tráfego enviado a um provedor fora do SRouter não é contado.",
     "legendRemainingTitle": "Restante / orçamento mensal de {name} ({platform})",
     "noPublishedQuota": "+{count} sem cota publicada",
     "noPublishedQuotaTitle": "Esses modelos não têm orçamento mensal de tokens documentado, então não há restante a exibir.",
@@ -517,6 +525,23 @@
     "providerActions": "Ações do provedor",
     "routeViaProxy": "Rotear pelo proxy",
     "checkNow": "Verificar agora",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Também configurável pela variável de ambiente ",
     "proxyEnvHintAfter": " (tem precedência). Deixe em branco para desativar. Exemplos:",
     "importKeys": "Importar chaves de provedor",
@@ -679,7 +704,8 @@
     "testFailed": "Teste do modelo falhou",
     "testThrottled": "Aguarde {seconds}s antes de testar este modelo novamente.",
     "noModelsForProvider": "Nenhum modelo configurado para este provedor.",
-    "testModels": "Testar modelos"
+    "testModels": "Testar modelos",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

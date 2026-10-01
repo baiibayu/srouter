@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import path from 'node:path';
 import { z } from 'zod';
 import { getDb } from '../db/index.js';
 import {
@@ -103,7 +104,14 @@ backupsRouter.get('/:id/download', (req: Request, res: Response) => {
   }
   try {
     const file = getBackupFile(getDb(), id);
-    res.download(file.path, file.filename);
+    // `send` (behind res.download) 404s on any path containing a dotted
+    // segment, so an absolute path under an install directory like
+    // `.srouter` never resolves. Pass the basename with an explicit `root`
+    // so only the filename is inspected. The service already confines the
+    // resolved path to the database directory, so `root` cannot escape it.
+    res.download(path.basename(file.path), file.filename, {
+      root: path.dirname(file.path),
+    });
   } catch (err) {
     fail(res, err, 404, 'Download failed');
   }

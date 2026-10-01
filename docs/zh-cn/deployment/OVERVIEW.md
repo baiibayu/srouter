@@ -4,7 +4,7 @@
 
 ## 范围
 
-在 Docker 中运营 FreeLLMAPI：已发布的镜像、Compose 快速开始、持久化、健康检查、容器网络坑点，以及日常维护工作——升级、备份和声明式配置。内容取材自 [`Dockerfile`](../../../Dockerfile)、[`docker-compose.yml`](../../../docker-compose.yml)、[`.dockerignore`](../../../.dockerignore) 与 [docs/zh-cn/install/01-install.md](../install/01-install.md)。
+在 Docker 中运营 SRouter：已发布的镜像、Compose 快速开始、持久化、健康检查、容器网络坑点，以及日常维护工作——升级、备份和声明式配置。内容取材自 [`Dockerfile`](../../../Dockerfile)、[`docker-compose.yml`](../../../docker-compose.yml)、[`.dockerignore`](../../../.dockerignore) 与 [docs/zh-cn/install/01-install.md](../install/01-install.md)。
 
 Docker 之外的安装路径（一行命令脚本、本地开发、桌面应用）见「[安装与部署](../install/01-install.md)」。
 
@@ -21,6 +21,6 @@ Docker 之外的安装路径（一行命令脚本、本地开发、桌面应用�
 | --- | --- |
 | 镜像 | `ghcr.io/tashfeenahmed/freellmapi:latest` |
 | 端口 | 3001（默认发布在 `127.0.0.1`；`HOST_BIND=0.0.0.0` 对局域网开放） |
-| 数据卷 | 命名卷 `freellmapi-data`，挂载于 `/app/server/data` |
+| 数据卷 | 命名卷 `srouter-data`，挂载于 `/app/server/data` |
 | 运行用户 | `node`（非 root） |
 | 健康检查 | 每 30 秒一次 `GET /api/ping`，由容器内的 Node fetch 发起 |

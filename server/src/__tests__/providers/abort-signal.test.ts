@@ -3,7 +3,7 @@ import type { AddressInfo } from 'net';
 import { describe, it, expect, afterEach } from 'vitest';
 import { OpenAICompatProvider } from '../../providers/openai-compat.js';
 import { isClientAbortError, newClientAbortError } from '../../lib/error-classify.js';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 
 /**
  * AbortSignal-through-fetch coverage (P1, mined from the frankljlyy-ai and

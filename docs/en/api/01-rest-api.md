@@ -34,7 +34,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3001/v1",
-    api_key="freellmapi-your-unified-key",
+    api_key="srouter-your-unified-key",
 )
 
 resp = client.chat.completions.create(
@@ -49,7 +49,7 @@ print("Routed via:", resp.headers.get("x-routed-via"))
 
 ```bash
 curl http://localhost:3001/v1/chat/completions \
-  -H "Authorization: Bearer freellmapi-your-unified-key" \
+  -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "auto",
@@ -71,7 +71,7 @@ These rank **every enabled model**, ignoring your chain order. Common synonyms r
 
 ```bash
 curl http://localhost:3001/v1/chat/completions \
-  -H "Authorization: Bearer freellmapi-your-unified-key" \
+  -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "auto:fast",
@@ -83,7 +83,7 @@ curl http://localhost:3001/v1/chat/completions \
 
 ```bash
 curl http://localhost:3001/v1/chat/completions \
-  -H "Authorization: Bearer freellmapi-your-unified-key" \
+  -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "auto:coding",
@@ -107,7 +107,7 @@ Each catalog entry also carries `execution_status`, a live answer to "would a re
 
 ```bash
 curl "http://localhost:3001/v1/models?execution_status=ready" \
-  -H "Authorization: Bearer freellmapi-your-unified-key"
+  -H "Authorization: Bearer srouter-your-unified-key"
 ```
 
 ## Streaming
@@ -189,7 +189,7 @@ Gemini SDKs and Gemini CLI can use the native `/v1beta` surface:
 
 ```bash
 curl "http://localhost:3001/v1beta/models/gemini-2.5-flash:generateContent" \
-  -H "x-goog-api-key: freellmapi-your-unified-key" \
+  -H "x-goog-api-key: srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"contents":[{"role":"user","parts":[{"text":"hello"}]}]}'
 ```
@@ -269,7 +269,7 @@ HuggingFace models route through the **fal queue** (`router.huggingface.co/fal-a
 
 ```bash
 curl http://localhost:3001/v1/videos/generations \
-  -H "Authorization: Bearer freellmapi-your-unified-key" \
+  -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"model":"auto","prompt":"a sunrise over a quiet lake","duration":6}' \
   --output video.mp4
@@ -324,7 +324,7 @@ print(len(resp.data), "vectors of", len(resp.data[0].embedding), "dims")
 
 ```bash
 curl http://localhost:3001/v1/embeddings \
-  -H "Authorization: Bearer freellmapi-your-unified-key" \
+  -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"model": "auto", "input": "hello world"}'
 ```
@@ -348,11 +348,11 @@ The default family, per-provider toggles, and priorities live on the dashboard's
 
 ## Anthropic / Claude clients
 
-FreeLLMAPI also speaks Anthropic's Messages API, so anything built for Claude — including **Claude Code** and the official Anthropic SDKs — can run against your free pool. Point the client at your server's **origin** (Anthropic clients append `/v1/messages` themselves) and authenticate with your unified key. Both `x-api-key` and `Authorization: Bearer` are accepted.
+SRouter also speaks Anthropic's Messages API, so anything built for Claude — including **Claude Code** and the official Anthropic SDKs — can run against your free pool. Point the client at your server's **origin** (Anthropic clients append `/v1/messages` themselves) and authenticate with your unified key. Both `x-api-key` and `Authorization: Bearer` are accepted.
 
 ```bash
 curl http://localhost:3001/v1/messages \
-  -H "x-api-key: freellmapi-your-unified-key" \
+  -H "x-api-key: srouter-your-unified-key" \
   -H "anthropic-version: 2023-06-01" \
   -H "Content-Type: application/json" \
   -d '{
@@ -369,14 +369,14 @@ Claude model names map to your free pool on the **Keys → Anthropic** tab: each
 *On macOS / Linux (Bash):*
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:3001
-export ANTHROPIC_AUTH_TOKEN=freellmapi-your-unified-key   # NOT ANTHROPIC_API_KEY
+export ANTHROPIC_AUTH_TOKEN=srouter-your-unified-key   # NOT ANTHROPIC_API_KEY
 claude
 ```
 
 *On Windows (PowerShell):*
 ```powershell
 $env:ANTHROPIC_BASE_URL="http://localhost:3001"
-$env:ANTHROPIC_AUTH_TOKEN="freellmapi-your-unified-key"
+$env:ANTHROPIC_AUTH_TOKEN="srouter-your-unified-key"
 claude
 ```
 
@@ -425,7 +425,7 @@ claude
   "items": [
     {
       "id": 14,
-      "filename": "freellmapi-20260825-040000-enc.sql",
+      "filename": "SRouter-20260825-040000-enc.sql",
       "filesize": 2418688,
       "isFull": true,
       "source": "scheduled",

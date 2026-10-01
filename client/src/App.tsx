@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ChevronDown, KeyRound, LogOut, Menu, MoreHorizontal, Search, Settings, Sparkles } from 'lucide-react'
+import { Bell, ChevronDown, KeyRound, LogOut, Menu, MoreHorizontal, Search, Settings, Sparkles } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -14,7 +14,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { AuthGate, ChangeCredentialsModal } from '@/components/auth-gate'
+import { LogoMark } from '@/components/logo-mark'
 import { CommandPalette } from '@/components/command-palette'
 import { openCommandPalette } from '@/components/command-palette-state'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -23,7 +25,7 @@ import { Toaster } from '@/components/toaster'
 import { UpdateReminder } from '@/components/update-reminder'
 import { usePremium } from '@/hooks/use-premium'
 import { I18nProvider, useI18n } from '@/i18n'
-import { logout } from '@/lib/api'
+import { apiFetch, logout } from '@/lib/api'
 import { toast } from '@/lib/toast'
 import { ThemeProvider } from '@/theme'
 import KeysPage from '@/pages/KeysPage'
@@ -39,7 +41,7 @@ import MediaDetailPage from '@/pages/MediaDetailPage'
 import EmbeddingDetailPage from '@/pages/EmbeddingDetailPage'
 import AnalyticsPage from '@/pages/AnalyticsPage'
 import LogsPage from '@/pages/LogsPage'
-import PremiumPage from '@/pages/PremiumPage'
+// PremiumPage removed — catalog sync is fully automatic now.
 import NotFoundPage from '@/pages/NotFoundPage'
 import AgentsPage from '@/pages/AgentsPage'
 
@@ -70,7 +72,7 @@ const navItems = [
   { to: '/keys', labelKey: 'nav.keys' },
   { to: '/agents', labelKey: 'nav.agents' },
   { to: '/analytics', labelKey: 'nav.analytics' },
-  { to: '/premium', labelKey: 'nav.premium' },
+  // Premium page removed — catalog sync is fully automatic now.
 ]
 
 // The modality pages behind "Models"; surfaced in the nav dropdown and
@@ -119,9 +121,9 @@ function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `relative text-sm px-1 py-4 transition-colors ${
+        `relative text-sm px-1 py-4 transition-colors duration-150 ${
           isActive
-            ? 'text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-foreground'
+            ? 'text-foreground font-medium after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-foreground after:rounded-full'
             : 'text-muted-foreground hover:text-foreground'
         }`
       }
@@ -134,8 +136,8 @@ function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
 function Brand() {
   return (
     <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
-      <span className="inline-block size-2 rounded-full bg-foreground" />
-      <span className="font-semibold tracking-tight text-sm">FreeLLMAPI</span>
+      <LogoMark />
+      <span className="font-semibold tracking-tight text-sm">SRouter</span>
     </Link>
   )
 }
@@ -144,10 +146,10 @@ function Brand() {
 // sets this). The navbar then doubles as the window title bar: draggable,
 // padded for the macOS traffic lights, and without the web-only Sign out.
 const isDesktopApp = typeof window !== 'undefined'
-  && (window as Window & { __FREEAPI_DESKTOP__?: boolean }).__FREEAPI_DESKTOP__ === true
+  && (window as Window & { __SROUTER_DESKTOP__?: boolean }).__SROUTER_DESKTOP__ === true
 
 const desktopPlatform = typeof window !== 'undefined'
-  ? (window as Window & { __FREEAPI_PLATFORM__?: string }).__FREEAPI_PLATFORM__
+  ? (window as Window & { __SROUTER_PLATFORM__?: string }).__SROUTER_PLATFORM__
   : undefined
 
 const isMacDesktop = isDesktopApp && (
@@ -223,14 +225,112 @@ function AccountMenuItems({
   )
 }
 
+interface SyncNotification {
+  id: string
+  type: 'added' | 'removed' | 'updated' | 'degraded' | 'update_available'
+  modelId: string
+  displayName: string
+  platform: string
+  message: string
+  timestamp: number
+  read: boolean
+}
+
+function NotificationBell() {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [notifications, setNotifications] = useState<SyncNotification[]>([])
+  const [unread, setUnread] = useState(0)
+
+  function fetchNotifications() {
+    apiFetch<{ notifications: SyncNotification[]; unread: number }>('/api/settings/notifications')
+      .then(data => {
+        setNotifications(data.notifications)
+        setUnread(data.unread)
+      })
+      .catch(() => {})
+  }
+
+  // Fetch on mount and poll every 30 seconds
+  useEffect(() => {
+    fetchNotifications()
+    const id = setInterval(fetchNotifications, 30_000)
+    return () => clearInterval(id)
+  }, [])
+
+  function markRead() {
+    apiFetch('/api/settings/notifications/read', { method: 'POST' })
+      .then(() => setUnread(0))
+      .catch(() => {})
+  }
+
+  const typeIcon = (type: SyncNotification['type']) => {
+    switch (type) {
+      case 'added':          return <span className="text-green-500">＋</span>
+      case 'removed':        return <span className="text-red-500">－</span>
+      case 'updated':        return <span className="text-blue-500">↻</span>
+      case 'degraded':       return <span className="text-amber-500">⚠</span>
+      case 'update_available': return <span className="text-violet-500">⬆</span>
+    }
+  }
+
+  const typeBg = (type: SyncNotification['type'], read: boolean) => {
+    if (read) return ''
+    switch (type) {
+      case 'degraded':         return 'bg-amber-50 dark:bg-amber-950/20'
+      case 'update_available': return 'bg-violet-50 dark:bg-violet-950/20'
+      default:                 return ''
+    }
+  }
+
+  return (
+    <Popover open={open} onOpenChange={(next) => { setOpen(next); if (next) markRead() }}>
+      <PopoverTrigger
+        className={`relative rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground ${buttonVariants({ variant: 'ghost', size: 'icon' })}`}
+        aria-label={t('nav.notifications')}
+      >
+        <Bell className="size-4" />
+        {unread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="border-b px-4 py-2.5 text-sm font-medium">{t('nav.notifications')}</div>
+        {notifications.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+            {t('nav.noNotifications')}
+          </div>
+        ) : (
+          <div className="max-h-72 overflow-y-auto">
+            {notifications.map(n => (
+              <div key={n.id} className={`flex items-start gap-2 border-b px-4 py-2.5 last:border-0 ${typeBg(n.type, n.read)}`}>
+                <span className="mt-0.5 text-sm">{typeIcon(n.type)}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{n.displayName}</p>
+                  <p className="text-xs text-muted-foreground">{n.message}</p>
+                </div>
+                <span className="shrink-0 text-[10px] text-muted-foreground">
+                  {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function Navbar() {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [credentialsMode, setCredentialsMode] = useState<'password' | 'email' | null>(null)
-  const { data: premium, licensed, isLoading: premiumLoading, isError: premiumError } = usePremium()
-  const showUpgrade = Boolean(premium) && !licensed && !premiumLoading && !premiumError
+  const { licensed } = usePremium()
+  const showUpgrade = !licensed
 
   return (
     <>
@@ -249,7 +349,7 @@ function Navbar() {
         >
           <Brand />
           <nav
-            className="ms-10 hidden items-center gap-6 md:flex"
+            className="ms-8 hidden items-center gap-5 lg:ms-10 lg:gap-6 md:flex"
             style={isDesktopApp ? ({ WebkitAppRegion: 'no-drag' } as React.CSSProperties) : undefined}
           >
             {navItems.map((item) => {
@@ -295,6 +395,7 @@ function Navbar() {
               <Search className="size-3.5" />
               <kbd className="text-[10px] text-muted-foreground">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
             </button>
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={buttonVariants({ variant: 'ghost', size: 'icon' })}
@@ -310,7 +411,7 @@ function Navbar() {
                   signOutLabel={t('nav.signOut')}
                   changeEmailLabel={t('auth.changeEmail')}
                   changePasswordLabel={t('auth.changePassword')}
-                  onUpgrade={() => navigate('/premium')}
+                  onUpgrade={() => navigate('/keys')}
                   onOpenSettings={() => setSettingsOpen(true)}
                   onChangeEmail={() => setCredentialsMode('email')}
                   onChangePassword={() => setCredentialsMode('password')}
@@ -364,7 +465,7 @@ function Navbar() {
                   signOutLabel={t('nav.signOut')}
                   changeEmailLabel={t('auth.changeEmail')}
                   changePasswordLabel={t('auth.changePassword')}
-                  onUpgrade={() => navigate('/premium')}
+                  onUpgrade={() => navigate('/keys')}
                   onOpenSettings={() => setSettingsOpen(true)}
                   onChangeEmail={() => setCredentialsMode('email')}
                   onChangePassword={() => setCredentialsMode('password')}
@@ -413,7 +514,7 @@ function PageContainer({ children }: { children: ReactNode }) {
   const location = useLocation()
   const fullBleed = FULL_BLEED_ROUTES.has(location.pathname)
   return (
-    <main className={fullBleed ? 'flex min-h-0 flex-1 flex-col' : 'mx-auto w-full max-w-6xl px-6 py-8'}>
+    <main className={fullBleed ? 'flex min-h-0 flex-1 flex-col' : 'mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8'}>
       {children}
     </main>
   )
@@ -470,7 +571,7 @@ function App() {
                       <Route path="/fallback" element={<Navigate to="/models/chat" replace />} />
                       <Route path="/analytics" element={<AnalyticsPage />} />
                       <Route path="/logs" element={<LogsPage />} />
-                      <Route path="/premium" element={<PremiumPage />} />
+                      <Route path="/premium" element={<Navigate to="/keys" replace />} />
                       <Route path="/test" element={<Navigate to="/playground" replace />} />
                       <Route path="/health" element={<Navigate to="/keys" replace />} />
                       <Route path="*" element={<NotFoundPage />} />

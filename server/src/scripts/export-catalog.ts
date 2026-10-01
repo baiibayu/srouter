@@ -1,18 +1,18 @@
 /**
- * export-catalog — build the signed catalog product from the live freeapi DB.
+ * export-catalog — build the signed catalog product from the live srouter DB.
  *
  * This is the single source of truth pipeline: every model and its resolved
  * quirks come straight out of the same SQLite DB the router uses, so the
  * published catalog can never drift from what the gateway actually serves.
  * The output JSON is what the standalone catalog server (../../catalog) hands
- * to clients — fresh ("live") to Premium, a monthly snapshot to free users.
+ * to clients — a monthly snapshot to all users.
  *
  * Usage:
  *   tsx src/scripts/export-catalog.ts [--db <path>] [--out <path>]
  *                                     [--version <YYYY.MM.DD>] [--tier live|monthly]
  *                                     [--stdout]
  *
- * Defaults: reads the server's data/freeapi.db, writes the suite's
+ * Defaults: reads the server's data/srouter.db, writes the suite's
  * catalog/data/catalog.live.json. The catalog server signs it separately
  * (catalog/src/scripts/sign-catalog.ts) so the signature covers the exact
  * bytes served.
@@ -25,7 +25,7 @@ import { getAllProviders } from '../providers/index.js';
 import { resolveQuirksByModel, quirkKey, listQuirkDefinitions } from '../services/quirks.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SUITE_ROOT = path.resolve(__dirname, '../../../..'); // freeapi/server/src/scripts -> suite root
+const SUITE_ROOT = path.resolve(__dirname, '../../../..'); // srouter/server/src/scripts -> suite root
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);

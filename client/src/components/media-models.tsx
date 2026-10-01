@@ -202,7 +202,7 @@ export function MediaModelsView({ modality }: { modality: 'image' | 'video' | 'a
 
   return (
     <div>
-      <PageHeader title={title} description={description} divider={false} actions={<ModelsTabs />} />
+      <PageHeader title={title} description={description} divider={false} tabs={<ModelsTabs />} />
 
       <div className="space-y-4">
         {modality === 'audio' && <h2 className="text-sm font-medium">{t('models.ttsHeading')}</h2>}

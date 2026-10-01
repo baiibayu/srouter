@@ -16,7 +16,9 @@
     "modelsMenu": "Gennemse modeltyper",
     "agents": "Agenter",
     "logs": "Log",
-    "analyticsMenu": "Analysesider"
+    "analyticsMenu": "Analysesider",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Opret din konto",
@@ -60,7 +62,7 @@
     "emailChanged": "E-mailen er skiftet.",
     "passwordReset": "Adgangskoden er nulstillet. Log ind.",
     "resetCodeDockerHint": "Kører du i Docker? Koden står i containerloggen: docker logs <container>.",
-    "desktopSessionFailed": "Dashboardet kunne ikke logge ind på den lokale server. Afslut FreeLLMAPI, og åbn det igen."
+    "desktopSessionFailed": "Dashboardet kunne ikke logge ind på den lokale server. Afslut SRouter, og åbn det igen."
   },
   "common": {
     "save": "Gem",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Automatisk opdateringstjek",
     "autoUpdateCheckHelp": "Tjekker GitHub én gang om dagen for en ny udgivelse og viser en påmindelse. Slået fra som standard.",
     "openReleases": "Åbn GitHub-udgivelser",
-    "restartAfterUpdate": "Genstart FreeLLMAPI, når buildet er færdigt."
+    "restartAfterUpdate": "Genstart SRouter, når buildet er færdigt.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modeller",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Månedligt token-budget",
     "remaining": "Resten",
     "used": "Brugt",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Udbyderhandlinger",
     "routeViaProxy": "Rute via proxy",
     "checkNow": "Tjek nu",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Også konfigurerbar via",
     "proxyEnvHintAfter": "miljøvariabel (har forrang). Lad det stå tomt for at deaktivere. Eksempler:",
     "importKeys": "Import af udbydernøgler",
@@ -679,7 +704,8 @@
     "testFailed": "Modeltest fejlede",
     "testThrottled": "Vent venligst {seconds}s, før du tester denne model igen.",
     "noModelsForProvider": "Ingen modeller konfigureret for denne udbyder.",
-    "testModels": "Test modeller"
+    "testModels": "Test modeller",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

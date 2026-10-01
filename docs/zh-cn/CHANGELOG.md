@@ -11,7 +11,7 @@
 | 2026-08-23 | `36850e8` | docs(i18n): translate logs/ and architecture/ domains to zh-CN（经 #979 合入） |
 | 2026-08-23 | [`2331045`](https://github.com/tashfeenahmed/freellmapi/commit/2331045) | docs(providers): add unorouter and xkiro to platform catalog |
 | 2026-08-23 | [`36850e8`](https://github.com/tashfeenahmed/freellmapi/commit/36850e8) | docs(providers): document xkiro 5M tokens/day and unorouter per-min RPM in quotas（经 #979 合入） |
-| 2026-08-23 | [`36850e8`](https://github.com/tashfeenahmed/freellmapi/commit/36850e8) | docs(env): add FREEAPI_PROXY_LOCAL_DESTINATIONS, SERVER_LOGS_RETENTION_DAYS/MAX_ROWS（经 #979 合入） |
+| 2026-08-23 | [`36850e8`](https://github.com/tashfeenahmed/freellmapi/commit/36850e8) | docs(env): add SROUTER_PROXY_LOCAL_DESTINATIONS, SERVER_LOGS_RETENTION_DAYS/MAX_ROWS（经 #979 合入） |
 | 2026-08-23 | [`36850e8`](https://github.com/tashfeenahmed/freellmapi/commit/36850e8) | docs(clients): add setup-dsh note in coding agents intro（经 #979 合入） |
 | 2026-08-23 | [`36850e8`](https://github.com/tashfeenahmed/freellmapi/commit/36850e8) | docs(compression): add early-exit protected-span check perf note（经 #979 合入） |
 | 2026-08-23 | [`36850e8`](https://github.com/tashfeenahmed/freellmapi/commit/36850e8) | docs(testing): add new test files note for August 2026 batch（经 #979 合入） |

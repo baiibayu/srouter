@@ -9,7 +9,7 @@ describe('Migration idempotency', () => {
   it('initDb on a fresh in-memory DB then re-run produces identical row counts', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     // Use a single shared file so both inits hit the same DB.
-    const tmpPath = `/tmp/freeapi-idempotency-${Date.now()}.db`;
+    const tmpPath = `/tmp/srouter-idempotency-${Date.now()}.db`;
 
     const db1 = initDb(tmpPath);
     const before = {

@@ -16,7 +16,9 @@
     "modelsMenu": "Przeglądaj typy modeli",
     "agents": "Agenci",
     "logs": "Logi",
-    "analyticsMenu": "Strony analityki"
+    "analyticsMenu": "Strony analityki",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Utwórz swoje konto",
@@ -60,7 +62,7 @@
     "emailChanged": "E-mail został zmieniony.",
     "passwordReset": "Hasło zresetowane. Zaloguj się ponownie.",
     "resetCodeDockerHint": "Serwer działa w kontenerze Docker? Kod znajduje się w logu kontenera: docker logs <container>.",
-    "desktopSessionFailed": "Panel nie mógł zalogować się do lokalnego serwera. Zamknij FreeLLMAPI i otwórz go ponownie."
+    "desktopSessionFailed": "Panel nie mógł zalogować się do lokalnego serwera. Zamknij SRouter i otwórz go ponownie."
   },
   "common": {
     "save": "Zapisz",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Automatyczne sprawdzanie aktualizacji",
     "autoUpdateCheckHelp": "Raz dziennie sprawdza w serwisie GitHub, czy jest nowe wydanie, i wyświetla przypomnienie. Domyślnie wyłączone.",
     "openReleases": "Otwórz wydania w GitHubie",
-    "restartAfterUpdate": "Uruchom ponownie FreeLLMAPI po zakończeniu kompilacji."
+    "restartAfterUpdate": "Uruchom ponownie SRouter po zakończeniu kompilacji.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modele",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Miesięczny budżet tokenów",
     "remaining": "pozostałe",
     "used": "używany",
-    "usedScopeHint": "Tylko żądania czatu od początku bieżącego miesiąca kalendarzowego, zsumowane dla wszystkich modeli w aktywnym łańcuchu — łącznie z własnymi endpointami. Ruch wysyłany do dostawcy z pominięciem FreeLLMAPI nie jest liczony.",
+    "usedScopeHint": "Tylko żądania czatu od początku bieżącego miesiąca kalendarzowego, zsumowane dla wszystkich modeli w aktywnym łańcuchu — łącznie z własnymi endpointami. Ruch wysyłany do dostawcy z pominięciem SRouter nie jest liczony.",
     "legendRemainingTitle": "Pozostało / budżet miesięczny dla {name} ({platform})",
     "noPublishedQuota": "+{count} bez opublikowanego limitu",
     "noPublishedQuotaTitle": "Te modele nie mają udokumentowanego miesięcznego budżetu tokenów, więc nie ma czego pokazać jako pozostałe.",
@@ -517,6 +525,23 @@
     "providerActions": "Działania dostawcy",
     "routeViaProxy": "Trasa przez proxy",
     "checkNow": "Sprawdź teraz",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Możliwość konfiguracji również poprzez",
     "proxyEnvHintAfter": "zmienna środowiskowa (ma pierwszeństwo). Pozostaw puste, aby wyłączyć. Przykłady:",
     "importKeys": "Importuj klucze dostawcy",
@@ -679,7 +704,8 @@
     "testFailed": "Test modelu nie powiódł się",
     "testThrottled": "Odczekaj {seconds}s przed ponownym testem tego modelu.",
     "noModelsForProvider": "Brak skonfigurowanych modeli dla tego dostawcy.",
-    "testModels": "Testuj modele"
+    "testModels": "Testuj modele",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

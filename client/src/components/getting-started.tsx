@@ -9,8 +9,8 @@ import { apiBaseUrl } from '@/components/api-usage'
 import { Button } from '@/components/ui/button'
 import { useI18n } from '@/i18n'
 
-const DISMISS_KEY = 'freellmapi.setup.dismissed'
-const CONNECT_KEY = 'freellmapi.setup.connected'
+const DISMISS_KEY = 'srouter.setup.dismissed'
+const CONNECT_KEY = 'srouter.setup.connected'
 
 function readFlag(key: string): boolean {
   try { return localStorage.getItem(key) === '1' } catch { return false }

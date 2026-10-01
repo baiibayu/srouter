@@ -1,4 +1,4 @@
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 import { contentToString } from '../lib/content.js';
 
 export type ContextHandoffMode = 'off' | 'on_model_switch';
@@ -25,7 +25,7 @@ export const HANDOFF_MAX_TOKENS = Math.ceil((MAX_HANDOFF_CHARS + 400) / 4);
 const store = new Map<string, SessionContext>();
 
 export function getContextHandoffMode(): ContextHandoffMode {
-  const raw = process.env.FREELLMAPI_CONTEXT_HANDOFF?.trim().toLowerCase();
+  const raw = process.env.SROUTER_CONTEXT_HANDOFF?.trim().toLowerCase();
   return raw === 'on_model_switch' ? 'on_model_switch' : 'off';
 }
 
@@ -127,13 +127,13 @@ export function maybeInjectContextHandoff(params: {
   const alreadyPresent = messages.some(m => {
     if (m.role !== 'system') return false;
     const text = typeof m.content === 'string' ? m.content : contentToString(m.content);
-    return text.startsWith('FreeLLMAPI context handoff:');
+    return text.startsWith('srouter context handoff:');
   });
   if (alreadyPresent) return { messages, injected: false, injectedTokens: 0 };
 
   const summary = buildSummary(ctx.recentMessages);
   const handoffContent = [
-    'FreeLLMAPI context handoff:',
+    'srouter context handoff:',
     `You are taking over an ongoing conversation from another model (${ctx.lastModelKey} → ${selectedModelKey}).`,
     'Continue the user\'s task using the conversation context already provided in this request.',
     'Do not restart the task, re-ask already answered setup questions, or discard prior tool results.',

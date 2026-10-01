@@ -17,7 +17,7 @@
 export const openapiSpec = {
   openapi: '3.0.3',
   info: {
-    title: 'FreeLLMAPI',
+    title: 'SRouter',
     version: '0.4.1',
     description:
       'OpenAI-compatible proxy that aggregates free LLM provider tiers behind a single /v1 endpoint. ' +

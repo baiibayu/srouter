@@ -2,7 +2,7 @@
 
 # Security and key handling
 
-How FreeLLMAPI protects the provider API keys you store in it, and how the `ENCRYPTION_KEY` that makes that protection real is generated, stored, and migrated.
+How SRouter protects the provider API keys you store in it, and how the `ENCRYPTION_KEY` that makes that protection real is generated, stored, and migrated.
 
 Sources: [`.env.example`](../../../.env.example) (key lifecycle comments), [`server/src/lib/crypto.ts`](../../../server/src/lib/crypto.ts), and [`server/src/db/index.ts`](../../../server/src/db/index.ts).
 
@@ -58,18 +58,18 @@ Stored provider keys are encrypted with AES-256-GCM using the resolved key. Cons
 
 - **Keep the same `ENCRYPTION_KEY` across restarts and upgrades.** Losing it makes every stored provider key undecryptable; there is no recovery path.
 - The dashboard's key export exists for backup purposes; its rate limit is deliberately much tighter than the general `/api` flood guard (see [01-variables.md](01-variables.md#rate-limits)).
-- The optional encrypted DB backup ([02-updates-and-backup.md](../deployment/02-updates-and-backup.md)) defaults its envelope key to `ENCRYPTION_KEY`; `FREEAPI_DB_BACKUP_KEY` can override that with a separate 64-char hex key.
+- The optional encrypted DB backup ([02-updates-and-backup.md](../deployment/02-updates-and-backup.md)) defaults its envelope key to `ENCRYPTION_KEY`; `SROUTER_DB_BACKUP_KEY` can override that with a separate 64-char hex key.
 
 ## Data directory hardening (WAL sidecars)
 
-SQLite creates `-wal` and `-shm` sidecar files on the first write and deletes them on the last clean close — so at startup there may be nothing there to chmod, and the files' protection has to come from the directory they live in. FreeLLMAPI therefore restricts the directory holding the database to the owning account before opening the connection (on Windows the ACL is inherited, so hardening first means the database file is born protected rather than spending its first moments with whatever ACL the parent handed down).
+SQLite creates `-wal` and `-shm` sidecar files on the first write and deletes them on the last clean close — so at startup there may be nothing there to chmod, and the files' protection has to come from the directory they live in. SRouter therefore restricts the directory holding the database to the owning account before opening the connection (on Windows the ACL is inherited, so hardening first means the database file is born protected rather than spending its first moments with whatever ACL the parent handed down).
 
-Because locking down a directory that is not ours would be a worse outage than the leak it prevents (pointing the DB at `/tmp/freeapi.db` must not chmod `0700` `/tmp`), hardening applies by ownership-by-construction:
+Because locking down a directory that is not ours would be a worse outage than the leak it prevents (pointing the DB at `/tmp/srouter.db` must not chmod `0700` `/tmp`), hardening applies by ownership-by-construction:
 
 1. The directory was just created by this process, or
 2. It is the built-in default data directory (`server/data`), which ships as ours.
 
-An operator pointing `FREEAPI_DB_PATH` at a dedicated pre-existing directory can opt in with `FREEAPI_DB_DIR_HARDENING=1`, and opt out entirely with `=0`. The default is default-on-where-safe rather than a required flag, because hardening that only runs when someone remembers to ask for it is the same class of failure as hardening nobody noticed had stopped running.
+An operator pointing `SROUTER_DB_PATH` at a dedicated pre-existing directory can opt in with `SROUTER_DB_DIR_HARDENING=1`, and opt out entirely with `=0`. The default is default-on-where-safe rather than a required flag, because hardening that only runs when someone remembers to ask for it is the same class of failure as hardening nobody noticed had stopped running.
 
 ## First-run setup code
 

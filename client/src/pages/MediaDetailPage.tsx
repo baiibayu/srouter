@@ -75,7 +75,7 @@ export default function MediaDetailPage({ modality }: { modality: 'image' | 'vid
 
   return (
     <div>
-      <PageHeader title={label || t('models.providersHeading')} description={t('models.providersHeading')} divider={false} actions={<ModelsTabs />} />
+      <PageHeader title={label || t('models.providersHeading')} description={t('models.providersHeading')} divider={false} tabs={<ModelsTabs />} />
 
       <div className="space-y-6">
         <Link to={modality === 'transcription' ? '/models/audio' : `/models/${modality}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -85,7 +85,7 @@ export default function MediaDetailPage({ modality }: { modality: 'image' | 'vid
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
         ) : members.length === 0 ? (
-          <div className="rounded-3xl border border-dashed p-8 text-center">
+          <div className="rounded-3xl border border-dashed p-6 sm:p-8 text-center">
             <p className="text-sm text-muted-foreground">{t('models.modelNotFound')}</p>
           </div>
         ) : (
@@ -102,7 +102,7 @@ export default function MediaDetailPage({ modality }: { modality: 'image' | 'vid
               <div className="space-y-1.5">
                 {members.map(m => (
                   <div key={m.id} className={`flex items-center gap-2 text-xs ${m.enabled ? '' : 'opacity-50'}`}>
-                    <span className="w-28 shrink-0 text-muted-foreground">{m.platform}</span>
+                    <span className="w-20 shrink-0 text-muted-foreground sm:w-28">{m.platform}</span>
                     <code className="min-w-0 flex-1 truncate font-mono text-[11px]">{m.modelId}</code>
                     {m.keyCount === 0 && (
                       <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-amber-600/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400">{t('models.noKey')}</span>

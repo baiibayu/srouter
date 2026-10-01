@@ -2,7 +2,7 @@
 
 # Outbound proxies
 
-How FreeLLMAPI routes its provider-bound traffic through proxies, which variables win when several are set, and the Docker networking gotchas that come with that.
+How SRouter routes its provider-bound traffic through proxies, which variables win when several are set, and the Docker networking gotchas that come with that.
 
 Sources: [`.env.example`](../../../.env.example) (proxy block), [`docker-compose.yml`](../../../docker-compose.yml), the container-networking notes in [docs/en/install/01-install.md](../install/01-install.md), the proxy transports in [`../proxy/01-fetch-relay.md`](../proxy/01-fetch-relay.md) / [`../proxy/OVERVIEW.md`](../proxy/OVERVIEW.md) (`server/src/lib/proxy.ts:52-414`, `server/src/lib/config.ts:95-110` for `TRUST_PROXY`).
 
@@ -29,7 +29,7 @@ The standard variables are also read in their lower-case spellings (`all_proxy`,
 
 | Variable | Role in the chain |
 | --- | --- |
-| `PROXY_URL` | Explicit FreeLLMAPI proxy setting; highest precedence. Checked via `readEnv('PROXY_URL')` (upper- or lower-case). |
+| `PROXY_URL` | Explicit SRouter proxy setting; highest precedence. Checked via `readEnv('PROXY_URL')` (upper- or lower-case). |
 | Dashboard setting | Keys → Outbound proxy (`getSetting('proxy_url')`); beats the generic environment variables — a proxy deliberately typed into the UI must not be silently overridden by a machine-wide `ALL_PROXY` exported for curl/git. |
 | `ALL_PROXY` | Standard catch-all proxy variable. |
 | `HTTPS_PROXY` / `HTTP_PROXY` | Conventional per-scheme variables, lowest of the explicit env vars. |
@@ -82,11 +82,11 @@ Parsed once in `applyProxyUrl()` from `readEnv('NO_PROXY')` (`server/src/lib/pro
 - proxy disabled globally (`applyProxyEnabled(false)` / `_proxyEnabled`);
 - `platform` listed in `proxy_bypass` (`applyProxyBypass`);
 - `NO_PROXY` matches the upstream hostname;
-- upstream hostname is loopback or private/LAN and `FREEAPI_PROXY_LOCAL_DESTINATIONS` is not set (`server/src/lib/proxy.ts:262-263,314`).
+- upstream hostname is loopback or private/LAN and `SROUTER_PROXY_LOCAL_DESTINATIONS` is not set (`server/src/lib/proxy.ts:262-263,314`).
 
 By default **local and LAN destinations always bypass the proxy** — a remote proxy has no route back to `localhost`/`127.0.0.0/8`/`::1`/`0.0.0.0` or RFC1918/ULA/CGNAT addresses, and an IP literal must go on the wire as SOCKS ATYP `0x01` no matter what `socks5h` promises, so Tor logs “giving Tor only an IP address” and may refuse. That is the right default for local Ollama / llama.cpp / LM Studio.
 
-Set `FREEAPI_PROXY_LOCAL_DESTINATIONS=true` (checked case-insensitive `1|true|yes`) only when proxying a local address *is* the point — e.g. `ssh -D` dynamic tunnel where `http://127.0.0.1:11434` through SOCKS should resolve at the remote end.
+Set `SROUTER_PROXY_LOCAL_DESTINATIONS=true` (checked case-insensitive `1|true|yes`) only when proxying a local address *is* the point — e.g. `ssh -D` dynamic tunnel where `http://127.0.0.1:11434` through SOCKS should resolve at the remote end.
 
 ### Fetch-Relay loopback hostnames
 
@@ -99,7 +99,7 @@ isLoopbackRelayHostname(hostname): localhost, 127.0.0.1, ::1, [::1], 127.*  // s
 Otherwise `https` is required; plaintext to a remote host earns `Fetch Relay URL must use https, or http only for a loopback relay.` at boot. The same guard is shared by the settings validator so the dashboard and headless installs agree.
 
 > **Callout — inbound vs outbound proxy.**
-> The outbound chain above (`PROXY_URL`, dashboard, `ALL_PROXY`, … `detectSystemProxy()`, per-key proxy, `NO_PROXY`, loopback guard) steers **FreeLLMAPI → provider** traffic. `TRUST_PROXY` steers the opposite direction — **client → FreeLLMAPI** — by telling Express whether to trust `X-Forwarded-For` / `X-Forwarded-Proto` from a reverse proxy (Caddy/nginx/Traefik). They are independent knobs; setting one does not imply the other. See `server/src/lib/config.ts:95-110` `parseTrustProxy()` vs `server/src/lib/proxy.ts:52-414` outbound chain.
+> The outbound chain above (`PROXY_URL`, dashboard, `ALL_PROXY`, … `detectSystemProxy()`, per-key proxy, `NO_PROXY`, loopback guard) steers **SRouter → provider** traffic. `TRUST_PROXY` steers the opposite direction — **client → SRouter** — by telling Express whether to trust `X-Forwarded-For` / `X-Forwarded-Proto` from a reverse proxy (Caddy/nginx/Traefik). They are independent knobs; setting one does not imply the other. See `server/src/lib/config.ts:95-110` `parseTrustProxy()` vs `server/src/lib/proxy.ts:52-414` outbound chain.
 
 See also [`../proxy/OVERVIEW.md`](../proxy/OVERVIEW.md) for the full transport scope.
 
@@ -107,7 +107,7 @@ See also [`../proxy/OVERVIEW.md`](../proxy/OVERVIEW.md) for the full transport s
 
 Inside a container, `127.0.0.1` is the container itself — not your machine (#733). If your proxy client runs on the host (Clash, v2rayN, sing-box, a corporate proxy), two adjustments are needed:
 
-1. Point FreeLLMAPI at the host's address instead of loopback:
+1. Point SRouter at the host's address instead of loopback:
 
    ```env
    PROXY_URL=socks5h://host.docker.internal:7890
@@ -127,13 +127,13 @@ A second, unrelated way a container can be cut off from providers while the host
 To see which case you are hitting, ask the container directly:
 
 ```bash
-docker compose exec freellmapi node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```
 
 ## TRUST_PROXY: inbound vs outbound
 
 > **Inbound vs outbound — different directions.**
-> Outbound (`PROXY_URL`, dashboard, `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY`, `detectSystemProxy()`, per-key proxy, `NO_PROXY`, loopback guard) controls **FreeLLMAPI → provider** egress. `TRUST_PROXY` controls **client → FreeLLMAPI** ingress: whether Express trusts `X-Forwarded-For` / `X-Forwarded-Proto` from a reverse proxy so Analytics and the per-IP rate limiters see the real client. One does not imply the other.
+> Outbound (`PROXY_URL`, dashboard, `ALL_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY`, `detectSystemProxy()`, per-key proxy, `NO_PROXY`, loopback guard) controls **SRouter → provider** egress. `TRUST_PROXY` controls **client → SRouter** ingress: whether Express trusts `X-Forwarded-For` / `X-Forwarded-Proto` from a reverse proxy so Analytics and the per-IP rate limiters see the real client. One does not imply the other.
 >
 > | Outbound | `PROXY_URL` / `ALL_PROXY` / `detectSystemProxy()` etc. | `server/src/lib/proxy.ts:52-414` | Provider-bound traffic |
 > | Inbound | `TRUST_PROXY` (`false\|true\|<hops>\|addr/CIDR`, `.env.example:314`) | `server/src/lib/config.ts:95-110` `parseTrustProxy()` → Express `trust proxy` | Client IP for `REQUEST_ANALYTICS_LOG_CLIENT` + `PROXY_RATE_LIMIT_RPM` / `ADMIN_RATE_LIMIT_RPM` |
@@ -151,7 +151,7 @@ When trusted, `client-context` (`server/src/lib/client-context.ts`) and limiters
 
 ## Related inbound rate-limit knobs
 
-Despite the shared “proxy” name, these two variables throttle *inbound* traffic to FreeLLMAPI itself, not outbound provider calls. They count the **real client IP** when `TRUST_PROXY` is set, otherwise the socket peer:
+Despite the shared “proxy” name, these two variables throttle *inbound* traffic to SRouter itself, not outbound provider calls. They count the **real client IP** when `TRUST_PROXY` is set, otherwise the socket peer:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |

@@ -4,7 +4,7 @@
 
 ## Scope
 
-This domain documents FreeLLMAPI's runtime configuration surface: every variable the server reads from `.env`, how provider API keys are encrypted at rest, and how outbound traffic can be steered through proxies. The single source of truth is [`.env.example`](../../../.env.example) at the repository root; the references here are derived from it (and from the code paths it describes) and never invent values.
+This domain documents SRouter's runtime configuration surface: every variable the server reads from `.env`, how provider API keys are encrypted at rest, and how outbound traffic can be steered through proxies. The single source of truth is [`.env.example`](../../../.env.example) at the repository root; the references here are derived from it (and from the code paths it describes) and never invent values.
 
 For getting an install running in the first place, see [Install & deploy](../install/01-install.md).
 
@@ -18,6 +18,6 @@ For getting an install running in the first place, see [Install & deploy](../ins
 
 ## Conventions
 
-- Variables are loaded by [`server/src/env.ts`](../../../server/src/env.ts) via dotenv; `FREEAPI_ENV_PATH` selects an alternate `.env` location for embedders.
+- Variables are loaded by [`server/src/env.ts`](../../../server/src/env.ts) via dotenv; `SROUTER_ENV_PATH` selects an alternate `.env` location for embedders.
 - Commented lines in `.env.example` are optional; uncommented ones ship active defaults.
 - Where a variable can also be changed at runtime from the dashboard, the runtime settings key is noted and always takes precedence over the environment value.

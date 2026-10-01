@@ -6,7 +6,6 @@ import path from 'path';
 import { getDb } from '../db/index.js';
 import { resolveProvider, getAllProviders } from '../providers/index.js';
 import { OpenAICompatProvider } from '../providers/openai-compat.js';
-import { getSyncState } from '../services/catalog-sync.js';
 import { encrypt, decrypt, maskKey } from '../lib/crypto.js';
 import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../lib/key-parser.js';
 import { assessProviderUrl } from '../lib/url-guard.js';
@@ -18,11 +17,12 @@ import { registerCustomModels, registerCustomChatModels } from '../services/cust
 import { registerCustomMediaModel } from '../services/custom-media-register.js';
 import { discoverEndpointModels, probeEndpointModel, classifyModelId, ModelDiscoveryError } from '../services/model-discovery.js';
 import { autoDiscoverModels } from '../services/auto-discover.js';
+import { syncCatalog } from '../services/catalog-sync.js';
 import { probeEmbeddingDimensions, registerCustomEmbeddingModel } from '../services/embeddings.js';
 import { endpointScopeForBaseUrl, normalizeBaseUrl } from '../lib/endpoint-scope.js';
 import { recordCustomModelTombstone } from '../services/custom-model-tombstone.js';
 import type { Db } from '../db/types.js';
-import type { Platform } from '@freellmapi/shared/types.js';
+import type { Platform } from '@srouter/shared/types.js';
 import { parseModelScope } from '../lib/model-scope.js';
 import { KEY_PROXY_URL_ERROR, KEY_PROXY_URL_MAX, decryptProxyUrl, encryptProxyUrl, isValidKeyProxyUrl, maskProxyUrl } from '../lib/key-proxy.js';
 
@@ -36,11 +36,11 @@ const PLATFORMS = [
   'aclide',
   'speka',
   'moondream',
-  'google', 'groq', 'cerebras', 'sail', 'electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'bai', 'radeon', 'nvidia', 'mistral',
+  'google', 'groq', 'xai', 'cerebras', 'sail', 'electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'bai', 'radeon', 'nvidia', 'mistral',
   'openrouter', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama',
-  'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'ovh', 'agnes', 'reka', 'siliconflow',
+  'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'reka', 'siliconflow',
   'routeway', 'bazaarlink', 'ainative', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
-  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'custom',
+  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'custom',
 ] as const;
 
 const ALLOWED_IMPORT_EXTENSIONS = new Set(['.env', '.json', '.jsonc', '.md', '.txt', '.csv']);
@@ -181,8 +181,8 @@ function insertImportedKey(platform: (typeof PLATFORMS)[number], keyName: string
 // Count enabled catalog models for a platform. Used to warn when a key is
 // added for a provider that has zero models in the operator's current catalog
 // tier — the Agnes case (#438): the provider is registered and selectable, but
-// its models ship in the premium/live catalog and only appear for free-tier
-// installs once they age into the monthly catalog, so a fresh install adds the
+// its models ship in the catalog and only appear for installs
+// once they age into the monthly catalog, so a fresh install adds the
 // key and silently sees nothing.
 /**
  * Whether a stored row belongs in an export file. Kept in one place because the
@@ -203,7 +203,8 @@ export function isExportableKey(row: { platform: string; baseUrl: string | null;
 // Every model a platform's key can serve: chat rows, plus embedding and
 // generative-media rows. Media-only providers (Speechify is TTS-only) never
 // have a chat row, so counting `models` alone reported "no models" — and fired
-// the no-catalog notice — for them even on a fully synced Premium install
+// the no-catalog notice — for them even on a fully synced
+// install
 // (#1327).
 function enabledModelCount(platform: string): number {
   const db = getDb();
@@ -227,11 +228,11 @@ function openAICompatBaseUrl(platform: string): string | null {
 // Non-null when the just-added key has no usable models yet, so the client can
 // explain the silence instead of leaving the user staring at an empty list.
 //
-// #1327: the old copy told a Premium user to "add a Premium license key", and
+// #1327: the old copy told users to "add a license key", and
 // told everyone to add the provider as a custom OpenAI-compatible endpoint
 // "with its base URL" without naming it — even for providers with no such
-// endpoint. The notice now matches the install's actual catalog tier, names
-// the base URL, and only offers the custom-provider route where it works.
+// endpoint. The notice now names the base URL, and only offers the
+// custom-provider route where it works.
 function noModelsNotice(platform: string): string | undefined {
   if (enabledModelCount(platform) > 0) return undefined;
   const baseUrl = openAICompatBaseUrl(platform);
@@ -432,7 +433,7 @@ function isLoopbackRemote(req: Request): boolean {
 // bind 0.0.0.0 through its LAN-access toggle, and a remote viewer on that LAN
 // still has to prove the password before it can lift a key.
 function skipsReauth(req: Request): boolean {
-  return process.env.FREEAPI_DESKTOP === '1' && isLoopbackRemote(req);
+  return process.env.SROUTER_DESKTOP === '1' && isLoopbackRemote(req);
 }
 
 // Export keys — returns plaintext keys in the requested format.
@@ -512,7 +513,7 @@ keysRouter.get('/export', (req: Request, res: Response) => {
     });
     const content = lines.join('\n\n') + '\n';
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="freellmapi-keys.env"');
+    res.setHeader('Content-Disposition', 'attachment; filename="srouter-keys.env"');
     res.send(content);
     return;
   }
@@ -537,7 +538,7 @@ keysRouter.get('/export', (req: Request, res: Response) => {
     );
     const content = [header, ...lines].join('\n') + '\n';
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="freellmapi-keys.csv"');
+    res.setHeader('Content-Disposition', 'attachment; filename="srouter-keys.csv"');
     res.send(content);
     return;
   }
@@ -546,11 +547,11 @@ keysRouter.get('/export', (req: Request, res: Response) => {
   const jsonExport = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    source: 'freellmapi',
+    source: 'srouter',
     keys: decryptedKeys,
   };
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="freellmapi-keys.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="srouter-keys.json"');
   res.json(jsonExport);
 });
 
@@ -857,7 +858,7 @@ async function registerImportedModels(
 
 // SSRF guard (#440): a base_url is the one user-controlled outbound target.
 // Cloud metadata / link-local addresses are rejected outright; private ranges
-// too when FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS is set. Re-checked at request
+// too when SROUTER_BLOCK_PRIVATE_PROVIDER_URLS is set. Re-checked at request
 // time in proxyFetch for URLs already in the DB.
 async function rejectUnsafeBaseUrl(baseUrl: string, res: Response): Promise<boolean> {
   const verdict = await assessProviderUrl(baseUrl);
@@ -1535,6 +1536,79 @@ keysRouter.delete('/:id', (req: Request, res: Response) => {
   remove();
 
   res.json({ success: true });
+});
+
+// Manually re-verify a platform's discovered model roster against its live
+// upstream (the same sweep the twice-daily timer runs). This is the "Sync
+// models" button: rosters move, and a model that flipped behind a paid gate
+// upstream would otherwise stay in the routing chain until the next scheduled
+// sweep — the health check only probes keys, never the model list.
+keysRouter.post('/platform/:platform/refresh-models', async (req: Request, res: Response) => {
+  const platform = req.params.platform as string;
+  if (!(PLATFORMS as readonly string[]).includes(platform)) {
+    res.status(400).json({ error: { message: `Invalid platform '${platform}'` } });
+    return;
+  }
+  const db = getDb();
+  const key = db.prepare('SELECT 1 FROM api_keys WHERE platform = ? AND enabled = 1 LIMIT 1').get(platform);
+  if (!key) {
+    res.status(409).json({ error: { message: `Platform '${platform}' has no enabled API key` } });
+    return;
+  }
+  const modelsAvailableBefore = enabledModelCount(platform);
+  let result;
+  try {
+    // refresh re-runs the sweep even though models already exist — that is the
+    // entire point of a manual sync (adding, dropping and re-verifying rows).
+    result = await autoDiscoverModels(platform, { refresh: true });
+  } catch (err) {
+    res.status(502).json({ error: { message: `Model refresh failed: ${err instanceof Error ? err.message : String(err)}` } });
+    return;
+  }
+  res.json({ platform, registered: result.registered, refreshed: result.refreshed, retired: result.retired, modelsAvailable: enabledModelCount(platform), previousModelsAvailable: modelsAvailableBefore, newModels: result.newModels, updatedModels: result.updatedModels, retiredModels: result.retiredModels });
+});
+
+// Refresh model rosters for ALL platforms at once — the "Sync All" button.
+// Runs catalog sync first (pulls latest from central catalog), then
+// auto-discovers models from each platform's API (user-key models).
+// Per-platform error isolation ensures one failure doesn't block the rest.
+keysRouter.post('/refresh-all-models', async (_req: Request, res: Response) => {
+  const db = getDb();
+
+  // 1) Catalog sync — pull latest models from the central catalog
+  let catalogSyncResult: { inserted: number; removed: number; updated: number } | undefined;
+  try {
+    const cs = await syncCatalog(true);
+    catalogSyncResult = cs.counts;
+  } catch (err) {
+    console.warn(`[sync-all] catalog sync failed: ${err instanceof Error ? err.message : err}`);
+  }
+
+  // 2) Auto-discover — query each platform's API for user-key models
+  const platforms = db.prepare(`
+    SELECT DISTINCT platform FROM api_keys WHERE enabled = 1
+  `).all() as { platform: string }[];
+
+  const results: { platform: string; registered: number; refreshed: number; retired: number; modelsAvailable: number; previousModelsAvailable: number; newModels: string[]; updatedModels: string[]; retiredModels: string[]; error?: string }[] = [];
+  let totalRegistered = 0;
+  let totalRefreshed = 0;
+  let totalRetired = 0;
+
+  for (const { platform } of platforms) {
+    if (!(PLATFORMS as readonly string[]).includes(platform)) continue;
+    const modelsAvailableBefore = enabledModelCount(platform);
+    try {
+      const r = await autoDiscoverModels(platform, { refresh: true });
+      totalRegistered += r.registered;
+      totalRefreshed += r.refreshed;
+      totalRetired += r.retired;
+      results.push({ platform, registered: r.registered, refreshed: r.refreshed, retired: r.retired, modelsAvailable: enabledModelCount(platform), previousModelsAvailable: modelsAvailableBefore, newModels: r.newModels, updatedModels: r.updatedModels, retiredModels: r.retiredModels });
+    } catch (err) {
+      results.push({ platform, registered: 0, refreshed: 0, retired: 0, modelsAvailable: enabledModelCount(platform), previousModelsAvailable: modelsAvailableBefore, newModels: [], updatedModels: [], retiredModels: [], error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  res.json({ platforms: results.length, totalRegistered, totalRefreshed, totalRetired, catalogSync: catalogSyncResult, results });
 });
 
 // Toggle all keys for a platform

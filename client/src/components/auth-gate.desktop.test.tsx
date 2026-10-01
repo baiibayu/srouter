@@ -14,12 +14,12 @@ import { I18nProvider } from '@/i18n'
 import { AuthGate } from './auth-gate'
 
 type DesktopWindow = Window & {
-  __FREEAPI_DESKTOP__?: boolean
-  __FREEAPI_SESSION__?: () => Promise<string>
+  __SROUTER_DESKTOP__?: boolean
+  __SROUTER_SESSION__?: () => Promise<string>
 }
 
 const FRESH = 'fresh-session-token'
-const TOKEN_KEY = 'freellmapi_dashboard_token'
+const TOKEN_KEY = 'srouter_dashboard_token'
 
 let root: Root
 let container: HTMLDivElement
@@ -76,8 +76,8 @@ afterEach(() => {
   localStorage.clear()
   vi.unstubAllGlobals()
   const w = window as DesktopWindow
-  delete w.__FREEAPI_DESKTOP__
-  delete w.__FREEAPI_SESSION__
+  delete w.__SROUTER_DESKTOP__
+  delete w.__SROUTER_SESSION__
 })
 
 const passwordField = () => container.querySelector('input[type="password"]')
@@ -85,12 +85,12 @@ const passwordField = () => container.querySelector('input[type="password"]')
 describe('AuthGate inside the desktop shell', () => {
   it('replaces a rejected session through the shell and never shows the login form', async () => {
     const w = window as DesktopWindow
-    w.__FREEAPI_DESKTOP__ = true
+    w.__SROUTER_DESKTOP__ = true
     const bridge = vi.fn(async () => {
       accepted.add(FRESH)
       return FRESH
     })
-    w.__FREEAPI_SESSION__ = bridge
+    w.__SROUTER_SESSION__ = bridge
 
     mount()
     await flush()
@@ -104,9 +104,9 @@ describe('AuthGate inside the desktop shell', () => {
 
   it('shows the recovery message, not a password prompt, when the fresh session is rejected too', async () => {
     const w = window as DesktopWindow
-    w.__FREEAPI_DESKTOP__ = true
+    w.__SROUTER_DESKTOP__ = true
     const bridge = vi.fn(async () => 'still-rejected')
-    w.__FREEAPI_SESSION__ = bridge
+    w.__SROUTER_SESSION__ = bridge
 
     mount()
     await flush()
@@ -114,15 +114,15 @@ describe('AuthGate inside the desktop shell', () => {
     expect(bridge).toHaveBeenCalledTimes(1)
     expect(passwordField()).toBeNull()
     expect(container.querySelector('[data-testid="app"]')).toBeNull()
-    expect(container.textContent).toContain('Quit FreeLLMAPI and open it again')
+    expect(container.textContent).toContain('Quit SRouter and open it again')
   })
 
   // The recovery message is the whole screen: a screen reader that has already
   // announced "loading" must be told the wait ended in a failure.
   it('announces the recovery message as an alert', async () => {
     const w = window as DesktopWindow
-    w.__FREEAPI_DESKTOP__ = true
-    w.__FREEAPI_SESSION__ = vi.fn(async () => 'still-rejected')
+    w.__SROUTER_DESKTOP__ = true
+    w.__SROUTER_SESSION__ = vi.fn(async () => 'still-rejected')
 
     mount()
     await flush()

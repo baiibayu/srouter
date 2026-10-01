@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GITHUB_MAX_INPUT_TOKENS, contentToString, flattenMessageContent, messageHasImage, normalizeOutboundContent, sanitizeResponse, stripImagesFromMessages, truncateMessagesForGithub } from '../../lib/content.js';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 
 describe('contentToString', () => {
   it('passes strings through', () => {

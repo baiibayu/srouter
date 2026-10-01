@@ -4,7 +4,7 @@
 
 ## What it is
 
-The coding-agent compatibility suite (commit `19168ac`, #629, 2026-07-27) proves that real AI coding agents work against FreeLLMAPI's surfaces — not just that the endpoints exist. It covers the three integration layers an agent touches: the wire API it calls, the config files it is pointed at, and the client classification the gateway applies to its traffic.
+The coding-agent compatibility suite (commit `19168ac`, #629, 2026-07-27) proves that real AI coding agents work against SRouter's surfaces — not just that the endpoints exist. It covers the three integration layers an agent touches: the wire API it calls, the config files it is pointed at, and the client classification the gateway applies to its traffic.
 
 ## What it covers and where
 

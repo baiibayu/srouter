@@ -16,7 +16,9 @@
     "modelsMenu": "Mag-browse ng mga uri ng modelo",
     "agents": "Mga Agent",
     "logs": "Mga Log",
-    "analyticsMenu": "Mga pahina ng analitika"
+    "analyticsMenu": "Mga pahina ng analitika",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Gumawa ng iyong account",
@@ -60,7 +62,7 @@
     "emailChanged": "Matagumpay na napalitan ang e-mail.",
     "passwordReset": "Na-reset ang password. Mag-sign in po.",
     "resetCodeDockerHint": "Tumatakbo sa Docker? Nasa container log ang code: docker logs <container>.",
-    "desktopSessionFailed": "Hindi nakapag-sign in ang dashboard sa lokal na server. Isara ang FreeLLMAPI at buksan itong muli."
+    "desktopSessionFailed": "Hindi nakapag-sign in ang dashboard sa lokal na server. Isara ang SRouter at buksan itong muli."
   },
   "common": {
     "save": "I-save",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Awtomatikong pagsusuri ng update",
     "autoUpdateCheckHelp": "Sinusuri ang GitHub minsan sa isang araw para sa bagong release at nagpapakita ng paalala. Naka-off bilang default.",
     "openReleases": "Buksan ang GitHub Releases",
-    "restartAfterUpdate": "I-restart ang FreeLLMAPI kapag natapos ang build."
+    "restartAfterUpdate": "I-restart ang SRouter kapag natapos ang build.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Mga Modelo",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Buwanang badyet ng token",
     "remaining": "natitirang",
     "used": "ginamit",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Mga aksyon ng provider",
     "routeViaProxy": "Ruta sa pamamagitan ng proxy",
     "checkNow": "Suriin ngayon",
+    "syncModels": "I-sync ang mga modelo sa upstream",
+    "syncModelsResult": "Na-sync ang listahan ng modelo: {added} idinagdag, {total} aktibo",
+    "syncModelsFailed": "Nabigo ang sync ng modelo: {reason}",
+    "syncAllModels": "I-sync ang lahat ng provider",
+    "syncAllPending": "Sini-sync…",
+    "syncAllResult": "Na-sync ang {count} provider: {registered} modelo ang naka-registered",
+    "syncAllFailed": "Nabigo ang sync lahat: {reason}",
+    "syncAllNoChanges": "Naka-sync na ang lahat ng provider",
+    "syncAllDialogTitle": "Mga Resulta ng Sync",
+    "syncAllDialogSummary": "May pagbabago sa {changed} sa {total} provider",
+    "syncAllNew": "+{count} bago",
+    "syncAllUpdated": "{count} na-update",
+    "syncAllRetired": "{count} na-retire",
+    "syncAllNewModels": "Mga bagong modelo",
+    "syncAllUpdatedModels": "Mga na-update na modelo",
+    "syncAllRetiredModels": "Mga na-retire na modelo",
+    "syncAllDialogClose": "Tapos na",
     "proxyEnvHintBefore": "Maaari ring i-configure gamit ang",
     "proxyEnvHintAfter": "variable ng kapaligiran (may prayoridad). Iwanang blangko para i-disable. Mga halimbawa:",
     "importKeys": "I-import ang mga provider key",
@@ -679,7 +704,8 @@
     "testFailed": "Bumagsak ang pagsusuri ng modelo",
     "testThrottled": "Mangyaring maghintay ng {seconds}s bago subukang muli ang modelong ito.",
     "noModelsForProvider": "Walang naka-configure na modelo para sa provider na ito.",
-    "testModels": "Subukan ang mga modelo"
+    "testModels": "Subukan ang mga modelo",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

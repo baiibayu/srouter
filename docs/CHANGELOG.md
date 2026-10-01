@@ -24,7 +24,7 @@ Revision history for `docs/`, derived from git commits touching this directory. 
 | --- | --- | --- |
 | `36850e8` | 2026-08-25 | docs(api): document video platforms (pollinations/huggingface, 5-min bound, fal queue), free-tier budget API (`GET /api/free-tier`, pool-deduped), and backups API (`GET /api/backups`, DUMP_FORMAT=1, sha256 fingerprint) (landed via #979) |
 | `36850e8` | 2026-08-25 | docs(fallback): add named-chains domain — chain lifecycle, empty-chain authoritative 400 (`activeChainOrThrow`, e852ff1), `auto:<name>` in `GET /v1/models` (cc1e985), `profiles.auto_include_new_models` (b3bf20f), named-chain manager UI (8bb2004) (landed via #979) |
-| `36850e8` | 2026-08-25 | docs(observability): dedupe 06-observability.md against logs viewer, cross-link both ways, add desktop `freeapi.log` file-logger note (90aaa5b) (landed via #979) |
+| `36850e8` | 2026-08-25 | docs(observability): dedupe 06-observability.md against logs viewer, cross-link both ways, add desktop `srouter.log` file-logger note (90aaa5b) (landed via #979) |
 | `36850e8` | 2026-08-25 | docs(providers): refresh free-tier numbers to 34 providers / 474 families / 635 endpoints (~7.4B tokens/month) in providers/OVERVIEW.md and providers/01-supported-platforms.md (landed via #979) |
 
 ## 2026-08-23
@@ -56,7 +56,7 @@ Revision history for `docs/`, derived from git commits touching this directory. 
 | `3ea33cb` | 2026-07-31 | docs(i18n): translate install.md and api.md into zh-CN (#690) |
 | `41527f2` | 2026-07-31 | docs(i18n): add translated-docs tree + zh-CN README (#689) |
 | `c8be5a6` | 2026-07-31 | docs(i18n): pin zh glossary, land two agreed zh-CN fixes (#683) |
-| `36eea7b` | 2026-07-30 | cli: publish freellmapi to npm (#672) |
+| `36eea7b` | 2026-07-30 | cli: publish SRouter to npm (#672) |
 | `e0befba` | 2026-07-29 | feat(custom): per-endpoint identity for relay models (#659) |
 | `d695bbc` | 2026-07-28 | fix(server): make X-Routed-Via header-safe (#639) |
 | `19168ac` | 2026-07-27 | Add end-to-end coding-agent compatibility suite (#629) |

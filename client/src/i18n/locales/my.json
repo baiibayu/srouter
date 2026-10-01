@@ -16,7 +16,9 @@
     "modelsMenu": "မော်ဒယ်အမျိုးအစားများကို ကြည့်ရှုပါ",
     "agents": "အေးဂျင့်များ",
     "logs": "မှတ်တမ်းများ",
-    "analyticsMenu": "သုံးသပ်ချက် စာမျက်နှာများ"
+    "analyticsMenu": "သုံးသပ်ချက် စာမျက်နှာများ",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "သင့်အကောင့်ကို ဖန်တီးပါ",
@@ -60,7 +62,7 @@
     "emailChanged": "အီးမေးလ်ပြောင်းပြီးပါပြီ။",
     "passwordReset": "စကားဝှက်ပြန်လည်သတ်မှတ်ပြီးပါပြီ။ ဝင်ရောက်ပါ။",
     "resetCodeDockerHint": "Docker တွင် လည်ပတ်နေပါသလား။ ကုဒ်သည် ကွန်တိန်နာမှတ်တမ်းတွင် ရှိသည် - docker logs <container>",
-    "desktopSessionFailed": "ဒက်ရှ်ဘုတ်သည် ဒေသတွင်းဆာဗာသို့ ဝင်ရောက်၍ မရပါ။ FreeLLMAPI ကို ပိတ်ပြီး ပြန်ဖွင့်ပါ။"
+    "desktopSessionFailed": "ဒက်ရှ်ဘုတ်သည် ဒေသတွင်းဆာဗာသို့ ဝင်ရောက်၍ မရပါ။ SRouter ကို ပိတ်ပြီး ပြန်ဖွင့်ပါ။"
   },
   "common": {
     "save": "သိမ်းဆည်းပါ",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "အလိုအလျောက် အပ်ဒိတ်စစ်ဆေးမှု",
     "autoUpdateCheckHelp": "တစ်ရက်လျှင် တစ်ကြိမ် ဗားရှင်းအသစ်အတွက် GitHub ကို စစ်ဆေးပြီး သတိပေးချက် ပြသသည်။ မူရင်းအတိုင်း ပိတ်ထားသည်။",
     "openReleases": "GitHub Releases ကို ဖွင့်ရန်",
-    "restartAfterUpdate": "build ပြီးဆုံးပြီးနောက် FreeLLMAPI ကို ပြန်လည်စတင်ပါ။"
+    "restartAfterUpdate": "build ပြီးဆုံးပြီးနောက် SRouter ကို ပြန်လည်စတင်ပါ။",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "မော်ဒယ်များ",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "လစဉ် token ဘတ်ဂျက်",
     "remaining": "ကျန်ရှိသော",
     "used": "အသုံးပြုပြီးသော",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "ပံ့ပိုးသူ လုပ်ဆောင်ချက်များ",
     "routeViaProxy": "Proxy ဖြင့် လမ်းကြောင်းပြောင်းခြင်း",
     "checkNow": "ယခုစစ်ဆေးပါ",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "ထို့အပြင် ပြင်ဆင်နိုင်သော",
     "proxyEnvHintAfter": "ပတ်ဝန်းကျင်အပြောင်းအလဲ (ဦးစားပေးသည်။) ပိတ်ဆို့ရန် အလွတ်ထားပါ။ ဥပမာများ:",
     "importKeys": "ပံ့ပိုးသူ key များကို တင်သွင်းပါ",
@@ -679,7 +704,8 @@
     "testFailed": "မော်ဒယ်စမ်းသပ်မှု ကျရှုံးခဲ့သည်",
     "testThrottled": "ဤမော်ဒယ်ကို ထပ်မံမစမ်းသပ်မီ {seconds} စက္ကန့် စောင့်ပါ။",
     "noModelsForProvider": "ဤဝန်ဆောင်မှုပေးသူအတွက် မော်ဒယ်များ သတ်မှတ်ထားခြင်း မရှိပါ။",
-    "testModels": "မော်ဒယ်များ စမ်းသပ်ရန်"
+    "testModels": "မော်ဒယ်များ စမ်းသပ်ရန်",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

@@ -53,7 +53,7 @@ The public query API (`queryLogs({ levels, q, provider, sinceId, limit })`), lev
 
 ### Desktop file logger
 
-The desktop app has no terminal attached, so it tees every console line to a **file logger** (`desktop/src/logger.ts`, added in `90aaa5b`) instead of relying on the in-memory ring: `<data dir>/logs/freeapi.log`, plus one rotated `freeapi.log.1` at 1 MB each. The same redaction wrapper feeds both the ring (server) and the file (desktop), so secrets never reach the file either. The desktop's password-reset code appears here — see the [Install & deploy FAQ](../install/01-install.md#where-are-the-logs).
+The desktop app has no terminal attached, so it tees every console line to a **file logger** (`desktop/src/logger.ts`, added in `90aaa5b`) instead of relying on the in-memory ring: `<data dir>/logs/srouter.log`, plus one rotated `srouter.log.1` at 1 MB each. The same redaction wrapper feeds both the ring (server) and the file (desktop), so secrets never reach the file either. The desktop's password-reset code appears here — see the [Install & deploy FAQ](../install/01-install.md#where-are-the-logs).
 
 ---
 
@@ -87,7 +87,7 @@ the cache. Streamed frames omit it (the header carries it there).
 
 `requests.caller` records the surface: today every inference path writes `http`
 (the OpenAI-compatible proxy, `/v1/responses`, `/v1/messages`, the Ollama and
-Gemini wires, fusion sub-calls, and `ask_freellmapi`). The MCP inference tool
+Gemini wires, fusion sub-calls, and `ask_SROUTER`). The MCP inference tool
 deliberately loops through the same local `/v1/chat/completions` route, so it
 inherits identical routing, fallback, cache, token accounting, and error
 handling instead of maintaining a second inference implementation. The other

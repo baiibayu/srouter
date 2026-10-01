@@ -49,7 +49,7 @@ describe('static SPA: gzip compression + asset cache headers', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
 
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-static-cache-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-static-cache-'));
     fs.mkdirSync(path.join(tmpDir, 'assets'), { recursive: true });
     fs.writeFileSync(
       path.join(tmpDir, 'index.html'),

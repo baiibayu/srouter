@@ -12,7 +12,7 @@ import type { Db, DbFactory } from './types.js';
 export type { Db, DbFactory } from './types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.resolve(__dirname, '../../data/freeapi.db');
+const DB_PATH = path.resolve(__dirname, '../../data/srouter.db');
 const runtimeRequire = createRequire(import.meta.url);
 
 let db: Db;
@@ -25,7 +25,7 @@ export function getDb(): Db {
 }
 
 export function getDefaultDbPath(): string {
-  return process.env.FREEAPI_DB_PATH?.trim() || DB_PATH;
+  return process.env.SROUTER_DB_PATH?.trim() || DB_PATH;
 }
 
 /** Default factory: opens a better-sqlite3 connection at the given path. */
@@ -98,9 +98,9 @@ export function connectDb(
  * The sidecars can only be covered by the directory: SQLite creates `-wal` and
  * `-shm` on the first write and deletes them on the last clean close, so at
  * startup there is nothing there to chmod. But the directory is also shared
- * state — FREEAPI_DB_PATH may point anywhere — and locking down a directory
+ * state — SROUTER_DB_PATH may point anywhere — and locking down a directory
  * that is not ours is a worse outage than the leak it prevents. Pointing the DB
- * at `/tmp/freeapi.db` must not chmod 0700 `/tmp`.
+ * at `/tmp/srouter.db` must not chmod 0700 `/tmp`.
  *
  * So the rule is ownership by construction rather than a guess about what is
  * safe. Two cases qualify, and nothing else does:
@@ -113,8 +113,8 @@ export function connectDb(
  * `server/data`, so case 1 alone would harden new installs and quietly leave
  * every upgrade behind.
  *
- * An operator who points FREEAPI_DB_PATH at a dedicated directory can opt in
- * with FREEAPI_DB_DIR_HARDENING=1, and one who dislikes the default can opt out
+ * An operator who points SROUTER_DB_PATH at a dedicated directory can opt in
+ * with SROUTER_DB_DIR_HARDENING=1, and one who dislikes the default can opt out
  * with =0. It is a deliberate default-on-where-safe rather than a flag, because
  * hardening that only runs when someone remembers to ask for it is the same
  * class of failure as hardening nobody noticed had stopped running.
@@ -138,7 +138,7 @@ export function shouldHardenDataDir(
 /** Tri-state, matching CSP_UPGRADE_INSECURE_REQUESTS in lib/config.ts: on, off,
  *  or unset to leave the policy above in charge. */
 function parseDirHardeningOverride(): boolean | undefined {
-  const raw = process.env.FREEAPI_DB_DIR_HARDENING;
+  const raw = process.env.SROUTER_DB_DIR_HARDENING;
   if (raw === undefined || raw.trim() === '') return undefined;
   const lower = raw.trim().toLowerCase();
   if (lower === 'true' || lower === '1' || lower === 'yes') return true;
@@ -157,7 +157,7 @@ function restrictDataDir(dataDir: string, created: boolean): void {
       console.log(
         `[db] leaving permissions on ${dataDir} as they are: it is not a directory this server created. ` +
         'The WAL sidecars written there inherit whatever it already grants. ' +
-        'Set FREEAPI_DB_DIR_HARDENING=1 if it belongs to this account alone.',
+        'Set SROUTER_DB_DIR_HARDENING=1 if it belongs to this account alone.',
       );
     }
     return;
@@ -230,7 +230,7 @@ export function getUnifiedApiKey(): string {
 
 export function regenerateUnifiedKey(): string {
   const db = getDb();
-  const key = `freellmapi-${crypto.randomBytes(24).toString('hex')}`;
+  const key = `srouter-${crypto.randomBytes(24).toString('hex')}`;
   db.prepare("UPDATE settings SET value = ? WHERE key = 'unified_api_key'").run(key);
   return key;
 }

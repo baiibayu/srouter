@@ -16,7 +16,9 @@
     "modelsMenu": "મોડેલ પ્રકારો બ્રાઉઝ કરો",
     "agents": "એજન્ટ્સ",
     "logs": "લોગ",
-    "analyticsMenu": "એનાલિટિક્સ પેજ"
+    "analyticsMenu": "એનાલિટિક્સ પેજ",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "તમારું એકાઉન્ટ બનાવો",
@@ -60,7 +62,7 @@
     "emailChanged": "ઈમેલ સફળતાપૂર્વક બદલાયો.",
     "passwordReset": "પાસવર્ડ રીસેટ થયો. કૃપા કરી સાઇન ઇન કરો.",
     "resetCodeDockerHint": "Docker માં ચલાવો છો? કોડ કન્ટેનર લોગમાં છે: docker logs <container>.",
-    "desktopSessionFailed": "ડેશબોર્ડ લોકલ સર્વરમાં સાઇન ઇન કરી શક્યું નથી. FreeLLMAPI બંધ કરીને ફરીથી ખોલો."
+    "desktopSessionFailed": "ડેશબોર્ડ લોકલ સર્વરમાં સાઇન ઇન કરી શક્યું નથી. SRouter બંધ કરીને ફરીથી ખોલો."
   },
   "common": {
     "save": "સાચવો",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "આપમેળે અપડેટ તપાસ",
     "autoUpdateCheckHelp": "દિવસમાં એક વાર નવા રિલીઝ માટે GitHub તપાસે છે અને રિમાઇન્ડર બતાવે છે. મૂળભૂત રીતે બંધ.",
     "openReleases": "GitHub રિલીઝ ખોલો",
-    "restartAfterUpdate": "બિલ્ડ પૂર્ણ થયા પછી FreeLLMAPI ફરી શરૂ કરો."
+    "restartAfterUpdate": "બિલ્ડ પૂર્ણ થયા પછી SRouter ફરી શરૂ કરો.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "મોડલ્સ",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "માસિક ટોકન બજેટ",
     "remaining": "બાકી",
     "used": "વપરાયેલ",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "પ્રદાતા ક્રિયાઓ",
     "routeViaProxy": "પ્રોક્સી મારફતે રૂટ",
     "checkNow": "હવે તપાસો",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "દ્વારા પણ રૂપરેખાંકિત કરી શકાય છે",
     "proxyEnvHintAfter": "પર્યાવરણ ચલ (અગ્રતા લે છે). અક્ષમ કરવા માટે ખાલી છોડો. ઉદાહરણો:",
     "importKeys": "પ્રદાતા કી આયાત કરો",
@@ -679,7 +704,8 @@
     "testFailed": "મોડેલ પરીક્ષણ નિષ્ફળ ગયું",
     "testThrottled": "કૃપા કરીને આ મોડેલનું ફરીથી પરીક્ષણ કરતા પહેલા {seconds} સેકન્ડ રાહ જુઓ.",
     "noModelsForProvider": "આ પ્રદાતા માટે કોઈ મોડેલો રૂપરેખાંકિત નથી.",
-    "testModels": "મોડેલ્સનું પરીક્ષણ કરો"
+    "testModels": "મોડેલ્સનું પરીક્ષણ કરો",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

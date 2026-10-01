@@ -1,4 +1,4 @@
-import type { Model } from '@freellmapi/shared/types'
+import type { Model } from '@srouter/shared/types'
 
 // Pure helpers behind the Keys page's "Test models" dialog, kept out of the
 // component file so fast refresh sees only components there.

@@ -16,7 +16,9 @@
     "modelsMenu": "浏览模型类型",
     "agents": "智能体",
     "logs": "日志",
-    "analyticsMenu": "分析页面"
+    "analyticsMenu": "分析页面",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "创建账号",
@@ -60,7 +62,7 @@
     "emailChanged": "邮箱修改成功。",
     "passwordReset": "密码重置成功，请重新登录。",
     "resetCodeDockerHint": "在 Docker 中运行？重置码在容器日志中：docker logs <container>",
-    "desktopSessionFailed": "控制台无法登录本地服务器。请退出 FreeLLMAPI 并重新打开。"
+    "desktopSessionFailed": "控制台无法登录本地服务器。请退出 SRouter 并重新打开。"
   },
   "common": {
     "save": "保存",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "自动检查更新",
     "autoUpdateCheckHelp": "每天检查一次 GitHub 上是否有新版本，并显示提醒。默认关闭。",
     "openReleases": "打开 GitHub Releases",
-    "restartAfterUpdate": "构建完成后重启 FreeLLMAPI。"
+    "restartAfterUpdate": "构建完成后重启 SRouter。",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "模型",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "每月词元额度",
     "remaining": "剩余",
     "used": "已用",
-    "usedScopeHint": "仅统计本自然月内的聊天请求，覆盖当前链路中的所有模型（包括自定义端点）。绕过 FreeLLMAPI 直接发往服务商的流量不计入。",
+    "usedScopeHint": "仅统计本自然月内的聊天请求，覆盖当前链路中的所有模型（包括自定义端点）。绕过 SRouter 直接发往服务商的流量不计入。",
     "legendRemainingTitle": "{name}（{platform}）的剩余量 / 每月额度",
     "noPublishedQuota": "另有 {count} 个未公布额度",
     "noPublishedQuotaTitle": "这些模型没有公布每月词元额度，因此无法显示剩余量。",
@@ -531,6 +539,23 @@
     "providerActions": "提供方操作",
     "routeViaProxy": "经由代理服务器转发",
     "checkNow": "立即检查",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "也可通过 ",
     "proxyEnvHintAfter": " 环境变量配置（优先生效）。留空则禁用。示例：",
     "importKeys": "导入提供方密钥",
@@ -679,7 +704,8 @@
     "testFailed": "模型测试失败",
     "testThrottled": "请等待 {seconds} 秒后再测试此模型。",
     "noModelsForProvider": "此提供方尚未配置任何模型。",
-    "testModels": "测试模型"
+    "testModels": "测试模型",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "备份",

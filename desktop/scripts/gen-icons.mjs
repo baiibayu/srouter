@@ -1,155 +1,81 @@
-// Generates the desktop icons from the brand mark (client/public/favicon.svg
-// design: dot inside a broken routing ring) without any image dependencies —
-// pure-Node PNG encoding (zlib IDAT + hand-rolled CRC32), 4x supersampled.
+// Generates the desktop icons from the brand mark
+// (client/src/assets/srouter-logo.svg) via sharp — the server workspace
+// dependency, hoisted to the repo root. Renders the real SVG instead of
+// hand-drawn primitives so the icons always match the current brand.
 //
 // Outputs:
 //   assets/trayTemplate.png      16x16  black-on-transparent (macOS template)
 //   assets/trayTemplate@2x.png   32x32
-//   assets/appicon_1024.png      full-color app icon (icns built via iconutil)
-import { deflateSync } from 'node:zlib';
+//   assets/appicon_1024.png      full-color app icon (win/linux)
+//   assets/icon.icns             macOS icon: icns container with PNG entries
+//                                ic07-ic14 (ic11/ic12 cover the 16px/32px
+//                                retina slots; 16px non-retina scales ic11)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const assets = path.resolve(__dirname, '../assets');
+const logo = path.resolve(__dirname, '../../client/src/assets/srouter-logo.svg');
 fs.mkdirSync(assets, { recursive: true });
 
-// ── PNG encoder ────────────────────────────────────────────────────────────
-const CRC_TABLE = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
-
-function crc32(buf) {
-  let c = 0xffffffff;
-  for (const b of buf) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-
-function chunk(type, data) {
-  const len = Buffer.alloc(4);
-  len.writeUInt32BE(data.length);
-  const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(body));
-  return Buffer.concat([len, body, crc]);
-}
-
-function encodePng(rgba, w, h) {
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(w, 0);
-  ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8;  // bit depth
-  ihdr[9] = 6;  // color type RGBA
-  const raw = Buffer.alloc((w * 4 + 1) * h);
-  for (let y = 0; y < h; y++) {
-    raw[y * (w * 4 + 1)] = 0; // filter: none
-    rgba.copy(raw, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4);
-  }
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw, { level: 9 })),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
-}
-
-// ── rasterizer ─────────────────────────────────────────────────────────────
-// Renders with 4x supersampling. `shapes` is an ordered list painted
-// back-to-front; each returns coverage [0..1] at a sample point plus a color.
-function render(size, shapes) {
-  const SS = 4;
-  const S = size * SS;
-  const img = Buffer.alloc(size * size * 4);
-  for (let py = 0; py < size; py++) {
-    for (let px = 0; px < size; px++) {
-      let r = 0, g = 0, b = 0, a = 0;
-      for (let sy = 0; sy < SS; sy++) {
-        for (let sx = 0; sx < SS; sx++) {
-          const x = (px * SS + sx + 0.5) / S; // normalized [0,1]
-          const y = (py * SS + sy + 0.5) / S;
-          // composite shapes front-to-back at this sample
-          let sr = 0, sg = 0, sb = 0, sa = 0;
-          for (const sh of shapes) {
-            const cov = sh.cover(x, y);
-            if (cov <= 0) continue;
-            const [cr, cg, cb, ca] = sh.color;
-            const srcA = ca * cov;
-            sr = cr * srcA + sr * (1 - srcA);
-            sg = cg * srcA + sg * (1 - srcA);
-            sb = cb * srcA + sb * (1 - srcA);
-            sa = srcA + sa * (1 - srcA);
-          }
-          r += sr; g += sg; b += sb; a += sa;
-        }
-      }
-      const n = SS * SS;
-      const idx = (py * size + px) * 4;
-      const alpha = a / n;
-      img[idx] = alpha > 0 ? Math.round((r / n / alpha) * 255) : 0;
-      img[idx + 1] = alpha > 0 ? Math.round((g / n / alpha) * 255) : 0;
-      img[idx + 2] = alpha > 0 ? Math.round((b / n / alpha) * 255) : 0;
-      img[idx + 3] = Math.round(alpha * 255);
-    }
-  }
-  return encodePng(img, size, size);
-}
-
-const dist = (x, y, cx, cy) => Math.hypot(x - cx, y - cy);
-
-// Ring with a gap. gapCenter/gapWidth in degrees, standard math orientation.
-function ringCover(x, y, cx, cy, radius, stroke, gapCenterDeg, gapWidthDeg) {
-  const d = Math.abs(dist(x, y, cx, cy) - radius);
-  if (d > stroke / 2) return 0;
-  let ang = (Math.atan2(cy - y, x - cx) * 180) / Math.PI; // y-flip: screen→math
-  let delta = Math.abs(((ang - gapCenterDeg + 540) % 360) - 180);
-  return delta < gapWidthDeg / 2 ? 0 : 1;
-}
-
-const circle = (cx, cy, r, color) => ({
-  color,
-  cover: (x, y) => (dist(x, y, cx, cy) <= r ? 1 : 0),
-});
-const ring = (cx, cy, r, stroke, gapC, gapW, color) => ({
-  color,
-  cover: (x, y) => ringCover(x, y, cx, cy, r, stroke, gapC, gapW),
-});
-const roundedRect = (x0, y0, x1, y1, rad, color) => ({
-  color,
-  cover: (x, y) => {
-    const qx = Math.max(x0 + rad - x, 0, x - (x1 - rad));
-    const qy = Math.max(y0 + rad - y, 0, y - (y1 - rad));
-    if (x < x0 || x > x1 || y < y0 || y > y1) return 0;
-    return Math.hypot(qx, qy) <= rad ? 1 : 0;
-  },
-});
+// ── app icon (1024, HIG grid: art occupies ~824/1024 rounded rect) ────────
+const SIZE = 1024;
+const ART = 560; // rendered logo size; visible mark lands ~500px wide
+const bg = Buffer.from(
+  `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg">` +
+    `<rect x="100" y="100" width="824" height="824" rx="180" fill="#09090b"/></svg>`
+);
+const mark = await sharp(logo, { density: 600 }).resize(ART, ART).png().toBuffer();
+const appicon = await sharp(bg)
+  .composite([{ input: mark, top: (SIZE - ART) / 2, left: (SIZE - ART) / 2 }])
+  .png()
+  .toBuffer();
+fs.writeFileSync(path.join(assets, 'appicon_1024.png'), appicon);
 
 // ── tray template (black on transparent; macOS tints it) ──────────────────
-// Slightly chunkier than the 64px favicon so it reads at 16px.
-const BLACK = [0, 0, 0, 1];
-const trayShapes = [
-  ring(0.5, 0.5, 0.36, 0.115, 45, 80, BLACK), // gap top-right, like the mark
-  circle(0.5, 0.5, 0.185, BLACK),
-];
-fs.writeFileSync(path.join(assets, 'trayTemplate.png'), render(16, trayShapes));
-fs.writeFileSync(path.join(assets, 'trayTemplate@2x.png'), render(32, trayShapes));
+// The mark's alpha becomes the mask, RGB forced to black.
+for (const [px, name] of [
+  [16, 'trayTemplate.png'],
+  [32, 'trayTemplate@2x.png'],
+]) {
+  const raw = await sharp(logo, { density: 600 }).resize(px, px).ensureAlpha().raw().toBuffer();
+  for (let i = 0; i < raw.length; i += 4) {
+    raw[i] = 0;
+    raw[i + 1] = 0;
+    raw[i + 2] = 0;
+  }
+  await sharp(raw, { raw: { width: px, height: px, channels: 4 } })
+    .png()
+    .toFile(path.join(assets, name));
+}
 
-// ── app icon (1024, HIG grid: art occupies ~824/1024 rounded rect) ────────
-const BG = [0x09 / 255, 0x09 / 255, 0x0b / 255, 1]; // #09090b
-const FG = [0xfa / 255, 0xfa / 255, 0xfa / 255, 1]; // #fafafa
-const FG40 = [0xfa / 255, 0xfa / 255, 0xfa / 255, 0.4];
-const inset = 100 / 1024, rectR = 180 / 1024;
-const appShapes = [
-  roundedRect(inset, inset, 1 - inset, 1 - inset, rectR, BG),
-  ring(0.5, 0.5, 232 / 1024, 45 / 1024, 45, 80, FG40),
-  circle(0.5, 0.5, 122 / 1024, FG),
-];
-fs.writeFileSync(path.join(assets, 'appicon_1024.png'), render(1024, appShapes));
+// ── macOS icon.icns: 'icns' container, each entry = type + BE length + PNG ─
+const be32 = n => {
+  const b = Buffer.alloc(4);
+  b.writeUInt32BE(n);
+  return b;
+};
+const entries = [];
+for (const [type, px] of [
+  ['ic11', 32],
+  ['ic12', 64],
+  ['ic07', 128],
+  ['ic08', 256],
+  ['ic13', 256],
+  ['ic09', 512],
+  ['ic14', 512],
+  ['ic10', 1024],
+]) {
+  const png =
+    px === SIZE ? appicon : await sharp(appicon).resize(px, px).png().toBuffer();
+  entries.push(Buffer.concat([Buffer.from(type, 'ascii'), be32(png.length + 8), png]));
+}
+const body = Buffer.concat(entries);
+fs.writeFileSync(
+  path.join(assets, 'icon.icns'),
+  Buffer.concat([Buffer.from('icns', 'ascii'), be32(body.length + 8), body]),
+);
 
 console.log('icons written to', assets);

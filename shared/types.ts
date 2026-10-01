@@ -63,6 +63,7 @@ export interface ImportSelectedResponse {
 export type Platform =
   | 'google'
   | 'groq'
+  | 'xai'
   | 'cerebras'
   // Sail Research — native Responses API provider. $5 in free credits refreshes
   // monthly when a payment method is attached; usage beyond the grant is
@@ -120,6 +121,15 @@ export type Platform =
   // OpenCode Zen — OpenAI-compatible gateway. Free promotional models require a
   // free (no-card) account key from opencode.ai/auth; see migrateModelsV18.
   | 'opencode'
+  // OpenCode Free — identity-spoofed access to OpenCode's zen free tier.
+  // Uses `Bearer public` + forged OpenCode CLI headers (User-Agent,
+  // x-opencode-session, fingerprint tools) to bypass the client-gate that
+  // locked free models to the official CLI since 2026-09. Keyless.
+  | 'opencode-free'
+  // OpenCode Go — OpenAI-compatible gateway (https://opencode.ai/zen/go/v1).
+  // Separate tier from Zen with its own model roster (minimax, kimi, qwen,
+  // deepseek, grok, gpt-6-luna); requires its own API key.
+  | 'opencode-go'
   // OVHcloud AI Endpoints — OpenAI-compatible, keyless anonymous tier
   // (2 req/min per IP per model); see migrateModelsV26.
   | 'ovh'

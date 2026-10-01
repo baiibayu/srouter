@@ -5,7 +5,7 @@
 ## Scope
 
 This domain covers all integration guides for connecting coding agents, CLI tools,
-and OpenAI-compatible clients to FreeLLMAPI. It documents the automated setup
+and OpenAI-compatible clients to SRouter. It documents the automated setup
 generators, manual configuration recipes, URL tokens for headerless clients, the
 Ollama emulation surface, the MCP server interface, and the Context Handoff
 feature for mid-conversation model switches.

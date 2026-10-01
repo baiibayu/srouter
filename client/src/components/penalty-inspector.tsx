@@ -6,7 +6,7 @@ import { apiFetch } from '@/lib/api'
 
 // Collapse state persists so a returning user keeps their last choice; a fresh
 // install (no stored value) defaults to collapsed to keep the routing page calm.
-const COLLAPSED_KEY = 'freellmapi.penaltyInspector.collapsed'
+const COLLAPSED_KEY = 'srouter.penaltyInspector.collapsed'
 
 function readCollapsed(): boolean {
   try {

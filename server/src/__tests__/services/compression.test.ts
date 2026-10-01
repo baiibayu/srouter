@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@srouter/shared/types.js';
 import { initDb } from '../../db/index.js';
 import {
   DEFAULT_COMPRESSION_CONFIG,
@@ -46,12 +46,12 @@ function msg(role: ChatMessage['role'], content: string, extra: Partial<ChatMess
 describe('compression configuration', () => {
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
-    delete process.env.FREELLMAPI_COMPRESSION;
+    delete process.env.SROUTER_COMPRESSION;
     initDb(':memory:');
   });
 
   it('uses setting → env → off precedence and persists complete engine defaults', () => {
-    process.env.FREELLMAPI_COMPRESSION = 'lossless';
+    process.env.SROUTER_COMPRESSION = 'lossless';
     expect(getCompressionConfig().mode).toBe('lossless');
     const saved = setCompressionConfig({
       mode: 'standard',

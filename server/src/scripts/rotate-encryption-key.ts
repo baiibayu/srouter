@@ -26,7 +26,7 @@
  *
  *   --old-key  the current key (hex, 64 chars). Falls back to ENCRYPTION_KEY.
  *   --new-key  the key to rotate to (hex, 64 chars). Required.
- *   --db       SQLite path (default: the server's data/freeapi.db).
+ *   --db       SQLite path (default: the server's data/srouter.db).
  *   --dry-run  decrypt + print every affected row WITHOUT writing anything.
  *
  * Exits 0 on success (or a clean dry run), 1 on any decrypt/validation error.
@@ -45,7 +45,7 @@ const KEY_HEX_LEN = 64;
 const AUTH_TAG_BYTES = 16;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_DB = path.resolve(__dirname, '../../data/freeapi.db');
+const DEFAULT_DB = path.resolve(__dirname, '../../data/srouter.db');
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);

@@ -340,8 +340,8 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   const logger = options.logger ?? console;
   const appVersion = options.version ?? getAppVersion;
   const autoCheckEnabled = options.autoCheckEnabled ?? isAutoUpdateCheckEnabled;
-  const updateCheckDisabled = env.FREELLMAPI_UPDATE_CHECK?.trim().toLowerCase() === 'off';
-  const githubToken = env.FREELLMAPI_UPDATE_GITHUB_TOKEN?.trim();
+  const updateCheckDisabled = env.SROUTER_UPDATE_CHECK?.trim().toLowerCase() === 'off';
+  const githubToken = env.SROUTER_UPDATE_GITHUB_TOKEN?.trim();
 
   let identity: Identity | undefined;
   let cache: CachedResult | null = null;
@@ -354,7 +354,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   function githubHeaders(accept: string): Record<string, string> {
     return {
       Accept: accept,
-      'User-Agent': 'freellmapi-update-checker',
+      'User-Agent': 'srouter-update-checker',
       'X-GitHub-Api-Version': '2022-11-28',
       ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
     };
@@ -366,8 +366,8 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   async function resolveIdentity(): Promise<Identity> {
     if (identity) return identity;
 
-    const environmentSha = validSha(env.FREELLMAPI_COMMIT_SHA);
-    const installMethod = env.FREELLMAPI_INSTALL_METHOD;
+    const environmentSha = validSha(env.SROUTER_COMMIT_SHA);
+    const installMethod = env.SROUTER_INSTALL_METHOD;
     if (installMethod === 'docker' || installMethod === 'desktop') {
       // Deliberately before the SHA check: a self-built image without
       // --build-arg has no embedded SHA, and it is still a container install.
@@ -433,7 +433,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
       const atomResponse = await fetchImpl(`https://github.com/${REPOSITORY}/commits/main.atom`, {
         headers: {
           Accept: 'application/atom+xml',
-          'User-Agent': 'freellmapi-update-checker',
+          'User-Agent': 'srouter-update-checker',
         },
         signal: AbortSignal.timeout(10_000),
       });

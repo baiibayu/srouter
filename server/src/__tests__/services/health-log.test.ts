@@ -13,7 +13,7 @@ vi.mock('../../providers/index.js', () => ({
 // Imported lazily so the mock above is wired first.
 const { checkKeyHealth } = await import('../../services/health.js');
 
-// The crash watchdog (cron bff5ae167d28, every 12h) greps /tmp/freellmapi.log for
+// The crash watchdog (cron bff5ae167d28, every 12h) greps /tmp/srouter.log for
 // "[Health] Key N (... transport error" to attribute transport failures to the
 // responsible provider. The format is part of an implicit contract — a refactor
 // that drops the leading "[Health] Key N (" prefix or removes the platform/base
@@ -98,7 +98,7 @@ describe('checkKeyHealth transport-error log format', () => {
     const id = seedKey('cloudflare', null);
     await checkKeyHealth(id);
     const line = firstLine();
-    // The cron regex in scripts/freellmapi-watchdog.sh is anchored on this prefix.
+    // The cron regex in scripts/srouter-watchdog.sh is anchored on this prefix.
     expect(line.startsWith(`[Health] Key ${id} (`)).toBe(true);
   });
 });

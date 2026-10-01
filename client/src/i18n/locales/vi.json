@@ -16,7 +16,9 @@
     "modelsMenu": "Duyệt các loại mô hình",
     "agents": "Tác nhân",
     "logs": "Nhật ký",
-    "analyticsMenu": "Trang phân tích"
+    "analyticsMenu": "Trang phân tích",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Tạo tài khoản của bạn",
@@ -60,7 +62,7 @@
     "emailChanged": "Đã đổi e-mail thành công.",
     "passwordReset": "Đã đặt lại mật khẩu. Vui lòng đăng nhập.",
     "resetCodeDockerHint": "Đang chạy trong Docker? Mã nằm trong nhật ký của container: docker logs <container>.",
-    "desktopSessionFailed": "Bảng điều khiển không thể đăng nhập vào máy chủ cục bộ. Hãy thoát FreeLLMAPI và mở lại."
+    "desktopSessionFailed": "Bảng điều khiển không thể đăng nhập vào máy chủ cục bộ. Hãy thoát SRouter và mở lại."
   },
   "common": {
     "save": "Lưu",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Tự động kiểm tra cập nhật",
     "autoUpdateCheckHelp": "Kiểm tra GitHub mỗi ngày một lần để tìm bản phát hành mới và hiển thị lời nhắc. Mặc định tắt.",
     "openReleases": "Mở GitHub Releases",
-    "restartAfterUpdate": "Khởi động lại FreeLLMAPI sau khi hoàn tất bản dựng."
+    "restartAfterUpdate": "Khởi động lại SRouter sau khi hoàn tất bản dựng.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Người mẫu",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Ngân sách mã thông báo hàng tháng",
     "remaining": "còn lại",
     "used": "đã sử dụng",
-    "usedScopeHint": "Chỉ tính các yêu cầu trò chuyện từ đầu tháng dương lịch này, cộng dồn trên mọi mô hình trong chuỗi đang hoạt động — bao gồm cả endpoint tùy chỉnh. Lưu lượng bạn gửi thẳng tới nhà cung cấp ngoài FreeLLMAPI không được tính.",
+    "usedScopeHint": "Chỉ tính các yêu cầu trò chuyện từ đầu tháng dương lịch này, cộng dồn trên mọi mô hình trong chuỗi đang hoạt động — bao gồm cả endpoint tùy chỉnh. Lưu lượng bạn gửi thẳng tới nhà cung cấp ngoài SRouter không được tính.",
     "legendRemainingTitle": "Còn lại / hạn mức hằng tháng của {name} ({platform})",
     "noPublishedQuota": "+{count} không công bố hạn mức",
     "noPublishedQuotaTitle": "Các mô hình này không công bố hạn mức token hằng tháng nên không có số còn lại để hiển thị.",
@@ -517,6 +525,23 @@
     "providerActions": "Hành động của nhà cung cấp",
     "routeViaProxy": "Định tuyến qua proxy",
     "checkNow": "Kiểm tra ngay",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Cũng có thể cấu hình thông qua",
     "proxyEnvHintAfter": "biến môi trường (được ưu tiên). Để trống để vô hiệu hóa. Ví dụ:",
     "importKeys": "Nhập khóa nhà cung cấp",
@@ -679,7 +704,8 @@
     "testFailed": "Kiểm tra mô hình thất bại",
     "testThrottled": "Vui lòng đợi {seconds}s trước khi kiểm tra lại mô hình này.",
     "noModelsForProvider": "Chưa có mô hình nào được cấu hình cho nhà cung cấp này.",
-    "testModels": "Kiểm tra mô hình"
+    "testModels": "Kiểm tra mô hình",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

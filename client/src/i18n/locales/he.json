@@ -16,7 +16,9 @@
     "modelsMenu": "דפדוף בסוגי דגמים",
     "agents": "סוכנים",
     "logs": "יומן",
-    "analyticsMenu": "דפי אנליטיקה"
+    "analyticsMenu": "דפי אנליטיקה",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "צור את החשבון שלך",
@@ -60,7 +62,7 @@
     "emailChanged": "הדוא\"ל שונה בהצלחה.",
     "passwordReset": "הסיסמה אופסה. יש להתחבר.",
     "resetCodeDockerHint": "מריצים ב-Docker? הקוד מופיע ביומן הקונטיינר: docker logs <container>.",
-    "desktopSessionFailed": "לוח הבקרה לא הצליח להתחבר לשרת המקומי. סגור את FreeLLMAPI ופתח אותו מחדש."
+    "desktopSessionFailed": "לוח הבקרה לא הצליח להתחבר לשרת המקומי. סגור את SRouter ופתח אותו מחדש."
   },
   "common": {
     "save": "שמור",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "בדיקת עדכונים אוטומטית",
     "autoUpdateCheckHelp": "בודקת ב-GitHub פעם ביום אם יצאה גרסה חדשה ומציגה תזכורת. כבויה כברירת מחדל.",
     "openReleases": "פתיחת מהדורות GitHub",
-    "restartAfterUpdate": "הפעל מחדש את FreeLLMAPI לאחר השלמת הבנייה."
+    "restartAfterUpdate": "הפעל מחדש את SRouter לאחר השלמת הבנייה.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "דגמים",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "תקציב טוקנים חודשי",
     "remaining": "נותרו",
     "used": "משומש",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "פעולות ספק",
     "routeViaProxy": "מסלול באמצעות פרוקסי",
     "checkNow": "בדוק עכשיו",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "ניתן גם להגדיר דרך",
     "proxyEnvHintAfter": "משתנה סביבתי (מקבל עדיפות). השאר ריק כדי להשבית. דוגמאות:",
     "importKeys": "מפתחות ספק לייבוא",
@@ -679,7 +704,8 @@
     "testFailed": "בדיקת הדגם נכשלה",
     "testThrottled": "אנא המתן {seconds} שניות לפני בדיקת דגם זה שוב.",
     "noModelsForProvider": "לא הוגדרו דגמים עבור ספק זה.",
-    "testModels": "בדיקת מודלים"
+    "testModels": "בדיקת מודלים",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

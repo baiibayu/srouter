@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ChatCompletionChunk, ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatMessage } from '@srouter/shared/types.js';
 import { MoondreamProvider } from '../../providers/moondream.js';
 import { getProvider } from '../../providers/index.js';
 import { AUTH_JSON_PROVIDER_MAP, detectPlatform, parseKeysFromFile } from '../../lib/key-parser.js';

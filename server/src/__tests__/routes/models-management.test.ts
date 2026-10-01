@@ -429,7 +429,7 @@ describe('Model management API', () => {
     expect(chain).toBeDefined();
     expect(chain.name).toContain('my-group');
     expect(chain.object).toBe('model');
-    expect(chain.owned_by).toBe('freellmapi');
+    expect(chain.owned_by).toBe('srouter');
     // The real point of the entry: is this chain usable right now, and how big
     // a context can it take? Both are asserted, not merely present.
     expect(chain.available).toBe(true);
@@ -458,7 +458,7 @@ describe('Model management API', () => {
       const entry = listed.body.data.find((m: any) => m.id === id);
       expect(entry, `${id} must be listed`).toBeDefined();
       expect(entry.object).toBe('model');
-      expect(entry.owned_by).toBe('freellmapi');
+      expect(entry.owned_by).toBe('srouter');
       expect(entry.available).toBe(true);
       // The display name says where the request really goes — none of these is
       // hosted Claude.

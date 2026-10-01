@@ -16,7 +16,9 @@
     "modelsMenu": "Kiri awoṣe orisi",
     "agents": "Awọn aṣoju",
     "logs": "Àkọọlẹ",
-    "analyticsMenu": "Awọn oju-iwe atupale"
+    "analyticsMenu": "Awọn oju-iwe atupale",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Ṣẹda akọọlẹ rẹ",
@@ -60,7 +62,7 @@
     "emailChanged": "A yí ìmẹ́lì padà.",
     "passwordReset": "A tún ọ̀rọ̀ aṣínà ṣe. Jọ̀wọ́ wọlé.",
     "resetCodeDockerHint": "Ṣé o ń lo Docker? Kóòdù náà wà nínú ìwé ìṣẹ̀lẹ̀ kọ́ntéènà: docker logs <container>.",
-    "desktopSessionFailed": "Dáṣíbọ́ọ̀dù kò lè wọlé sí olùpèsè agbègbè. Pa FreeLLMAPI, kí o sì tún ṣí i."
+    "desktopSessionFailed": "Dáṣíbọ́ọ̀dù kò lè wọlé sí olùpèsè agbègbè. Pa SRouter, kí o sì tún ṣí i."
   },
   "common": {
     "save": "Fipamọ",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Àyẹ̀wò ìmúdójúìwọ̀n aládàáṣe",
     "autoUpdateCheckHelp": "Ó ń ṣàyẹ̀wò GitHub lẹ́ẹ̀kan lóòjọ́ fún ìtújáde tuntun, ó sì ń fi ìránnilétí hàn. Ó pa ní àtìbẹ̀rẹ̀.",
     "openReleases": "Ṣí àwọn ìtújáde GitHub",
-    "restartAfterUpdate": "Tun FreeLLMAPI bẹ̀rẹ̀ lẹ́yìn tí ìkọ́lé bá parí."
+    "restartAfterUpdate": "Tun SRouter bẹ̀rẹ̀ lẹ́yìn tí ìkọ́lé bá parí.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Awọn awoṣe",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Oṣooṣu àmi isuna",
     "remaining": "ti o ku",
     "used": "lo",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Awọn iṣẹ olupese",
     "routeViaProxy": "Ipa ọna nipasẹ aṣoju",
     "checkNow": "Ṣayẹwo bayi",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Tun Configurable nipasẹ awọn",
     "proxyEnvHintAfter": "oniyipada ayika (mu ṣaaju). Fi òfo silẹ lati mu ṣiṣẹ. Awọn apẹẹrẹ:",
     "importKeys": "Gbe wọle awọn bọtini olupese",
@@ -679,7 +704,8 @@
     "testFailed": "Idanwo awoṣe kuna",
     "testThrottled": "Jọwọ duro fun iṣẹju-aaya {seconds} ki o to tun awoṣe yii ṣe idanwo.",
     "noModelsForProvider": "Ko si awọn awoṣe ti a tunto fun olupese yii.",
-    "testModels": "Ṣàdánwò àwọn àwòṣe"
+    "testModels": "Ṣàdánwò àwọn àwòṣe",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

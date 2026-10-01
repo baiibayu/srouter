@@ -1,6 +1,6 @@
 // Bundles desktop/src/server-host.ts (and through it the whole server) into
 // build/server.mjs. esbuild resolves the server's `.js`-suffixed TS imports
-// and flattens the @freellmapi/shared workspace symlink — only better-sqlite3
+// and flattens the @srouter/shared workspace symlink — only better-sqlite3
 // stays external (native module, electron-rebuilt in desktop/node_modules).
 import { build } from 'esbuild';
 import path from 'node:path';
@@ -19,8 +19,8 @@ await build({
   outfile: path.resolve(__dirname, '../build/server.mjs'),
   external: ['better-sqlite3'],
   define: {
-    'process.env.FREELLMAPI_COMMIT_SHA': JSON.stringify(hasBuildIdentity ? githubSha : ''),
-    'process.env.FREELLMAPI_INSTALL_METHOD': JSON.stringify(hasBuildIdentity ? 'desktop' : ''),
+    'process.env.SROUTER_COMMIT_SHA': JSON.stringify(hasBuildIdentity ? githubSha : ''),
+    'process.env.SROUTER_INSTALL_METHOD': JSON.stringify(hasBuildIdentity ? 'desktop' : ''),
   },
   // Some inlined CJS deps (express internals) reference `require` at runtime;
   // give the ESM bundle a working one.

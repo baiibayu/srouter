@@ -8,7 +8,7 @@ stdout — routing decisions, provider health checks, key cooldowns, quota
 exhaustion, compression fidelity gates, and any `warn`/`error` level events —
 without requiring SSH or container log access.
 
-> **Implementation internals:** the ingest path, structured `providerLog` metadata, boot preload, the `server_logs` / `requests` / `request_attempts` schema, and the desktop file logger (`freeapi.log`) are covered in the [Observability deep-dive](../architecture/06-observability.md). This guide covers the operator-facing dashboard, polling API, and client implementation.
+> **Implementation internals:** the ingest path, structured `providerLog` metadata, boot preload, the `server_logs` / `requests` / `request_attempts` schema, and the desktop file logger (`srouter.log`) are covered in the [Observability deep-dive](../architecture/06-observability.md). This guide covers the operator-facing dashboard, polling API, and client implementation.
 
 ---
 

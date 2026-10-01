@@ -16,7 +16,9 @@
     "modelsMenu": "모델 유형 찾아보기",
     "agents": "에이전트",
     "logs": "로그",
-    "analyticsMenu": "분석 페이지"
+    "analyticsMenu": "분석 페이지",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "계정 만들기",
@@ -60,7 +62,7 @@
     "emailChanged": "이메일이 변경되었습니다.",
     "passwordReset": "비밀번호가 재설정되었습니다. 로그인해 주세요.",
     "resetCodeDockerHint": "Docker에서 실행 중인가요? 코드는 컨테이너 로그에 있습니다: docker logs <container>",
-    "desktopSessionFailed": "대시보드가 로컬 서버에 로그인하지 못했습니다. FreeLLMAPI를 종료한 뒤 다시 여세요."
+    "desktopSessionFailed": "대시보드가 로컬 서버에 로그인하지 못했습니다. srouter를 종료한 뒤 다시 여세요."
   },
   "common": {
     "save": "저장",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "자동 업데이트 확인",
     "autoUpdateCheckHelp": "하루에 한 번 GitHub에서 새 릴리스를 확인하고 알림을 표시합니다. 기본값은 꺼짐입니다.",
     "openReleases": "GitHub 릴리스 열기",
-    "restartAfterUpdate": "빌드가 완료되면 FreeLLMAPI를 다시 시작하세요."
+    "restartAfterUpdate": "빌드가 완료되면 srouter를 다시 시작하세요.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "모델",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "월간 토큰 예산",
     "remaining": "남은",
     "used": "사용됨",
-    "usedScopeHint": "이번 달(달력 기준) 시작 이후의 채팅 요청만, 활성 체인의 모든 모델(사용자 지정 엔드포인트 포함)에 대해 합산한 값입니다. FreeLLMAPI를 거치지 않고 제공자에 직접 보낸 트래픽은 포함되지 않습니다.",
+    "usedScopeHint": "이번 달(달력 기준) 시작 이후의 채팅 요청만, 활성 체인의 모든 모델(사용자 지정 엔드포인트 포함)에 대해 합산한 값입니다. srouter를 거치지 않고 제공자에 직접 보낸 트래픽은 포함되지 않습니다.",
     "legendRemainingTitle": "{name}({platform})의 남은 양 / 월 예산",
     "noPublishedQuota": "공개 할당량이 없는 모델 {count}개",
     "noPublishedQuotaTitle": "이 모델들은 공개된 월 토큰 예산이 없어 남은 양을 표시할 수 없습니다.",
@@ -517,6 +525,23 @@
     "providerActions": "공급자 작업",
     "routeViaProxy": "프록시를 통한 라우팅",
     "checkNow": "지금 확인하세요",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "또한 다음을 통해 구성할 수 있습니다.",
     "proxyEnvHintAfter": "환경 변수(우선순위를 갖습니다). 비활성화하려면 비워 두세요. 예:",
     "importKeys": "공급자 키 가져오기",
@@ -679,7 +704,8 @@
     "testFailed": "모델 테스트에 실패했습니다",
     "testThrottled": "이 모델을 다시 테스트하기 전에 {seconds}초 동안 기다려 주세요.",
     "noModelsForProvider": "이 제공자에 구성된 모델이 없습니다.",
-    "testModels": "모델 테스트"
+    "testModels": "모델 테스트",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

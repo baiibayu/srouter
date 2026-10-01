@@ -4,7 +4,7 @@ import { getDb, getSetting, setSetting } from '../db/index.js';
 import { hasProvider } from '../providers/index.js';
 import { MEDIA_PLATFORMS, TRANSCRIPTION_PLATFORMS, VIDEO_PLATFORMS } from './media.js';
 import { EMBEDDING_PLATFORMS } from './embeddings.js';
-import type { Platform } from '@freellmapi/shared/types.js';
+import type { Platform } from '@srouter/shared/types.js';
 import type { Scheduler } from '../lib/scheduler.js';
 import {
   applyAllModelOverrides,
@@ -24,13 +24,12 @@ const MEDIA_MODALITIES = new Set(['image', 'audio']);
 /**
  * catalog-sync — keeps the local model catalog in step with the published one.
  *
- * Twice a day (and on demand) the server pulls the signed catalog from the
- * catalog service. A valid Premium license key (Bearer) gets the live tier,
- * refreshed every 2-3 days; everyone else gets the monthly snapshot — so free
- * installs still self-heal, just on a slower cadence. The response is verified
- * against a pinned Ed25519 public key over the exact bytes received; anything
- * unsigned or tampered with is discarded, which means a compromised CDN or
- * MITM cannot inject models or quirks into the router.
+ * Twice a day (and on on boot) the server pulls the signed catalog from the
+ * catalog service. Everyone gets the monthly snapshot, which self-heals on a
+ * regular cadence. The response is verified against a pinned Ed25519 public
+ * key over the exact bytes received; anything unsigned or tampered with is
+ * discarded, which means a compromised CDN or MITM cannot inject models or
+ * quirks into the router.
  *
  * The bundled migrations remain the baseline: a fetched catalog is applied
  * only when it is NEWER than what the binary shipped with (MIN_CATALOG_VERSION
@@ -52,18 +51,90 @@ MCowBQYDK2VwAyEAq9yv4+3EeyMHKsfVYBhkcz1lYgIXSUeHNnN6tNgYX3k=
 // migration lands, so the bundled DB is always the floor.
 export const MIN_CATALOG_VERSION = '2026.06.07';
 
-const SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000; // twice daily
+const DEFAULT_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000; // default: 12h
 const BOOT_DELAY_MS = 10 * 1000; // let the server settle before first sync
 const FETCH_TIMEOUT_MS = 20 * 1000;
 
 // settings table keys
-export const SETTING_LICENSE_KEY = 'premium_license_key';
-export const SETTING_LICENSE_STATUS = 'premium_license_status'; // JSON LicenseStatus
 const SETTING_APPLIED_VERSION = 'catalog_applied_version';
 const SETTING_APPLIED_TIER = 'catalog_applied_tier';
 const SETTING_APPLIED_JSON = 'catalog_applied_json';
 const SETTING_LAST_SYNC_MS = 'catalog_last_sync_ms';
 const SETTING_LAST_ERROR = 'catalog_last_error';
+const SETTING_SYNC_INTERVAL_HOURS = 'sync_interval_hours';
+const SETTING_NOTIFICATIONS = 'sync_notifications';
+
+// ── Sync schedule (configurable from Settings → General) ──────
+
+export type SyncInterval = 'off' | 6 | 12 | 24;
+const VALID_INTERVALS: SyncInterval[] = ['off', 6, 12, 24];
+
+export function getSyncIntervalHours(): SyncInterval {
+  const raw = getSetting(SETTING_SYNC_INTERVAL_HOURS);
+  // Unset (fresh install) keeps the upstream default of twice daily; only an
+  // explicit 'off' disables the timer.
+  if (!raw) return DEFAULT_SYNC_INTERVAL_MS / (60 * 60 * 1000) as SyncInterval;
+  if (raw === 'off') return 'off';
+  const n = Number(raw);
+  return VALID_INTERVALS.includes(n as SyncInterval) ? (n as SyncInterval) : 'off';
+}
+
+export function setSyncIntervalHours(interval: SyncInterval): void {
+  setSetting(SETTING_SYNC_INTERVAL_HOURS, interval === 'off' ? 'off' : String(interval));
+}
+
+function syncIntervalMs(): number {
+  const hours = getSyncIntervalHours();
+  return hours === 'off' ? 0 : hours * 60 * 60 * 1000;
+}
+
+// ── Notifications (model changes from sync) ──────────────────
+
+export interface SyncNotification {
+  id: string;
+  type: 'added' | 'removed' | 'updated' | 'degraded' | 'update_available';
+  modelId: string;
+  displayName: string;
+  platform: string;
+  message: string;
+  timestamp: number;
+  read: boolean;
+}
+
+export function getNotifications(): SyncNotification[] {
+  const raw = getSetting(SETTING_NOTIFICATIONS);
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as SyncNotification[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addNotifications(notifs: SyncNotification[]): void {
+  if (notifs.length === 0) return;
+  const existing = getNotifications();
+  // Prepend new ones, cap at 50.
+  const merged = [...notifs, ...existing].slice(0, 50);
+  merged.sort((a, b) => b.timestamp - a.timestamp);
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(merged));
+}
+
+export function markNotificationsRead(): void {
+  const all = getNotifications().map(n => ({ ...n, read: true }));
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(all));
+}
+
+export function unreadNotificationCount(): number {
+  return getNotifications().filter(n => !n.read).length;
+}
+
+/** Remove all notifications of a given type (e.g. 'update_available' after user updates). */
+export function removeNotificationsByType(type: SyncNotification['type']): void {
+  const filtered = getNotifications().filter(n => n.type !== type);
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(filtered));
+}
 
 export function catalogBaseUrl(): string {
   return (process.env.CATALOG_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, '');
@@ -72,16 +143,6 @@ export function catalogBaseUrl(): string {
 function catalogPublicKey(): crypto.KeyObject {
   const pem = process.env.CATALOG_PUBKEY ? process.env.CATALOG_PUBKEY.replace(/\\n/g, '\n') : PINNED_CATALOG_PUBKEY;
   return crypto.createPublicKey({ key: pem, format: 'pem' });
-}
-
-export interface LicenseStatus {
-  valid: boolean;
-  plan: 'annual' | 'lifetime' | null;
-  status: string | null;
-  expiresAt: string | null;
-  cancelAtPeriodEnd?: boolean;
-  reason?: string;
-  checkedAtMs: number;
 }
 
 interface CatalogQuirk {
@@ -676,21 +737,18 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
 
 /**
  * Fetch the catalog, verify its signature, and apply it if it moves us forward.
- * `force` skips the `since` short-circuit — used right after a license key is
- * added or removed, where the tier can change without the version changing.
+ * `force` skips the `since` short-circuit — forces a full catalog fetch
+ * regardless of version changes.
  */
 export async function syncCatalog(force = false): Promise<SyncResult> {
   const db = getDb();
-  const key = getSetting(SETTING_LICENSE_KEY);
   const applied = getSetting(SETTING_APPLIED_VERSION);
 
   try {
-    const headers: Record<string, string> = {};
-    if (key) headers.Authorization = `Bearer ${key}`;
     const url = new URL(`${catalogBaseUrl()}/v1/latest`);
     if (applied && !force) url.searchParams.set('since', applied);
 
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
 
     if (res.status === 304) {
       setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
@@ -735,7 +793,9 @@ export async function syncCatalog(force = false): Promise<SyncResult> {
       );
       setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
       setSetting(SETTING_LAST_ERROR, '');
-      return { ok: true, action: 'applied', version: catalog.version, tier: catalog.tier, counts };
+      const syncResult: SyncResult = { ok: true, action: 'applied', version: catalog.version, tier: catalog.tier, counts };
+      emitSyncNotifications(syncResult);
+      return syncResult;
     }
 
     setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
@@ -746,67 +806,6 @@ export async function syncCatalog(force = false): Promise<SyncResult> {
     console.warn(`[catalog-sync] ${message}`);
     setSetting(SETTING_LAST_ERROR, message);
     return { ok: false, action: 'error', detail: message };
-  }
-}
-
-/** Raw response from the catalog service's license activation endpoint. */
-export interface LicenseActivation {
-  valid: boolean;
-  plan: string | null;
-  status: string | null;
-  expiresAt: string | null;
-  reason?: string;
-}
-
-/**
- * Validate a key with the license service. Returns null when the service is
- * unreachable — distinguishable from a rejected key, so a transient outage can
- * be warned about instead of reported as a bad key. Shared by the dashboard's
- * POST /api/premium/key and declarative `license` config.
- */
-export async function validateLicenseKey(key: string, timeoutMs = FETCH_TIMEOUT_MS): Promise<LicenseActivation | null> {
-  try {
-    const res = await fetch(`${catalogBaseUrl()}/v1/license/activate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    return (await res.json()) as LicenseActivation;
-  } catch {
-    return null;
-  }
-}
-
-/** Revalidate the stored license against the catalog service and cache the result. */
-export async function refreshLicenseStatus(): Promise<LicenseStatus | null> {
-  const key = getSetting(SETTING_LICENSE_KEY);
-  if (!key) return null;
-  try {
-    const res = await fetch(`${catalogBaseUrl()}/v1/license/check`, {
-      headers: { Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
-    if (!res.ok && res.status !== 401) throw new Error(`HTTP ${res.status}`);
-    const body = (await res.json()) as Omit<LicenseStatus, 'checkedAtMs'>;
-    const status: LicenseStatus = { ...body, checkedAtMs: Date.now() };
-    setSetting(SETTING_LICENSE_STATUS, JSON.stringify(status));
-    return status;
-  } catch (err) {
-    // Offline or service down: keep the cached status. Entitlement is enforced
-    // server-side at /v1/latest anyway — this cache is informational UI state.
-    console.warn(`[catalog-sync] license check unreachable: ${err instanceof Error ? err.message : err}`);
-    return getCachedLicenseStatus();
-  }
-}
-
-export function getCachedLicenseStatus(): LicenseStatus | null {
-  const raw = getSetting(SETTING_LICENSE_STATUS);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as LicenseStatus;
-  } catch {
-    return null;
   }
 }
 
@@ -866,32 +865,51 @@ export function reapplyCachedCatalog(): { reapplied: boolean; version?: string }
 
 let cancelBootTimer: (() => void) | null = null;
 let cancelInterval: (() => void) | null = null;
+let currentScheduler: Scheduler | null = null;
+
+function restartInterval(): void {
+  if (!currentScheduler) return;
+  if (cancelInterval) { cancelInterval(); cancelInterval = null; }
+  const ms = syncIntervalMs();
+  if (ms > 0) {
+    cancelInterval = currentScheduler.every(ms, () => { void syncCatalog(); });
+    console.log(`[catalog-sync] polling ${catalogBaseUrl()} every ${ms / 3600000}h`);
+  } else {
+    console.log('[catalog-sync] auto-sync disabled (manual mode)');
+  }
+}
 
 export function startCatalogSync(scheduler: Scheduler): void {
   if (cancelInterval) return;
+  currentScheduler = scheduler;
   if (process.env.CATALOG_SYNC_DISABLED === '1') {
     console.log('[catalog-sync] disabled via CATALOG_SYNC_DISABLED=1');
     return;
   }
   reapplyCachedCatalog();
   const run = () => {
-    void refreshLicenseStatus();
     void syncCatalog();
   };
   cancelBootTimer = scheduler.after(BOOT_DELAY_MS, async () => {
     run();
     // Auto-discover models for providers that have keys but zero models in
-    // the catalog. This bypasses the Premium gate: instead of waiting for
-    // the monthly catalog to include a new provider, we query their APIs.
+    // the catalog. Bypasses the monthly catalog: instead of waiting for
+    // the next snapshot to include a new provider, we query their APIs.
     try {
       const { autoDiscoverAll } = await import('./auto-discover.js');
       await autoDiscoverAll();
     } catch (err) {
       console.warn(`[catalog-sync] auto-discover failed: ${err instanceof Error ? err.message : err}`);
     }
+    // Check for server updates on boot (if enabled in settings)
+    try {
+      const { checkUpdateAvailable } = await import('./notification-emitter.js');
+      await checkUpdateAvailable();
+    } catch {
+      // Silent — update check is best-effort
+    }
   });
-  cancelInterval = scheduler.every(SYNC_INTERVAL_MS, run);
-  console.log(`[catalog-sync] polling ${catalogBaseUrl()} every ${SYNC_INTERVAL_MS / 3600000}h`);
+  restartInterval();
 }
 
 export function stopCatalogSync(): void {
@@ -903,4 +921,57 @@ export function stopCatalogSync(): void {
     cancelInterval();
     cancelInterval = null;
   }
+}
+
+/** Call after changing the schedule setting to restart the polling timer. */
+export function updateSyncSchedule(): void {
+  restartInterval();
+  // Also restart auto-discover on the same schedule
+  import('./auto-discover.js').then(m => m.restartRefreshInterval()).catch(() => {});
+}
+
+/** Generate notifications from sync result counts. */
+function emitSyncNotifications(result: SyncResult): void {
+  if (!result.counts) return;
+  const { inserted, removed, updated } = result.counts;
+  if (inserted === 0 && removed === 0 && updated === 0) return;
+  const now = Date.now();
+  const notifs: SyncNotification[] = [];
+  if (inserted > 0) {
+    notifs.push({
+      id: `sync-${now}-added`,
+      type: 'added',
+      modelId: '*',
+      displayName: `${inserted} model baru`,
+      platform: '',
+      message: `${inserted} model baru ditambahkan dari katalog`,
+      timestamp: now,
+      read: false,
+    });
+  }
+  if (removed > 0) {
+    notifs.push({
+      id: `sync-${now}-removed`,
+      type: 'removed',
+      modelId: '*',
+      displayName: `${removed} model dihapus`,
+      platform: '',
+      message: `${removed} model dihapus karena sudah tidak ada di katalog`,
+      timestamp: now,
+      read: false,
+    });
+  }
+  if (updated > 0) {
+    notifs.push({
+      id: `sync-${now}-updated`,
+      type: 'updated',
+      modelId: '*',
+      displayName: `${updated} model diperbarui`,
+      platform: '',
+      message: `${updated} model diperbarui dari katalog terbaru`,
+      timestamp: now,
+      read: false,
+    });
+  }
+  addNotifications(notifs);
 }

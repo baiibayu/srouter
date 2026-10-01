@@ -15,7 +15,7 @@ npx wrangler secret put RELAY_TOKEN
 npx wrangler deploy
 ```
 
-Do not put the token in `wrangler.jsonc` or commit it. Configure FreeLLMAPI:
+Do not put the token in `wrangler.jsonc` or commit it. Configure SRouter:
 
 ```dotenv
 PROXY_MODE=fetch-relay

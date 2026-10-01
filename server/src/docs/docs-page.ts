@@ -20,7 +20,7 @@ export const DOCS_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FreeLLMAPI - API reference</title>
+  <title>SRouter - API reference</title>
   <style>
     :root {
       --bg: #ffffff; --fg: #1b1f24; --muted: #5b6472; --border: #e4e8ee;
@@ -90,7 +90,7 @@ export const DOCS_HTML = `<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <header class="top"><div class="wrap" style="padding:0;"><h1 id="doc-title">FreeLLMAPI</h1><span class="ver" id="doc-ver"></span></div></header>
+  <header class="top"><div class="wrap" style="padding:0;"><h1 id="doc-title">SRouter</h1><span class="ver" id="doc-ver"></span></div></header>
   <main class="wrap"><div id="root"><p class="loading">Loading API reference…</p></div></main>
   <script>
   (function () {

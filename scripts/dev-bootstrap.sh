@@ -48,7 +48,7 @@ lock_hash_for() {
 
 lockfile="$project_root/package-lock.json"
 node_modules="$project_root/node_modules"
-lock_stamp="$node_modules/.freellmapi-bootstrap-lock"
+lock_stamp="$node_modules/.srouter-bootstrap-lock"
 lock_hash="$(lock_hash_for "$lockfile")"
 installed_lock_hash=""
 

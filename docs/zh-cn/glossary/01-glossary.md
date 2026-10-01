@@ -14,7 +14,7 @@
 | **老虎机路由（Bandit router）** | Thompson 采样路由器（`services/router.ts` + `scoring.ts`），在可靠性/速度/智能/余量后验之间权衡，并保留 10% 探索。 |
 | **在途窗口（In-flight window）** | 并发请求去重窗口 —— **不**为幂等去重（`95bc46f`，`services/idempotency.ts:16-20`）—— 使用相同 `Idempotency-Key` 的并发重试可能产生竞态。 |
 | **TRUST_PROXY** | 环境变量（`.env.example:314`，`lib/config.ts:95-110`），转发给 Express `trust proxy`，以便分析/限流通过 `X-Forwarded-For`/`Proto` 看到真实客户端 IP。默认 `false`（不信任伪造）。 |
-| **`FREEAPI_SHOT`** | 桌面端截图模式标志，位于 `desktop/src/main.ts`。 |
-| **`freellmapi-…`** | 汇聚回退链标识符 —— 网关的单一逻辑模型，经由回退阶梯扇出。 |
+| **`SROUTER_SHOT`** | 桌面端截图模式标志，位于 `desktop/src/main.ts`。 |
+| **`srouter-…`** | 汇聚回退链标识符 —— 网关的单一逻辑模型，经由回退阶梯扇出。 |
 
 另见：[架构](../architecture/OVERVIEW.md)、[路由与老虎机评分](../architecture/01-routing-and-bandit-scoring.md)、[额度与冷却引擎](../architecture/02-quota-and-cooldown-engine.md)。

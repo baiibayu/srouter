@@ -16,7 +16,9 @@
     "modelsMenu": "ආකෘති වර්ග පිරික්සන්න",
     "agents": "නියෝජිතයන්",
     "logs": "ලොග",
-    "analyticsMenu": "විශ්ලේෂණ පිටු"
+    "analyticsMenu": "විශ්ලේෂණ පිටු",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "ඔබගේ ගිණුම සාදන්න",
@@ -60,7 +62,7 @@
     "emailChanged": "ඊමේල් සාර්ථකව වෙනස් විය.",
     "passwordReset": "මුරපදය යළි සකසන ලදි. පිවිසෙන්න.",
     "resetCodeDockerHint": "Docker තුළ ධාවනය වේද? කේතය කන්ටේනර් ලොගයේ ඇත: docker logs <container>.",
-    "desktopSessionFailed": "උපකරණ පුවරුවට දේශීය සේවාදායකයට පිවිසීමට නොහැකි විය. FreeLLMAPI වසා නැවත විවෘත කරන්න."
+    "desktopSessionFailed": "උපකරණ පුවරුවට දේශීය සේවාදායකයට පිවිසීමට නොහැකි විය. SRouter වසා නැවත විවෘත කරන්න."
   },
   "common": {
     "save": "සුරකින්න",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "ස්වයංක්‍රීය යාවත්කාලීන පරීක්ෂාව",
     "autoUpdateCheckHelp": "නව නිකුතුවක් සඳහා දිනකට වරක් GitHub පරීක්ෂා කර මතක් කිරීමක් පෙන්වයි. පෙරනිමියෙන් ක්‍රියාවිරහිතයි.",
     "openReleases": "GitHub Releases විවෘත කරන්න",
-    "restartAfterUpdate": "ගොඩනැගීම සම්පූර්ණ වූ පසු FreeLLMAPI නැවත ආරම්භ කරන්න."
+    "restartAfterUpdate": "ගොඩනැගීම සම්පූර්ණ වූ පසු SRouter නැවත ආරම්භ කරන්න.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "ආකෘති",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "මාසික සංකේත අයවැය",
     "remaining": "ඉතිරි",
     "used": "භාවිතා කරන ලදී",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "සපයන්නාගේ ක්රියාවන්",
     "routeViaProxy": "ප්‍රොක්සි හරහා ගමන් කරන්න",
     "checkNow": "දැන් පරීක්ෂා කරන්න",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "හරහා ද වින්‍යාසගත කළ හැක",
     "proxyEnvHintAfter": "පරිසර විචල්‍යය (ප්‍රමුඛත්වය ගනී). අබල කිරීමට හිස්ව තබන්න. උදාහරණ:",
     "importKeys": "සැපයුම්කරු යතුරු ආයාත කරන්න",
@@ -679,7 +704,8 @@
     "testFailed": "ආකෘති පරීක්ෂණය අසමත් විය",
     "testThrottled": "මෙම ආකෘතිය නැවත පරීක්ෂා කිරීමට පෙර කරුණාකර තත්පර {seconds} ක් රැඳී සිටින්න.",
     "noModelsForProvider": "මෙම සපයන්නා සඳහා ආකෘති වින්‍යාස කර නොමැත.",
-    "testModels": "මාදිලි පරීක්ෂා කරන්න"
+    "testModels": "මාදිලි පරීක්ෂා කරන්න",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

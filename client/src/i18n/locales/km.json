@@ -16,7 +16,9 @@
     "modelsMenu": "រុករកប្រភេទម៉ូដែល",
     "agents": "ភ្នាក់ងារ",
     "logs": "កំណត់ហេតុ",
-    "analyticsMenu": "ទំព័រវិភាគ"
+    "analyticsMenu": "ទំព័រវិភាគ",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "បង្កើតគណនីរបស់អ្នក",
@@ -60,7 +62,7 @@
     "emailChanged": "បានប្តូរអ៊ីមែលដោយជោគជ័យ។",
     "passwordReset": "បានកំណត់ពាក្យសម្ងាត់ឡើងវិញ។ សូមចូលគណនី។",
     "resetCodeDockerHint": "កំពុងដំណើរការក្នុង Docker មែនទេ? លេខកូដស្ថិតនៅក្នុងកំណត់ហេតុកុងតឺន័រ៖ docker logs <container>។",
-    "desktopSessionFailed": "ផ្ទាំងគ្រប់គ្រងមិនអាចចូលទៅម៉ាស៊ីនមេមូលដ្ឋានបានទេ។ សូមបិទ FreeLLMAPI ហើយបើកវាឡើងវិញ។"
+    "desktopSessionFailed": "ផ្ទាំងគ្រប់គ្រងមិនអាចចូលទៅម៉ាស៊ីនមេមូលដ្ឋានបានទេ។ សូមបិទ SRouter ហើយបើកវាឡើងវិញ។"
   },
   "common": {
     "save": "រក្សាទុក",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "ការពិនិត្យអាប់ដេតដោយស្វ័យប្រវត្តិ",
     "autoUpdateCheckHelp": "ពិនិត្យ GitHub ម្ដងក្នុងមួយថ្ងៃរកមើលការចេញផ្សាយថ្មី ហើយបង្ហាញការរំលឹក។ បិទតាមលំនាំដើម។",
     "openReleases": "បើក GitHub Releases",
-    "restartAfterUpdate": "ចាប់ផ្តើម FreeLLMAPI ឡើងវិញ បន្ទាប់ពីការបង្កើតបានបញ្ចប់។"
+    "restartAfterUpdate": "ចាប់ផ្តើម SRouter ឡើងវិញ បន្ទាប់ពីការបង្កើតបានបញ្ចប់។",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "ម៉ូដែល",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "ថវិកាតូខិនប្រចាំខែ",
     "remaining": "នៅសល់",
     "used": "បានប្រើ",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "សកម្មភាពអ្នកផ្តល់សេវា",
     "routeViaProxy": "បញ្ជូនតាមរយៈប្រូកស៊ី",
     "checkNow": "ពិនិត្យឥឡូវនេះ",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "អាចកំណត់រចនាសម្ព័ន្ធបានតាមរយៈ",
     "proxyEnvHintAfter": "អថេរបរិស្ថាន (មានអាទិភាព)។ ទុកទទេសម្រាប់បិទ។ ឧទាហរណ៍៖",
     "importKeys": "នាំចូលកូនសោអ្នកផ្គត់ផ្គង់",
@@ -679,7 +704,8 @@
     "testFailed": "ការសាកល្បងម៉ូដែលបានបរាជ័យ",
     "testThrottled": "សូមរង់ចាំ {seconds}វិនាទី មុនពេលសាកល្បងម៉ូដែលនេះម្តងទៀត។",
     "noModelsForProvider": "មិនមានម៉ូដែលត្រូវបានកំណត់រចនាសម្ព័ន្ធសម្រាប់អ្នកផ្តល់សេវានេះទេ។",
-    "testModels": "សាកល្បងម៉ូដែល"
+    "testModels": "សាកល្បងម៉ូដែល",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

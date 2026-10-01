@@ -16,7 +16,9 @@
     "modelsMenu": "మోడల్ రకాలను బ్రౌజ్ చేయండి",
     "agents": "ఏజెంట్లు",
     "logs": "లాగ్‌లు",
-    "analyticsMenu": "విశ్లేషణల పేజీలు"
+    "analyticsMenu": "విశ్లేషణల పేజీలు",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "మీ ఖాతాను సృష్టించండి",
@@ -60,7 +62,7 @@
     "emailChanged": "ఇమెయిల్ విజయవంతంగా మార్చబడింది.",
     "passwordReset": "పాస్‌వర్డ్ రీసెట్ అయింది. దయచేసి సైన్ ఇన్ చేయండి.",
     "resetCodeDockerHint": "Docker లో నడుపుతున్నారా? కోడ్ కంటైనర్ లాగ్‌లో ఉంది: docker logs <container>.",
-    "desktopSessionFailed": "డాష్‌బోర్డ్ లోకల్ సర్వర్‌కు సైన్ ఇన్ కాలేకపోయింది. FreeLLMAPI ని మూసివేసి మళ్లీ తెరవండి."
+    "desktopSessionFailed": "డాష్‌బోర్డ్ లోకల్ సర్వర్‌కు సైన్ ఇన్ కాలేకపోయింది. SRouter ని మూసివేసి మళ్లీ తెరవండి."
   },
   "common": {
     "save": "సేవ్ చేయండి",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "స్వయంచాలక నవీకరణ తనిఖీ",
     "autoUpdateCheckHelp": "రోజుకు ఒకసారి కొత్త విడుదల కోసం GitHubను తనిఖీ చేసి రిమైండర్‌ను చూపుతుంది. అప్రమేయంగా ఆఫ్‌లో ఉంటుంది.",
     "openReleases": "GitHub విడుదలలను తెరవండి",
-    "restartAfterUpdate": "బిల్డ్ పూర్తయిన తర్వాత FreeLLMAPIని పునఃప్రారంభించండి."
+    "restartAfterUpdate": "బిల్డ్ పూర్తయిన తర్వాత srouterని పునఃప్రారంభించండి.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "మోడల్స్",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "నెలవారీ టోకెన్ బడ్జెట్",
     "remaining": "మిగిలి ఉంది",
     "used": "ఉపయోగించారు",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "ప్రొవైడర్ చర్యలు",
     "routeViaProxy": "ప్రాక్సీ ద్వారా మార్గం",
     "checkNow": "ఇప్పుడే తనిఖీ చేయండి",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "ద్వారా కూడా కాన్ఫిగర్ చేయవచ్చు",
     "proxyEnvHintAfter": "పర్యావరణ వేరియబుల్ (ప్రాధాన్యత తీసుకుంటుంది). నిలిపివేయడానికి ఖాళీని వదిలివేయండి. ఉదాహరణలు:",
     "importKeys": "ప్రొవైడర్ కీలను దిగుమతి చేయండి",
@@ -679,7 +704,8 @@
     "testFailed": "మోడల్ పరీక్ష విఫలమైంది",
     "testThrottled": "ఈ మోడల్‌ని మళ్లీ పరీక్షించే ముందు దయచేసి {seconds}సె వేచి ఉండండి.",
     "noModelsForProvider": "ఈ ప్రొవైడర్ కోసం మోడల్స్ ఏవీ కాన్ఫిగర్ చేయబడలేదు.",
-    "testModels": "మోడల్‌లను పరీక్షించండి"
+    "testModels": "మోడల్‌లను పరీక్షించండి",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

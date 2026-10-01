@@ -1,4 +1,4 @@
-import path from 'node:path';
+﻿import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, dialog, ipcMain, clipboard, nativeTheme, screen, shell, type Tray } from 'electron';
 import { startServer, ensureSessionToken, getUnifiedApiKey } from './server.mjs';
@@ -16,8 +16,8 @@ const DEFAULT_PORT = 31415;
 // Lean posture: one instance, menu-bar only. GPU stays ON — vibrancy
 // (the popover/dashboard glass) needs GPU compositing; with hardware
 // acceleration disabled, transparent windows render an opaque white.
-app.setName('FreeLLMAPI');
-app.setPath('userData', path.join(app.getPath('appData'), 'FreeLLMAPI'));
+app.setName('SRouter');
+app.setPath('userData', path.join(app.getPath('appData'), 'SRouter'));
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -35,7 +35,7 @@ if (!app.requestSingleInstanceLock()) {
   // prefers-color-scheme tracks live appearance changes; `theme` is always
   // the resolved dark/light the popover snapshot needs.
   let themeChoice: 'dark' | 'light' | 'system' =
-    (process.env.FREEAPI_THEME as 'dark' | 'light' | 'system' | undefined) // dev-only screenshot override
+    (process.env.SROUTER_THEME as 'dark' | 'light' | 'system' | undefined) // dev-only screenshot override
     ?? loadConfig().theme
     ?? 'system';
   nativeTheme.themeSource = themeChoice;
@@ -50,12 +50,12 @@ if (!app.requestSingleInstanceLock()) {
     if (next === theme) return;
     theme = next;
     const { getPopoverWindow } = await import('./popover.js');
-    getPopoverWindow()?.webContents.send('freeapi:refresh');
+    getPopoverWindow()?.webContents.send('srouter:refresh');
   });
   // The dashboard also owns the language (its ⋯-menu selector); the native tray
   // menu and popover follow via the same mirror-and-persist pattern as the theme.
   let locale: NativeLocale = normalizeLocale(
-    (process.env.FREEAPI_LOCALE as string | undefined) ?? loadConfig().locale,
+    (process.env.SROUTER_LOCALE as string | undefined) ?? loadConfig().locale,
   );
 
   app.on('second-instance', () => {
@@ -102,7 +102,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   // ── popover IPC ──────────────────────────────────────────────────────────
-  ipcMain.handle('freeapi:snapshot', () => {
+  ipcMain.handle('srouter:snapshot', () => {
     const s = todayStats();
     return {
       port: resolvedPort,
@@ -120,7 +120,7 @@ if (!app.requestSingleInstanceLock()) {
       strings: nativeStrings(locale),
     };
   });
-  ipcMain.on('freeapi:theme-changed', async (_e, raw: unknown) => {
+  ipcMain.on('srouter:theme-changed', async (_e, raw: unknown) => {
     // Older preloads sent the bare resolved string; current ones send
     // { resolved, choice } so a 'system' choice can reach nativeTheme.
     const payload = typeof raw === 'string' ? { resolved: raw } : (raw ?? {}) as { resolved?: unknown; choice?: unknown };
@@ -135,9 +135,9 @@ if (!app.requestSingleInstanceLock()) {
     // 'system' delegates to the OS appearance.
     nativeTheme.themeSource = themeChoice;
     const { getPopoverWindow } = await import('./popover.js');
-    getPopoverWindow()?.webContents.send('freeapi:refresh');
+    getPopoverWindow()?.webContents.send('srouter:refresh');
   });
-  ipcMain.on('freeapi:locale-changed', async (_e, raw: string) => {
+  ipcMain.on('srouter:locale-changed', async (_e, raw: string) => {
     const next = normalizeLocale(raw);
     if (next === locale) return;
     locale = next;
@@ -145,18 +145,18 @@ if (!app.requestSingleInstanceLock()) {
     refreshTrayLocale(locale);
     // Re-label the popover if it's open (snapshot now carries the new strings).
     const { getPopoverWindow } = await import('./popover.js');
-    getPopoverWindow()?.webContents.send('freeapi:refresh');
+    getPopoverWindow()?.webContents.send('srouter:refresh');
   });
-  ipcMain.handle('freeapi:open-dashboard', () => openDashboard(resolvedPort, sessionToken));
-  ipcMain.handle('freeapi:copy-base-url', () => clipboard.writeText(`http://127.0.0.1:${resolvedPort}/v1`));
-  ipcMain.handle('freeapi:copy-api-key', () => clipboard.writeText(getUnifiedApiKey()));
-  ipcMain.handle('freeapi:set-login-item', (_e, open: boolean) => app.setLoginItemSettings({ openAtLogin: open }));
-  ipcMain.handle('freeapi:quit', () => app.quit());
+  ipcMain.handle('srouter:open-dashboard', () => openDashboard(resolvedPort, sessionToken));
+  ipcMain.handle('srouter:copy-base-url', () => clipboard.writeText(`http://127.0.0.1:${resolvedPort}/v1`));
+  ipcMain.handle('srouter:copy-api-key', () => clipboard.writeText(getUnifiedApiKey()));
+  ipcMain.handle('srouter:set-login-item', (_e, open: boolean) => app.setLoginItemSettings({ openAtLogin: open }));
+  ipcMain.handle('srouter:quit', () => app.quit());
   // Dashboard → a fresh session for the hidden machine account (preload
-  // __FREEAPI_SESSION__). The window never shows a login form: its account has
+  // __SROUTER_SESSION__). The window never shows a login form: its account has
   // a random password nobody knows, so when the boot-time session is gone the
   // only sane answer is a new one. Later windows reuse it too.
-  ipcMain.handle('freeapi:session-token', () => {
+  ipcMain.handle('srouter:session-token', () => {
     sessionToken = ensureSessionToken();
     return sessionToken;
   });
@@ -174,7 +174,7 @@ if (!app.requestSingleInstanceLock()) {
         defaultId: 1,
         cancelId: 1,
         title: 'Allow LAN access',
-        message: 'Expose FreeLLMAPI to your local network?',
+        message: 'Expose SRouter to your local network?',
         detail:
           'The server will bind to 0.0.0.0 so other devices (Tailscale, VMs, ' +
           'phones on your Wi-Fi) can reach it at http://<this-machine-ip>:' +
@@ -212,15 +212,15 @@ if (!app.requestSingleInstanceLock()) {
 
     const choice = dialog.showMessageBoxSync({
       type: 'info',
-      title: 'FreeLLMAPI has no menu-bar icon',
-      message: 'macOS is not showing the FreeLLMAPI menu-bar icon.',
+      title: 'SRouter has no menu-bar icon',
+      message: 'macOS is not showing the SRouter menu-bar icon.',
       detail:
         'The app and its API are running normally, but the icon everything else ' +
         'hangs off is not being drawn, so there is nothing to click.\n\n' +
-        'To bring it back: System Settings > Menu Bar, find FreeLLMAPI and set it ' +
+        'To bring it back: System Settings > Menu Bar, find SRouter and set it ' +
         'to Allow. On a Mac with a notch, quitting a few other menu-bar apps can ' +
         'also free up the room it needs.\n\n' +
-        'Until then, relaunching FreeLLMAPI from Finder opens the dashboard.',
+        'Until then, relaunching SRouter from Finder opens the dashboard.',
       buttons: ['Open Dashboard', 'Continue in Background'],
       defaultId: 0,
       cancelId: 1,
@@ -247,11 +247,11 @@ if (!app.requestSingleInstanceLock()) {
     applyDockVisibility(loadConfig().showInDock ?? true);
 
     const cfg = loadConfig();
-    const dbPath = path.join(app.getPath('userData'), 'freeapi.db');
+    const dbPath = path.join(app.getPath('userData'), 'srouter.db');
     // Packaged: client/dist ships in extraResources (Resources/client-dist).
     // Dev: use this repo's own client/dist (desktop/ lives in the monorepo;
-    // FREEAPI_REPO can still point at a different checkout if ever needed).
-    const repoRoot = process.env.FREEAPI_REPO ?? path.resolve(__dirname, '../..');
+    // SROUTER_REPO can still point at a different checkout if ever needed).
+    const repoRoot = process.env.SROUTER_REPO ?? path.resolve(__dirname, '../..');
     const clientDist = app.isPackaged
       ? path.join(process.resourcesPath, 'client-dist')
       : path.join(repoRoot, 'client/dist');
@@ -266,7 +266,7 @@ if (!app.requestSingleInstanceLock()) {
     // version is both the cheapest and the most authoritative answer for the
     // dashboard's version row — no manifest lookup, and it cannot disagree with
     // the app the user actually launched (#703).
-    process.env.FREEAPI_VERSION = app.getVersion();
+    process.env.SROUTER_VERSION = app.getVersion();
 
     try {
       const { port } = await startServer({
@@ -287,29 +287,29 @@ if (!app.requestSingleInstanceLock()) {
         () => loadConfig().showInDock ?? true,
         toggleShowInDock,
       );
-      console.log(`[desktop] FreeLLMAPI running on http://${host}:${port}${cfg.lanAccess ? ' (LAN access enabled)' : ''}`);
+      console.log(`[desktop] SRouter running on http://${host}:${port}${cfg.lanAccess ? ' (LAN access enabled)' : ''}`);
       // A tray that macOS refuses to draw still constructs cleanly, so the only
       // way to notice is to look at where the item landed (#807).
       if (process.platform === 'darwin') setTimeout(() => reportHiddenTray(tray, port), TRAY_PROBE_DELAY_MS);
 
-      // Dev-only UI verification: FREEAPI_SHOT=1 opens the popover and the
-      // dashboard, captures both to /tmp, and quits. FREEAPI_SHOT=hold opens
+      // Dev-only UI verification: SROUTER_SHOT=1 opens the popover and the
+      // dashboard, captures both to /tmp, and quits. SROUTER_SHOT=hold opens
       // the popover and keeps it pinned (blur ignored) so a real screen
       // capture can include the compositor's vibrancy. Never set when packaged.
-      if (process.env.FREEAPI_SHOT && !app.isPackaged) {
+      if (process.env.SROUTER_SHOT && !app.isPackaged) {
         const fs = await import('node:fs');
         const { togglePopover, getPopoverWindow } = await import('./popover.js');
         const { getDashboardWindow } = await import('./window.js');
         const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
         await sleep(800);
         togglePopover(tray);
-        if (process.env.FREEAPI_SHOT === 'hold') {
+        if (process.env.SROUTER_SHOT === 'hold') {
           const pop = getPopoverWindow();
           pop?.removeAllListeners('blur'); // stay open unfocused
-          if (pop) fs.writeFileSync('/tmp/freeapi-popover-bounds.json', JSON.stringify(pop.getBounds()));
-          // FREEAPI_THEME forces a theme for captures — skip the dashboard
+          if (pop) fs.writeFileSync('/tmp/srouter-popover-bounds.json', JSON.stringify(pop.getBounds()));
+          // SROUTER_THEME forces a theme for captures — skip the dashboard
           // then, or its theme report would immediately override the override.
-          if (!process.env.FREEAPI_THEME) {
+          if (!process.env.SROUTER_THEME) {
             openDashboard(port, sessionToken);
             await sleep(2500);
             const dashWin = getDashboardWindow();
@@ -317,23 +317,23 @@ if (!app.requestSingleInstanceLock()) {
               dashWin.show();
               dashWin.focus();
               dashWin.moveTop();
-              fs.writeFileSync('/tmp/freeapi-dashboard-bounds.json', JSON.stringify(dashWin.getBounds()));
+              fs.writeFileSync('/tmp/srouter-dashboard-bounds.json', JSON.stringify(dashWin.getBounds()));
             }
           }
           return;
         }
         await sleep(1500);
         const pop = await getPopoverWindow()?.webContents.capturePage();
-        if (pop) fs.writeFileSync('/tmp/freeapi-popover.png', pop.toPNG());
+        if (pop) fs.writeFileSync('/tmp/srouter-popover.png', pop.toPNG());
         openDashboard(port, sessionToken);
         await sleep(3000);
         const dash = await getDashboardWindow()?.webContents.capturePage();
-        if (dash) fs.writeFileSync('/tmp/freeapi-dashboard.png', dash.toPNG());
+        if (dash) fs.writeFileSync('/tmp/srouter-dashboard.png', dash.toPNG());
         app.quit();
       }
     } catch (err: any) {
       dialog.showErrorBox(
-        'FreeLLMAPI failed to start',
+        'SRouter failed to start',
         err?.message ?? String(err),
       );
       app.quit();

@@ -11,7 +11,7 @@ Doc revision history for `docs/architecture/`, seeded from commits touching arch
 ## 2026-08-25
 
 - **docs(architecture): deduplicate `architecture.md` vs `architecture/OVERVIEW.md` intros, clarify `docs/README.md` vs `docs/OVERVIEW.md`** — root `architecture.md` is now the high-level index (what the system is, two-paragraph summary, request-flow diagram, limitations and ToS) with a `See [OVERVIEW.md](OVERVIEW.md) for deep-dives` bridge and no duplicated provider/routing summaries (removed the deep-dive reference table and the Routing/Operational detail sections — those live in `01`/`02` deep-dives); `architecture/OVERVIEW.md` is now the domain scope (Scope + File Index + How deep-dives fit, high-level index cross-link); `docs/README.md` clarified as the user entry point (getting started) vs `docs/OVERVIEW.md` as the domain index (full file map) and verified no dangling `api.md`/`clients.md`/`compression.md` links (`rg "api\.md|clients\.md|compression\.md" docs --glob '!CHANGELOG.md'` — only numbered `01-*.md` hits remain).
-- **docs(observability): dedupe 06-observability.md against logs/01-server-logs-viewer.md** — the operator-facing log viewer, polling API, env vars, and client implementation now live solely in the logs domain; the observability deep-dive keeps the internals (ingest path, structured provider logs, boot preload, schema) and cross-links both ways. Added the desktop `freeapi.log` file-logger note (90aaa5b).
+- **docs(observability): dedupe 06-observability.md against logs/01-server-logs-viewer.md** — the operator-facing log viewer, polling API, env vars, and client implementation now live solely in the logs domain; the observability deep-dive keeps the internals (ingest path, structured provider logs, boot preload, schema) and cross-links both ways. Added the desktop `srouter.log` file-logger note (90aaa5b).
 
 ## 2026-08-23 — Routing, Quota & Chain Overhaul
 
@@ -225,5 +225,5 @@ Doc revision history for `docs/architecture/`, seeded from commits touching arch
 
 ## 2025 — Foundation
 
-- **04e1503** Initial release of FreeLLMAPI
+- **04e1503** Initial release of SRouter
   - Basic router, rate limiting, provider adapters, SQLite storage

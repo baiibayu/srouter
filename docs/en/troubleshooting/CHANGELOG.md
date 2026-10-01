@@ -9,6 +9,6 @@
 | `86368ac` | 2026-09-01 | System proxy auto-detect `scutil`/`registry`/`gsettings` |
 | `56eb257` | 2026-08-31 | Fetch Relay `PROXY_MODE`/`FETCH_RELAY_TOKEN` loopback guard |
 | `46ea0de` | 2026-09-02 | `TRUST_PROXY` forwarded headers |
-| `90aaa5b` | 2026-08-24 | Desktop `freeapi.log` password-reset visibility |
+| `90aaa5b` | 2026-08-24 | Desktop `srouter.log` password-reset visibility |
 
 Regenerate: `git log --oneline -- docs/troubleshooting/`

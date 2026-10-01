@@ -37,7 +37,7 @@ const SPECS: Array<[string, string, number, string]> = [
   ['Aion', 'alv2_', 43, ALNUM],
   ['Pollinations', 'sk_', 32, ALNUM],
   ['Mistral (bare)', '', 32, ALNUM],
-  ['Own gateway key', 'freellmapi-', 48, HEX],
+  ['Own gateway key', 'srouter-', 48, HEX],
 ];
 
 const SAMPLES: Array<[string, string]> = SPECS.map(
@@ -49,7 +49,7 @@ SAMPLES.push(['Chutes', `cpk_${filler(32, HEX)}.${filler(32, HEX)}.${filler(32)}
 
 const GOOGLE_LIKE = `AIza${filler(35)}`;
 const GROQ_LIKE = `gsk_${filler(52)}`;
-const UNIFIED_LIKE = `freellmapi-${filler(48, HEX)}`;
+const UNIFIED_LIKE = `srouter-${filler(48, HEX)}`;
 
 describe('redactSecrets', () => {
   for (const [label, secret] of SAMPLES) {
@@ -100,7 +100,7 @@ describe('redactSecrets', () => {
   });
 
   it('emits exactly one marker when two patterns cover the same value', () => {
-    // "API key: freellmapi-..." matches both the prefix rule and the key=value
+    // "API key: srouter-..." matches both the prefix rule and the key=value
     // rule; without a guard the second pass rewrote the first marker and left a
     // trailing bracket ("[redacted-key]]").
     const out = redactSecrets(

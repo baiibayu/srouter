@@ -16,7 +16,9 @@
     "modelsMenu": "Böngészés modelltípusok",
     "agents": "Ügynökök",
     "logs": "Napló",
-    "analyticsMenu": "Elemzési oldalak"
+    "analyticsMenu": "Elemzési oldalak",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Hozza létre a fiókot",
@@ -60,7 +62,7 @@
     "emailChanged": "Az e-mail-cím módosult.",
     "passwordReset": "A jelszó visszaállt. Jelentkezzen be.",
     "resetCodeDockerHint": "Docker alatt fut? A kód a konténer naplójában található: docker logs <container>.",
-    "desktopSessionFailed": "Az irányítópult nem tudott bejelentkezni a helyi szerverre. Lépjen ki a FreeLLMAPI alkalmazásból, és nyissa meg újra."
+    "desktopSessionFailed": "Az irányítópult nem tudott bejelentkezni a helyi szerverre. Lépjen ki a SRouter alkalmazásból, és nyissa meg újra."
   },
   "common": {
     "save": "Mentés",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Automatikus frissítésellenőrzés",
     "autoUpdateCheckHelp": "Naponta egyszer ellenőrzi a GitHubon az új kiadást, és emlékeztetőt jelenít meg. Alapértelmezés szerint kikapcsolva.",
     "openReleases": "GitHub-kiadások megnyitása",
-    "restartAfterUpdate": "A build befejezése után indítsa újra a FreeLLMAPI-t."
+    "restartAfterUpdate": "A build befejezése után indítsa újra a SRouter-t.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Modellek",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Havi token költségvetés",
     "remaining": "Maradék",
     "used": "Használt",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Szolgáltatói intézkedések",
     "routeViaProxy": "Útvonal proxyn keresztül",
     "checkNow": "Ellenőrizd most",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Konfigurálható a",
     "proxyEnvHintAfter": "környezeti változó (elsőbbséget élvez). Hagyj üres gombot a letiltáshoz. Példák:",
     "importKeys": "Szolgáltató kulcsok importálása",
@@ -679,7 +704,8 @@
     "testFailed": "A modellteszt sikertelen",
     "testThrottled": "Kérjük, várjon {seconds} másodpercet a modell újratesztelése előtt.",
     "noModelsForProvider": "Nincsenek konfigurált modellek ennél a szolgáltatónál.",
-    "testModels": "Modellek tesztelése"
+    "testModels": "Modellek tesztelése",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

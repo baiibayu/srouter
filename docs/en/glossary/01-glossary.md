@@ -14,7 +14,7 @@
 | **Bandit router** | Thompson-sampling router (`services/router.ts` + `scoring.ts`) that balances reliability/speed/intelligence/headroom posteriors with 10% explore. |
 | **In-flight window** | Concurrent request deduplication window — **not** deduplicated for idempotency (`95bc46f`, `services/idempotency.ts:16-20`) — a concurrent retry with the same `Idempotency-Key` may race. |
 | **TRUST_PROXY** | Env var (`.env.example:314`, `lib/config.ts:95-110`) forwarded to Express `trust proxy` so analytics/rate limiting see real client IP via `X-Forwarded-For`/`Proto`. Default `false` (no spoof). |
-| **`FREEAPI_SHOT`** | Desktop capture mode flag in `desktop/src/main.ts` for screenshots. |
-| **`freellmapi-…`** | Pooled fallback chain identifier — the gateway's single logical model that fans out over the fallback ladder. |
+| **`SROUTER_SHOT`** | Desktop capture mode flag in `desktop/src/main.ts` for screenshots. |
+| **`srouter-…`** | Pooled fallback chain identifier — the gateway's single logical model that fans out over the fallback ladder. |
 
 See also: [Architecture](../architecture/OVERVIEW.md), [Routing & bandit scoring](../architecture/01-routing-and-bandit-scoring.md), [Quota & cooldown](../architecture/02-quota-and-cooldown-engine.md).

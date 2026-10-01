@@ -1,6 +1,6 @@
 **English** · [简体中文](../zh-cn/README.md)
 
-# FreeLLMAPI documentation
+# SRouter documentation
 
 This is the user entry point — start here to install the gateway, call the OpenAI-compatible API, connect coding agents and understand the high-level architecture. The root [README](../../README.md) is the product overview; this index gets you running.
 

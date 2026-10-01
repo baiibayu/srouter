@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { FieldError } from '@/components/ui/field-error'
 import { useI18n } from '@/i18n'
 import { toast } from '@/lib/toast'
-import type { ApiKey } from '@freellmapi/shared/types'
+import type { ApiKey } from '@srouter/shared/types'
 import { PLATFORMS, CUSTOM_GROUP } from '@/components/keys/shared'
 
 export interface AddModelDialogProps {

@@ -22,7 +22,7 @@ export function SegmentedControl<T extends string>({
   className?: string
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex gap-1 rounded-xl border p-1', className)}>
+    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex gap-0.5 overflow-x-auto rounded-xl border p-1 sm:gap-1', className)}>
       {options.map(o => (
         <button
           key={o.value}

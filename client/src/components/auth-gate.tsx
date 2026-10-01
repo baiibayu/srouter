@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { isEmail } from '@/lib/validate'
 import { useI18n } from '@/i18n'
+import { LogoMark } from '@/components/logo-mark'
 import { toast } from '@/lib/toast'
 
 // Matches the server rule (routes/auth.ts zod schema).
@@ -19,14 +20,14 @@ const PASSWORD_MIN = 8
 // seeded session is gone (expired after a month of uptime, or cleared by a
 // 401) it asks the shell for a fresh one through the preload bridge.
 type DesktopWindow = Window & {
-  __FREEAPI_DESKTOP__?: boolean
-  __FREEAPI_SESSION__?: () => Promise<string>
+  __SROUTER_DESKTOP__?: boolean
+  __SROUTER_SESSION__?: () => Promise<string>
 }
 function desktopSessionBridge(): (() => Promise<string>) | null {
   if (typeof window === 'undefined') return null
   const w = window as DesktopWindow
-  return w.__FREEAPI_DESKTOP__ === true && typeof w.__FREEAPI_SESSION__ === 'function'
-    ? w.__FREEAPI_SESSION__
+  return w.__SROUTER_DESKTOP__ === true && typeof w.__SROUTER_SESSION__ === 'function'
+    ? w.__SROUTER_SESSION__
     : null
 }
 
@@ -119,8 +120,8 @@ function AuthForm({ mode, onAuthed }: { mode: 'setup' | 'login'; onAuthed: () =>
   return (
     <Centered>
       <div className="mb-6 flex items-center gap-2">
-        <span className="inline-block size-2 rounded-full bg-foreground" />
-        <span className="font-semibold tracking-tight text-sm">FreeLLMAPI</span>
+        <LogoMark />
+        <span className="font-semibold tracking-tight text-sm">SRouter</span>
       </div>
       <div className="rounded-3xl border bg-card p-6">
         <h1 className="text-lg font-semibold tracking-tight">{isSetup ? t('auth.createYourAccount') : t('auth.signIn')}</h1>
@@ -257,8 +258,8 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   return (
     <Centered>
       <div className="mb-6 flex items-center gap-2">
-        <span className="inline-block size-2 rounded-full bg-foreground" />
-        <span className="font-semibold tracking-tight text-sm">FreeLLMAPI</span>
+        <LogoMark />
+        <span className="font-semibold tracking-tight text-sm">SRouter</span>
       </div>
       <div className="rounded-3xl border bg-card p-6">
         <h1 className="text-base font-medium">{t('auth.forgotPassword')}</h1>

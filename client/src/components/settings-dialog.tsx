@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import {
   AlertTriangle,
   ArrowRight,
+  Bell,
   Check,
   CheckCircle2,
   ChevronsUpDown,
+  Clock,
   ExternalLink,
   FlaskConical,
   Gauge,
@@ -555,6 +557,57 @@ function PreviewSection({ state }: { state: CompressionState }) {
 
 const RELEASES_URL = 'https://github.com/tashfeenahmed/freellmapi/releases'
 
+type SyncInterval = 'off' | 6 | 12 | 24
+
+function SyncScheduleRow() {
+  const { t } = useI18n()
+  const [interval, setInterval] = useState<SyncInterval | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiFetch<{ interval: SyncInterval }>('/api/settings/sync-schedule')
+      .then(data => setInterval(data.interval))
+      .catch(() => setInterval('off'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  function handleChange(value: string) {
+    const next = value as SyncInterval
+    setInterval(next)
+    apiFetch('/api/settings/sync-schedule', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interval: next }),
+    }).catch(() => {
+      // revert on error
+      setInterval(prev => prev ?? 'off')
+    })
+  }
+
+  if (loading) return null
+
+  return (
+    <Row
+      label={t('settings.syncSchedule')}
+      hint={t('settings.syncScheduleHint')}
+      control={(
+        <OptionBar
+          value={String(interval ?? 'off')}
+          onValueChange={handleChange}
+          options={[
+            { value: 'off', label: t('settings.syncIntervalOff'), icon: Bell },
+            { value: '6', label: '6h', icon: Clock },
+            { value: '12', label: '12h', icon: Clock },
+            { value: '24', label: '24h', icon: Clock },
+          ]}
+          ariaLabel={t('settings.syncSchedule')}
+          className="w-full grid-cols-4 sm:w-72"
+        />
+      )}
+    />
+  )
+}
+
 function GeneralSection({ active }: { active: boolean }) {
   const { t } = useI18n()
   const { theme, setTheme } = useTheme()
@@ -582,6 +635,7 @@ function GeneralSection({ active }: { active: boolean }) {
           />
         )}
       />
+      <SyncScheduleRow />
       <UpdateChecker active={active} />
     </>
   )
@@ -651,7 +705,7 @@ function UpdateChecker({ active }: { active: boolean }) {
   // The desktop shell knows its own version outright; browser and container
   // installs ask the server, which resolves it from the release manifest.
   const shellVersion = typeof window !== 'undefined'
-    ? (window as { __FREEAPI_VERSION__?: string | null }).__FREEAPI_VERSION__ ?? null
+    ? (window as { __SROUTER_VERSION__?: string | null }).__SROUTER_VERSION__ ?? null
     : null
   const [statusInfo, setStatusInfo] = useState<UpdateStatusInfo | null>(null)
   const [checkResult, setCheckResult] = useState<UpdateCheckInfo | null>(null)
@@ -780,7 +834,7 @@ function UpdateChecker({ active }: { active: boolean }) {
   return (
     <>
       <Row
-        label="FreeLLMAPI"
+        label="SRouter"
         hint={t('settings.contactsGithub')}
         control={(
           <div className="flex items-center gap-2 text-sm tabular-nums">
@@ -1009,8 +1063,9 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPopup maxWidth="max-w-3xl" className="flex flex-col overflow-y-hidden p-0">
-        <div className="flex items-center justify-between gap-4 border-b px-5 py-4 sm:px-6">
+      <DialogPopup maxWidth="max-w-3xl" className="flex h-[min(85vh,85dvh)] flex-col overflow-hidden p-0 sm:p-0">
+        {/* Compact header — minimal vertical padding so more room for content. */}
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b px-5 py-3 sm:px-6">
           <DialogTitle>{t('settings.title')}</DialogTitle>
           <DialogClose
             aria-label={t('common.dismiss')}
@@ -1020,7 +1075,9 @@ export function SettingsDialog({
           </DialogClose>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+        {/* Flex row: sidebar + content scroller. Both flex-1 so the content
+            scroller fills all remaining height after header & footer. */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
           {/* Sidebar on ≥sm, scrollable tab strip below it — the same
               breakpoint-swap the navbar uses for its own navigation. */}
           <nav
@@ -1049,8 +1106,8 @@ export function SettingsDialog({
             })}
           </nav>
 
-          {/* min-height keeps the popup from resizing as sections are switched. */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:min-h-[27rem] sm:px-6 sm:py-6">
+          {/* Content scroller — flex-1 fills remaining height, scrolls overflow. */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
             {section === 'general' && <GeneralSection active={open} />}
             {loading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1071,19 +1128,19 @@ export function SettingsDialog({
           </div>
         </div>
 
-        {compressionSection && config && (
-          <div className="flex flex-wrap items-center justify-end gap-3 border-t px-5 py-3 sm:px-6">
-            {error && <p className="me-auto text-xs text-destructive">{error}</p>}
-            <button
-              type="button"
-              onClick={save}
-              disabled={busy !== null}
-              className="rounded-lg bg-foreground px-4 py-2 text-xs font-medium text-background transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
-            >
-              {busy === 'save' ? t('common.saving') : t('common.saveChanges')}
-            </button>
-          </div>
-        )}
+        {/* Footer — always rendered to keep height stable; hidden when no
+            save action is needed (general section). */}
+        <div className={`flex shrink-0 items-center justify-end gap-3 border-t px-5 py-2.5 sm:px-6 ${compressionSection && config ? '' : 'invisible'}`}>
+          {error && <p className="me-auto text-xs text-destructive">{error}</p>}
+          <button
+            type="button"
+            onClick={save}
+            disabled={busy !== null}
+            className="rounded-lg bg-foreground px-4 py-2 text-xs font-medium text-background transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+          >
+            {busy === 'save' ? t('common.saving') : t('common.saveChanges')}
+          </button>
+        </div>
       </DialogPopup>
     </Dialog>
   )

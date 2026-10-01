@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ChatCompletionChunk } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk } from '@srouter/shared/types.js';
 import { getProvider, hasProvider } from '../../providers/index.js';
 import { isRetryableError } from '../../lib/error-classify.js';
 
@@ -86,7 +86,7 @@ describe('Router9 and Septor adapters', () => {
     expect(fetch.mock.calls[0][0]).toBe('https://api.septorlabs.com/v1/models');
     expect(fetch.mock.calls[0][1]?.method).toBe('GET');
     // Cloudflare challenges Node's default UA from datacenter IPs (#1298).
-    expect(new Headers(fetch.mock.calls[0][1]?.headers).get('user-agent')).toBe('FreeLLMAPI/1.0');
+    expect(new Headers(fetch.mock.calls[0][1]?.headers).get('user-agent')).toBe('srouter/1.0');
   });
 
   it.each([401, 403])('Septor rejects invalid credentials (%s)', async status => {

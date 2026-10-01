@@ -16,7 +16,9 @@
     "modelsMenu": "تصفح أنواع النماذج",
     "agents": "الوكلاء",
     "logs": "السجلات",
-    "analyticsMenu": "صفحات التحليلات"
+    "analyticsMenu": "صفحات التحليلات",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "أنشئ حسابك",
@@ -60,7 +62,7 @@
     "emailChanged": "تم تغيير البريد الإلكتروني بنجاح.",
     "passwordReset": "تمت إعادة تعيين كلمة المرور. يرجى تسجيل الدخول.",
     "resetCodeDockerHint": "هل تعمل داخل Docker؟ الرمز موجود في سجل الحاوية: docker logs <container>.",
-    "desktopSessionFailed": "تعذّر على لوحة التحكم تسجيل الدخول إلى الخادم المحلي. أغلق FreeLLMAPI ثم افتحه من جديد."
+    "desktopSessionFailed": "تعذّر على لوحة التحكم تسجيل الدخول إلى الخادم المحلي. أغلق SRouter ثم افتحه من جديد."
   },
   "common": {
     "save": "حفظ",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "التحقق التلقائي من التحديثات",
     "autoUpdateCheckHelp": "يتحقق من GitHub مرة واحدة يوميًا بحثًا عن إصدار جديد ويعرض تذكيرًا. مُعطَّل افتراضيًا.",
     "openReleases": "فتح إصدارات GitHub",
-    "restartAfterUpdate": "أعد تشغيل FreeLLMAPI بعد اكتمال البنية."
+    "restartAfterUpdate": "أعد تشغيل SRouter بعد اكتمال البنية.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "نماذج",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "ميزانية الرمز الشهرية",
     "remaining": "المتبقية",
     "used": "تستخدم",
-    "usedScopeHint": "طلبات المحادثة فقط، منذ بداية هذا الشهر الميلادي، مجمَّعة عبر كل النماذج في السلسلة النشطة — بما في ذلك النقاط المخصّصة. لا تُحتسب حركة المرور التي ترسلها إلى مزوّد خارج FreeLLMAPI.",
+    "usedScopeHint": "طلبات المحادثة فقط، منذ بداية هذا الشهر الميلادي، مجمَّعة عبر كل النماذج في السلسلة النشطة — بما في ذلك النقاط المخصّصة. لا تُحتسب حركة المرور التي ترسلها إلى مزوّد خارج SRouter.",
     "legendRemainingTitle": "المتبقي / الميزانية الشهرية لـ {name} ({platform})",
     "noPublishedQuota": "+{count} بلا حصة منشورة",
     "noPublishedQuotaTitle": "هذه النماذج ليس لها ميزانية رموز شهرية موثّقة، لذا لا يوجد متبقٍ لعرضه.",
@@ -517,6 +525,23 @@
     "providerActions": "إجراءات المزود",
     "routeViaProxy": "الطريق عبر الوكيل",
     "checkNow": "تحقق الآن",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "يمكن تكوينه أيضًا عبر",
     "proxyEnvHintAfter": "متغير البيئة (له الأسبقية). اتركه فارغًا للتعطيل. أمثلة:",
     "importKeys": "استيراد مفاتيح الموفر",
@@ -679,7 +704,8 @@
     "testFailed": "فشل اختبار النموذج",
     "testThrottled": "يرجى الانتظار {seconds} ثانية قبل اختبار هذا النموذج مرة أخرى.",
     "noModelsForProvider": "لا توجد نماذج مهيأة لهذا المزود.",
-    "testModels": "اختبار النماذج"
+    "testModels": "اختبار النماذج",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

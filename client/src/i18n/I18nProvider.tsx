@@ -54,7 +54,7 @@ function detectLocale(): Locale {
     return DEFAULT_LOCALE
   }
 
-  const stored = window.localStorage.getItem('freellmapi.locale')
+  const stored = window.localStorage.getItem('srouter.locale')
   if (stored && supportedLocaleSet.has(stored)) return stored as Locale
 
   const legacyLanguage = (navigator as { userLanguage?: string }).userLanguage
@@ -119,7 +119,7 @@ export function I18nProvider({ children, initialLocale }: I18nProviderProps) {
   )
 
   useEffect(() => {
-    window.localStorage.setItem('freellmapi.locale', locale)
+    window.localStorage.setItem('srouter.locale', locale)
     document.documentElement.lang = locale
     document.documentElement.dir = RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'
   }, [locale])

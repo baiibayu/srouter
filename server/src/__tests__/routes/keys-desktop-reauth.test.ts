@@ -63,16 +63,16 @@ describe('Desktop re-auth bypass is loopback-only (#786)', () => {
 
   beforeEach(() => {
     getDb().prepare('DELETE FROM api_keys').run();
-    delete process.env.FREEAPI_DESKTOP;
+    delete process.env.SROUTER_DESKTOP;
   });
 
   afterAll(() => {
-    delete process.env.FREEAPI_DESKTOP;
+    delete process.env.SROUTER_DESKTOP;
   });
 
   describe('reveal', () => {
     it('reveals without a password for a loopback caller on the desktop build', async () => {
-      process.env.FREEAPI_DESKTOP = '1';
+      process.env.SROUTER_DESKTOP = '1';
       const id = await addKey();
       const { status, body } = await call(appWithRemote('127.0.0.1'), `/api/keys/${id}/reveal`, 'POST');
       expect(status).toBe(200);
@@ -80,7 +80,7 @@ describe('Desktop re-auth bypass is loopback-only (#786)', () => {
     });
 
     it('accepts IPv6 and IPv4-mapped loopback forms', async () => {
-      process.env.FREEAPI_DESKTOP = '1';
+      process.env.SROUTER_DESKTOP = '1';
       const id = await addKey();
       for (const addr of ['::1', '::ffff:127.0.0.1', '127.0.0.53']) {
         const { status } = await call(appWithRemote(addr), `/api/keys/${id}/reveal`, 'POST');
@@ -89,7 +89,7 @@ describe('Desktop re-auth bypass is loopback-only (#786)', () => {
     });
 
     it('still demands the password from a LAN caller on the desktop build', async () => {
-      process.env.FREEAPI_DESKTOP = '1';
+      process.env.SROUTER_DESKTOP = '1';
       const id = await addKey();
       const { status, body } = await call(appWithRemote('192.168.1.42'), `/api/keys/${id}/reveal`, 'POST');
       expect(status).toBe(403);
@@ -107,7 +107,7 @@ describe('Desktop re-auth bypass is loopback-only (#786)', () => {
 
   describe('export', () => {
     it('exports without a password for a loopback caller on the desktop build', async () => {
-      process.env.FREEAPI_DESKTOP = '1';
+      process.env.SROUTER_DESKTOP = '1';
       await addKey();
       const { status, body } = await call(appWithRemote('127.0.0.1'), '/api/keys/export?format=json', 'GET');
       expect(status).toBe(200);
@@ -115,7 +115,7 @@ describe('Desktop re-auth bypass is loopback-only (#786)', () => {
     });
 
     it('still demands the password from a LAN caller on the desktop build', async () => {
-      process.env.FREEAPI_DESKTOP = '1';
+      process.env.SROUTER_DESKTOP = '1';
       await addKey();
       const { status, body } = await call(appWithRemote('192.168.1.42'), '/api/keys/export?format=json', 'GET');
       expect(status).toBe(403);
@@ -131,7 +131,7 @@ describe('Desktop re-auth bypass is loopback-only (#786)', () => {
   });
 
   it('does not take X-Forwarded-For as proof of being local', async () => {
-    process.env.FREEAPI_DESKTOP = '1';
+    process.env.SROUTER_DESKTOP = '1';
     const id = await addKey();
     const app = appWithRemote('192.168.1.42');
     const server = app.listen(0, '127.0.0.1');

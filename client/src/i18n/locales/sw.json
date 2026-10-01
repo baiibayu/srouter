@@ -16,7 +16,9 @@
     "modelsMenu": "Vinjari aina za mifano",
     "agents": "Mawakala",
     "logs": "Kumbukumbu",
-    "analyticsMenu": "Kurasa za uchanganuzi"
+    "analyticsMenu": "Kurasa za uchanganuzi",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "Fungua akaunti yako",
@@ -60,7 +62,7 @@
     "emailChanged": "Barua pepe imebadilishwa.",
     "passwordReset": "Nenosiri limewekwa upya. Tafadhali ingia.",
     "resetCodeDockerHint": "Unatumia Docker? Msimbo uko kwenye kumbukumbu ya kontena: docker logs <container>.",
-    "desktopSessionFailed": "Dashibodi haikuweza kuingia kwenye seva ya ndani. Funga FreeLLMAPI kisha uifungue tena."
+    "desktopSessionFailed": "Dashibodi haikuweza kuingia kwenye seva ya ndani. Funga SRouter kisha uifungue tena."
   },
   "common": {
     "save": "Hifadhi",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "Ukaguzi wa masasisho otomatiki",
     "autoUpdateCheckHelp": "Hukagua GitHub mara moja kwa siku kwa toleo jipya na kuonyesha ukumbusho. Imezimwa kwa chaguo-msingi.",
     "openReleases": "Fungua Matoleo ya GitHub",
-    "restartAfterUpdate": "Anzisha upya FreeLLMAPI baada ya ujenzi kukamilika."
+    "restartAfterUpdate": "Anzisha upya SRouter baada ya ujenzi kukamilika.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "Mifano",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "Bajeti ya tokeni ya kila mwezi",
     "remaining": "iliyobaki",
     "used": "kutumika",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "Vitendo vya mtoaji",
     "routeViaProxy": "Njia kupitia seva mbadala",
     "checkNow": "Angalia sasa",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "Pia inaweza kusanidiwa kupitia",
     "proxyEnvHintAfter": "kutofautisha kwa mazingira (huchukua nafasi ya kwanza). Acha wazi ili kuzima. Mifano:",
     "importKeys": "Ingiza funguo za mtoa huduma",
@@ -679,7 +704,8 @@
     "testFailed": "Jaribio la muundo limeshindwa",
     "testThrottled": "Tafadhali subiri sekunde {seconds} kabla ya kujaribu muundo huu tena.",
     "noModelsForProvider": "Hakuna miundo iliyowekwa kwa mtoa huduma huyu.",
-    "testModels": "Jaribu miundo"
+    "testModels": "Jaribu miundo",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

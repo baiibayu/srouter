@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/empty-state'
 import { useI18n } from '@/i18n'
 import { toast } from '@/lib/toast'
-import type { Model, ModelTestResult } from '@freellmapi/shared/types'
+import type { Model, ModelTestResult } from '@srouter/shared/types'
 import { MODEL_TEST_MIN_INTERVAL_MS, nowMs, selectTestableModels } from '@/lib/test-models'
 
 // Fire one real "ping" at a model through the normal pinned routing path

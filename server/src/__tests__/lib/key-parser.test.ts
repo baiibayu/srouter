@@ -153,11 +153,11 @@ describe('key parser', () => {
     expect(looksLikeApiKey('sk-valid-token')).toBe(true);
   });
 
-  it('parses FreeLLMAPI export JSON format', () => {
+  it('parses srouter export JSON format', () => {
     const exportJson = JSON.stringify({
       version: 1,
       exportedAt: '2026-07-06T12:00:00Z',
-      source: 'freellmapi',
+      source: 'srouter',
       keys: [
         { platform: 'google', key: 'AIza-test-key', label: 'Google Key' },
         { platform: 'groq', key: 'gsk-test-key', label: 'Groq Key' },
@@ -220,7 +220,7 @@ describe('key parser', () => {
     const csv = 'platform,key,label,base_url\n' +
       '"groq","gsk-abc","work, primary",""\n' +
       '"custom","sk-local","say ""hi""","http://192.168.1.5:1234/v1"\n';
-    const result = parseKeysFromFile(csv, 'freellmapi-keys.csv');
+    const result = parseKeysFromFile(csv, 'srouter-keys.csv');
     expect(result.skipped).toEqual([]);
     expect(result.keys.map(k => k.platform)).toEqual(['groq', 'custom']);
     expect(result.keys[1]!.baseUrl).toBe('http://192.168.1.5:1234/v1');
@@ -235,19 +235,19 @@ describe('key parser', () => {
     const exportJson = JSON.stringify({
       version: 1,
       exportedAt: '2026-07-06T12:00:00Z',
-      source: 'freellmapi',
+      source: 'srouter',
       keys: [
         { platform: 'mistral', key: 'mist-test', label: 'Mistral Key' },
       ],
     });
-    const result = parseKeysFromFile(exportJson, 'freellmapi-keys.json');
+    const result = parseKeysFromFile(exportJson, 'srouter-keys.json');
     expect(result.keys).toHaveLength(1);
     expect(result.keys[0]).toEqual({ rawKey: 'Mistral Key=mist-test', prefix: 'MISTRAL_', platform: 'mistral', label: 'Mistral Key' });
   });
 
   it('handles CSV via parseKeysFromFile', () => {
     const csv = 'platform,key,label\n"nvidia","nv-test","Nvidia Key"\n';
-    const result = parseKeysFromFile(csv, 'freellmapi-keys.csv');
+    const result = parseKeysFromFile(csv, 'srouter-keys.csv');
     expect(result.keys).toHaveLength(1);
     // The CSV label wins over the generated name, matching the export JSON
     // path above: the import route stores the rawKey name as the label.

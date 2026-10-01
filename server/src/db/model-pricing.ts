@@ -196,10 +196,72 @@ export const MODEL_PRICING: PricingRow[] = [
 export const FALLBACK_INPUT_PER_M = 0.20;
 export const FALLBACK_OUTPUT_PER_M = 0.80;
 
+// ── P4: OpenRouter pricing auto-fetch ────────────────────────────────
+// On boot, we try to pull fresh pricing from OpenRouter's public API so
+// analytics "Est. savings" stays current without a new binary release.
+// The hardcoded MODEL_PRICING above is the fallback (offline / CDN-miss).
+
+let _orPricingCache: PricingRow[] | null = null;
+let _orPricingTime = 0;
+const OR_PRICING_TTL_MS = 6 * 60 * 60 * 1000; // refresh every 6 hours
+
+/**
+ * Fetch the latest pricing snapshot from OpenRouter's public /v1/models
+ * endpoint.  Returns PricingRow[] where each row is
+ * ['openrouter', model_id, input$/M, output$/M].
+ *
+ * Caches the result for 6 hours. Returns [] on failure so callers can
+ * fall back to MODEL_PRICING silently.
+ */
+export async function fetchOpenRouterPricing(): Promise<PricingRow[]> {
+  if (_orPricingCache && Date.now() - _orPricingTime < OR_PRICING_TTL_MS) {
+    return _orPricingCache;
+  }
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/models', {
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      console.warn(`[model-pricing] OpenRouter /v1/models returned HTTP ${res.status}`);
+      return [];
+    }
+    const body = await res.json() as {
+      data?: Array<{
+        id: string;
+        pricing?: { prompt?: string; completion?: string };
+      }>;
+    };
+    if (!body?.data) return [];
+
+    const rows: PricingRow[] = [];
+    for (const m of body.data) {
+      if (!m.pricing) continue;
+      const inputPerM  = m.pricing.prompt     ? parseFloat(m.pricing.prompt) * 1_000_000     : null;
+      const outputPerM = m.pricing.completion ? parseFloat(m.pricing.completion) * 1_000_000 : null;
+      if (inputPerM != null || outputPerM != null) {
+        rows.push(['openrouter', m.id, inputPerM, outputPerM]);
+      }
+    }
+
+    _orPricingCache = rows;
+    _orPricingTime = Date.now();
+    console.log(`[model-pricing] Fetched ${rows.length} pricing rows from OpenRouter`);
+    return rows;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[model-pricing] OpenRouter pricing fetch failed: ${msg}`);
+    return [];
+  }
+}
+
 /**
  * Adds the pricing columns (idempotent) and refreshes prices for every
  * known model. Runs on every boot — it's ~100 UPDATEs in one transaction
  * and keeps prices current when this map is updated in a release.
+ *
+ * P4: Tries to merge OpenRouter live pricing on top of the hardcoded map,
+ * so models added after the last snapshot still get accurate prices.
  */
 export function applyModelPricing(db: Db): void {
   const columns = db.prepare('PRAGMA table_info(models)').all() as { name: string }[];
@@ -210,6 +272,41 @@ export function applyModelPricing(db: Db): void {
     db.prepare('ALTER TABLE models ADD COLUMN paid_output_per_m REAL').run();
   }
 
+  // Build a lookup map: `${platform}/${model_id}` → [input, output]
+  const pricingMap = new Map<string, [number | null, number | null]>();
+  for (const [platform, modelId, input, output] of MODEL_PRICING) {
+    pricingMap.set(`${platform}/${modelId}`, [input, output]);
+  }
+
+  // P4: Try to enrich with OpenRouter live pricing (async, best-effort).
+  // We fire-and-forget; the first boot may use only hardcoded data.
+  fetchOpenRouterPricing().then(orRows => {
+    if (orRows.length === 0) return;
+    // Merge: OpenRouter rows only fill gaps (hardcoded wins for known models)
+    for (const [platform, modelId, input, output] of orRows) {
+      const key = `${platform}/${modelId}`;
+      if (!pricingMap.has(key)) {
+        pricingMap.set(key, [input, output]);
+      }
+    }
+    // Re-apply pricing with merged data
+    const update = db.prepare(`
+      UPDATE models SET paid_input_per_m = ?, paid_output_per_m = ?
+      WHERE platform = ? AND model_id = ?
+    `);
+    const applyMerged = db.transaction(() => {
+      for (const [key, [input, output]] of pricingMap) {
+        const slash = key.indexOf('/');
+        const platform = key.slice(0, slash);
+        const modelId = key.slice(slash + 1);
+        update.run(input, output, platform, modelId);
+      }
+    });
+    applyMerged();
+    console.log(`[model-pricing] Merged OpenRouter pricing: ${pricingMap.size} total entries applied`);
+  }).catch(() => { /* non-fatal */ });
+
+  // Immediate pass with hardcoded data (guaranteed sync on boot)
   const update = db.prepare(`
     UPDATE models SET paid_input_per_m = ?, paid_output_per_m = ?
     WHERE platform = ? AND model_id = ?

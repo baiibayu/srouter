@@ -31,7 +31,7 @@ describe('fetch-relay local smoke test', () => {
     applyProxyMode('forward');
     applyProxyUrl('');
     applyFetchRelayToken('');
-    delete process.env.FREEAPI_PROXY_LOCAL_DESTINATIONS;
+    delete process.env.SROUTER_PROXY_LOCAL_DESTINATIONS;
     await Promise.all(servers.splice(0).map(close));
   });
 
@@ -99,7 +99,7 @@ describe('fetch-relay local smoke test', () => {
     servers.push(relay);
     const relayUrl = await listen(relay);
 
-    process.env.FREEAPI_PROXY_LOCAL_DESTINATIONS = 'true';
+    process.env.SROUTER_PROXY_LOCAL_DESTINATIONS = 'true';
     applyProxyEnabled(true);
     applyProxyUrl(relayUrl);
     applyProxyMode('fetch-relay');

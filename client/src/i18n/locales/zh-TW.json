@@ -16,7 +16,9 @@
     "modelsMenu": "瀏覽模型類型",
     "agents": "代理程式",
     "logs": "日誌",
-    "analyticsMenu": "分析頁面"
+    "analyticsMenu": "分析頁面",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "建立您的帳號",
@@ -60,7 +62,7 @@
     "emailChanged": "電子郵件已成功變更。",
     "passwordReset": "密碼已重設，請重新登入。",
     "resetCodeDockerHint": "在 Docker 中執行？重設碼在容器日誌中：docker logs <container>",
-    "desktopSessionFailed": "儀表板無法登入本機伺服器。請結束 FreeLLMAPI 並重新開啟。"
+    "desktopSessionFailed": "儀表板無法登入本機伺服器。請結束 SRouter 並重新開啟。"
   },
   "common": {
     "save": "儲存",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "自動檢查更新",
     "autoUpdateCheckHelp": "每天檢查一次 GitHub 上是否有新版本，並顯示提醒。預設關閉。",
     "openReleases": "開啟 GitHub Releases",
-    "restartAfterUpdate": "建置完成後重新啟動 FreeLLMAPI。"
+    "restartAfterUpdate": "建置完成後重新啟動 SRouter。",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "模型",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "每月 Token 額度",
     "remaining": "剩餘",
     "used": "已用",
-    "usedScopeHint": "僅統計本月內的聊天請求，涵蓋目前鏈路中的所有模型（包含自訂端點）。繞過 FreeLLMAPI 直接送往服務商的流量不計入。",
+    "usedScopeHint": "僅統計本月內的聊天請求，涵蓋目前鏈路中的所有模型（包含自訂端點）。繞過 SRouter 直接送往服務商的流量不計入。",
     "legendRemainingTitle": "{name}（{platform}）的剩餘量 / 每月額度",
     "noPublishedQuota": "另有 {count} 個未公布額度",
     "noPublishedQuotaTitle": "這些模型未公布每月權杖額度，因此無法顯示剩餘量。",
@@ -521,6 +529,23 @@
     "providerActions": "提供者操作",
     "routeViaProxy": "經由代理伺服器轉發",
     "checkNow": "立即檢查",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "也可透過 ",
     "proxyEnvHintAfter": " 環境變數設定（優先生效）。留空則停用。範例：",
     "importKeys": "匯入提供者金鑰",
@@ -679,7 +704,8 @@
     "testFailed": "模型測試失敗",
     "testThrottled": "請等待 {seconds} 秒後再測試此模型。",
     "noModelsForProvider": "此提供商尚未設定任何模型。",
-    "testModels": "測試模型"
+    "testModels": "測試模型",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

@@ -1,4 +1,5 @@
 import { getDb } from '../db/index.js';
+import { emitDegradedNotif, removeDegradedNotif } from './notification-emitter.js';
 
 /**
  * Global degraded-mode state machine (#904).
@@ -128,6 +129,7 @@ export function updateDegradationState(now = Date.now()): DegradationStatus {
           `[Degradation] Entering degraded mode: ${snapshot.healthyProviders}/${snapshot.totalProviders} providers healthy ` +
           `(${(snapshot.ratio * 100).toFixed(0)}% < ${(DEGRADED_HEALTHY_RATIO * 100).toFixed(0)}%)`,
         );
+        emitDegradedNotif(snapshot.healthyProviders, snapshot.totalProviders, snapshot.ratio);
       }
     }
   } else {
@@ -141,6 +143,7 @@ export function updateDegradationState(now = Date.now()): DegradationStatus {
           `[Degradation] Exiting degraded mode: ${snapshot.healthyProviders}/${snapshot.totalProviders} providers healthy ` +
           `(${(snapshot.ratio * 100).toFixed(0)}% >= ${(DEGRADED_HEALTHY_RATIO * 100).toFixed(0)}%)`,
         );
+        removeDegradedNotif();
       }
     } else {
       state.recoveredSince = null;

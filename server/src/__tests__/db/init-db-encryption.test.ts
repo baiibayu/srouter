@@ -18,7 +18,7 @@ function restoreEnv() {
 
 describe('initDb encryption bootstrapping', () => {
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-db-'));
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-db-'));
     process.env.ENCRYPTION_KEY = 'c'.repeat(64);
   });
 
@@ -30,7 +30,7 @@ describe('initDb encryption bootstrapping', () => {
   });
 
   it('loads the encryption key on dev boot when migrations are already applied', async () => {
-    const dbPath = path.join(tempDir!, 'freeapi.db');
+    const dbPath = path.join(tempDir!, 'srouter.db');
 
     process.env.NODE_ENV = 'test';
     vi.resetModules();

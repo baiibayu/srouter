@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // intact ("the endpoint rejected the key"); treating any 401 as session-expired
 // signed the operator out every time they tested a bad provider key.
 
-const TOKEN_KEY = 'freellmapi_dashboard_token'
+const TOKEN_KEY = 'srouter_dashboard_token'
 
 function makeStorage(): Storage {
   const store = new Map<string, string>()
@@ -53,7 +53,7 @@ describe('apiFetch 401 handling', () => {
 
     await expect(apiFetch('/api/keys')).rejects.toMatchObject({ status: 401, code: 'authentication_error' })
     expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
-    expect(events).toContain('freellmapi:unauthorized')
+    expect(events).toContain('srouter:unauthorized')
   })
 
   it('keeps the session when a discover/probe relays an upstream 401', async () => {

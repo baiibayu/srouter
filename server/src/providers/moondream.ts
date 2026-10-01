@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage, Platform } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage, Platform } from '@srouter/shared/types.js';
 import { BaseProvider, providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import { resolveMaxTokens } from '../lib/sampling-params.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';
@@ -13,7 +13,7 @@ function checkModel(requested: string, returned: unknown): void {
 }
 
 /** Hosted BYOK API, not self-hosted weights. Model rows belong exclusively in
- * the signed catalog to preserve Premium-now / Free-after-30-days delivery. */
+ * the signed catalog to preserve the monthly snapshot delivery. */
 export class MoondreamProvider extends BaseProvider {
   readonly platform: Platform = 'moondream';
   readonly name = 'Moondream';

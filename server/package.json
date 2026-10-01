@@ -1,5 +1,5 @@
 {
-  "name": "@freellmapi/server",
+  "name": "@srouter/server",
   "version": "0.2.1",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
     "db:migration:create": "tsx src/db/migrate/cli.ts create"
   },
   "dependencies": {
-    "@freellmapi/shared": "*",
+    "@srouter/shared": "*",
     "ajv": "^8.20.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",

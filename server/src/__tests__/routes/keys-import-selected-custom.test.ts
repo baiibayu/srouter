@@ -148,11 +148,11 @@ describe('POST /api/keys/import-selected — custom endpoints (#687)', () => {
     const exportFile = JSON.stringify({
       version: 1,
       exportedAt: '2026-08-02T00:00:00Z',
-      source: 'freellmapi',
+      source: 'srouter',
       keys: [{ platform: 'custom', key: 'sk-relay-123', label: 'My Relay', baseUrl: 'https://relay.example.com/v1' }],
     });
 
-    const { status, body } = await previewFile(app, 'freellmapi-keys.json', exportFile);
+    const { status, body } = await previewFile(app, 'srouter-keys.json', exportFile);
     expect(status).toBe(200);
     const custom = body.keys.find((k: any) => k.detectedPlatform === 'custom');
     expect(custom).toBeTruthy();

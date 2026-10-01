@@ -4,7 +4,7 @@ import { getDb } from '../db/index.js';
 import { parseBudget } from '../lib/budget.js';
 import { getActiveProfileId } from '../services/profile-models.js';
 import { inferQuotaPoolKey, getQuotaStateForKeys } from '../services/provider-quota.js';
-import type { Platform, QuotaMetric } from '@freellmapi/shared/types.js';
+import type { Platform, QuotaMetric } from '@srouter/shared/types.js';
 
 /**
  * Free-tier budget dashboard (#905).

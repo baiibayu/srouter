@@ -4,7 +4,7 @@
 
 ## Scope
 
-This domain documents how FreeLLMAPI is tested: the local command matrix across the monorepo workspaces, the layout and conventions of the server suite (serial forked execution, module-purity guard, loopback binding), and the end-to-end coding-agent compatibility suite introduced in #629.
+This domain documents how SRouter is tested: the local command matrix across the monorepo workspaces, the layout and conventions of the server suite (serial forked execution, module-purity guard, loopback binding), and the end-to-end coding-agent compatibility suite introduced in #629.
 
 Sources: the root [`package.json`](../../../package.json) test chain, per-workspace `package.json` scripts ([server](../../../server/package.json), [client](../../../client/package.json)), [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml), and the suites themselves under [`server/src/__tests__/`](../../../server/src/__tests__).
 

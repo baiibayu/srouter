@@ -36,11 +36,11 @@ if [ "$(id -u)" = "0" ]; then
   ensure_owned /app/server/data
   # docker/README.md tells single-mount PaaS operators to point these at their
   # one persistent directory, which may sit outside /app/server/data.
-  if [ -n "$FREEAPI_DB_PATH" ]; then
-    ensure_owned "$(dirname "$FREEAPI_DB_PATH")"
+  if [ -n "$SROUTER_DB_PATH" ]; then
+    ensure_owned "$(dirname "$SROUTER_DB_PATH")"
   fi
-  if [ -n "$FREEAPI_DB_BACKUP_PATH" ]; then
-    ensure_owned "$(dirname "$FREEAPI_DB_BACKUP_PATH")"
+  if [ -n "$SROUTER_DB_BACKUP_PATH" ]; then
+    ensure_owned "$(dirname "$SROUTER_DB_BACKUP_PATH")"
   fi
 
   # setpriv ships in util-linux on node:20-bookworm-slim, so it is always

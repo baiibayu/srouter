@@ -1,7 +1,7 @@
 {
-  "name": "freellmapi",
+  "name": "srouter",
   "version": "0.6.0",
-  "description": "Set up coding agents to use a FreeLLMAPI gateway",
+  "description": "Set up coding agents to use an SRouter gateway",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
     "url": "https://github.com/tashfeenahmed/freellmapi/issues"
   },
   "keywords": [
-    "freellmapi",
+    "srouter",
     "llm",
     "openai-compatible",
     "claude-code",
@@ -25,7 +25,7 @@
   ],
   "type": "module",
   "bin": {
-    "freellmapi": "dist/index.js"
+    "srouter": "dist/index.js"
   },
   "exports": {
     ".": "./dist/index.js",

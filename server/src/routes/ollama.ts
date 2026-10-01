@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type {
   ChatMessage,
   ChatToolDefinition,
-} from '@freellmapi/shared/types.js';
+} from '@srouter/shared/types.js';
 import { getSetting, getUnifiedApiKey } from '../db/index.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';
@@ -84,7 +84,7 @@ function ollamaModel(model: ReturnType<typeof buildModelListing>['models'][numbe
     digest: '',
     details: {
       parent_model: '',
-      format: 'freellmapi',
+      format: 'srouter',
       family: model.ownedBy,
       families: [model.ownedBy],
       parameter_size: 'remote',
@@ -106,9 +106,9 @@ ollamaRouter.get('/api/tags', (req, res) => {
     digest: '',
     details: {
       parent_model: '',
-      format: 'freellmapi',
-      family: 'freellmapi',
-      families: ['freellmapi'],
+      format: 'srouter',
+      family: 'srouter',
+      families: ['srouter'],
       parameter_size: 'remote',
       quantization_level: 'remote',
     },
@@ -144,14 +144,14 @@ ollamaRouter.post('/api/show', (req, res) => {
       template: '{{ .Prompt }}',
       details: {
         parent_model: '',
-        format: 'freellmapi',
-        family: 'freellmapi',
-        families: ['freellmapi'],
+        format: 'srouter',
+        family: 'srouter',
+        families: ['srouter'],
         parameter_size: 'remote',
         quantization_level: 'remote',
       },
       model_info: {
-        'general.architecture': 'freellmapi',
+        'general.architecture': 'srouter',
         'general.context_length': autoContextWindow ?? 128000,
       },
       capabilities: ['completion', 'tools'],

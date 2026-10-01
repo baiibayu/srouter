@@ -22,14 +22,14 @@ const created: string[] = [];
 const createdDirs: string[] = [];
 
 function tempFile(contents = 'x'): string {
-  const p = path.join(os.tmpdir(), `freeapi-fileperms-${Date.now()}-${Math.random()}`);
+  const p = path.join(os.tmpdir(), `srouter-fileperms-${Date.now()}-${Math.random()}`);
   fs.writeFileSync(p, contents);
   created.push(p);
   return p;
 }
 
 function tempDir(): string {
-  const p = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-fileperms-dir-'));
+  const p = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-fileperms-dir-'));
   createdDirs.push(p);
   return p;
 }
@@ -63,8 +63,8 @@ afterEach(() => {
 
 describe('windowsRestrictArgs', () => {
   it('drops inheritance and replaces the ACL with owner + SYSTEM + Administrators', () => {
-    expect(windowsRestrictArgs('C:\\data\\freeapi.db', SID)).toEqual([
-      'C:\\data\\freeapi.db',
+    expect(windowsRestrictArgs('C:\\data\\srouter.db', SID)).toEqual([
+      'C:\\data\\srouter.db',
       '/inheritance:r',
       '/grant:r', `*${SID}:(F)`,
       '/grant:r', '*S-1-5-18:(F)',
@@ -137,7 +137,7 @@ describe('restrictDirToOwner', () => {
   });
 
   it('treats an absent directory as nothing to do', () => {
-    const missing = path.join(os.tmpdir(), `freeapi-fileperms-nodir-${Date.now()}`);
+    const missing = path.join(os.tmpdir(), `srouter-fileperms-nodir-${Date.now()}`);
     const exec = fakeExec();
 
     expect(restrictDirToOwner(missing, { platform: 'win32', execFileSync: exec })).toBe(true);
@@ -250,7 +250,7 @@ describe('restrictToOwner on POSIX', () => {
 describe('restrictToOwner on a missing file', () => {
   it('treats an absent target as nothing to do, on either platform', () => {
     // SQLite's -wal/-shm sidecars do not exist until the first write.
-    const missing = path.join(os.tmpdir(), `freeapi-fileperms-absent-${Date.now()}`);
+    const missing = path.join(os.tmpdir(), `srouter-fileperms-absent-${Date.now()}`);
     const exec = fakeExec();
 
     expect(restrictToOwner(missing, { platform: 'win32', execFileSync: exec })).toBe(true);

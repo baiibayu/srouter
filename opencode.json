@@ -1,16 +1,16 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "freellmapi/auto",
+  "model": "srouter/auto",
   "provider": {
-    "freellmapi": {
+    "srouter": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "FreeLLMAPI (local)",
+      "name": "srouter (local)",
       "options": {
         "baseURL": "http://127.0.0.1:3001/v1"
       },
       "models": {
         "auto": {
-          "name": "FreeLLMAPI Auto Router",
+          "name": "srouter Auto Router",
           "limit": {
             "context": 1048576,
             "output": 65536

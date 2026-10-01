@@ -16,7 +16,9 @@
     "modelsMenu": "മോഡൽ തരങ്ങൾ ബ്രൗസ് ചെയ്യുക",
     "agents": "ഏജൻ്റുകൾ",
     "logs": "ലോഗുകൾ",
-    "analyticsMenu": "അനലിറ്റിക്സ് പേജുകൾ"
+    "analyticsMenu": "അനലിറ്റിക്സ് പേജുകൾ",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet"
   },
   "auth": {
     "createYourAccount": "നിങ്ങളുടെ അക്കൗണ്ട് സൃഷ്ടിക്കുക",
@@ -60,7 +62,7 @@
     "emailChanged": "ഇമെയിൽ വിജയകരമായി മാറ്റി.",
     "passwordReset": "പാസ്‌വേഡ് റീസെറ്റ് ചെയ്തു. സൈൻ ഇൻ ചെയ്യുക.",
     "resetCodeDockerHint": "Docker-ൽ പ്രവർത്തിപ്പിക്കുകയാണോ? കോഡ് കണ്ടെയ്നർ ലോഗിലുണ്ട്: docker logs <container>.",
-    "desktopSessionFailed": "ഡാഷ്‌ബോർഡിന് ലോക്കൽ സെർവറിൽ സൈൻ ഇൻ ചെയ്യാനായില്ല. FreeLLMAPI അടച്ച് വീണ്ടും തുറക്കുക."
+    "desktopSessionFailed": "ഡാഷ്‌ബോർഡിന് ലോക്കൽ സെർവറിൽ സൈൻ ഇൻ ചെയ്യാനായില്ല. SRouter അടച്ച് വീണ്ടും തുറക്കുക."
   },
   "common": {
     "save": "സംരക്ഷിക്കുക",
@@ -166,7 +168,13 @@
     "autoUpdateCheck": "സ്വയമേവയുള്ള അപ്ഡേറ്റ് പരിശോധന",
     "autoUpdateCheckHelp": "ദിവസത്തിൽ ഒരിക്കൽ പുതിയ റിലീസിനായി GitHub പരിശോധിച്ച് ഒരു ഓർമ്മപ്പെടുത്തൽ കാണിക്കുന്നു. സ്ഥിരസ്ഥിതിയായി ഓഫ് ആണ്.",
     "openReleases": "GitHub റിലീസുകൾ തുറക്കുക",
-    "restartAfterUpdate": "ബിൽഡ് പൂർത്തിയായ ശേഷം FreeLLMAPI പുനരാരംഭിക്കുക."
+    "restartAfterUpdate": "ബിൽഡ് പൂർത്തിയായ ശേഷം SRouter പുനരാരംഭിക്കുക.",
+    "syncSchedule": "Model Sync",
+    "syncScheduleHint": "How often the model catalog is refreshed from the server",
+    "syncIntervalOff": "Off",
+    "syncInterval6h": "Every 6h",
+    "syncInterval12h": "Every 12h",
+    "syncInterval24h": "Every 24h"
   },
   "models": {
     "title": "മോഡലുകൾ",
@@ -189,7 +197,7 @@
     "monthlyTokenBudget": "പ്രതിമാസ ടോക്കൺ ബജറ്റ്",
     "remaining": "അവശേഷിക്കുന്നു",
     "used": "ഉപയോഗിച്ചു",
-    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside FreeLLMAPI is not counted.",
+    "usedScopeHint": "Chat requests only, since the start of this calendar month, summed over every model in the active chain — custom endpoints included. Traffic you send to a provider outside SRouter is not counted.",
     "legendRemainingTitle": "Remaining / monthly budget for {name} ({platform})",
     "noPublishedQuota": "+{count} with no published quota",
     "noPublishedQuotaTitle": "These models have no documented monthly token budget, so there is no remaining figure to show.",
@@ -517,6 +525,23 @@
     "providerActions": "ദാതാവിൻ്റെ പ്രവർത്തനങ്ങൾ",
     "routeViaProxy": "പ്രോക്സി വഴി റൂട്ട്",
     "checkNow": "ഇപ്പോൾ പരിശോധിക്കുക",
+    "syncModels": "Sync models with upstream",
+    "syncModelsResult": "Model list synced: {added} added, {total} live",
+    "syncModelsFailed": "Model sync failed: {reason}",
+    "syncAllModels": "Sync all providers",
+    "syncAllPending": "Syncing…",
+    "syncAllResult": "Synced {count} provider(s): {registered} model(s) registered",
+    "syncAllFailed": "Sync all failed: {reason}",
+    "syncAllNoChanges": "All provider rosters are already up to date",
+    "syncAllDialogTitle": "Sync Results",
+    "syncAllDialogSummary": "Changes detected in {changed} of {total} providers",
+    "syncAllNew": "+{count} new",
+    "syncAllUpdated": "{count} updated",
+    "syncAllRetired": "{count} retired",
+    "syncAllNewModels": "New models",
+    "syncAllUpdatedModels": "Updated models",
+    "syncAllRetiredModels": "Retired models",
+    "syncAllDialogClose": "Done",
     "proxyEnvHintBefore": "വഴിയും ക്രമീകരിക്കാവുന്നതാണ്",
     "proxyEnvHintAfter": "പരിസ്ഥിതി വേരിയബിൾ (മുൻഗണന എടുക്കുന്നു). പ്രവർത്തനരഹിതമാക്കാൻ ശൂന്യമായി വിടുക. ഉദാഹരണങ്ങൾ:",
     "importKeys": "ദാതാവിൻ്റെ കീകൾ ഇറക്കുമതി ചെയ്യുക",
@@ -679,7 +704,8 @@
     "testFailed": "മോഡൽ പരിശോധന പരാജയപ്പെട്ടു",
     "testThrottled": "ഈ മോഡൽ വീണ്ടും പരിശോധിക്കുന്നതിന് മുമ്പ് ദയവായി {seconds} സെക്കൻഡ് കാത്തിരിക്കുക.",
     "noModelsForProvider": "ഈ ദാതാവിനായി മോഡലുകളൊന്നും കോൺഫിഗർ ചെയ്തിട്ടില്ല.",
-    "testModels": "മോഡലുകൾ പരീക്ഷിക്കുക"
+    "testModels": "മോഡലുകൾ പരീക്ഷിക്കുക",
+    "syncAllCatalog": "Catalog: +{inserted} added, ~{updated} updated, -{removed} removed"
   },
   "backups": {
     "title": "Backups",

@@ -5,7 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { getSetting } from '../db/index.js';
 import { decrypt, encrypt } from './crypto.js';
 import { assertProviderUrlAllowed, isLoopbackOrPrivateHostname } from './url-guard.js';
-import type { ProxyMode } from '@freellmapi/shared/types.js';
+import type { ProxyMode } from '@srouter/shared/types.js';
 
 // #590 (per-key proxy): the SAME provider may be reached through different
 // exit IPs per key (geo-ban / risk-control avoidance). Providers are process
@@ -311,7 +311,7 @@ export function applyProxyUrl(dbValue: string): void {
   // PROXY_MODE is the only way an environment-sourced URL becomes a relay.
   if (source !== 'dashboard' && !readEnv('PROXY_MODE')) _proxyMode = 'forward';
   _noProxyRules = parseNoProxy(readEnv('NO_PROXY'));
-  _proxyLocalDestinations = /^(1|true|yes)$/i.test(readEnv('FREEAPI_PROXY_LOCAL_DESTINATIONS'));
+  _proxyLocalDestinations = /^(1|true|yes)$/i.test(readEnv('SROUTER_PROXY_LOCAL_DESTINATIONS'));
   cached = null;
   if (_proxyUrl) {
     console.log(`[proxy] Configured → ${redactProxyUrl(_proxyUrl)} (source: ${source})`);
@@ -319,7 +319,7 @@ export function applyProxyUrl(dbValue: string): void {
       console.log(`[proxy] NO_PROXY direct for: ${_noProxyRules.join(', ')}`);
     }
     if (_proxyLocalDestinations) {
-      console.log('[proxy] FREEAPI_PROXY_LOCAL_DESTINATIONS is set — localhost/LAN destinations go through the proxy too.');
+      console.log('[proxy] SROUTER_PROXY_LOCAL_DESTINATIONS is set — localhost/LAN destinations go through the proxy too.');
     }
   } else {
     console.log('[proxy] Not configured — outbound requests go direct.');
@@ -385,7 +385,7 @@ export function getProxyMode(): ProxyMode {
   return _proxyMode;
 }
 
-/** Set the bearer token used only to authenticate FreeLLMAPI to a Fetch Relay.
+/** Set the bearer token used only to authenticate srouter to a Fetch Relay.
  * The environment wins so headless deployments never expose or overwrite it
  * through the dashboard. This token is separate from the provider's
  * Authorization header, which is preserved for the upstream request. */
@@ -464,7 +464,7 @@ export function getNoProxyRules(): string[] {
  * Ollama/llama.cpp/LM Studio case — the app's primary documented local use,
  * "on localhost or the LAN" — is exactly this.
  *
- * FREEAPI_PROXY_LOCAL_DESTINATIONS=true opts out, for the one setup where
+ * SROUTER_PROXY_LOCAL_DESTINATIONS=true opts out, for the one setup where
  * proxying a local address IS the point: an `ssh -D` dynamic tunnel, where
  * http://127.0.0.1:11434 sent through the SOCKS proxy resolves at the far end
  * and reaches the REMOTE host's Ollama.

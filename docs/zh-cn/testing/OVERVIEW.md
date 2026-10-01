@@ -4,7 +4,7 @@
 
 ## 范围
 
-本域文档描述 FreeLLMAPI 如何被测试：跨 monorepo 各工作区的本地命令矩阵、服务器套件的布局与约定（串行 fork 执行、模块纯度守卫、环回绑定），以及 #629 引入的端到端编程智能体兼容性套件。
+本域文档描述 SRouter 如何被测试：跨 monorepo 各工作区的本地命令矩阵、服务器套件的布局与约定（串行 fork 执行、模块纯度守卫、环回绑定），以及 #629 引入的端到端编程智能体兼容性套件。
 
 来源：根目录 [`package.json`](../../../package.json) 的测试链、各工作区的 `package.json` 脚本（[server](../../../server/package.json)、[client](../../../client/package.json)）、[`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml)，以及 [`server/src/__tests__/`](../../../server/src/__tests__) 下的各个套件本身。
 

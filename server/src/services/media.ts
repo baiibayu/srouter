@@ -5,8 +5,8 @@
 // (a chat request can't misroute to an image model) and never pollute the chat
 // token budget. Each platform has a small adapter here; routing fails over
 // across the providers serving the same modality. The rows are maintained in the
-// published catalog and arrive via catalog-sync (premium on the live tier within
-// ~12h, free once each model is 30 days old) — never seeded by migrations.
+// published catalog and arrive via catalog-sync (monthly snapshot refresh
+// every 12h) — never seeded by migrations.
 import { getDb } from '../db/index.js';
 import { parseRetryAfterMs } from '../providers/base.js';
 import { RetryHintTracker } from '../lib/retry-hint.js';

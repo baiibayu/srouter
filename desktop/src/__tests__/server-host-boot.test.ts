@@ -189,7 +189,7 @@ describe('desktop server boot sequence (#949)', () => {
     const steps = new Set(
       [...withoutComments.matchAll(/\b((?:install|start|cleanup|restore|load)[A-Z]\w*)\(/g)].map((m) => m[1]),
     );
-    // Env-gated (FREEAPI_DB_BACKUP_*): a GUI-launched packaged app inherits no
+    // Env-gated (SROUTER_DB_BACKUP_*): a GUI-launched packaged app inherits no
     // shell environment, so these can never activate on desktop. loadConfig()
     // is the same story: port/host/dbPath arrive as StartOptions here, not from
     // the environment it would read.

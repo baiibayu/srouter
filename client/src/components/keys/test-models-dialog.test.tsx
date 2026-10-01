@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { I18nProvider } from '@/i18n'
 import { apiFetch } from '@/lib/api'
 import { toast } from '@/lib/toast'
-import type { Model } from '@freellmapi/shared/types'
+import type { Model } from '@srouter/shared/types'
 import { TestModelsDialog } from './test-models-dialog'
 import { selectTestableModels } from '@/lib/test-models'
 
