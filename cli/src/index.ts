@@ -49,7 +49,7 @@ function parseTimeout(value: string): number {
 
 export function parseArgs(argv: string[]): { command?: string; options: CliOptions } {
   const options: CliOptions = {
-    url: process.env.SROUTER_URL || 'http://localhost:3000',
+    url: process.env.SROUTER_URL || 'http://localhost:20268',
     apiKey: process.env.SROUTER_API_KEY,
     token: process.env.SROUTER_DASHBOARD_TOKEN,
     profile: 'default',

@@ -16,7 +16,7 @@ let container: HTMLDivElement
 beforeAll(() => {
   ;(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   // The component builds its dev-mode base URL from the vite-injected port.
-  ;(globalThis as unknown as Record<string, unknown>).__SERVER_PORT__ = '3001'
+  ;(globalThis as unknown as Record<string, unknown>).__SERVER_PORT__ = '20268'
 })
 
 beforeEach(() => {

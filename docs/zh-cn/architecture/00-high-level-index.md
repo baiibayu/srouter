@@ -21,7 +21,7 @@ SRouter 是一个自托管的、兼容 OpenAI 的网关，把约 34 家提供方
 
 ```
 ┌──────────────────┐   Bearer srouter-…   ┌─────────────────────────┐
-│  OpenAI SDK /    │ ──────────────────────▶ │  Express proxy (:3001)  │
+│  OpenAI SDK /    │ ──────────────────────▶ │  Express proxy (:20268)  │
 │  curl / any      │ ◀────────────────────── │  /v1/chat/completions   │
 │  OpenAI client   │      streamed tokens    └────────────┬────────────┘
 └──────────────────┘                                      │

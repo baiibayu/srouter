@@ -4,7 +4,7 @@
 
 [← Back to README](../README.md) · [Documentation index](../README.md)
 
-Any OpenAI-compatible client works (Anthropic / Claude clients too — see [Anthropic / Claude clients](#anthropic--claude-clients)). Base URL `http://localhost:3001/v1`, unified key from the dashboard's Keys page. An interactive OpenAPI viewer covering every proxy endpoint is served at `GET /v1/docs`; the spec itself lives at `GET /v1/openapi.json`.
+Any OpenAI-compatible client works (Anthropic / Claude clients too — see [Anthropic / Claude clients](#anthropic--claude-clients)). Base URL `http://localhost:20268/v1`, unified key from the dashboard's Keys page. An interactive OpenAPI viewer covering every proxy endpoint is served at `GET /v1/docs`; the spec itself lives at `GET /v1/openapi.json`.
 
 - [Chat completions](#chat-completions)
 - [Routing strategies (`auto:*`)](#routing-strategies-auto)
@@ -33,7 +33,7 @@ Any OpenAI-compatible client works (Anthropic / Claude clients too — see [Anth
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:3001/v1",
+    base_url="http://localhost:20268/v1",
     api_key="srouter-your-unified-key",
 )
 
@@ -48,7 +48,7 @@ print("Routed via:", resp.headers.get("x-routed-via"))
 **curl**
 
 ```bash
-curl http://localhost:3001/v1/chat/completions \
+curl http://localhost:20268/v1/chat/completions \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -70,7 +70,7 @@ Plain `auto` follows your active fallback chain. Add a suffix to steer a single 
 These rank **every enabled model**, ignoring your chain order. Common synonyms resolve too (`auto:fastest`, `auto:speed`, `auto:smartest`, `auto:cheapest`, `auto:budget`, …), and the whole model string is case-insensitive.
 
 ```bash
-curl http://localhost:3001/v1/chat/completions \
+curl http://localhost:20268/v1/chat/completions \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -82,7 +82,7 @@ curl http://localhost:3001/v1/chat/completions \
 `auto:<profile-name>` routes through a named profile's chain instead of the active one, so different tools can use different chains through the same key:
 
 ```bash
-curl http://localhost:3001/v1/chat/completions \
+curl http://localhost:20268/v1/chat/completions \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -106,7 +106,7 @@ Each catalog entry also carries `execution_status`, a live answer to "would a re
 `?execution_status=ready` (also `needsKey`, `exhausted`; matched case-insensitively) narrows the catalog rows to one status, so an agent can ask for models it can call without reading the whole list. An unrecognised value filters nothing. Like `?available=`, the filter applies only to catalog rows: `auto`, `fusion` and the `auto:<profile>` chains are router entries rather than models with keys of their own, and are always listed.
 
 ```bash
-curl "http://localhost:3001/v1/models?execution_status=ready" \
+curl "http://localhost:20268/v1/models?execution_status=ready" \
   -H "Authorization: Bearer srouter-your-unified-key"
 ```
 
@@ -188,7 +188,7 @@ Gemini SDKs and Gemini CLI can use the native `/v1beta` surface:
 - `POST /v1beta/models/{model}:countTokens`
 
 ```bash
-curl "http://localhost:3001/v1beta/models/gemini-2.5-flash:generateContent" \
+curl "http://localhost:20268/v1beta/models/gemini-2.5-flash:generateContent" \
   -H "x-goog-api-key: srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"contents":[{"role":"user","parts":[{"text":"hello"}]}]}'
@@ -268,7 +268,7 @@ Video generation is served by two platforms — **`pollinations`** and **`huggin
 HuggingFace models route through the **fal queue** (`router.huggingface.co/fal-ai/…`): the request is submitted as a queued job, polled every 500 ms until `COMPLETED`, and the resulting video URL is fetched and streamed back. Pollinations models are requested directly. Both return the generated video as binary MP4 data with `X-Provider` and `X-Model` response headers:
 
 ```bash
-curl http://localhost:3001/v1/videos/generations \
+curl http://localhost:20268/v1/videos/generations \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"model":"auto","prompt":"a sunrise over a quiet lake","duration":6}' \
@@ -323,7 +323,7 @@ print(len(resp.data), "vectors of", len(resp.data[0].embedding), "dims")
 ```
 
 ```bash
-curl http://localhost:3001/v1/embeddings \
+curl http://localhost:20268/v1/embeddings \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"model": "auto", "input": "hello world"}'
@@ -351,7 +351,7 @@ The default family, per-provider toggles, and priorities live on the dashboard's
 SRouter also speaks Anthropic's Messages API, so anything built for Claude — including **Claude Code** and the official Anthropic SDKs — can run against your free pool. Point the client at your server's **origin** (Anthropic clients append `/v1/messages` themselves) and authenticate with your unified key. Both `x-api-key` and `Authorization: Bearer` are accepted.
 
 ```bash
-curl http://localhost:3001/v1/messages \
+curl http://localhost:20268/v1/messages \
   -H "x-api-key: srouter-your-unified-key" \
   -H "anthropic-version: 2023-06-01" \
   -H "Content-Type: application/json" \
@@ -368,14 +368,14 @@ Claude model names map to your free pool on the **Keys → Anthropic** tab: each
 
 *On macOS / Linux (Bash):*
 ```bash
-export ANTHROPIC_BASE_URL=http://localhost:3001
+export ANTHROPIC_BASE_URL=http://localhost:20268
 export ANTHROPIC_AUTH_TOKEN=srouter-your-unified-key   # NOT ANTHROPIC_API_KEY
 claude
 ```
 
 *On Windows (PowerShell):*
 ```powershell
-$env:ANTHROPIC_BASE_URL="http://localhost:3001"
+$env:ANTHROPIC_BASE_URL="http://localhost:20268"
 $env:ANTHROPIC_AUTH_TOKEN="srouter-your-unified-key"
 claude
 ```

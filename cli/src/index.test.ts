@@ -64,7 +64,7 @@ describe('CLI arguments and launchers', () => {
     { id: 'reasoning-model', available: true, context_window: 262144 },
   ];
   const baseOptions = {
-    url: 'http://localhost:3000',
+    url: 'http://localhost:20268',
     profile: 'default',
     dryRun: false,
   };
@@ -90,7 +90,7 @@ describe('CLI arguments and launchers', () => {
     const fallback = claudeLaunchEnv(baseOptions, 'unified-key', models, {}, '/home/tester');
     expect(fallback.ANTHROPIC_MODEL).toBe('fast-coder');
     expect(fallback.ANTHROPIC_AUTH_TOKEN).toBe('unified-key');
-    expect(fallback.ANTHROPIC_BASE_URL).toBe('http://localhost:3000');
+    expect(fallback.ANTHROPIC_BASE_URL).toBe('http://localhost:20268');
   });
 
   it('never uses the profile name as a model id', () => {

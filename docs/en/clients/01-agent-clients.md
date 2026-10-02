@@ -19,7 +19,7 @@
 Any client that can target an OpenAI-compatible base URL can use SRouter:
 
 - **LangChain, LlamaIndex, official OpenAI SDKs**: set `base_url` to
-  `http://localhost:3001/v1` and use the unified key from the dashboard.
+  `http://localhost:20268/v1` and use the unified key from the dashboard.
 - **Local GPU boxes**: add custom OpenAI-compatible endpoints for Ollama,
   llama.cpp, LM Studio, vLLM, or an internal gateway.
 
@@ -29,9 +29,9 @@ Use the generator instead of hand-editing a client configuration:
 
 ```bash
 export SROUTER_API_KEY=<unified-key>   # or pass --api-key on each command
-npx srouter setup-claude --url http://localhost:3001 --dry-run
-npx srouter setup-claude --url http://localhost:3001
-npx srouter setup-dsh --url http://localhost:3001 --api-key <unified-key>
+npx srouter setup-claude --url http://localhost:20268 --dry-run
+npx srouter setup-claude --url http://localhost:20268
+npx srouter setup-dsh --url http://localhost:20268 --api-key <unified-key>
 ```
 
 `--dry-run` prints a diff. Real writes merge with the existing configuration
@@ -41,26 +41,26 @@ context windows.
 
 | Agent | Automated command | Manual base URL | Wire |
 | --- | --- | --- | --- |
-| **Claude Code** | `setup-claude` or credential-free-on-disk `launch` | `http://localhost:3001` | Anthropic Messages |
-| **Codex CLI** | `setup-codex` or `launch-codex` | `http://localhost:3001/v1` | Responses (`wire_api = "responses"`) |
-| **Cline** | `setup-cline` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Continue** | `setup-continue` | `http://localhost:3001/v1` | OpenAI Chat / legacy Completions |
-| **Aider** | `setup-aider` | `http://localhost:3001/v1` | OpenAI Chat |
-| **OpenCode** | `setup-opencode` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Goose** | `setup-goose` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Qwen Code** | `setup-qwen` | `http://localhost:3001/v1` | OpenAI Chat (native Gemini also works) |
-| **Roo Code** | `setup-roo` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Kilo Code** | `setup-kilo` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Crush** | `setup-crush` | `http://localhost:3001/v1` | OpenAI Chat |
-| **DeepSeek Harness** | `setup-dsh` | `http://localhost:3001/v1` | OpenAI Chat (`api: openai-completions`) |
-| **MiMo Code** | `setup-mimo` | `http://localhost:3001/v1` | OpenAI Chat |
-| **AtomCode** | `setup-atomcode` | `http://localhost:3001/v1` | OpenAI Chat (`type = "openai"`) |
-| **OpenClaw** | `setup-openclaw` | `http://localhost:3001/v1` | OpenAI Chat (`api: openai-completions`) |
-| **Hermes Agent** | `setup-hermes` | `http://localhost:3001/v1` | OpenAI Chat (`provider: custom`) |
-| **Pi** | `setup-pi` | `http://localhost:3001/v1` | OpenAI Chat (`api: openai-completions`) |
-| **QwenPaw** | Manual setup | `http://localhost:3001/v1` | OpenAI Chat (`chat.completions`) |
+| **Claude Code** | `setup-claude` or credential-free-on-disk `launch` | `http://localhost:20268` | Anthropic Messages |
+| **Codex CLI** | `setup-codex` or `launch-codex` | `http://localhost:20268/v1` | Responses (`wire_api = "responses"`) |
+| **Cline** | `setup-cline` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Continue** | `setup-continue` | `http://localhost:20268/v1` | OpenAI Chat / legacy Completions |
+| **Aider** | `setup-aider` | `http://localhost:20268/v1` | OpenAI Chat |
+| **OpenCode** | `setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Goose** | `setup-goose` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Qwen Code** | `setup-qwen` | `http://localhost:20268/v1` | OpenAI Chat (native Gemini also works) |
+| **Roo Code** | `setup-roo` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Kilo Code** | `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Crush** | `setup-crush` | `http://localhost:20268/v1` | OpenAI Chat |
+| **DeepSeek Harness** | `setup-dsh` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
+| **MiMo Code** | `setup-mimo` | `http://localhost:20268/v1` | OpenAI Chat |
+| **AtomCode** | `setup-atomcode` | `http://localhost:20268/v1` | OpenAI Chat (`type = "openai"`) |
+| **OpenClaw** | `setup-openclaw` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
+| **Hermes Agent** | `setup-hermes` | `http://localhost:20268/v1` | OpenAI Chat (`provider: custom`) |
+| **Pi** | `setup-pi` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
+| **QwenPaw** | Manual setup | `http://localhost:20268/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` prints the guide | public `https://…/v1` | OpenAI Chat |
-| **Anything else** | `setup-generic` prints a ready block | `http://localhost:3001/v1` | OpenAI Chat |
+| **Anything else** | `setup-generic` prints a ready block | `http://localhost:20268/v1` | OpenAI Chat |
 
 The root-vs-`/v1` distinction matters: Claude Code expects the server root
 because it appends the Anthropic Messages path. OpenAI-compatible clients in
@@ -82,7 +82,7 @@ own, so nothing needs exporting. Both writes are structural merges: other
 routes, comments, and settings in the file are left as they were.
 
 ```bash
-npx srouter setup-dsh --url http://localhost:3001 --api-key <unified-key>
+npx srouter setup-dsh --url http://localhost:20268 --api-key <unified-key>
 npx @deepseek-ai/dsh web
 ```
 
@@ -109,7 +109,7 @@ generated file is the weakest layer and anything you hand-write in
 providers and settings already in `config.json` are left as they were.
 
 ```bash
-npx srouter setup-mimo --url http://localhost:3001
+npx srouter setup-mimo --url http://localhost:20268
 export SROUTER_API_KEY=<unified-key>
 mimo
 ```
@@ -135,7 +135,7 @@ tables, only the `SRouter` table is replaced, and other `[providers.*]`
 tables and settings in the file are left as they were.
 
 ```bash
-npx srouter setup-atomcode --url http://localhost:3001 --api-key <unified-key>
+npx srouter setup-atomcode --url http://localhost:20268 --api-key <unified-key>
 atomcode
 ```
 
@@ -162,7 +162,7 @@ providers, `fallbacks` on the default model, and every other setting in the
 file are left as they were.
 
 ```bash
-npx srouter setup-openclaw --url http://localhost:3001 --api-key <unified-key>
+npx srouter setup-openclaw --url http://localhost:20268 --api-key <unified-key>
 npm install -g openclaw@latest --allow-scripts=openclaw
 openclaw agent exec --model SRouter/auto "Say hello"   # no gateway daemon needed
 ```
@@ -195,7 +195,7 @@ exactly what `hermes setup` would do, and it is what lets a headless first
 run skip the wizard. Every other key in the file is left as it was.
 
 ```bash
-npx srouter setup-hermes --url http://localhost:3001 --api-key <unified-key>
+npx srouter setup-hermes --url http://localhost:20268 --api-key <unified-key>
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup
 hermes -z "Say hello"
 ```
@@ -222,7 +222,7 @@ created with mode 0600. Other providers and settings in both files are left
 as they were.
 
 ```bash
-npx srouter setup-pi --url http://localhost:3001 --api-key <unified-key>
+npx srouter setup-pi --url http://localhost:20268 --api-key <unified-key>
 npm install -g @earendil-works/pi-coding-agent
 pi -p "Say hello"
 ```
@@ -249,10 +249,10 @@ Console:
    as `SRouter`, and set the API compatibility mode to OpenAI
    `chat.completions`.
 3. Open the new provider's settings and set **Base URL** to
-   `http://localhost:3001/v1` and **API Key** to your SRouter unified key.
+   `http://localhost:20268/v1` and **API Key** to your SRouter unified key.
 4. On the provider's models page, add a model. Use `auto` as the **Model ID**
    to let SRouter route the request, or copy a current id from
-   `GET http://localhost:3001/v1/models`.
+   `GET http://localhost:20268/v1/models`.
 5. Save, then pick the model as the default (or per chat) and send a test
    message.
 
@@ -268,7 +268,7 @@ for the current Console field names.
 Gemini CLI and Gemini-lineage clients can speak Google's wire format directly:
 
 ```bash
-export GOOGLE_GEMINI_BASE_URL=http://localhost:3001
+export GOOGLE_GEMINI_BASE_URL=http://localhost:20268
 export GEMINI_API_KEY=srouter-your-unified-key
 gemini
 ```
@@ -297,7 +297,7 @@ Ollama emulation is off by default. Enable one of these modes on
 The exact endpoints are `/api/tags`, `/api/chat`, `/api/generate`, `/api/show`,
 `/api/version`, `/api/embed`, and legacy `/api/embeddings`. Streaming uses
 newline-delimited JSON, not SSE. Point Zed, JetBrains AI Assistant, or another
-Ollama-capable client at `http://localhost:3001`.
+Ollama-capable client at `http://localhost:20268`.
 
 ## Headerless clients
 
@@ -305,9 +305,9 @@ If a client cannot set headers, create a separately revocable token on
 **Keys → Agents** and use:
 
 ```text
-http://localhost:3001/v1/t/<token>/chat/completions
-http://localhost:3001/v1/t/<token>/responses
-http://localhost:3001/v1/t/<token>/models
+http://localhost:20268/v1/t/<token>/chat/completions
+http://localhost:20268/v1/t/<token>/responses
+http://localhost:20268/v1/t/<token>/models
 ```
 
 The same prefix exposes `/api/chat` and `/api/tags`. Never put the unified API
@@ -328,7 +328,7 @@ keep it on, so an existing Claude Code or Cline session does not break on upgrad
 it on the Keys page under **Agent compatibility**, or from the API:
 
 ```bash
-curl -X PUT http://localhost:3001/api/settings/enable-mcp \
+curl -X PUT http://localhost:20268/api/settings/enable-mcp \
   -H "Authorization: Bearer <dashboard-token>" -H "Content-Type: application/json" \
   -d '{"enabled": true}'
 ```
@@ -338,7 +338,7 @@ While it is off, every verb on `/mcp` answers `403` with a JSON-RPC error saying
 For Claude Code:
 
 ```bash
-claude mcp add --transport http SRouter http://localhost:3001/mcp \
+claude mcp add --transport http SRouter http://localhost:20268/mcp \
   --header "Authorization: Bearer srouter-your-unified-key"
 ```
 
@@ -357,7 +357,7 @@ The three relevant settings are deliberately separate:
 
 | Setting | Where it lives | Example |
 | --- | --- | --- |
-| Base URL | `mcp.server_urls[].url` in tunnel-client | `http://127.0.0.1:3001/mcp` |
+| Base URL | `mcp.server_urls[].url` in tunnel-client | `http://127.0.0.1:20268/mcp` |
 | API key | `SROUTER_MCP_AUTHORIZATION` environment variable | `Bearer srouter-...` |
 | Default model | SRouter `MCP_INFERENCE_DEFAULT_MODEL` | `auto`, a model id, or `auto:<profile>` |
 
@@ -411,7 +411,7 @@ models:
   - name: SRouter Autocomplete
     provider: openai
     model: auto
-    apiBase: http://localhost:3001/v1
+    apiBase: http://localhost:20268/v1
     apiKey: srouter-your-unified-key
     useLegacyCompletionsEndpoint: true
     roles:

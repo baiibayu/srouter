@@ -70,7 +70,7 @@ fi
 if [[ ! -e .env ]]; then
   encryption_key="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")"
   umask 077
-  printf 'ENCRYPTION_KEY=%s\nPORT=3001\n' "$encryption_key" > .env
+  printf 'ENCRYPTION_KEY=%s\nPORT=20268\n' "$encryption_key" > .env
   echo 'Created .env with a new ENCRYPTION_KEY.'
 else
   echo '.env already exists; leaving it unchanged.'

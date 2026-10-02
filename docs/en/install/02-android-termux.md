@@ -42,7 +42,7 @@ npm run dev
 
 An installation warning for the optional `better-sqlite3` package is harmless on Android. If npm asks you to approve dependency install scripts, approve the `esbuild` script and run `npm install` again.
 
-Open `http://localhost:5173` in a browser on the phone. The API is available at `http://localhost:3001/v1`.
+Open `http://localhost:5173` in a browser on the phone. The API is available at `http://localhost:20268/v1`.
 
 ## Access from another device
 
@@ -93,7 +93,7 @@ The dependency installation did not complete. Run `npm install --no-audit --no-f
 
 ### Port already in use
 
-Stop the process using port 3001 or 5173, or configure a different `PORT` in the repository's `.env` file.
+Stop the process using port 20268 or 5173, or configure a different `PORT` in the repository's `.env` file.
 
 ### The process stops when the screen turns off
 

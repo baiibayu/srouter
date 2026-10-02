@@ -168,7 +168,7 @@ register(new OpenAICompatProvider({
   name: 'OpenRouter',
   baseUrl: 'https://openrouter.ai/api/v1',
   extraHeaders: {
-    'HTTP-Referer': 'http://localhost:3001',
+    'HTTP-Referer': 'http://localhost:20268',
     'X-Title': 'srouter',
   },
 }));

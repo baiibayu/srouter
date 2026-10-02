@@ -42,7 +42,7 @@ npm run dev
 
 安装时关于可选包 `better-sqlite3` 的警告在 Android 上无害。如果 npm 要求批准依赖的安装脚本，批准 `esbuild` 的脚本后再运行一次 `npm install`。
 
-在手机浏览器中打开 `http://localhost:5173`。API 位于 `http://localhost:3001/v1`。
+在手机浏览器中打开 `http://localhost:5173`。API 位于 `http://localhost:20268/v1`。
 
 ## 从其他设备访问
 
@@ -93,7 +93,7 @@ pkg install -y nodejs-lts
 
 ### 端口已被占用
 
-停止占用 3001 或 5173 端口的进程，或在仓库的 `.env` 文件中配置另一个 `PORT`。
+停止占用 20268 或 5173 端口的进程，或在仓库的 `.env` 文件中配置另一个 `PORT`。
 
 ### 屏幕关闭后进程停止
 

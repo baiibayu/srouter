@@ -76,7 +76,7 @@ try {
 
         @(
             "ENCRYPTION_KEY=$encryptionKey"
-            'PORT=3001'
+            'PORT=20268'
         ) | Set-Content -LiteralPath $envFile -Encoding ascii
         Write-Host 'Created .env with a new ENCRYPTION_KEY.'
     } else {

@@ -30,7 +30,7 @@ async function assertEnvIsCreatedAndPreserved(runBootstrap, t) {
 
   await runBootstrap(fixture);
   const generatedEnv = await readFile(join(fixture, '.env'), 'utf8');
-  assert.match(generatedEnv, /^ENCRYPTION_KEY=[0-9a-f]{64}\r?\nPORT=3001\r?\n$/);
+  assert.match(generatedEnv, /^ENCRYPTION_KEY=[0-9a-f]{64}\r?\nPORT=20268\r?\n$/);
 
   const existingEnv = 'ENCRYPTION_KEY=keep-this-value\nPORT=4444\n';
   await writeFile(join(fixture, '.env'), existingEnv);

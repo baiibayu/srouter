@@ -5,7 +5,7 @@ gateway in one command. The generators read the models your server is actually
 serving and write the config file each tool expects.
 
 ```bash
-npx srouter setup-claude --url http://localhost:3001 --api-key <your-key>
+npx srouter setup-claude --url http://localhost:20268 --api-key <your-key>
 ```
 
 No install step, no account. The unified API key comes from your SRouter
@@ -43,7 +43,7 @@ dashboard (or the tray popover in the desktop app).
 
 | Flag | Meaning |
 | --- | --- |
-| `--url URL` | Gateway base URL (default `http://localhost:3001`) |
+| `--url URL` | Gateway base URL (default `http://localhost:20268`) |
 | `--api-key KEY` | Unified API key |
 | `--profile NAME` | Name the generated profile/provider entry |
 | `--model ID` | Pin a specific model instead of the catalog default |
@@ -61,7 +61,7 @@ storage as `SROUTER_dashboard_token`). The unified `--api-key` /
 The CLI does not log in or persist the dashboard token.
 
 ```bash
-export SROUTER_URL=http://localhost:3001
+export SROUTER_URL=http://localhost:20268
 export SROUTER_DASHBOARD_TOKEN='<dashboard-session-token>'
 
 npx srouter keys add groq                 # hidden provider-key prompt

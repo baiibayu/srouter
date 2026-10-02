@@ -4,7 +4,7 @@
 
 [← 返回 README](../README.md) · [文档索引](../README.md)
 
-任何兼容 OpenAI 的客户端都能用（Anthropic / Claude 客户端也可以，见 [Anthropic 与 Claude 客户端](#anthropic-与-claude-客户端)）。Base URL 为 `http://localhost:3001/v1`，统一密钥在仪表盘的密钥页获取。`GET /v1/docs` 提供一个覆盖所有代理端点的交互式 OpenAPI 浏览器；规范文件本身在 `GET /v1/openapi.json`。
+任何兼容 OpenAI 的客户端都能用（Anthropic / Claude 客户端也可以，见 [Anthropic 与 Claude 客户端](#anthropic-与-claude-客户端)）。Base URL 为 `http://localhost:20268/v1`，统一密钥在仪表盘的密钥页获取。`GET /v1/docs` 提供一个覆盖所有代理端点的交互式 OpenAPI 浏览器；规范文件本身在 `GET /v1/openapi.json`。
 
 - [聊天补全](#聊天补全)
 - [路由策略 `auto:*`](#路由策略-auto)
@@ -29,7 +29,7 @@
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:3001/v1",
+    base_url="http://localhost:20268/v1",
     api_key="srouter-your-unified-key",
 )
 
@@ -44,7 +44,7 @@ print("Routed via:", resp.headers.get("x-routed-via"))
 **curl**
 
 ```bash
-curl http://localhost:3001/v1/chat/completions \
+curl http://localhost:20268/v1/chat/completions \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -66,7 +66,7 @@ curl http://localhost:3001/v1/chat/completions \
 这些策略会对 **所有已启用的模型** 重新排序，忽略你的链路顺序。常见的同义写法也能识别（`auto:fastest`、`auto:speed`、`auto:smartest`、`auto:cheapest`、`auto:budget` 等等），整个模型字符串不区分大小写。
 
 ```bash
-curl http://localhost:3001/v1/chat/completions \
+curl http://localhost:20268/v1/chat/completions \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -78,7 +78,7 @@ curl http://localhost:3001/v1/chat/completions \
 `auto:<配置档名>` 会走某个具名配置档的链路，而不是当前生效的那条，这样不同工具可以通过同一把密钥使用不同的链路：
 
 ```bash
-curl http://localhost:3001/v1/chat/completions \
+curl http://localhost:20268/v1/chat/completions \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -167,7 +167,7 @@ Gemini 系列 SDK 和 Gemini CLI 可以使用原生的 `/v1beta` 接口：
 - `POST /v1beta/models/{model}:countTokens`
 
 ```bash
-curl "http://localhost:3001/v1beta/models/gemini-2.5-flash:generateContent" \
+curl "http://localhost:20268/v1beta/models/gemini-2.5-flash:generateContent" \
   -H "x-goog-api-key: srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"contents":[{"role":"user","parts":[{"text":"hello"}]}]}'
@@ -240,7 +240,7 @@ print(len(resp.data), "vectors of", len(resp.data[0].embedding), "dims")
 ```
 
 ```bash
-curl http://localhost:3001/v1/embeddings \
+curl http://localhost:20268/v1/embeddings \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"model": "auto", "input": "hello world"}'
@@ -268,7 +268,7 @@ curl http://localhost:3001/v1/embeddings \
 SRouter 同样会讲 Anthropic 的 Messages API，所以任何为 Claude 写的东西，包括 **Claude Code** 和官方 Anthropic SDK，都能跑在你的免费池上。把客户端指向你服务器的 **根地址**（Anthropic 客户端会自己拼上 `/v1/messages`），用统一密钥认证即可。`x-api-key` 和 `Authorization: Bearer` 两种方式都接受。
 
 ```bash
-curl http://localhost:3001/v1/messages \
+curl http://localhost:20268/v1/messages \
   -H "x-api-key: srouter-your-unified-key" \
   -H "anthropic-version: 2023-06-01" \
   -H "Content-Type: application/json" \
@@ -285,14 +285,14 @@ Claude 的模型名在 **密钥 → Anthropic** 标签页里映射到你的免�
 
 *在 macOS / Linux 上（Bash）：*
 ```bash
-export ANTHROPIC_BASE_URL=http://localhost:3001
+export ANTHROPIC_BASE_URL=http://localhost:20268
 export ANTHROPIC_AUTH_TOKEN=srouter-your-unified-key   # 不是 ANTHROPIC_API_KEY
 claude
 ```
 
 *在 Windows 上（PowerShell）：*
 ```powershell
-$env:ANTHROPIC_BASE_URL="http://localhost:3001"
+$env:ANTHROPIC_BASE_URL="http://localhost:20268"
 $env:ANTHROPIC_AUTH_TOKEN="srouter-your-unified-key"
 claude
 ```

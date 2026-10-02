@@ -29,13 +29,13 @@ On Windows, the easiest path is the desktop **[`.exe` installer from Releases](h
 
 On Android, see the experimental [Termux installation guide](02-android-termux.md). It uses Node's built-in SQLite driver and does not require the Android NDK.
 
-Open http://localhost:3001, add your provider keys on the **Keys** page, reorder the **Fallback Chain** to taste, and grab your unified API key from the **Keys** page header. That unified key is what you point your OpenAI SDK at.
+Open http://localhost:20268, add your provider keys on the **Keys** page, reorder the **Fallback Chain** to taste, and grab your unified API key from the **Keys** page header. That unified key is what you point your OpenAI SDK at.
 
 Your install keeps itself updated from the signed catalog feed. The current full catalog is listed at [freellmapi.co/models](https://freellmapi.co/models.html).
 
 ## Docker Compose
 
-Runs the API and dashboard together on port 3001 and persists SQLite in a named volume.
+Runs the API and dashboard together on port 20268 and persists SQLite in a named volume.
 
 **Prerequisites:** Docker, Docker Compose, OpenSSL.
 
@@ -46,7 +46,7 @@ cd SRouter
 
 # Generate an encryption key for at-rest key storage
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
-printf "ENCRYPTION_KEY=%s\nPORT=3001\n" "$ENCRYPTION_KEY" > .env
+printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 
 docker compose up -d
 ```
@@ -59,11 +59,11 @@ cd SRouter
 $Bytes = New-Object Byte[] 32
 [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($Bytes)
 $ENCRYPTION_KEY = -join ($Bytes | ForEach-Object { "{0:x2}" -f $_ })
-"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=3001" | Out-File -Encoding utf8 .env
+"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=20268" | Out-File -Encoding utf8 .env
 docker compose up -d
 ```
 
-> **Reaching it from another machine?** By default the container is published only on `127.0.0.1`, so `http://<server-ip>:3001` won't load from another device (the page just hangs). To expose it on your LAN — e.g. a Raspberry Pi at `http://192.168.1.x:3001` — start it with `HOST_BIND=0.0.0.0`:
+> **Reaching it from another machine?** By default the container is published only on `127.0.0.1`, so `http://<server-ip>:20268` won't load from another device (the page just hangs). To expose it on your LAN — e.g. a Raspberry Pi at `http://192.168.1.x:20268` — start it with `HOST_BIND=0.0.0.0`:
 >
 > ```bash
 > HOST_BIND=0.0.0.0 docker compose up -d
@@ -92,7 +92,7 @@ git clone https://github.com/tashfeenahmed/freellmapi.git
 cd SRouter
 npm install
 ENCRYPTION_KEY="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
-printf "ENCRYPTION_KEY=%s\nPORT=3001\n" "$ENCRYPTION_KEY" > .env
+printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 npm run dev
 ```
 
@@ -102,7 +102,7 @@ git clone https://github.com/tashfeenahmed/freellmapi.git
 cd SRouter
 npm install
 $ENCRYPTION_KEY = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=3001" | Out-File -Encoding utf8 .env
+"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=20268" | Out-File -Encoding utf8 .env
 npm run dev
 ```
 
@@ -154,7 +154,7 @@ For a production build without Docker:
 
 ```bash
 npm run build
-node server/dist/index.js     # server + dashboard both served on :3001
+node server/dist/index.js     # server + dashboard both served on :20268
 ```
 
 ## Declarative startup config

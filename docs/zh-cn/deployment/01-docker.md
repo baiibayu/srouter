@@ -26,7 +26,7 @@ docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # 或固定到某个发布
 构建形态（[Dockerfile](../../../Dockerfile)）：
 
 - 基于 `node:20-bookworm-slim` 的三个阶段（`deps` → `build` → `runtime`）；只有已构建完成的产物会被复制进 runtime 阶段。
-- runtime 阶段设置 `NODE_ENV=production`、`PORT=3001` 和 `SROUTER_INSTALL_METHOD=docker`；进程为 `node server/dist/index.js`。
+- runtime 阶段设置 `NODE_ENV=production`、`PORT=20268` 和 `SROUTER_INSTALL_METHOD=docker`；进程为 `node server/dist/index.js`。
 - 一对 `SROUTER_COMMIT_SHA` ARG/ENV 刻意放在所有 `COPY` 层之后：SHA 每次提交都会变，放得更高会让每次构建都使整个镜像的层缓存失效。
 - runtime 还会复制 `desktop/package.json`（一个约 400 字节的清单），让容器安装能报出自己的发布版本（#703）。
 - `.dockerignore` 把秘密和本地状态挡在构建上下文之外：`.env`、`.env.*`、`*.db`（含 `-wal`/`-shm` 边车文件）、`.encryption-key` 以及 `server/data` 永远不会进入镜像。
@@ -41,7 +41,7 @@ cd SRouter
 
 # 生成用于静态存储密钥的加密密钥
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
-printf "ENCRYPTION_KEY=%s\nPORT=3001\n" "$ENCRYPTION_KEY" > .env
+printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 
 docker compose up -d
 ```
@@ -52,11 +52,11 @@ Windows PowerShell 版本和 curl 一行命令引导见 [docs/zh-cn/install/01-i
 docker compose logs -f srouter
 ```
 
-打开 http://localhost:3001 ，在「密钥」页添加提供方密钥，并从该页顶部拿到你的统一 API 密钥——你的 OpenAI SDK 要指向的就是它。
+打开 http://localhost:20268 ，在「密钥」页添加提供方密钥，并从该页顶部拿到你的统一 API 密钥——你的 OpenAI SDK 要指向的就是它。
 
 ## 端口与局域网访问
 
-Compose 文件把端口发布为 `"${HOST_BIND:-127.0.0.1}:${PORT:-3001}:3001"`。默认仪表盘/API 只能从运行 Docker 的那台机器访问；想从其他设备访问它（例如树莓派上的 `http://192.168.1.x:3001`）：
+Compose 文件把端口发布为 `"${HOST_BIND:-127.0.0.1}:${PORT:-20268}:20268"`。默认仪表盘/API 只能从运行 Docker 的那台机器访问；想从其他设备访问它（例如树莓派上的 `http://192.168.1.x:20268`）：
 
 ```bash
 HOST_BIND=0.0.0.0 docker compose up -d
@@ -85,7 +85,7 @@ Dockerfile 和 Compose 文件定义了同一个探针：一条 Node 单行命令
 
 ## 非 root 运行时
 
-runtime 阶段在 `EXPOSE 3001` 之前切换到 `USER node`。服务器数据目录 `/app/server/data` 在构建期间创建并 chown 给 `node:node`，保证运行用户拥有它；所有复制的产物都带 `--chown=node:node`。
+runtime 阶段在 `EXPOSE 20268` 之前切换到 `USER node`。服务器数据目录 `/app/server/data` 在构建期间创建并 chown 给 `node:node`，保证运行用户拥有它；所有复制的产物都带 `--chown=node:node`。
 
 ## 为什么 better-sqlite3 要从源码编译
 

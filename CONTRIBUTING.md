@@ -6,7 +6,7 @@ Contributors are very welcome. This project is a local-first aggregator for free
 
 ```bash
 npm install
-npm run dev             # server on :3001, dashboard on :5173, both with HMR
+npm run dev             # server on :20268, dashboard on :5173, both with HMR
 npm run db:migration:up # apply all the migrations to your local database
 npm test                # server vitest; also runs client tests if present
 npm run build           # compile server and dashboard

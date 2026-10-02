@@ -21,7 +21,7 @@ See [OVERVIEW.md](OVERVIEW.md) for deep-dives.
 
 ```
 ┌──────────────────┐   Bearer srouter-…   ┌─────────────────────────┐
-│  OpenAI SDK /    │ ──────────────────────▶ │  Express proxy (:3001)  │
+│  OpenAI SDK /    │ ──────────────────────▶ │  Express proxy (:20268)  │
 │  curl / any      │ ◀────────────────────── │  /v1/chat/completions   │
 │  OpenAI client   │      streamed tokens    └────────────┬────────────┘
 └──────────────────┘                                      │

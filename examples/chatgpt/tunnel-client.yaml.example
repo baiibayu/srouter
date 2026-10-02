@@ -10,7 +10,7 @@ control_plane:
 mcp:
   server_urls:
     - channel: main
-      url: http://127.0.0.1:3001/mcp
+      url: http://127.0.0.1:20268/mcp
   # Set SROUTER_MCP_AUTHORIZATION to the complete value
   # "Bearer srouter-..." in the process environment.
   extra_headers:

@@ -33,7 +33,7 @@ FROM ${NODE_IMAGE} AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=20268
 ENV SROUTER_INSTALL_METHOD=docker
 
 COPY --from=build --chown=node:node /app/package.json /app/package-lock.json ./
@@ -70,7 +70,7 @@ USER root
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-EXPOSE 3001
+EXPOSE 20268
 
 # No VOLUME for /app/server/data on purpose. Persistence is the deployment's
 # job — docker-compose.yml maps the named `srouter-data` volume there, and a
@@ -81,6 +81,6 @@ EXPOSE 3001
 # declaration also shadows a bind mount made at the same path.
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3001) + '/api/ping').then((res) => { if (!res.ok) process.exit(1); }).catch(() => process.exit(1));"
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 20268) + '/api/ping').then((res) => { if (!res.ok) process.exit(1); }).catch(() => process.exit(1));"
 
 CMD ["node", "server/dist/index.js"]

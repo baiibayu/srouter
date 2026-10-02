@@ -19,7 +19,7 @@
 任何能指向 OpenAI 兼容 base URL 的客户端都能使用 SRouter：
 
 - **LangChain、LlamaIndex、官方 OpenAI SDK**：把 `base_url` 设为
-  `http://localhost:3001/v1`，使用仪表盘里的统一密钥。
+  `http://localhost:20268/v1`，使用仪表盘里的统一密钥。
 - **本地 GPU 盒子**：为 Ollama、llama.cpp、LM Studio、vLLM 或内部网关添加自定义 OpenAI 兼容端点。
 
 ## 编程智能体
@@ -28,33 +28,33 @@
 
 ```bash
 export SROUTER_API_KEY=<统一密钥>   # 或每条命令传 --api-key
-npx srouter setup-claude --url http://localhost:3001 --dry-run
-npx srouter setup-claude --url http://localhost:3001
-npx srouter setup-dsh --url http://localhost:3001 --api-key <统一密钥>
+npx srouter setup-claude --url http://localhost:20268 --dry-run
+npx srouter setup-claude --url http://localhost:20268
+npx srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
 ```
 
 `--dry-run` 打印差异。真实写入会与现有配置合并，并先创建带时间戳的备份。`--profile <name>` 创建一个命名的 Claude/Codex 配置档。实时 `/v1/models` 目录提供模型 id 和上下文窗口。
 
 | 智能体 | 自动化命令 | 手动 base URL | 线上协议 |
 | --- | --- | --- | --- |
-| **Claude Code** | `setup-claude` 或免凭证 `launch` | `http://localhost:3001` | Anthropic Messages |
-| **Codex CLI** | `setup-codex` 或 `launch-codex` | `http://localhost:3001/v1` | Responses (`wire_api = "responses"`) |
-| **Cline** | `setup-cline` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Continue** | `setup-continue` | `http://localhost:3001/v1` | OpenAI Chat / 旧版 Completions |
-| **Aider** | `setup-aider` | `http://localhost:3001/v1` | OpenAI Chat |
-| **OpenCode** | `setup-opencode` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Goose** | `setup-goose` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Qwen Code** | `setup-qwen` | `http://localhost:3001/v1` | OpenAI Chat（原生 Gemini 也可用） |
-| **Roo Code** | `setup-roo` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Kilo Code** | `setup-kilo` | `http://localhost:3001/v1` | OpenAI Chat |
-| **Crush** | `setup-crush` | `http://localhost:3001/v1` | OpenAI Chat |
-| **DeepSeek Harness** | `setup-dsh` | `http://localhost:3001/v1` | OpenAI Chat (`api: openai-completions`) |
-| **OpenClaw** | `setup-openclaw` | `http://localhost:3001/v1` | OpenAI Chat（`api: openai-completions`） |
-| **Hermes Agent** | `setup-hermes` | `http://localhost:3001/v1` | OpenAI Chat（`provider: custom`） |
-| **Pi** | `setup-pi` | `http://localhost:3001/v1` | OpenAI Chat（`api: openai-completions`） |
-| **QwenPaw** | 手动配置 | `http://localhost:3001/v1` | OpenAI Chat (`chat.completions`) |
+| **Claude Code** | `setup-claude` 或免凭证 `launch` | `http://localhost:20268` | Anthropic Messages |
+| **Codex CLI** | `setup-codex` 或 `launch-codex` | `http://localhost:20268/v1` | Responses (`wire_api = "responses"`) |
+| **Cline** | `setup-cline` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Continue** | `setup-continue` | `http://localhost:20268/v1` | OpenAI Chat / 旧版 Completions |
+| **Aider** | `setup-aider` | `http://localhost:20268/v1` | OpenAI Chat |
+| **OpenCode** | `setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Goose** | `setup-goose` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Qwen Code** | `setup-qwen` | `http://localhost:20268/v1` | OpenAI Chat（原生 Gemini 也可用） |
+| **Roo Code** | `setup-roo` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Kilo Code** | `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat |
+| **Crush** | `setup-crush` | `http://localhost:20268/v1` | OpenAI Chat |
+| **DeepSeek Harness** | `setup-dsh` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
+| **OpenClaw** | `setup-openclaw` | `http://localhost:20268/v1` | OpenAI Chat（`api: openai-completions`） |
+| **Hermes Agent** | `setup-hermes` | `http://localhost:20268/v1` | OpenAI Chat（`provider: custom`） |
+| **Pi** | `setup-pi` | `http://localhost:20268/v1` | OpenAI Chat（`api: openai-completions`） |
+| **QwenPaw** | 手动配置 | `http://localhost:20268/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` 打印指引 | 公共 `https://…/v1` | OpenAI Chat |
-| **其他** | `setup-generic` 打印现成配置块 | `http://localhost:3001/v1` | OpenAI Chat |
+| **其他** | `setup-generic` 打印现成配置块 | `http://localhost:20268/v1` | OpenAI Chat |
 
 根路径与 `/v1` 的区别很重要：Claude Code 期望服务器根路径，因为它会追加 Anthropic Messages 路径。本表中兼容 OpenAI 的客户端——包括 Cline、Aider、Goose、Codex、Continue、OpenCode、Qwen、Roo、Kilo、Crush、QwenPaw 和 DeepSeek Harness——期望它们配置的 base URL 包含 `/v1`。
 
@@ -65,7 +65,7 @@ npx srouter setup-dsh --url http://localhost:3001 --api-key <统一密钥>
 `setup-dsh` 在那里添加一条 `SRouter` 路由——`api: openai-completions`、网关的 `/v1` base URL、以及实时目录作为该路由的 `models` 列表（DSH 要求提供方在其自带目录里没有的模型也得列出来）——并把 `SRouter/auto` 设为默认模型。密钥写进 `$DSH_HOME/.env`（权限 0600）作为 `SROUTER_API_KEY`，这是 DSH 自己读取的环境层，所以无需导出。两次写入都是结构化合并：文件里其他的路由、注释、设置保持原样。
 
 ```bash
-npx srouter setup-dsh --url http://localhost:3001 --api-key <统一密钥>
+npx srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
 npx @deepseek-ai/dsh web
 ```
 
@@ -76,7 +76,7 @@ npx @deepseek-ai/dsh web
 [OpenClaw](https://docs.openclaw.ai/) 是常驻运行的个人助理，通过其网关接入 WhatsApp、Telegram、Discord 等渠道。它只读取一份 JSON5 文档 `~/.openclaw/openclaw.json`，每个模型端点都是 `models.providers` 下的一个条目；其自带目录不认识的提供方必须写明 `baseUrl`、`api` 和非空的 `models` 列表。`setup-openclaw` 在那里写入一个 `SRouter` 提供方——`api: openai-completions`、网关的 `/v1` base URL、以及实时目录作为 `models` 列表——并把 `SRouter/auto` 设为 `agents.defaults.model.primary` 的默认模型。密钥以 OpenClaw 自己的替换语法 `${SROUTER_API_KEY}` 引用，值写进 `~/.openclaw/.env`（权限 0600），这是 OpenClaw 自行加载的全局环境文件，所以无需导出。两次写入都是结构化合并：其他提供方、默认模型上的 `fallbacks`、以及文件里的其他设置保持原样。
 
 ```bash
-npx srouter setup-openclaw --url http://localhost:3001 --api-key <统一密钥>
+npx srouter setup-openclaw --url http://localhost:20268 --api-key <统一密钥>
 npm install -g openclaw@latest --allow-scripts=openclaw
 openclaw agent exec --model SRouter/auto "Say hello"   # 无需启动网关守护进程
 ```
@@ -88,7 +88,7 @@ openclaw agent exec --model SRouter/auto "Say hello"   # 无需启动网关守�
 [Hermes Agent](https://hermes-agent.nousresearch.com/docs/) 是 Nous Research 的自我进化智能体，可在终端使用，也可通过其网关接入 Telegram、Discord 等聊天软件。`~/.hermes/config.yaml` 是端点的唯一事实来源：`OPENAI_BASE_URL` 只对 api.openai.com 生效，`OPENAI_API_KEY` 也只会发给 OpenAI 的主机，所以自定义端点必须写在 `model` 块里。`setup-hermes` 写入这个块——`provider: custom`、`api_mode: chat_completions`、网关的 `/v1` 作为 `base_url`、所选模型作为 `default` 并附上来自实时目录的 `context_length`——并以 Hermes 自己的替换语法 `api_key: "${SROUTER_API_KEY}"` 引用密钥，值写进 `~/.hermes/.env`（权限 0600），Hermes 会自行加载。全新安装自带 `model: ""`（"尚未配置"的哨兵值）；替换它正是 `hermes setup` 会做的事，也正是无人值守首次运行能跳过向导的原因。文件里的其他键保持原样。
 
 ```bash
-npx srouter setup-hermes --url http://localhost:3001 --api-key <统一密钥>
+npx srouter setup-hermes --url http://localhost:20268 --api-key <统一密钥>
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup
 hermes -z "Say hello"
 ```
@@ -100,7 +100,7 @@ hermes -z "Say hello"
 [Pi](https://pi.dev) 是一个极简的终端智能体框架，可用你自己的扩展、技能和提示词模板来定制。Pi 未内置的端点写在 `~/.pi/agent/models.json` 的 provider 条目里。`setup-pi` 在其中添加 `srouter` provider——`api: openai-completions`、网关的 `/v1` 作为 `baseUrl`，并列出实时目录中的全部模型及其上下文窗口（所选模型排在最前）——再在 `~/.pi/agent/settings.json` 中设置 `defaultProvider` 和 `defaultModel`，让全新启动的 `pi` 直接使用它。Pi 不会自行加载 `.env` 文件，所以密钥直接写入 `models.json`（以 0600 权限创建）。两个文件中的其他 provider 和设置保持原样。
 
 ```bash
-npx srouter setup-pi --url http://localhost:3001 --api-key <统一密钥>
+npx srouter setup-pi --url http://localhost:20268 --api-key <统一密钥>
 npm install -g @earendil-works/pi-coding-agent
 pi -p "Say hello"
 ```
@@ -116,10 +116,10 @@ pi -p "Say hello"
 1. 在 **提供方** 下选择 **添加提供方**。
 2. 填写 **提供方 ID**（例如 `SRouter`）和 **提供方名称**（例如 `SRouter`），
    并将 API 兼容模式设为 OpenAI `chat.completions`。
-3. 进入该提供方的设置页，将 **Base URL** 设为 `http://localhost:3001/v1`，
+3. 进入该提供方的设置页，将 **Base URL** 设为 `http://localhost:20268/v1`，
    将 **API 密钥** 设为 SRouter 统一密钥。
 4. 在该提供方的模型页面添加模型。**模型 ID** 可填 `auto` 让 SRouter 自动路由，
-   或从 `GET http://localhost:3001/v1/models` 复制当前可用的模型 id。
+   或从 `GET http://localhost:20268/v1/models` 复制当前可用的模型 id。
 5. 保存后把该模型设为默认（或在单次对话中选用），并发一条消息验证。
 
 如果 QwenPaw 在容器中运行，`localhost` 指向的是该容器，而不是运行 SRouter 的宿主机。
@@ -132,7 +132,7 @@ pi -p "Say hello"
 Gemini CLI 和 Gemini 系客户端能直接说 Google 的线上格式：
 
 ```bash
-export GOOGLE_GEMINI_BASE_URL=http://localhost:3001
+export GOOGLE_GEMINI_BASE_URL=http://localhost:20268
 export GEMINI_API_KEY=srouter-your-unified-key
 gemini
 ```
@@ -153,16 +153,16 @@ Ollama 模拟默认关闭。在 **密钥 → 智能体** 里启用下列模式�
 确切端点是 `/api/tags`、`/api/chat`、`/api/generate`、`/api/show`、
 `/api/version`、`/api/embed` 和旧版 `/api/embeddings`。流式用
 换行分隔 JSON，而非 SSE。把 Zed、JetBrains AI Assistant 或其他
-支持 Ollama 的客户端指向 `http://localhost:3001`。
+支持 Ollama 的客户端指向 `http://localhost:20268`。
 
 ## 无头客户端
 
 如果客户端无法设置头部，在 **密钥 → 智能体** 里单独创建一个可撤销的令牌，然后用：
 
 ```text
-http://localhost:3001/v1/t/<token>/chat/completions
-http://localhost:3001/v1/t/<token>/responses
-http://localhost:3001/v1/t/<token>/models
+http://localhost:20268/v1/t/<token>/chat/completions
+http://localhost:20268/v1/t/<token>/responses
+http://localhost:20268/v1/t/<token>/models
 ```
 
 同一前缀也暴露 `/api/chat` 和 `/api/tags`。永远别把统一 API 密钥放进 URL。URL 令牌有独立哈希和即时撤销，因为 URL 经常泄露进 shell 历史、反向代理日志和遥测。
@@ -176,7 +176,7 @@ http://localhost:3001/v1/t/<token>/models
 MCP 接口是一项设置，而非始终开启的端点（#925）。**全新安装默认关闭**；升级时已配置提供方密钥的安装会保持开启，这样已有的 Claude Code 或 Cline 会话不会在升级后中断。可在「密钥」页的**智能体兼容性**里开关，也可以走 API：
 
 ```bash
-curl -X PUT http://localhost:3001/api/settings/enable-mcp \
+curl -X PUT http://localhost:20268/api/settings/enable-mcp \
   -H "Authorization: Bearer <dashboard-token>" -H "Content-Type: application/json" \
   -d '{"enabled": true}'
 ```
@@ -186,7 +186,7 @@ curl -X PUT http://localhost:3001/api/settings/enable-mcp \
 对 Claude Code：
 
 ```bash
-claude mcp add --transport http SRouter http://localhost:3001/mcp \
+claude mcp add --transport http SRouter http://localhost:20268/mcp \
   --header "Authorization: Bearer srouter-your-unified-key"
 ```
 
@@ -203,7 +203,7 @@ models:
   - name: SRouter Autocomplete
     provider: openai
     model: auto
-    apiBase: http://localhost:3001/v1
+    apiBase: http://localhost:20268/v1
     apiKey: srouter-your-unified-key
     useLegacyCompletionsEndpoint: true
     roles:

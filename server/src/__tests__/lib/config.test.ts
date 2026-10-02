@@ -10,7 +10,7 @@ afterEach(() => {
 describe('loadConfig', () => {
   it('returns sensible defaults when no env vars are set', () => {
     const cfg = loadConfig();
-    expect(cfg.port).toBe(3001);
+    expect(cfg.port).toBe(20268);
     expect(cfg.host).toBe('::');
     expect(cfg.dbPath).toBeNull();
     expect(cfg.dashboardOrigins).toEqual([]);

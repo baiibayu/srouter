@@ -20,7 +20,7 @@ Docker 之外的安装路径（一行命令脚本、本地开发、桌面应用�
 | 方面 | 取值 |
 | --- | --- |
 | 镜像 | `ghcr.io/tashfeenahmed/freellmapi:latest` |
-| 端口 | 3001（默认发布在 `127.0.0.1`；`HOST_BIND=0.0.0.0` 对局域网开放） |
+| 端口 | 20268（默认发布在 `127.0.0.1`；`HOST_BIND=0.0.0.0` 对局域网开放） |
 | 数据卷 | 命名卷 `srouter-data`，挂载于 `/app/server/data` |
 | 运行用户 | `node`（非 root） |
 | 健康检查 | 每 30 秒一次 `GET /api/ping`，由容器内的 Node fetch 发起 |

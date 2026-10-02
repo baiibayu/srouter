@@ -8,11 +8,11 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      PORT: 3001
+      PORT: 20268
     # Bound to localhost by default — SRouter is single-user and must not be
     # exposed to the internet. Set HOST_BIND=0.0.0.0 to reach it from your LAN.
     ports:
-      - "${HOST_BIND:-127.0.0.1}:${PORT:-3001}:3001"
+      - "${HOST_BIND:-127.0.0.1}:${PORT:-20268}:20268"
     volumes:
       - srouter-data:/app/server/data
     # Makes `host.docker.internal` resolve to the host from inside the
@@ -28,7 +28,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3001/api/ping').then((res) => { if (!res.ok) process.exit(1); }).catch(() => process.exit(1));"
+          "fetch('http://127.0.0.1:20268/api/ping').then((res) => { if (!res.ok) process.exit(1); }).catch(() => process.exit(1));"
         ]
       interval: 30s
       timeout: 5s

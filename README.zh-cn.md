@@ -173,7 +173,7 @@ curl -fsSL https://freellmapi.co/install.sh | bash
 
 不放心直接管道给 bash？[脚本在这里](https://freellmapi.co/install.sh)。重复执行是安全的：你的 `.env`（以及加密密钥）会被保留，容器会更新到 `:latest`。
 
-打开 http://localhost:3001 ，在 **密钥** 页添加你的提供方密钥，按喜好调整 **回退链** 的顺序，然后在 **密钥** 页顶部拿到你的统一 API 密钥。这个统一密钥就是你的 OpenAI SDK 要指向的东西。
+打开 http://localhost:20268 ，在 **密钥** 页添加你的提供方密钥，按喜好调整 **回退链** 的顺序，然后在 **密钥** 页顶部拿到你的统一 API 密钥。这个统一密钥就是你的 OpenAI SDK 要指向的东西。
 
 在 Windows 上，最省事的方式是下面提到的桌面版 **[Releases 里的 `.exe` 安装包](https://github.com/tashfeenahmed/freellmapi/releases/latest)**。Android 上可参考实验性的 [Termux 指南](docs/zh-cn/install/02-android-termux.md)。
 
@@ -191,12 +191,12 @@ macOS 要求 12 Monterey 或更高版本；Apple Silicon 请选择 **arm64**，I
 
 ## 兼容 OpenAI 的客户端
 
-任何能指定 OpenAI 兼容 base URL 的东西都能用：把它设成 `http://localhost:3001/v1`，配上仪表盘里的统一密钥。**Claude Code**、**Codex CLI**、**Cline / Roo Code**、**Continue**（含行内补全）、**Aider**、**opencode** 和 **Cursor** 在 **[docs/zh-cn/clients/01-agent-clients.md](docs/zh-cn/clients/01-agent-clients.md)** 里各有一段简短配方。此外路由器本身还兼作 MCP 服务，你的智能体可以在会话中随时查询它。
+任何能指定 OpenAI 兼容 base URL 的东西都能用：把它设成 `http://localhost:20268/v1`，配上仪表盘里的统一密钥。**Claude Code**、**Codex CLI**、**Cline / Roo Code**、**Continue**（含行内补全）、**Aider**、**opencode** 和 **Cursor** 在 **[docs/zh-cn/clients/01-agent-clients.md](docs/zh-cn/clients/01-agent-clients.md)** 里各有一段简短配方。此外路由器本身还兼作 MCP 服务，你的智能体可以在会话中随时查询它。
 
 最快的配置方式是根据你服务器上实际可用的模型生成：
 
 ```bash
-npx srouter setup-claude --url http://localhost:3001 --api-key <统一密钥>
+npx srouter setup-claude --url http://localhost:20268 --api-key <统一密钥>
 ```
 
 每个生成器都支持 `--dry-run`，改动已有文件前会先创建带时间戳的备份，并且是合并进用户配置而不是覆盖。启动器则把凭据完全挡在配置文件之外：Claude Code 用 `npx srouter launch`，Codex 用 `npx srouter launch-codex`。
@@ -253,7 +253,7 @@ Premium 让这份签名目录在你运行的每一个路由器上保持实时。
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:3001/v1",
+    base_url="http://localhost:20268/v1",
     api_key="srouter-your-unified-key",
 )
 
@@ -313,7 +313,7 @@ print("Routed via:", resp.headers.get("x-routed-via"))
 - **打磨仪表盘** —— 分析页的图表、密钥轮换的交互、从 `.env` 批量导入密钥。
 - **文档** —— 更多示例、Go/Rust 等语言的客户端片段、Docker 或 Fly 的部署配方。
 
-`npm install && npm run dev` 就能起来：服务在 :3001，仪表盘在 :5173，两边都有热更新。PR 应当包含测试、保持现有测试套件通过（`npm test`），并遵循仓库里已有的 `.editorconfig` 和 tsconfig 默认配置。数据库迁移流程和完整的贡献者循环见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+`npm install && npm run dev` 就能起来：服务在 :20268，仪表盘在 :5173，两边都有热更新。PR 应当包含测试、保持现有测试套件通过（`npm test`），并遵循仓库里已有的 `.editorconfig` 和 tsconfig 默认配置。数据库迁移流程和完整的贡献者循环见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ### 贡献者
 

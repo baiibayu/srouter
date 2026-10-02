@@ -26,7 +26,7 @@ Published tags: `latest` (default branch), `v*.*.*` (git release tags), and `sha
 Build shape ([Dockerfile](../../../Dockerfile)):
 
 - Three stages on the `node:20-bookworm-slim` base (`deps` → `build` → `runtime`); only already-built artifacts are copied into the runtime stage.
-- The runtime sets `NODE_ENV=production`, `PORT=3001`, and `SROUTER_INSTALL_METHOD=docker`; the process is `node server/dist/index.js`.
+- The runtime sets `NODE_ENV=production`, `PORT=20268`, and `SROUTER_INSTALL_METHOD=docker`; the process is `node server/dist/index.js`.
 - A `SROUTER_COMMIT_SHA` ARG/ENV pair sits deliberately after all `COPY` layers: the SHA changes every commit, and placing it higher would invalidate the layer cache for the whole image on each build.
 - The runtime also copies `desktop/package.json` (a 400-byte manifest) so a container install can name its own release version (#703).
 - `.dockerignore` keeps secrets and local state out of the build context: `.env`, `.env.*`, `*.db` (+ `-wal`/`-shm` sidecars), `.encryption-key`, and `server/data` never enter an image.
@@ -41,7 +41,7 @@ cd SRouter
 
 # Generate an encryption key for at-rest key storage
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
-printf "ENCRYPTION_KEY=%s\nPORT=3001\n" "$ENCRYPTION_KEY" > .env
+printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 
 docker compose up -d
 ```
@@ -52,11 +52,11 @@ Windows PowerShell variant and a curl one-liner bootstrap live in [docs/en/insta
 docker compose logs -f srouter
 ```
 
-Open http://localhost:3001, add provider keys on the **Keys** page, and grab your unified API key from that page's header — that key is what your OpenAI SDK points at.
+Open http://localhost:20268, add provider keys on the **Keys** page, and grab your unified API key from that page's header — that key is what your OpenAI SDK points at.
 
 ## Ports & LAN access
 
-The compose file publishes `"${HOST_BIND:-127.0.0.1}:${PORT:-3001}:3001"`. By default the dashboard/API is reachable only from the machine running Docker; to reach it from other devices (e.g. a Raspberry Pi at `http://192.168.1.x:3001`):
+The compose file publishes `"${HOST_BIND:-127.0.0.1}:${PORT:-20268}:20268"`. By default the dashboard/API is reachable only from the machine running Docker; to reach it from other devices (e.g. a Raspberry Pi at `http://192.168.1.x:20268`):
 
 ```bash
 HOST_BIND=0.0.0.0 docker compose up -d
@@ -85,7 +85,7 @@ Both the Dockerfile and the compose file define the same probe: a Node one-liner
 
 ## Non-root runtime
 
-The runtime stage switches to `USER node` before `EXPOSE 3001`. The server data directory `/app/server/data` is created and chowned to `node:node` during the build so the running user owns it; all copied artifacts carry `--chown=node:node`.
+The runtime stage switches to `USER node` before `EXPOSE 20268`. The server data directory `/app/server/data` is created and chowned to `node:node` during the build so the running user owns it; all copied artifacts carry `--chown=node:node`.
 
 ## Why better-sqlite3 is compiled from source
 

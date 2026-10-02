@@ -5,7 +5,7 @@ import path from 'path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(__dirname, '..'), '')
-  const serverPort = env.PORT ?? process.env.PORT ?? 3001
+  const serverPort = env.PORT ?? process.env.PORT ?? 20268
 
   return {
     plugins: [react(), tailwindcss()],

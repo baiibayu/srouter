@@ -28,13 +28,13 @@ curl -fsSL https://freellmapi.co/install.sh | bash
 
 在 Android 上，参见实验性的 [Termux 安装指南](02-android-termux.md)。它使用 Node 内置的 SQLite 驱动，不需要 Android NDK。
 
-打开 http://localhost:3001 ，在 **密钥** 页添加你的提供方密钥，按喜好调整 **回退链** 的顺序，然后在 **密钥** 页顶部拿到你的统一 API 密钥。这个统一密钥就是你的 OpenAI SDK 要指向的东西。
+打开 http://localhost:20268 ，在 **密钥** 页添加你的提供方密钥，按喜好调整 **回退链** 的顺序，然后在 **密钥** 页顶部拿到你的统一 API 密钥。这个统一密钥就是你的 OpenAI SDK 要指向的东西。
 
 你的部署会自行从签名的目录源保持更新。当前的完整目录列在 [freellmapi.co/models](https://freellmapi.co/models.html)。
 
 ## Docker Compose
 
-在 3001 端口上同时跑起 API 和仪表盘，并把 SQLite 持久化到一个具名卷里。
+在 20268 端口上同时跑起 API 和仪表盘，并把 SQLite 持久化到一个具名卷里。
 
 **前置条件：** Docker、Docker Compose、OpenSSL。
 
@@ -45,7 +45,7 @@ cd SRouter
 
 # 生成用于静态存储密钥的加密密钥
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
-printf "ENCRYPTION_KEY=%s\nPORT=3001\n" "$ENCRYPTION_KEY" > .env
+printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 
 docker compose up -d
 ```
@@ -58,11 +58,11 @@ cd SRouter
 $Bytes = New-Object Byte[] 32
 [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($Bytes)
 $ENCRYPTION_KEY = -join ($Bytes | ForEach-Object { "{0:x2}" -f $_ })
-"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=3001" | Out-File -Encoding utf8 .env
+"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=20268" | Out-File -Encoding utf8 .env
 docker compose up -d
 ```
 
-> **想从另一台机器访问？** 默认情况下容器只发布在 `127.0.0.1` 上，所以从别的设备打开 `http://<服务器 IP>:3001` 是加载不出来的（页面会一直卡住）。想把它暴露到局域网，比如让树莓派在 `http://192.168.1.x:3001` 上可访问，就用 `HOST_BIND=0.0.0.0` 启动：
+> **想从另一台机器访问？** 默认情况下容器只发布在 `127.0.0.1` 上，所以从别的设备打开 `http://<服务器 IP>:20268` 是加载不出来的（页面会一直卡住）。想把它暴露到局域网，比如让树莓派在 `http://192.168.1.x:20268` 上可访问，就用 `HOST_BIND=0.0.0.0` 启动：
 >
 > ```bash
 > HOST_BIND=0.0.0.0 docker compose up -d
@@ -91,7 +91,7 @@ git clone https://github.com/tashfeenahmed/freellmapi.git
 cd SRouter
 npm install
 ENCRYPTION_KEY="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
-printf "ENCRYPTION_KEY=%s\nPORT=3001\n" "$ENCRYPTION_KEY" > .env
+printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 npm run dev
 ```
 
@@ -101,7 +101,7 @@ git clone https://github.com/tashfeenahmed/freellmapi.git
 cd SRouter
 npm install
 $ENCRYPTION_KEY = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=3001" | Out-File -Encoding utf8 .env
+"ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=20268" | Out-File -Encoding utf8 .env
 npm run dev
 ```
 
@@ -138,7 +138,7 @@ ENCRYPTION_KEY=<旧密钥> npm run rotate-encryption-key -- --new-key "$NEW_KEY"
 
 ```bash
 npm run build
-node server/dist/index.js     # 服务和仪表盘都在 :3001 上提供
+node server/dist/index.js     # 服务和仪表盘都在 :20268 上提供
 ```
 
 ## 声明式启动配置
