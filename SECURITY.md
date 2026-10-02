@@ -60,7 +60,7 @@ In scope:
 - The Electron desktop app and its local data directory.
 - The Docker image and packaging (`Dockerfile`, `docker-compose.yml`, the install
   script), including anything that leaks secrets into image layers or logs.
-- Premium license key validation and the signed catalog feed.
+- The signed catalog feed that catalog sync verifies.
 
 Out of scope:
 
