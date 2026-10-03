@@ -902,7 +902,25 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
  * `force` skips the `since` short-circuit — forces a full catalog fetch
  * regardless of version changes.
  */
+/** In-flight run for syncCatalog — concurrent callers share the same run. */
+let inFlightSync: Promise<SyncResult> | null = null;
+
 export async function syncCatalog(force = false): Promise<SyncResult> {
+  // In-flight guard: if a run is already active, hand back the same promise
+  // instead of starting a duplicate fetch+apply.
+  if (inFlightSync) {
+    console.log('[catalog-sync] sync already in flight — reusing run');
+    return inFlightSync;
+  }
+  inFlightSync = runSyncCatalog(force);
+  try {
+    return await inFlightSync;
+  } finally {
+    inFlightSync = null;
+  }
+}
+
+async function runSyncCatalog(force: boolean): Promise<SyncResult> {
   const db = getDb();
   const applied = getSetting(SETTING_APPLIED_VERSION);
 
@@ -1050,11 +1068,12 @@ function restartInterval(): void {
 
 export function startCatalogSync(scheduler: Scheduler): void {
   if (cancelInterval) return;
-  currentScheduler = scheduler;
   if (process.env.CATALOG_SYNC_DISABLED === '1') {
     console.log('[catalog-sync] disabled via CATALOG_SYNC_DISABLED=1');
+    stopCatalogSync();
     return;
   }
+  currentScheduler = scheduler;
   reapplyCachedCatalog();
   const run = () => {
     void syncCatalog();
