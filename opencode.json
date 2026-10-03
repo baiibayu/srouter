@@ -7,7 +7,7 @@
       "name": "srouter (local)",
       "options": {
         "baseURL": "http://127.0.0.1:20268/v1",
-        "apiKey": "{file:.opencode/srouter-key}"
+        "apiKey": "{file:~/.srouter/opencode-key}"
       },
       "models": {
         "auto": {
