@@ -17,12 +17,12 @@
  */
 
 import type { Db } from '../db/types.js';
-import { getDb, getSetting } from '../db/index.js';
+import { getDb } from '../db/index.js';
 import { resolveProvider } from '../providers/index.js';
 import { OpenAICompatProvider } from '../providers/openai-compat.js';
 import { parseModelCatalog, type DiscoveredModelKind } from './model-discovery.js';
 import { ensureModelInProfiles } from './profile-models.js';
-import { addNotifications, type SyncNotification } from './catalog-sync.js';
+import { addNotifications, getSyncIntervalHours, type SyncNotification } from './catalog-sync.js';
 import type { Scheduler } from '../lib/scheduler.js';
 import type { Platform } from '@srouter/shared/types.js';
 
@@ -1118,12 +1118,13 @@ export function startModelRefresh(scheduler: Scheduler): void {
   restartRefreshInterval();
 }
 
-/** Read the same sync_interval_hours setting used by catalog sync. */
+/** Read the same sync_interval_hours setting used by catalog sync.
+ *  Delegates to getSyncIntervalHours() so the default (unset) matches
+ *  catalog sync's 12h; only an explicit 0/'off' disables the timer. */
 function getAutoDiscoverIntervalMs(): number {
-  const raw = getSetting('sync_interval_hours');
-  if (!raw || raw === 'off') return 0;
-  const hours = Number(raw);
-  return Number.isFinite(hours) && hours > 0 ? hours * 60 * 60 * 1000 : 0;
+  const hours = getSyncIntervalHours();
+  if (hours === 'off') return 0;
+  return hours * 60 * 60 * 1000;
 }
 
 /** Restart the recurring auto-discover timer (call when sync schedule changes). */
