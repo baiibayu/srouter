@@ -8,7 +8,7 @@
 
 | Agent | Lokasi kerja | Branch | Catatan |
 |-------|--------------|--------|---------|
-| OpenCode | `C:\Users\Hype AMD\Downloads\APP\SRouter` (repo utama) | main | HEAD e4905afc (0.3.0); remote `upstream` = tashfeenahmed/freellmapi |
+| OpenCode | `C:\Users\Hype AMD\Downloads\APP\SRouter` (repo utama) | main | HEAD ac808172 (0.3.1); remote `upstream` = tashfeenahmed/freellmapi |
 | Hermes | repo utama (jangan edit file yang sama saat OpenCode aktif); task paralel → worktree baru `git worktree add` | main / branch task | |
 
 - Clone lama `C:\Users\Hype AMD\.freellmapi` (main a34cfc7c, 1 commit di belakang repo utama) = ARSIP — jangan dipakai untuk kerja baru.
@@ -16,6 +16,7 @@
 
 ## Status Log
 
+- 2026-10-04 — OpenCode (lead) + worker Orca (droid/grok, antigravity/agy): **3 fix laporan sync model & token budget SELESAI** — (1) auto-discover ikut `getSyncIntervalHours()` (unset→12h, 0/off→mati), (2) UI edit-key dialog tampilkan cap/sisa/resetsAt +5 key i18n di 60 locale, (3) kill-switch urutan sebelum `currentScheduler` + in-flight guard `syncCatalog`. Juga: notifikasi i18n payload (`97793aef`, bell read sync + `isNewerVersion` semver + `SROUTER_UPDATE_REPO`). Semua di-merge ke main (31e93130, 0cbcfc37) + release **0.3.1** (ac808172). Verifikasi: client 368/368 + i18n 60 locale/1184 key; server test area yang diubah 66/66 + tsc hijau; server restart background, `/health` 200. Worker diakhiri setelah worker_done (terminal ditutup — catatan user: jangan terlalu agresif, selama masih dipakai biarkan hidup). Fix hook telemetry Gemini rusak: folder `googlecloudtools.datacloud_telemetry` dipindah ke `config\*.bak` (di luar `plugins\`). Kilo CLI tersedia (`C:\nodejs\kilo.ps1`) sebagai fallback kalau agy habis limit.
 - 2026-10-03 — OpenCode (lead): upstream sync SELESAI — 1 commit tersisa (716948f2 Gizmo+BlockRun, pick 57fec9e2, fix rebrand import 09cbfc72); resolusi konflik desktop/package.json (versi tetap unified); desktop/package-lock sinkron 0.2.0 (75f000de). Key opencode.json dipindah ke `.opencode/srouter-key` (gitignored) — commit 4b8e7ef3 + PasswordInput auth UI. Release **0.3.0** (e4905afc). Suite: server 3680 lulus/1 flaky (fallback-loop-hedge, lulus saat solo re-run), client 367 lulus + i18n 60 locale. Server restart, health 200, 641 model.
 - 2026-10-02 — Setup jalur koordinasi Hermes↔OpenCode (di firefish; sekarang retired).
 - 2026-10-02 — Batch cherry-pick 16 commit upstream SELESAI di clone lama (afa0359d), semua suite hijau.
@@ -29,7 +30,7 @@
 - Sisa rebrand kecil (butuh keputusan user): `desktop/package.json` homepage = freellmapi.co; `cli/package.json` repository/bugs URL = tashfeenahmed/freellmapi; SECURITY.md link Security tab = repo upstream. Menunggu GitHub repo sendiri dibuat.
 - Domain srouter.org: PERCOBAAN ULANG berjalan — cart $0 siap di Northwest, tinggal user isi Create Account; monitor renewal bulan ke-2/3; fallback eu.org / pp.ua / registrar lokal.
 - GitHub push + npm claim `srouter`: menunggu username + gh auth dari user. Setelah ada: bump ref URL di package.json/SECURITY.md sekalian.
-- Catatan: test server `fallback-loop-hedge.test.ts` bisa flaky kalau suite jalan beban penuh — re-run solo untuk konfirmasi.
+- Catatan: test server `fallback-loop-hedge.test.ts` bisa flaky kalau suite jalan beban penuh — re-run solo untuk konfirmasi. Juga flaky saat beban CPU/jaringan tinggi: `keys.test.ts` (#438/#1327 — auto-discover memanggil endpoint agnes nyata), `builtin-model-discovery`, `proxy*` (timeout 5s) — bukan regresi; verifikasi solo saat mesin idle.
 
 ## Aturan Anti-Tabrakan
 
