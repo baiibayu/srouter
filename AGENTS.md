@@ -31,6 +31,7 @@ SRouter (fork & rebrand FreeLLMAPI, MIT — kredit Tashfeen Ahmed). Monorepo: `s
 
 ## Batasan
 - Jangan aktifkan/pulihkan kode premium/license.
+- **Anti over-engineering**: jaga hemat RAM/ROM ala 9Router — dependency & kode seperlunya saja (hindari Omniroute-style fork berat yang jadi tidak relevan); kalau bisa tanpa library baru, tanpa library. Evalukasi konsumsi RAM server & ukuran dist tiap perubahan besar.
 - Source update upstream: `git remote rename origin upstream` (workflow cherry-pick — lihat note fork-strategy.md).
 ## Versi (WAJIB — aturan bump)
 - Versi unified **0.1.0** di semua package (cli, server, desktop, client, shared); root `@srouter/monorepo` private tanpa versi.
