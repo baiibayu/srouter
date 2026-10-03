@@ -73,11 +73,14 @@ function createTestApp(overrides: Parameters<typeof createUpdateRouter>[0] = {})
   const execMock = overrides.execFile ?? vi.fn(async () => ({ stdout: `${LOCAL_SHA}\n` }));
   const logger = overrides.logger ?? { error: vi.fn() };
   app.use('/api/update', createUpdateRouter({
-    env: {},
     cwd: '/worktree/server',
     now: () => NOW,
     version: () => VERSION,
     ...overrides,
+    // There is no default repository anymore (upstream's version numbers do
+    // not apply to this fork), so tests name one explicitly to keep the
+    // asserted URLs verbatim; pass an empty string to test the disabled path.
+    env: { SROUTER_UPDATE_REPO: 'tashfeenahmed/freellmapi', ...(overrides.env ?? {}) },
     fetch: fetchMock,
     execFile: execMock,
     logger,
@@ -252,6 +255,32 @@ describe('Update API', () => {
       const execMock = vi.fn(async () => ({ stdout: `${LOCAL_SHA}\n` }));
       const { app, logger } = createTestApp({
         env: { SROUTER_UPDATE_CHECK: ' OFF ' },
+        fetch: fetchMock,
+        execFile: execMock,
+      });
+
+      const result = await httpGet(app, '/api/update/check');
+
+      expect(result.status).toBe(200);
+      expect(result.body).toEqual({
+        status: 'disabled',
+        installation: 'unknown',
+        localSha: null,
+        checkedAt: '2026-07-28T14:00:00.000Z',
+        version: null,
+      });
+      expect(execMock).not.toHaveBeenCalled();
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it('reports disabled when no update repository is configured', async () => {
+      // No fallback to the replaced upstream: without an explicit
+      // SROUTER_UPDATE_REPO there is nothing valid to compare against.
+      const fetchMock = vi.fn();
+      const execMock = vi.fn(async () => ({ stdout: `${LOCAL_SHA}\n` }));
+      const { app, logger } = createTestApp({
+        env: { SROUTER_UPDATE_REPO: '' },
         fetch: fetchMock,
         execFile: execMock,
       });

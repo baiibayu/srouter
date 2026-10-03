@@ -7,8 +7,6 @@ import { getAppVersion } from '../lib/app-version.js';
 
 const execFileAsync = promisify(nodeExecFile);
 
-const REPOSITORY = 'tashfeenahmed/freellmapi';
-const RELEASES_URL = `https://github.com/${REPOSITORY}/releases`;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 /**
  * The automatic release check is opt-in (see UPDATE_CHECK_SETTING), and even
@@ -342,6 +340,17 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   const autoCheckEnabled = options.autoCheckEnabled ?? isAutoUpdateCheckEnabled;
   const updateCheckDisabled = env.SROUTER_UPDATE_CHECK?.trim().toLowerCase() === 'off';
   const githubToken = env.SROUTER_UPDATE_GITHUB_TOKEN?.trim();
+  /**
+   * The fork's own owner/repo, and the one valid comparison target. There is
+   * deliberately no upstream default: this fork replaced upstream, and
+   * checking upstream announced every upstream release (v0.13.4 > our 0.3.1)
+   * as an endless bogus "update available". Until SROUTER_UPDATE_REPO names a
+   * repository that actually carries releases for THIS install, every surface
+   * below reports disabled instead of phoning GitHub.
+   */
+  const repository = (env.SROUTER_UPDATE_REPO ?? '').trim();
+  const repositoryMissing = repository.length === 0;
+  const releasesUrl = `https://github.com/${repository}/releases`;
 
   let identity: Identity | undefined;
   let cache: CachedResult | null = null;
@@ -415,7 +424,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
       }
     }
 
-    const url = `https://api.github.com/repos/${REPOSITORY}/compare/${currentIdentity.sha}...${compareTarget}`;
+    const url = `https://api.github.com/repos/${repository}/compare/${currentIdentity.sha}...${compareTarget}`;
     const response = await fetchImpl(url, {
       headers: githubHeaders('application/vnd.github+json'),
       signal: AbortSignal.timeout(10_000),
@@ -430,7 +439,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
       if (currentIdentity.installation === 'desktop') {
         throw new Error(`GitHub compare request returned HTTP ${response.status}`);
       }
-      const atomResponse = await fetchImpl(`https://github.com/${REPOSITORY}/commits/main.atom`, {
+      const atomResponse = await fetchImpl(`https://github.com/${repository}/commits/main.atom`, {
         headers: {
           Accept: 'application/atom+xml',
           'User-Agent': 'srouter-update-checker',
@@ -492,7 +501,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   }
 
   async function performReleaseCheck(): Promise<LatestRelease> {
-    const response = await fetchImpl(`https://api.github.com/repos/${REPOSITORY}/releases/latest`, {
+    const response = await fetchImpl(`https://api.github.com/repos/${repository}/releases/latest`, {
       headers: githubHeaders('application/vnd.github+json'),
       signal: AbortSignal.timeout(10_000),
     });
@@ -509,9 +518,9 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
     // The release notes are rendered as Markdown in the dashboard, so the body
     // is capped rather than trusted at whatever length GitHub returns, and the
     // link is only honoured when it points back at this repository.
-    const htmlUrl = typeof body.html_url === 'string' && body.html_url.startsWith(`${RELEASES_URL}/`)
+    const htmlUrl = typeof body.html_url === 'string' && body.html_url.startsWith(`${releasesUrl}/`)
       ? body.html_url
-      : RELEASES_URL;
+      : releasesUrl;
 
     return {
       tagName: body.tag_name.trim().slice(0, MAX_TAG_LENGTH),
@@ -559,7 +568,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
    * the box, not even a request that is thrown away afterwards.
    */
   router.get('/release', async (_req: Request, res: Response) => {
-    if (updateCheckDisabled || !autoCheckEnabled()) {
+    if (updateCheckDisabled || repositoryMissing || !autoCheckEnabled()) {
       return res.json({ disabled: true });
     }
 
@@ -576,7 +585,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   });
 
   router.get('/check', async (_req: Request, res: Response) => {
-    if (updateCheckDisabled) {
+    if (updateCheckDisabled || repositoryMissing) {
       return res.json({
         status: 'disabled',
         installation: 'unknown',
@@ -610,7 +619,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   });
 
   router.get('/status', async (_req: Request, res: Response) => {
-    if (updateCheckDisabled) {
+    if (updateCheckDisabled || repositoryMissing) {
       return res.json({
         status: 'disabled',
         installation: 'unknown',

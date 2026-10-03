@@ -129,7 +129,16 @@ export function getNotifications(): SyncNotification[] {
   if (!raw) return [];
   try {
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as SyncNotification[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    const rows = parsed as SyncNotification[];
+    // A *pending* update notification is pinned above everything else no
+    // matter how old it is: the operator must keep seeing it (and the bell
+    // badge) until the update lands. Everything else — including a settled
+    // update row — is plain newest-first chronological order. Storage stays
+    // chronological; the pin is presentation, applied on read.
+    const pinned = (n: SyncNotification): number =>
+      n.type === 'update_available' && !n.read ? 1 : 0;
+    return [...rows].sort((a, b) => pinned(b) - pinned(a) || b.timestamp - a.timestamp);
   } catch {
     return [];
   }
@@ -145,8 +154,32 @@ export function addNotifications(notifs: SyncNotification[]): void {
 }
 
 export function markNotificationsRead(): void {
-  const all = getNotifications().map(n => ({ ...n, read: true }));
+  // A pending update_available row deliberately survives the mark-all: the
+  // bell keeps its badge until the update actually lands (the periodic check
+  // settles it via settleUpdateNotifications). Everything else reads on cue.
+  const all = getNotifications().map(n =>
+    n.type === 'update_available' && !n.read ? n : { ...n, read: true },
+  );
   setSetting(SETTING_NOTIFICATIONS, JSON.stringify(all));
+}
+
+/**
+ * Settle the update-available reminder once the installed version caught up:
+ * collapse historical duplicates down to the newest row, mark it read (which
+ * un-pins it — it sinks into normal chronological order), and keep it in the
+ * list so the history still shows what happened.
+ */
+export function settleUpdateNotifications(): void {
+  const all = getNotifications();
+  const updates = all.filter(n => n.type === 'update_available');
+  if (updates.length === 0) return;
+  if (updates.length === 1 && updates[0].read) return;
+  updates.sort((a, b) => b.timestamp - a.timestamp);
+  const rest = all.filter(n => n.type !== 'update_available');
+  const merged = [{ ...updates[0], read: true }, ...rest]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 50);
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(merged));
 }
 
 export function unreadNotificationCount(): number {
@@ -155,7 +188,9 @@ export function unreadNotificationCount(): number {
 
 /** Remove all notifications of a given type (e.g. 'update_available' after user updates). */
 export function removeNotificationsByType(type: SyncNotification['type']): void {
-  const filtered = getNotifications().filter(n => n.type !== type);
+  const all = getNotifications();
+  const filtered = all.filter(n => n.type !== type);
+  if (filtered.length === all.length) return; // nothing matched — skip the write
   setSetting(SETTING_NOTIFICATIONS, JSON.stringify(filtered));
 }
 

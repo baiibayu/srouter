@@ -56,11 +56,13 @@ function createTestApp(overrides: Parameters<typeof createUpdateRouter>[0] = {})
   const fetchMock = overrides.fetch ?? vi.fn(async () => response(releaseBody()));
   const logger = overrides.logger ?? { error: vi.fn() };
   app.use('/api/update', createUpdateRouter({
-    env: {},
     cwd: '/worktree/server',
     now: () => NOW,
     version: () => '0.6.9',
     ...overrides,
+    // No default repository (upstream's releases are not this fork's) — tests
+    // name one so the asserted URLs stay verbatim; '' exercises the gate.
+    env: { SROUTER_UPDATE_REPO: 'tashfeenahmed/freellmapi', ...(overrides.env ?? {}) },
     fetch: fetchMock,
     logger,
   }));
@@ -156,6 +158,22 @@ describe('GET /api/update/release', () => {
     const fetchMock = vi.fn();
     const { app } = createTestApp({
       env: { SROUTER_UPDATE_CHECK: 'off' },
+      fetch: fetchMock,
+      autoCheckEnabled: () => true,
+    });
+
+    const result = await httpGet(app, '/api/update/release');
+
+    expect(result.body).toEqual({ disabled: true });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('stays disabled without a configured repository, opt-in or not', async () => {
+    // The fork must not fall back to checking the upstream project it
+    // replaced — no repo, no outbound request, even with the opt-in on.
+    const fetchMock = vi.fn();
+    const { app } = createTestApp({
+      env: { SROUTER_UPDATE_REPO: '' },
       fetch: fetchMock,
       autoCheckEnabled: () => true,
     });

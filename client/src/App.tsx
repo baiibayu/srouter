@@ -264,10 +264,10 @@ function NotificationBell() {
   function markRead() {
     apiFetch('/api/settings/notifications/read', { method: 'POST' })
       .then(() => {
-        setUnread(0)
-        // Reflect the read state locally right away — without this the rows
-        // keep their unread tint until the next 30s poll.
-        setNotifications(prev => prev.map(n => (n.read ? n : { ...n, read: true })))
+        // Re-read from the server instead of zeroing locally: a pending
+        // update_available row deliberately survives the mark-all (it keeps
+        // the badge until the update lands), so server truth must win.
+        fetchNotifications()
       })
       .catch(() => {})
   }

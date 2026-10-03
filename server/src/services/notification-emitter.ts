@@ -10,14 +10,13 @@
  * (auto-disable, cooldown, etc.) — no user-facing notifs needed.
  */
 
-import { addNotifications, getNotifications, removeNotificationsByType, type SyncNotification } from './catalog-sync.js';
+import { addNotifications, getNotifications, removeNotificationsByType, settleUpdateNotifications, type SyncNotification } from './catalog-sync.js';
 
 // ── Deduplication ────────────────────────────────────────────────────────────
 const recentEmit = new Map<string, number>();
 
 const DEDUP_TTL: Record<string, number> = {
   degraded:         60 * 60_000,    // 1 hour — degraded state persists
-  update_available: 24 * 60 * 60_000, // 24 hours
 };
 
 function isDeduplicated(type: string, dedupKey: string): boolean {
@@ -64,28 +63,41 @@ export function removeDegradedNotif(): void {
 // ── Update Available ─────────────────────────────────────────────────────────
 
 export function emitUpdateAvailableNotif(version: string | null, remoteMessage: string | null, _htmlUrl: string): void {
-  const existing = getNotifications().find(
-    n => n.type === 'update_available' && !n.read && n.modelId === (version ?? 'latest'),
-  );
-  if (existing) return;
-
-  const now = Date.now();
   const versionStr = version ?? 'baru';
+  const modelId = version ?? 'latest';
+  const existing = getNotifications().find(n => n.type === 'update_available');
+  // Exactly ONE update row at any time, and it is unread while an update
+  // applies (the periodic check keeps re-running): a repeat check for the
+  // same version is a no-op — this is what stops the bell from refilling a
+  // freshly-marked-read list with duplicates every few minutes. A different
+  // version replaces the old row, collapsing any duplicates with it.
+  if (existing && existing.modelId === modelId && !existing.read) return;
+  if (existing) removeNotificationsByType('update_available');
+
   const detail = remoteMessage ? remoteMessage.slice(0, 100) : '';
   const notif: SyncNotification = {
-    id: `update-${now}-${version ?? 'latest'}`,
+    id: `update-${Date.now()}-${modelId}`,
     type: 'update_available',
-    modelId: version ?? 'latest',
+    modelId,
     displayName: `Update tersedia: v${versionStr}`,
     platform: '',
     // The sentence is localized via data.key; message carries only the
     // upstream release-notes excerpt (content, not chrome).
     message: detail,
     data: { key: 'notifications.updateAvailable', vars: { version: versionStr } },
-    timestamp: now,
+    timestamp: Date.now(),
     read: false,
   };
   addNotifications([notif]);
+}
+
+/**
+ * Settle the update reminder after the installed version caught up: the row
+ * stays in the list (history), but marked read — it un-pins from the top of
+ * the bell and sinks into normal chronological order, and the badge clears.
+ */
+export function settleUpdateAvailableNotif(): void {
+  settleUpdateNotifications();
 }
 
 /** Remove update-notif after user performs the update. */
@@ -119,23 +131,32 @@ export function isNewerVersion(latest: string, current: string): boolean {
  * Check for server updates and emit a notification if one is available.
  * Called on boot (via catalog-sync) and periodically via health checker.
  *
- * The checked repository is overrideable via SROUTER_UPDATE_REPO — once the
- * fork publishes its own releases, point it there instead of upstream.
+ * The repository is NOT defaulted: this fork replaces upstream and publishes
+ * no releases of its own yet, so checking upstream would announce every
+ * upstream tag (e.g. v0.13.4 > 0.3.1) as an endless "update available".
+ * SROUTER_UPDATE_REPO must name the fork's own owner/repo before anything is
+ * checked — otherwise any stored update row is stale and gets dropped.
  */
 export async function checkUpdateAvailable(): Promise<void> {
   try {
     const { getSetting } = await import('../db/index.js');
-    if (getSetting('update_check_enabled') !== '1') return;
+    const repo = process.env.SROUTER_UPDATE_REPO?.trim();
+    if (getSetting('update_check_enabled') !== '1' || !repo) {
+      removeNotificationsByType('update_available');
+      return;
+    }
 
     const { getAppVersion } = await import('../lib/app-version.js');
     const version = getAppVersion();
-    if (!version) return;
+    if (!version) {
+      removeNotificationsByType('update_available');
+      return;
+    }
 
-    const repo = process.env.SROUTER_UPDATE_REPO?.trim() || 'tashfeenahmed/freellmapi';
     const resp = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
       signal: AbortSignal.timeout(10_000),
     });
-    if (!resp.ok) return;
+    if (!resp.ok) return; // transient — keep whatever row already exists
 
     const body = await resp.json() as { tag_name?: string; name?: string; body?: string; html_url?: string };
     const latestTag = body.tag_name;
@@ -147,6 +168,10 @@ export async function checkUpdateAvailable(): Promise<void> {
 
     if (isNewerVersion(cleanLatest, cleanCurrent)) {
       emitUpdateAvailableNotif(cleanLatest, body.body?.slice(0, 200) ?? null, body.html_url ?? '');
+    } else {
+      // Installed build caught up (or is ahead): unpin, mark read, sink into
+      // chronological order. The row is kept as history, never duplicated.
+      settleUpdateAvailableNotif();
     }
   } catch {
     // GitHub unreachable or rate-limited — silently skip
