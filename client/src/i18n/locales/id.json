@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Batas token bulanan",
     "capUnlimitedPlaceholder": "Tanpa batas",
     "capEditHint": "Batas disetel ulang pada tanggal 1 pukul 00:00 UTC. Kosongkan untuk tanpa batas.",
-    "monthlyUsageLine": "{requests} permintaan, {tokens} token bulan ini"
+    "monthlyUsageLine": "{requests} permintaan, {tokens} token bulan ini",
+    "monthlyUsageRequests": "{requests} permintaan",
+    "monthlyUsageTokens": "{tokens} token",
+    "monthlyUsageRequestsRelative": "{used} / {cap} (sisa {remaining}) permintaan",
+    "monthlyUsageTokensRelative": "{used} / {cap} (sisa {remaining}) token",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

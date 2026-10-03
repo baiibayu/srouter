@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Iyakar token ta wata",
     "capUnlimitedPlaceholder": "Ba iyaka ba",
     "capEditHint": "Ana saita iyakoki a ranar 1 00:00 UTC. Bara komai don mara iyaka.",
-    "monthlyUsageLine": "Buƙatotu {requests}, token {tokens} wannan wata"
+    "monthlyUsageLine": "Buƙatotu {requests}, token {tokens} wannan wata",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

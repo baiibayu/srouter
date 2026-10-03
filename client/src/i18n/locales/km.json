@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "ដែនកំណត់តូខិនប្រចាំខែ",
     "capUnlimitedPlaceholder": "គ្មានដែនកំណត់",
     "capEditHint": "ដែនកំណត់កំណត់ឡើងវិញនៅថ្ងៃទី 1 ម៉ោង 00:00 UTC ទុកទទេប្រសិនបើគ្មានដែនកំណត់។",
-    "monthlyUsageLine": "ខែនេះ {requests} ស្នើសុំ {tokens} តូខិន"
+    "monthlyUsageLine": "ខែនេះ {requests} ស្នើសុំ {tokens} តូខិន",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

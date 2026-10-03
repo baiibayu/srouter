@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Měsíční limit tokenů",
     "capUnlimitedPlaceholder": "Neomezeno",
     "capEditHint": "Limity se resetují 1. dne v 00:00 UTC. Nechte prázdné pro neomezeno.",
-    "monthlyUsageLine": "{requests} požadavků, {tokens} tokenů tento měsíc"
+    "monthlyUsageLine": "{requests} požadavků, {tokens} tokenů tento měsíc",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

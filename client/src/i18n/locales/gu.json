@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "માસિક ટોકન મર્યાદા",
     "capUnlimitedPlaceholder": "અમર્યાદિત",
     "capEditHint": "મર્યાદા દર મહિને 1 તારીખે 00:00 UTC પર રીસેટ થાય છે. અમર્યાદિત માટે ખાલી રાખો.",
-    "monthlyUsageLine": "આ મહિને {requests} વિનંતીઓ, {tokens} ટોકન"
+    "monthlyUsageLine": "આ મહિને {requests} વિનંતીઓ, {tokens} ટોકન",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

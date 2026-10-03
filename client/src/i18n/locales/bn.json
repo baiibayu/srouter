@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "মাসিক টোকেন সীমা",
     "capUnlimitedPlaceholder": "সীমাহীন",
     "capEditHint": "সীমা প্রতি মাসের ১ তারিখে ০০:০০ UTC-তে রিসেট হয়। সীমাহীন রাখতে খালি রাখুন।",
-    "monthlyUsageLine": "এই মাসে {requests} অনুরোধ, {tokens} টোকেন"
+    "monthlyUsageLine": "এই মাসে {requests} অনুরোধ, {tokens} টোকেন",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",
