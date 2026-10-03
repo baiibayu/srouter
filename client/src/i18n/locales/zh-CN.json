@@ -1231,5 +1231,15 @@
     "renameConfirm": "将链“{oldName}”重命名为“{name}”？调用 auto:{oldName} 的客户端必须改用 auto:{name}。",
     "renamePlaceholder": "新链名称",
     "renameFailed": "无法重命名该链。"
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

@@ -1231,5 +1231,15 @@
     "renameConfirm": "දාමය \"{oldName}\" හි නම \"{name}\" ලෙස වෙනස් කරන්නද? auto:{oldName} අමතන සේවාදායකයින් auto:{name} වෙත යා යුතුය.",
     "renamePlaceholder": "නව දාම නම",
     "renameFailed": "එම දාමයේ නම වෙනස් කළ නොහැකි විය."
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

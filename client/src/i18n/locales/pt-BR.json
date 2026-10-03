@@ -1231,5 +1231,15 @@
     "renameConfirm": "Renomear a cadeia \"{oldName}\" para \"{name}\"? Clientes que chamam auto:{oldName} devem mudar para auto:{name}.",
     "renamePlaceholder": "Novo nome da cadeia",
     "renameFailed": "Não foi possível renomear a cadeia."
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

@@ -90,6 +90,26 @@ function syncIntervalMs(): number {
 
 // ── Notifications (model changes from sync) ──────────────────
 
+/**
+ * Localization payload for the client to render.
+ *
+ * Server-side notification text used to be a hardcoded Indonesian string,
+ * which meant every install saw Indonesian regardless of the chosen locale.
+ * Emitters now fill this instead: the client looks up `key` in its own
+ * dictionary and substitutes `vars`, so the bell speaks the user's language
+ * while the server stays the single source of truth for WHAT changed.
+ *
+ * The model names themselves never need translating — they are proper nouns —
+ * so they ride in `SyncNotification.message` (untruncated list, already
+ * elided by the emitter) and only the sentence around them is localized.
+ * Older notifications written before this field existed render displayName
+ * and message verbatim, exactly as they always did.
+ */
+export interface SyncNotificationPayload {
+  key: string;
+  vars?: Record<string, string | number>;
+}
+
 export interface SyncNotification {
   id: string;
   type: 'added' | 'removed' | 'updated' | 'degraded' | 'update_available';
@@ -97,6 +117,9 @@ export interface SyncNotification {
   displayName: string;
   platform: string;
   message: string;
+  /** Structured, localizable content. Absent on notifications written by
+   *  older builds — the client then renders displayName/message verbatim. */
+  data?: SyncNotificationPayload;
   timestamp: number;
   read: boolean;
 }
@@ -256,6 +279,16 @@ export interface SyncResult {
   tier?: string;
   detail?: string;
   counts?: { updated: number; inserted: number; removed: number; skippedUnknownPlatform: number; quirks: number };
+  /** Platform → the models that changed, so the bell can name the provider
+   *  and the exact models instead of a bare "12 models added". */
+  details?: CatalogChangeDetails;
+}
+
+/** Per-platform model change ledger produced by applyCatalog. */
+export interface CatalogChangeDetails {
+  added: Map<string, string[]>;
+  removed: Map<string, string[]>;
+  updated: Map<string, string[]>;
 }
 
 /** Minimal structural check — enough to fail loudly on a wrong/garbled body. */
@@ -384,6 +417,16 @@ export function appliedCatalogPlatforms(db: Db): Set<string> {
 }
 
 export function applyCatalog(db: Db, catalog: Catalog): NonNullable<SyncResult['counts']> {
+  return applyCatalogDetailed(db, catalog).counts;
+}
+
+/** Same apply, but also returns the per-platform ledger of which models
+ *  changed — what feeds the "3 models added on Groq" bell notifications.
+ *  Counts alone cannot name a provider or a model. */
+export function applyCatalogDetailed(db: Db, catalog: Catalog): {
+  counts: NonNullable<SyncResult['counts']>;
+  details: CatalogChangeDetails;
+} {
   // One transaction for the whole apply (#1047): the body runs hundreds of
   // individual statements, and under WAL each one outside a transaction is its
   // own commit + fsync executed on the event loop. On slow storage that made
@@ -392,10 +435,28 @@ export function applyCatalog(db: Db, catalog: Catalog): NonNullable<SyncResult['
   return db.transaction(() => applyCatalogInner(db, catalog))();
 }
 
-function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['counts']> {
+function applyCatalogInner(db: Db, catalog: Catalog): {
+  counts: NonNullable<SyncResult['counts']>;
+  details: CatalogChangeDetails;
+} {
   const counts = { updated: 0, inserted: 0, removed: 0, skippedUnknownPlatform: 0, quirks: 0 };
+  const details: CatalogChangeDetails = { added: new Map(), removed: new Map(), updated: new Map() };
 
-  const selectModel = db.prepare('SELECT id, enabled, source FROM models WHERE platform = ? AND model_id = ?');
+  /** Note one model change against its provider. Names use the catalog
+ *  display_name where we have it (that is what the user recognises) and fall
+ *  back to the raw model_id for pruned rows, whose catalog entry is gone. */
+  const record = (ledger: Map<string, string[]>, platform: string, name: string): void => {
+    const bucket = ledger.get(platform);
+    if (bucket) bucket.push(name);
+    else ledger.set(platform, [name]);
+  };
+
+  // The previous display_name/enabled are read alongside so an "updated" entry
+  // records what actually changed. Without them every catalog row looks
+  // updated on every sync, which drowns the real news.
+  const selectModel = db.prepare(
+    'SELECT id, enabled, source, display_name AS displayName FROM models WHERE platform = ? AND model_id = ?',
+  );
   const updateModel = db.prepare(`
     UPDATE models SET
       display_name = @displayName, intelligence_rank = @intelligenceRank, speed_rank = @speedRank,
@@ -416,7 +477,9 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
   `);
 
   // Generative-media models go to their own table (never the chat router's pool).
-  const selectMedia = db.prepare('SELECT id, enabled FROM media_models WHERE platform = ? AND model_id = ?');
+  const selectMedia = db.prepare(
+    'SELECT id, enabled, display_name AS displayName FROM media_models WHERE platform = ? AND model_id = ?',
+  );
   const updateMedia = db.prepare(`
     UPDATE media_models SET
       display_name = @displayName, modality = @modality, priority = @priority,
@@ -440,7 +503,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
     VALUES (@platform, @modelId, @displayName, 'transcription', @priority, @enabled, @quotaLabel, @metaJson)
   `);
   const selectEmbedding = db.prepare(
-    'SELECT id, enabled FROM embedding_models WHERE platform = ? AND model_id = ?',
+    'SELECT id, enabled, display_name AS displayName FROM embedding_models WHERE platform = ? AND model_id = ?',
   );
   const updateEmbedding = db.prepare(`
     UPDATE embedding_models SET
@@ -476,7 +539,8 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
         }
         if (isCatalogModelTombstoned(db, 'media', m.platform, m.modelId)) continue;
         inMediaCatalog.add(`${m.platform}:${m.modelId}`);
-        const mrow = selectMedia.get(m.platform, m.modelId) as { id: number; enabled: number } | undefined;
+        const mrow = selectMedia.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
         // Generative-media meta carries only the adapter request flavor today;
         // a row without one stores NULL so the adapter keeps its default.
         const mmeta: Record<string, unknown> = {};
@@ -492,9 +556,11 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
           const enabled = m.enabled ? mrow.enabled : 0; // catalog disable wins; local disable wins
           updateMedia.run({ ...mfields, id: mrow.id, enabled });
           counts.updated++;
+          if (mrow.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
         } else {
           insertMedia.run({ ...mfields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
           counts.inserted++;
+          record(details.added, m.platform, m.displayName);
         }
         continue;
       }
@@ -513,7 +579,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
       inCatalog.add(`${m.platform}:${m.modelId}`);
 
       const row = selectModel.get(m.platform, m.modelId) as
-        | { id: number; enabled: number; source: string }
+        | { id: number; enabled: number; source: string; displayName: string | null }
         | undefined;
       // Collision rule: if the user hand-added a model and the catalog later
       // ships the same platform:model_id, the user row wins — the catalog
@@ -548,11 +614,13 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
         refreshModelOverrideBaselines(db, m.platform, m.modelId);
         applyModelOverrides(db, m.platform, m.modelId);
         counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
       } else {
         insertModel.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
         refreshModelOverrideBaselines(db, m.platform, m.modelId);
         applyModelOverrides(db, m.platform, m.modelId);
         counts.inserted++;
+          record(details.added, m.platform, m.displayName);
       }
     }
 
@@ -577,14 +645,17 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
           quotaLabel: m.quotaLabel ?? '',
           metaJson: meta,
         };
-        const row = selectMedia.get(m.platform, m.modelId) as { id: number; enabled: number } | undefined;
+        const row = selectMedia.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
         if (row) {
           const enabled = m.enabled ? row.enabled : 0;
           updateMedia.run({ ...fields, id: row.id, enabled });
           counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
         } else {
           insertMedia.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
           counts.inserted++;
+          record(details.added, m.platform, m.displayName);
         }
       }
     }
@@ -598,7 +669,8 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
           continue;
         }
         inEmbeddingCatalog.add(`${m.platform}:${m.modelId}`);
-        const row = selectEmbedding.get(m.platform, m.modelId) as { id: number; enabled: number } | undefined;
+        const row = selectEmbedding.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
         const fields = {
           family: m.family,
           displayName: m.displayName,
@@ -611,6 +683,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
           const enabled = m.enabled ? row.enabled : 0; // catalog and local disables both win
           updateEmbedding.run({ ...fields, id: row.id, enabled });
           counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
         } else {
           insertEmbedding.run({
             ...fields,
@@ -619,6 +692,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
             enabled: m.enabled ? 1 : 0,
           });
           counts.inserted++;
+          record(details.added, m.platform, m.displayName);
         }
       }
     }
@@ -645,14 +719,17 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
           quotaLabel: m.quotaLabel ?? '',
           metaJson: Object.keys(meta).length > 0 ? JSON.stringify(meta) : null,
         };
-        const row = selectMedia.get(m.platform, m.modelId) as { id: number; enabled: number } | undefined;
+        const row = selectMedia.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
         if (row) {
           const enabled = m.enabled ? row.enabled : 0; // catalog and local disables both win
           updateTranscription.run({ ...fields, id: row.id, enabled });
           counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
         } else {
           insertTranscription.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
           counts.inserted++;
+          record(details.added, m.platform, m.displayName);
         }
       }
     }
@@ -683,13 +760,13 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
     // predicates stay as belt and braces.
     const candidates = db
       .prepare(`
-        SELECT id, platform, model_id
+        SELECT id, platform, model_id, display_name AS displayName
           FROM models
          WHERE platform != 'custom'
            AND key_id IS NULL
            AND source = 'catalog'
       `)
-      .all() as { id: number; platform: string; model_id: string }[];
+      .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
     const deleteFb = db.prepare('DELETE FROM fallback_config WHERE model_db_id = ?');
     const deleteModel = db.prepare('DELETE FROM models WHERE id = ?');
     for (const c of candidates) {
@@ -698,6 +775,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
         deleteFb.run(c.id);
         deleteModel.run(c.id);
         counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
       }
     }
 
@@ -710,13 +788,15 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
     // stopgap the catalog has superseded.
     const managed = catalogPlatforms(catalog);
     const discoveredRows = db
-      .prepare('SELECT id, platform FROM models WHERE source = ?')
-      .all(DISCOVERED_MODEL_SOURCE) as { id: number; platform: string }[];
+      .prepare('SELECT id, platform, model_id, display_name AS displayName FROM models WHERE source = ?')
+      .all(DISCOVERED_MODEL_SOURCE) as
+        { id: number; platform: string; model_id: string; displayName: string | null }[];
     for (const d of discoveredRows) {
       if (!managed.has(d.platform)) continue;
       deleteFb.run(d.id);
       deleteModel.run(d.id);
       counts.removed++;
+      record(details.removed, d.platform, d.displayName ?? d.model_id);
     }
 
     // Remove media models the catalog no longer lists (own table, no
@@ -727,14 +807,15 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
     // to a `!=` filter would silently delete every video row on the first sync
     // from an older catalog.
     const mediaCandidates = db
-      .prepare("SELECT id, platform, model_id FROM media_models WHERE modality IN ('image', 'audio')")
-      .all() as { id: number; platform: string; model_id: string }[];
+      .prepare("SELECT id, platform, model_id, display_name AS displayName FROM media_models WHERE modality IN ('image', 'audio')")
+      .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
     const deleteMedia = db.prepare('DELETE FROM media_models WHERE id = ?');
     for (const c of mediaCandidates) {
       if (!MEDIA_PLATFORMS.has(c.platform)) continue; // not media-managed by this binary
       if (!inMediaCatalog.has(`${c.platform}:${c.model_id}`)) {
         deleteMedia.run(c.id);
         counts.removed++;
+        record(details.removed, c.platform, c.displayName ?? c.model_id);
       }
     }
 
@@ -742,13 +823,14 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
     // snapshot. An older catalog cannot know whether a video row was retired.
     if (catalog.videoModels) {
       const videoCandidates = db
-        .prepare("SELECT id, platform, model_id FROM media_models WHERE modality = 'video'")
-        .all() as { id: number; platform: string; model_id: string }[];
+        .prepare("SELECT id, platform, model_id, display_name AS displayName FROM media_models WHERE modality = 'video'")
+        .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
       for (const c of videoCandidates) {
         if (!VIDEO_PLATFORMS.has(c.platform)) continue;
         if (!inVideoCatalog.has(`${c.platform}:${c.model_id}`)) {
           deleteMedia.run(c.id);
           counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
         }
       }
     }
@@ -758,13 +840,14 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
     // image/audio rows are never touched by it.
     if (catalog.transcriptionModels) {
       const sttCandidates = db
-        .prepare("SELECT id, platform, model_id FROM media_models WHERE modality = 'transcription'")
-        .all() as { id: number; platform: string; model_id: string }[];
+        .prepare("SELECT id, platform, model_id, display_name AS displayName FROM media_models WHERE modality = 'transcription'")
+        .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
       for (const c of sttCandidates) {
         if (!TRANSCRIPTION_PLATFORMS.has(c.platform)) continue;
         if (!inTranscriptionCatalog.has(`${c.platform}:${c.model_id}`)) {
           deleteMedia.run(c.id);
           counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
         }
       }
     }
@@ -777,17 +860,18 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
     if (catalog.embeddings && catalog.embeddings.length > 0) {
       const embeddingCandidates = db
         .prepare(`
-          SELECT id, platform, model_id
+          SELECT id, platform, model_id, display_name AS displayName
             FROM embedding_models
            WHERE platform != 'custom' AND key_id IS NULL
         `)
-        .all() as { id: number; platform: string; model_id: string }[];
+        .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
       const deleteEmbedding = db.prepare('DELETE FROM embedding_models WHERE id = ?');
       for (const c of embeddingCandidates) {
         if (!EMBEDDING_PLATFORMS.has(c.platform)) continue;
         if (!inEmbeddingCatalog.has(`${c.platform}:${c.model_id}`)) {
           deleteEmbedding.run(c.id);
           counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
         }
       }
     }
@@ -810,7 +894,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): NonNullable<SyncResult['co
   });
 
   apply();
-  return counts;
+  return { counts, details };
 }
 
 /**
@@ -855,7 +939,7 @@ export async function syncCatalog(force = false): Promise<SyncResult> {
 
     const sameAsApplied = applied === catalog.version && getSetting(SETTING_APPLIED_TIER) === catalog.tier;
     if (!sameAsApplied) {
-      const counts = applyCatalog(db, catalog);
+      const { counts, details } = applyCatalogDetailed(db, catalog);
       setSetting(SETTING_APPLIED_VERSION, catalog.version);
       setSetting(SETTING_APPLIED_TIER, catalog.tier);
       // Cache the verified document so boots can re-apply it offline (see
@@ -871,7 +955,14 @@ export async function syncCatalog(force = false): Promise<SyncResult> {
       );
       setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
       setSetting(SETTING_LAST_ERROR, '');
-      const syncResult: SyncResult = { ok: true, action: 'applied', version: catalog.version, tier: catalog.tier, counts };
+      const syncResult: SyncResult = {
+        ok: true,
+        action: 'applied',
+        version: catalog.version,
+        tier: catalog.tier,
+        counts,
+        details,
+      };
       emitSyncNotifications(syncResult);
       return syncResult;
     }
@@ -1008,48 +1099,122 @@ export function updateSyncSchedule(): void {
   import('./auto-discover.js').then(m => m.restartRefreshInterval()).catch(() => {});
 }
 
-/** Generate notifications from sync result counts. */
+/** How many model names one notification line may name before it elides. */
+const MAX_NOTIFICATION_MODELS = 5;
+
+/**
+ * One notification per provider that actually changed, naming the models.
+ *
+ * A bare "12 models added" line tells the user nothing actionable, so the
+ * per-platform ledger from applyCatalogInner drives this: each entry is a
+ * provider plus the models that changed on it. Names are elided past
+ * MAX_NOTIFICATION_MODELS — one sync can land a whole new provider's roster —
+ * while the count stays the true total, so nothing is hidden.
+ *
+ * `updated` collapses to one line per provider with a count rather than
+ * naming models: the ledger there is every catalog row whose display name
+ * moved, which on a routine monthly snapshot is essentially the entire
+ * catalog (370 rows on the install this was built for), and a bell listing
+ * all of them is noise, not news.
+ */
 function emitSyncNotifications(result: SyncResult): void {
   if (!result.counts) return;
   const { inserted, removed, updated } = result.counts;
   if (inserted === 0 && removed === 0 && updated === 0) return;
   const now = Date.now();
   const notifs: SyncNotification[] = [];
+  const ledger = result.details;
+
+  const names = (list: string[]): string =>
+    list.slice(0, MAX_NOTIFICATION_MODELS).join(', ') + (list.length > MAX_NOTIFICATION_MODELS ? '…' : '');
+
+  /** Per-platform lines for added/removed, one line per changed provider. */
+  const perPlatform = (
+    changes: Map<string, string[]>,
+    type: SyncNotification['type'],
+    dataKey: string,
+  ): void => {
+    for (const [platform, list] of changes) {
+      const count = list.length;
+      notifs.push({
+        id: `sync-${now}-${type}-${platform}`,
+        type,
+        modelId: '*',
+        platform,
+        displayName: `${count} model ${type === 'added' ? 'baru' : 'dihapus'}`,
+        message: names(list),
+        data: { key: dataKey, vars: { count, platform } },
+        timestamp: now,
+        read: false,
+      });
+    }
+  };
+
   if (inserted > 0) {
-    notifs.push({
-      id: `sync-${now}-added`,
-      type: 'added',
-      modelId: '*',
-      displayName: `${inserted} model baru`,
-      platform: '',
-      message: `${inserted} model baru ditambahkan dari katalog`,
-      timestamp: now,
-      read: false,
-    });
+    if (ledger && ledger.added.size > 0) {
+      perPlatform(ledger.added, 'added', 'notifications.catalogAddedFrom');
+    } else {
+      notifs.push({
+        id: `sync-${now}-added`,
+        type: 'added',
+        modelId: '*',
+        platform: '',
+        displayName: `${inserted} model baru`,
+        message: `${inserted} model baru ditambahkan dari katalog`,
+        data: { key: 'notifications.catalogAdded', vars: { count: inserted } },
+        timestamp: now,
+        read: false,
+      });
+    }
   }
+
   if (removed > 0) {
-    notifs.push({
-      id: `sync-${now}-removed`,
-      type: 'removed',
-      modelId: '*',
-      displayName: `${removed} model dihapus`,
-      platform: '',
-      message: `${removed} model dihapus karena sudah tidak ada di katalog`,
-      timestamp: now,
-      read: false,
-    });
+    if (ledger && ledger.removed.size > 0) {
+      perPlatform(ledger.removed, 'removed', 'notifications.catalogRemovedFrom');
+    } else {
+      notifs.push({
+        id: `sync-${now}-removed`,
+        type: 'removed',
+        modelId: '*',
+        platform: '',
+        displayName: `${removed} model dihapus`,
+        message: `${removed} model dihapus karena sudah tidak ada di katalog`,
+        data: { key: 'notifications.catalogRemoved', vars: { count: removed } },
+        timestamp: now,
+        read: false,
+      });
+    }
   }
+
   if (updated > 0) {
-    notifs.push({
-      id: `sync-${now}-updated`,
-      type: 'updated',
-      modelId: '*',
-      displayName: `${updated} model diperbarui`,
-      platform: '',
-      message: `${updated} model diperbarui dari katalog terbaru`,
-      timestamp: now,
-      read: false,
-    });
+    if (ledger && ledger.updated.size > 0) {
+      for (const [platform, list] of ledger.updated) {
+        notifs.push({
+          id: `sync-${now}-updated-${platform}`,
+          type: 'updated',
+          modelId: '*',
+          platform,
+          displayName: `${list.length} model diperbarui`,
+          message: '',
+          data: { key: 'notifications.catalogUpdatedFrom', vars: { count: list.length, platform } },
+          timestamp: now,
+          read: false,
+        });
+      }
+    } else {
+      notifs.push({
+        id: `sync-${now}-updated`,
+        type: 'updated',
+        modelId: '*',
+        platform: '',
+        displayName: `${updated} model diperbarui`,
+        message: `${updated} model diperbarui dari katalog terbaru`,
+        data: { key: 'notifications.catalogUpdated', vars: { count: updated } },
+        timestamp: now,
+        read: false,
+      });
+    }
   }
+
   addNotifications(notifs);
 }

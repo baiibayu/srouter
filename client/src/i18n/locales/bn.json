@@ -1231,5 +1231,15 @@
     "renameConfirm": "চেইন \"{oldName}\" এর নাম \"{name}\" করবেন? auto:{oldName} কল করা ক্লায়েন্টদের auto:{name} এ যেতে হবে।",
     "renamePlaceholder": "নতুন চেইন নাম",
     "renameFailed": "চেইনের নাম পরিবর্তন করা যায়নি।"
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

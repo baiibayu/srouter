@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Dialog, DialogClose, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { useI18n } from '@/i18n'
+import { platformLabel } from '@/lib/platform-label'
 import {
   Check,
   ChevronDown,
@@ -37,34 +38,9 @@ export interface SyncAllResult {
   results: SyncPlatformResult[]
 }
 
-/* ──────────────────────────── helpers ─────────────────────────── */
-
-const PLATFORM_LABELS: Record<string, string> = {
-  aihorde: 'AI Horde',
-  airforce: 'Airforce',
-  bai: 'Bai',
-  bazaarlink: 'Bazaarlink',
-  cerebras: 'Cerebras',
-  cohere: 'Cohere',
-  custom: 'Custom',
-  google: 'Google',
-  groq: 'Groq',
-  huggingface: 'HuggingFace',
-  kilo: 'Kilo',
-  mistral: 'Mistral',
-  nara: 'Nara',
-  nvidia: 'NVIDIA NIM',
-  ollama: 'Ollama',
-  openrouter: 'OpenRouter',
-  ovh: 'OVH',
-  radeon: 'Radeon',
-  unorouter: 'UnoRouter',
-  xkiro: 'xKIRO',
-}
-
-function platformLabel(platform: string): string {
-  return PLATFORM_LABELS[platform] ?? platform.charAt(0).toUpperCase() + platform.slice(1)
-}
+/* ──────────────────────────── helpers ──────────────────────────── */
+// platformLabel() lives in @/lib/platform-label — shared with the
+// notification bell so a provider is never named two different ways.
 
 /* ─────────── small helper: model name badge (truncated) ──────── */
 

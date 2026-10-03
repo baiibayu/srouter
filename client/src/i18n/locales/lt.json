@@ -1231,5 +1231,15 @@
     "renameConfirm": "Pervadinti grandinę „{oldName}“ į „{name}“? Klientai, kviečianti auto:{oldName}, turi pereiti prie auto:{name}.",
     "renamePlaceholder": "Naujas grandinės pavadinimas",
     "renameFailed": "Nepavyko pervadinti šios grandinės."
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

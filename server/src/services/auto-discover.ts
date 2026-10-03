@@ -40,6 +40,11 @@ const SKIP_AUTO_DISCOVER = new Set([
 /** How many models to register per platform before giving up */
 const MAX_AUTO_MODELS = 300;
 
+// How many model names one bell row may name before it elides the rest.
+// A provider can gain dozens of models in one refresh; naming all of them
+// turns the bell into a wall of text.
+const DISCOVER_NOTIFICATION_MODELS = 5;
+
 // ── Platform-specific rate-limit defaults (P0) ───────────────────
 // Documented or observed free-tier limits per platform.  These replace
 // the old hardcoded 60/1000/100000/1000000 that was applied to every
@@ -1018,11 +1023,18 @@ export async function refreshDiscoveredModels(): Promise<void> {
     if (provider && (provider as { hasAccessTier?: boolean }).hasAccessTier) targeted.add(p);
   }
 
-  // Aggregate results across all platforms for bell notification
-  let totalNew = 0;
-  let totalRetired = 0;
-  const newModelNames: string[] = [];
-  const retiredModelNames: string[] = [];
+  // One bell row per provider that changed, so the entry names WHICH provider
+  // gained or lost models. Discovery already runs per platform, so keeping the
+  // results keyed by platform is the natural shape — a single rolled-up line
+  // across every provider is what made these notifications unreadable.
+  const changesByPlatform = new Map<string, { added: string[]; removed: string[] }>();
+  const bucket = (platform: string) => {
+    const existing = changesByPlatform.get(platform);
+    if (existing) return existing;
+    const fresh = { added: [] as string[], removed: [] as string[] };
+    changesByPlatform.set(platform, fresh);
+    return fresh;
+  };
 
   for (const platform of targeted) {
     if (SKIP_AUTO_DISCOVER.has(platform)) continue;
@@ -1030,45 +1042,50 @@ export async function refreshDiscoveredModels(): Promise<void> {
     if (!hasKey) continue;
     try {
       const result = await autoDiscoverModels(platform, { refresh: true });
-      totalNew += result.registered;
-      totalRetired += result.retired;
-      newModelNames.push(...result.newModels);
-      retiredModelNames.push(...result.retiredModels);
+      if (result.registered === 0 && result.retired === 0) continue;
+      const entry = bucket(platform);
+      entry.added.push(...result.newModels);
+      entry.removed.push(...result.retiredModels);
     } catch (err) {
       console.warn(`[auto-discover] refresh for ${platform} failed: ${err instanceof Error ? err.message : err}`);
     }
   }
 
-  // Emit bell notifications so the user knows what changed
-  if (totalNew + totalRetired > 0) {
-    const now = Date.now();
-    const notifs: SyncNotification[] = [];
-    if (totalNew > 0) {
+  if (changesByPlatform.size === 0) return;
+  const now = Date.now();
+  const notifs: SyncNotification[] = [];
+  const names = (list: string[]): string =>
+    list.slice(0, DISCOVER_NOTIFICATION_MODELS).join(', ') + (list.length > DISCOVER_NOTIFICATION_MODELS ? '…' : '');
+
+  for (const [platform, change] of changesByPlatform) {
+    if (change.added.length > 0) {
       notifs.push({
-        id: `discover-${now}-added`,
+        id: `discover-${now}-added-${platform}`,
         type: 'added',
         modelId: '*',
-        displayName: `${totalNew} model baru dari provider`,
-        platform: '',
-        message: `Auto-discover: ${totalNew} model terdaftar (${newModelNames.slice(0, 5).join(', ')}${newModelNames.length > 5 ? '...' : ''})`,
+        platform,
+        displayName: `${change.added.length} model baru`,
+        message: names(change.added),
+        data: { key: 'notifications.discoverAdded', vars: { count: change.added.length, platform } },
         timestamp: now,
         read: false,
       });
     }
-    if (totalRetired > 0) {
+    if (change.removed.length > 0) {
       notifs.push({
-        id: `discover-${now}-removed`,
+        id: `discover-${now}-removed-${platform}`,
         type: 'removed',
         modelId: '*',
-        displayName: `${totalRetired} model dihapus dari provider`,
-        platform: '',
-        message: `Auto-discover: ${totalRetired} model sudah tidak tersedia (${retiredModelNames.slice(0, 5).join(', ')}${retiredModelNames.length > 5 ? '...' : ''})`,
+        platform,
+        displayName: `${change.removed.length} model dihapus`,
+        message: names(change.removed),
+        data: { key: 'notifications.discoverRemoved', vars: { count: change.removed.length, platform } },
         timestamp: now,
         read: false,
       });
     }
-    addNotifications(notifs);
   }
+  addNotifications(notifs);
 }
 
 function configuredPlatforms(db: Db): string[] {

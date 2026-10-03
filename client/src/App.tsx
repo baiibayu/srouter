@@ -26,6 +26,7 @@ import { UpdateReminder } from '@/components/update-reminder'
 import { usePremium } from '@/hooks/use-premium'
 import { I18nProvider, useI18n } from '@/i18n'
 import { apiFetch, logout } from '@/lib/api'
+import { platformLabel } from '@/lib/platform-label'
 import { toast } from '@/lib/toast'
 import { ThemeProvider } from '@/theme'
 import KeysPage from '@/pages/KeysPage'
@@ -232,6 +233,8 @@ interface SyncNotification {
   displayName: string
   platform: string
   message: string
+  /** Localizable payload; absent on rows written before this existed. */
+  data?: { key: string; vars?: Record<string, string | number> }
   timestamp: number
   read: boolean
 }
@@ -304,18 +307,27 @@ function NotificationBell() {
           </div>
         ) : (
           <div className="max-h-72 overflow-y-auto">
-            {notifications.map(n => (
-              <div key={n.id} className={`flex items-start gap-2 border-b px-4 py-2.5 last:border-0 ${typeBg(n.type, n.read)}`}>
-                <span className="mt-0.5 text-sm">{typeIcon(n.type)}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{n.displayName}</p>
-                  <p className="text-xs text-muted-foreground">{n.message}</p>
+            {notifications.map(n => {
+              // New rows carry a dictionary key + vars so the sentence follows
+              // the user's locale; rows written before that existed still
+              // render the server's original displayName/message verbatim.
+              const title = n.data
+                ? t(n.data.key, { ...n.data.vars, provider: n.platform ? platformLabel(n.platform) : '' })
+                : n.displayName
+              return (
+                <div key={n.id} className={`flex items-start gap-2 border-b px-4 py-2.5 last:border-0 ${typeBg(n.type, n.read)}`}>
+                  <span className="mt-0.5 text-sm">{typeIcon(n.type)}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{title}</p>
+                    {/* Model names are proper nouns — server-side, never translated. */}
+                    {n.message && <p className="text-xs break-words text-muted-foreground">{n.message}</p>}
+                  </div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
-                <span className="shrink-0 text-[10px] text-muted-foreground">
-                  {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </PopoverContent>

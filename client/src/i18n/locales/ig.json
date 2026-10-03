@@ -1231,5 +1231,15 @@
     "renameConfirm": "Gbanwee aha chain \"{oldName}\" ka ọ bụrụ \"{name}\"? Ndị ahịa na-akpọ auto:{oldName} ga-agbanwe gaa auto:{name}.",
     "renamePlaceholder": "Aha chain ọhụrụ",
     "renameFailed": "Enweghị ike ịgbanwe aha chain ahụ."
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

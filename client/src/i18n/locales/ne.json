@@ -1231,5 +1231,15 @@
     "renameConfirm": "चेन \"{oldName}\" को नाम \"{name}\" मा बदल्ने? auto:{oldName} बोलाउने क्लाइन्टहरूले auto:{name} मा जानुपर्छ।",
     "renamePlaceholder": "नयाँ चेन नाम",
     "renameFailed": "चेनको नाम बदल्न सकिएन।"
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

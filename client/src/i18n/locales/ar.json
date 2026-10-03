@@ -1231,5 +1231,15 @@
     "renameConfirm": "إعادة تسمية السلسلة \"{oldName}\" إلى \"{name}\"؟ يجب على العملاء الذين يستدعون auto:{oldName} التحول إلى auto:{name}.",
     "renamePlaceholder": "الاسم الجديد للسلسلة",
     "renameFailed": "تعذّرت إعادة تسمية السلسلة."
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }

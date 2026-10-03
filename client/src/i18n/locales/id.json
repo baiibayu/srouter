@@ -1231,5 +1231,15 @@
     "renameConfirm": "Ganti nama rantai \"{oldName}\" menjadi \"{name}\"? Klien yang memanggil auto:{oldName} harus beralih ke auto:{name}.",
     "renamePlaceholder": "Nama rantai baru",
     "renameFailed": "Tidak dapat mengganti nama rantai."
+  },
+  "notifications": {
+    "catalogAdded": "{count} model baru ditambahkan dari katalog",
+    "catalogAddedFrom": "{count} model baru ditambahkan untuk {provider}",
+    "catalogRemoved": "{count} model dihapus dari katalog",
+    "catalogRemovedFrom": "{count} model dihapus untuk {provider}",
+    "catalogUpdated": "{count} model diperbarui dari katalog terbaru",
+    "catalogUpdatedFrom": "{count} model diperbarui untuk {provider}",
+    "discoverAdded": "{count} model baru dari provider {provider}",
+    "discoverRemoved": "{count} model dihapus dari provider {provider}"
   }
 }

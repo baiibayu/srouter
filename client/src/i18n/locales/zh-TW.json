@@ -1231,5 +1231,15 @@
     "renameConfirm": "將鏈「{oldName}」重新命名為「{name}」？呼叫 auto:{oldName} 的客戶端必須改用 auto:{name}。",
     "renamePlaceholder": "新鏈名稱",
     "renameFailed": "無法重新命名該鏈。"
+  },
+  "notifications": {
+    "catalogAdded": "{count} new models added from catalog",
+    "catalogAddedFrom": "{count} new models added for {provider}",
+    "catalogRemoved": "{count} models removed from catalog",
+    "catalogRemovedFrom": "{count} models removed for {provider}",
+    "catalogUpdated": "{count} models updated from latest catalog",
+    "catalogUpdatedFrom": "{count} models updated for {provider}",
+    "discoverAdded": "{count} new models from provider {provider}",
+    "discoverRemoved": "{count} models removed from provider {provider}"
   }
 }
