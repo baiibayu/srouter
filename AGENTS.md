@@ -4,9 +4,9 @@
 SRouter (fork & rebrand FreeLLMAPI, MIT — kredit Tashfeen Ahmed). Monorepo: `server/` (Express+TS), `client/` (Vite+React), `shared/`, `cli/`, `desktop/`. Rencana rebrand: `C:\Users\Hype AMD\basic-memory\srouter\srouter-rebranding-plan.md`.
 
 ## Working copies (2026-10-02)
-- **Working copy utama**: `C:\Users\Hype AMD\Downloads\APP\SRouter` (clone dari main, HEAD a34cfc7c)
-- Main clone (origin lokal): `C:\Users\Hype AMD\.freellmapi` (branch main)
-- Worktree Orca: `C:\Users\Hype AMD\orca\workspaces\.freellmapi\firefish` (branch firefish, stale)
+- **Working copy utama & basis kolaborasi multi-agent**: `C:\Users\Hype AMD\Downloads\APP\SRouter` (main, HEAD 454f8225; remote `upstream` = tashfeenahmed/freellmapi). Koordinasi Hermes↔OpenCode via `HANDOFF.md` di root repo ini.
+- Main clone lama: `C:\Users\Hype AMD\.freellmapi` (main a34cfc7c, 1 commit di belakang repo utama) — ARSIP, jangan dipakai kerja baru.
+- Worktree Orca: `C:\Users\Hype AMD\orca\workspaces\.freellmapi\firefish` (branch firefish, stale) — sudah tidak dipakai; HANDOFF.md lama diganti pointer.
 - Repo GitHub: BELUM ADA — saat jadi: `git remote add origin https://github.com/<user>/srouter.git && git push -u origin main`
 
 ## Status singkat
@@ -39,3 +39,8 @@ SRouter (fork & rebrand FreeLLMAPI, MIT — kredit Tashfeen Ahmed). Monorepo: `s
 - **Agent WAJIB setelah task selesai**: cek apakah perubahan menyangkut versi. Kalau YA → bump package.json (semua workspace) + sinkron SECURITY.md (baris "current") + `npm install` (lock) + commit. Kalau TIDAK → bilang eksplisit ke user: "versi tidak perlu diupdate karena ...".
 - Jangan diam-diam: user sering lupa, agent harus mengingatkan.
 - Saat up GitHub/npm: versi di package = versi release yang dipublikasikan.
+## Data & key (RAHASIA — jangan pernah di-commit)
+- `server/data/` (DB srouter.db + .encryption-key) dan `.env` sudah di-.gitignore — **jangan di-force-add, jangan masuk push GitHub**.
+- DB berisi 42 API key terenkripsi + akun dashboard — di-restore 2026-10-02 dari freeapi.db (era lama) ke srouter.db; file lama `freeapi.db` masih ada sebagai arsip lokal.
+- **Setelah install fresh dari repo user**: agent WAJIB injek data — copy `server/data/` (atau minimal srouter.db + .encryption-key) dari backup lokal (`C:\Users\Hype AMD\Downloads\APP\SRouter\server\data` atau `.freellmapi-arsip\server\data`) ke instalasi baru, lalu start server. Jangan generate key baru kalau backup ada.
+- Kalau user minta demo tanpa key: biarkan kosong (server auto-generate key dev).
