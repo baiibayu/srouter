@@ -41,7 +41,12 @@ export function emitDegradedNotif(healthyProviders: number, totalProviders: numb
     modelId: '*',
     displayName: 'Mode degraded aktif',
     platform: '',
-    message: `Hanya ${healthyProviders}/${totalProviders} provider sehat (${pct}%) — routing dibatasi`,
+    // Chrome lives in the localized title; nothing left to show below it.
+    message: '',
+    data: {
+      key: 'notifications.degraded',
+      vars: { healthy: healthyProviders, total: totalProviders, pct },
+    },
     timestamp: now,
     read: false,
   };
@@ -66,14 +71,17 @@ export function emitUpdateAvailableNotif(version: string | null, remoteMessage: 
 
   const now = Date.now();
   const versionStr = version ?? 'baru';
-  const detail = remoteMessage ? ` — ${remoteMessage.slice(0, 100)}` : '';
+  const detail = remoteMessage ? remoteMessage.slice(0, 100) : '';
   const notif: SyncNotification = {
     id: `update-${now}-${version ?? 'latest'}`,
     type: 'update_available',
     modelId: version ?? 'latest',
     displayName: `Update tersedia: v${versionStr}`,
     platform: '',
-    message: `Versi baru v${versionStr} tersedia${detail}`,
+    // The sentence is localized via data.key; message carries only the
+    // upstream release-notes excerpt (content, not chrome).
+    message: detail,
+    data: { key: 'notifications.updateAvailable', vars: { version: versionStr } },
     timestamp: now,
     read: false,
   };
@@ -88,8 +96,31 @@ export function removeUpdateAvailableNotif(): void {
 // ── Periodic checks ──────────────────────────────────────────────────────────
 
 /**
+ * True when `latest` is strictly newer than `current` by semver.
+ * Unparseable versions never notify — a false "update available" is worse
+ * than a missed one (the old `!==` compare notified even when the installed
+ * version was ahead of the release being compared).
+ */
+export function isNewerVersion(latest: string, current: string): boolean {
+  const parse = (v: string): [number, number, number] | null => {
+    const m = /^(\d+)\.(\d+)\.(\d+)/.exec(v.trim());
+    return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+  };
+  const a = parse(latest);
+  const b = parse(current);
+  if (!a || !b) return false;
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] > b[i];
+  }
+  return false;
+}
+
+/**
  * Check for server updates and emit a notification if one is available.
  * Called on boot (via catalog-sync) and periodically via health checker.
+ *
+ * The checked repository is overrideable via SROUTER_UPDATE_REPO — once the
+ * fork publishes its own releases, point it there instead of upstream.
  */
 export async function checkUpdateAvailable(): Promise<void> {
   try {
@@ -100,8 +131,8 @@ export async function checkUpdateAvailable(): Promise<void> {
     const version = getAppVersion();
     if (!version) return;
 
-    // Use GitHub API to check latest release
-    const resp = await fetch('https://api.github.com/repos/tashfeenahmed/freellmapi/releases/latest', {
+    const repo = process.env.SROUTER_UPDATE_REPO?.trim() || 'tashfeenahmed/freellmapi';
+    const resp = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
       signal: AbortSignal.timeout(10_000),
     });
     if (!resp.ok) return;
@@ -114,9 +145,7 @@ export async function checkUpdateAvailable(): Promise<void> {
     const cleanLatest = latestTag.replace(/^v/i, '');
     const cleanCurrent = version.replace(/^v/i, '');
 
-    // Simple string comparison — if latest is newer, notify
-    // (We use the GitHub comparison as the source of truth)
-    if (cleanLatest !== cleanCurrent) {
+    if (isNewerVersion(cleanLatest, cleanCurrent)) {
       emitUpdateAvailableNotif(cleanLatest, body.body?.slice(0, 200) ?? null, body.html_url ?? '');
     }
   } catch {

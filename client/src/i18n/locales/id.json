@@ -1240,6 +1240,8 @@
     "catalogUpdated": "{count} model diperbarui dari katalog terbaru",
     "catalogUpdatedFrom": "{count} model diperbarui untuk {provider}",
     "discoverAdded": "{count} model baru dari provider {provider}",
-    "discoverRemoved": "{count} model dihapus dari provider {provider}"
+    "discoverRemoved": "{count} model dihapus dari provider {provider}",
+    "degraded": "Mode degraded aktif — hanya {healthy}/{total} provider sehat ({pct}%)",
+    "updateAvailable": "Update tersedia: v{version}"
   }
 }

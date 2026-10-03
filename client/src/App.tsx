@@ -263,7 +263,12 @@ function NotificationBell() {
 
   function markRead() {
     apiFetch('/api/settings/notifications/read', { method: 'POST' })
-      .then(() => setUnread(0))
+      .then(() => {
+        setUnread(0)
+        // Reflect the read state locally right away — without this the rows
+        // keep their unread tint until the next 30s poll.
+        setNotifications(prev => prev.map(n => (n.read ? n : { ...n, read: true })))
+      })
       .catch(() => {})
   }
 
@@ -274,6 +279,7 @@ function NotificationBell() {
       case 'updated':        return <span className="text-blue-500">↻</span>
       case 'degraded':       return <span className="text-amber-500">⚠</span>
       case 'update_available': return <span className="text-violet-500">⬆</span>
+      default:               return null
     }
   }
 

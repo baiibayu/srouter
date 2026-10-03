@@ -1240,6 +1240,8 @@
     "catalogUpdated": "{count} models updated from latest catalog",
     "catalogUpdatedFrom": "{count} models updated for {provider}",
     "discoverAdded": "{count} new models from provider {provider}",
-    "discoverRemoved": "{count} models removed from provider {provider}"
+    "discoverRemoved": "{count} models removed from provider {provider}",
+    "degraded": "Degraded mode active — only {healthy}/{total} providers healthy ({pct}%)",
+    "updateAvailable": "Update available: v{version}"
   }
 }
