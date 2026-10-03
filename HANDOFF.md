@@ -8,7 +8,7 @@
 
 | Agent | Lokasi kerja | Branch | Catatan |
 |-------|--------------|--------|---------|
-| OpenCode | `C:\Users\Hype AMD\Downloads\APP\SRouter` (repo utama) | main | HEAD 454f8225; remote `upstream` = tashfeenahmed/freellmapi |
+| OpenCode | `C:\Users\Hype AMD\Downloads\APP\SRouter` (repo utama) | main | HEAD e4905afc (0.3.0); remote `upstream` = tashfeenahmed/freellmapi |
 | Hermes | repo utama (jangan edit file yang sama saat OpenCode aktif); task paralel → worktree baru `git worktree add` | main / branch task | |
 
 - Clone lama `C:\Users\Hype AMD\.freellmapi` (main a34cfc7c, 1 commit di belakang repo utama) = ARSIP — jangan dipakai untuk kerja baru.
@@ -16,6 +16,7 @@
 
 ## Status Log
 
+- 2026-10-03 — OpenCode (lead): upstream sync SELESAI — 1 commit tersisa (716948f2 Gizmo+BlockRun, pick 57fec9e2, fix rebrand import 09cbfc72); resolusi konflik desktop/package.json (versi tetap unified); desktop/package-lock sinkron 0.2.0 (75f000de). Key opencode.json dipindah ke `.opencode/srouter-key` (gitignored) — commit 4b8e7ef3 + PasswordInput auth UI. Release **0.3.0** (e4905afc). Suite: server 3680 lulus/1 flaky (fallback-loop-hedge, lulus saat solo re-run), client 367 lulus + i18n 60 locale. Server restart, health 200, 641 model.
 - 2026-10-02 — Setup jalur koordinasi Hermes↔OpenCode (di firefish; sekarang retired).
 - 2026-10-02 — Batch cherry-pick 16 commit upstream SELESAI di clone lama (afa0359d), semua suite hijau.
 - 2026-10-02 — Task Northwest domain: signup error, dihentikan (ToS: gratis bersyarat + 60-day lock + exit fee). Riset alternatif: Porkbun, Cloudflare Registrar (at-cost), atau registrar lokal (QRIS/transfer). Detail: vault `Percobaan Northwest Gagal - ToS verified.md`.
@@ -24,9 +25,11 @@
 
 ## Pekerjaan tersisa / kandidat task
 
-- Upstream sync lanjutan: repo utama behind 26 commit vs `upstream` (tashfeenahmed/freellmapi). Workflow cherry-pick per vault `fork-strategy.md`; skip duplikat/chore(release)/merge; build+test per batch.
+- ~~Upstream sync~~ SELESAI 2026-10-03 — main sudah setara upstream/main (0 behind). Ulangi `git fetch upstream` + `git cherry-pick` untuk batch berikutnya.
+- Sisa rebrand kecil (butuh keputusan user): `desktop/package.json` homepage = freellmapi.co; `cli/package.json` repository/bugs URL = tashfeenahmed/freellmapi; SECURITY.md link Security tab = repo upstream. Menunggu GitHub repo sendiri dibuat.
 - Domain srouter.org: PERCOBAAN ULANG berjalan — cart $0 siap di Northwest, tinggal user isi Create Account; monitor renewal bulan ke-2/3; fallback eu.org / pp.ua / registrar lokal.
-- GitHub push + npm claim `srouter`: menunggu username + gh auth dari user.
+- GitHub push + npm claim `srouter`: menunggu username + gh auth dari user. Setelah ada: bump ref URL di package.json/SECURITY.md sekalian.
+- Catatan: test server `fallback-loop-hedge.test.ts` bisa flaky kalau suite jalan beban penuh — re-run solo untuk konfirmasi.
 
 ## Aturan Anti-Tabrakan
 
