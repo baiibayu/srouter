@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Kuukausittainen tokenraja",
     "capUnlimitedPlaceholder": "Rajoittamaton",
     "capEditHint": "Rajat nollautuvat kuun 1. päivänä 00:00 UTC. Jätä tyhjäksi rajoittamattomaan.",
-    "monthlyUsageLine": "{requests} pyyntöä, {tokens} tokenia tässä kuussa"
+    "monthlyUsageLine": "{requests} pyyntöä, {tokens} tokenia tässä kuussa",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

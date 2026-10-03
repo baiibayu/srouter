@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "ขีดจำกัดโทเคนรายเดือน",
     "capUnlimitedPlaceholder": "ไม่จำกัด",
     "capEditHint": "ขีดจำกัดจะรีเซ็ตวันที่ 1 เวลา 00:00 UTC เว้นว่างไว้หากไม่จำกัด",
-    "monthlyUsageLine": "เดือนนี้ {requests} คำขอ {tokens} โทเคน"
+    "monthlyUsageLine": "เดือนนี้ {requests} คำขอ {tokens} โทเคน",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

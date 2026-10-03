@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Mėnesinis žetonų limitas",
     "capUnlimitedPlaceholder": "Neribota",
     "capEditHint": "Limitai atstatomi 1 d. 00:00 UTC. Palikite tuščią neribotam.",
-    "monthlyUsageLine": "{requests} užklausos, {tokens} žetonai šį mėnesį"
+    "monthlyUsageLine": "{requests} užklausos, {tokens} žetonai šį mėnesį",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

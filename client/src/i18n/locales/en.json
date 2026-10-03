@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Monthly token cap",
     "capUnlimitedPlaceholder": "Unlimited",
     "capEditHint": "Caps reset on the 1st, 00:00 UTC. Leave blank for unlimited.",
-    "monthlyUsageLine": "{requests} requests, {tokens} tokens this month"
+    "monthlyUsageLine": "{requests} requests, {tokens} tokens this month",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "ወርሃዊ የቶከን ገደብ",
     "capUnlimitedPlaceholder": "ወሰን የለሽ",
     "capEditHint": "ገደቦች በእያንዳንዱ ወር 1 ቀን 00:00 UTC ዳግም ይጀምራሉ። ለወሰን አልባ ባዶ ይተዉ።",
-    "monthlyUsageLine": "በዚህ ወር {requests} ጥያቄዎች፣ {tokens} ቶከኖች"
+    "monthlyUsageLine": "በዚህ ወር {requests} ጥያቄዎች፣ {tokens} ቶከኖች",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

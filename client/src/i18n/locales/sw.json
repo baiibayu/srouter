@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Kikomo cha kila mwezi cha tokeni",
     "capUnlimitedPlaceholder": "Bila kikomo",
     "capEditHint": "Vikomo huwekwa upya tarehe 1 saa 00:00 UTC. Acha wazi bila kikomo.",
-    "monthlyUsageLine": "Maombi {requests}, tokeni {tokens} mwezi huu"
+    "monthlyUsageLine": "Maombi {requests}, tokeni {tokens} mwezi huu",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

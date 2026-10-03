@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "الحد الشهري للرموز",
     "capUnlimitedPlaceholder": "غير محدود",
     "capEditHint": "تُصفَّر الحدود في 1 من الشهر 00:00 بتوقيت UTC. اتركه فارغًا بلا حد.",
-    "monthlyUsageLine": "{requests} طلبًا، {tokens} رمز هذا الشهر"
+    "monthlyUsageLine": "{requests} طلبًا، {tokens} رمز هذا الشهر",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",

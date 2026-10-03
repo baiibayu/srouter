@@ -11,6 +11,13 @@ import type { ApiKey } from '../../../../shared/types'
 import { useI18n } from '@/i18n'
 import { PLATFORMS } from './shared'
 
+function formatBudgetAmount(n: number): string {
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}K`
+  return String(n)
+}
+
 type UpdateBody = {
   label?: string
   key?: string
@@ -43,7 +50,7 @@ export function EditKeyDialog({
   apiKey: ApiKey
   onOpenChange: (open: boolean) => void
 }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const queryClient = useQueryClient()
   const [label, setLabel] = useState(apiKey.label)
   const [apiKeyValue, setApiKeyValue] = useState('')
@@ -178,10 +185,39 @@ export function EditKeyDialog({
           <details className="group" open={Boolean(apiKey.monthlyRequestCap || apiKey.monthlyTokenCap) || undefined}>
             <summary className="cursor-pointer select-none text-[11px] text-muted-foreground hover:text-foreground">
               {apiKey.monthlyUsage
-                ? t('keys.monthlyUsageLine', {
-                    requests: apiKey.monthlyUsage.requests.toLocaleString(),
-                    tokens: apiKey.monthlyUsage.tokens.toLocaleString(),
-                  })
+                ? (() => {
+                    const { requests, tokens, resetsAt } = apiKey.monthlyUsage
+                    const reqCap = apiKey.monthlyRequestCap ?? 0
+                    const tokCap = apiKey.monthlyTokenCap ?? 0
+
+                    const reqLine = reqCap > 0
+                      ? t('keys.monthlyUsageRequestsRelative', {
+                          used: formatBudgetAmount(requests),
+                          cap: formatBudgetAmount(reqCap),
+                          remaining: formatBudgetAmount(Math.max(0, reqCap - requests)),
+                        })
+                      : t('keys.monthlyUsageRequests', { requests: requests.toLocaleString() })
+
+                    const tokLine = tokCap > 0
+                      ? t('keys.monthlyUsageTokensRelative', {
+                          used: formatBudgetAmount(tokens),
+                          cap: formatBudgetAmount(tokCap),
+                          remaining: formatBudgetAmount(Math.max(0, tokCap - tokens)),
+                        })
+                      : t('keys.monthlyUsageTokens', { tokens: tokens.toLocaleString() })
+
+                    const resetLine = resetsAt
+                      ? ' · ' +
+                        t('keys.monthlyUsageReset', {
+                          date: new Date(resetsAt).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
+                            day: 'numeric',
+                            month: 'short',
+                          }),
+                        })
+                      : ''
+
+                    return `${reqLine} · ${tokLine}${resetLine}`
+                  })()
                 : t('keys.monthlyRequestCapLabel')}
             </summary>
             <div className="mt-2 grid gap-3 sm:grid-cols-2">

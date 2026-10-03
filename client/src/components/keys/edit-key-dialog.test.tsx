@@ -110,6 +110,21 @@ describe('editing provider credentials', () => {
     expect(apiFetch).not.toHaveBeenCalled()
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
+  it('shows relative usage against caps and reset date', async () => {
+    mount(<EditKeyDialog
+      apiKey={{
+        ...key,
+        platform: 'groq',
+        monthlyRequestCap: 5000000,
+        monthlyTokenCap: 10000000,
+        monthlyUsage: { requests: 1200000, tokens: 4000000, resetsAt: '2026-10-12T00:00:00.000Z' },
+      }}
+      onOpenChange={onOpenChange}
+    />)
+    expect(container.textContent).toContain('1.2M / 5M (3.8M left) requests')
+    expect(container.textContent).toContain('4M / 10M (6M left) tokens')
+    expect(container.textContent).toContain('reset Oct 12')
+  })
   it('keeps the budget collapsed when no cap is set', async () => {
     mount(<EditKeyDialog apiKey={{ ...key, platform: 'groq', monthlyRequestCap: 0, monthlyTokenCap: 0 }} onOpenChange={onOpenChange} />)
     expect(document.querySelector('details')!.open).toBe(false)

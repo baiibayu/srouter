@@ -711,7 +711,12 @@
     "monthlyTokenCapLabel": "Giới hạn token hàng tháng",
     "capUnlimitedPlaceholder": "Không giới hạn",
     "capEditHint": "Giới hạn đặt lại vào ngày 1 lúc 00:00 UTC. Để trống để không giới hạn.",
-    "monthlyUsageLine": "{requests} yêu cầu, {tokens} token tháng này"
+    "monthlyUsageLine": "{requests} yêu cầu, {tokens} token tháng này",
+    "monthlyUsageRequests": "{requests} requests",
+    "monthlyUsageTokens": "{tokens} tokens",
+    "monthlyUsageRequestsRelative": "{used} / {cap} ({remaining} left) requests",
+    "monthlyUsageTokensRelative": "{used} / {cap} ({remaining} left) tokens",
+    "monthlyUsageReset": "reset {date}"
   },
   "backups": {
     "title": "Backups",
