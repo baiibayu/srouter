@@ -5,6 +5,7 @@ import { apiFetch, setToken, UNAUTHORIZED_EVENT, type ApiError } from '@/lib/api
 import { Button } from '@/components/ui/button'
 import { FieldError } from '@/components/ui/field-error'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { isEmail } from '@/lib/validate'
 import { useI18n } from '@/i18n'
@@ -119,9 +120,9 @@ function AuthForm({ mode, onAuthed }: { mode: 'setup' | 'login'; onAuthed: () =>
 
   return (
     <Centered>
-      <div className="mb-6 flex items-center gap-2">
-        <LogoMark />
-        <span className="font-semibold tracking-tight text-sm">SRouter</span>
+      <div className="mb-7 flex items-center justify-center gap-3">
+        <LogoMark className="size-11" />
+        <span className="text-2xl font-semibold tracking-tight">SRouter</span>
       </div>
       <div className="rounded-3xl border bg-card p-6">
         <h1 className="text-lg font-semibold tracking-tight">{isSetup ? t('auth.createYourAccount') : t('auth.signIn')}</h1>
@@ -148,9 +149,9 @@ function AuthForm({ mode, onAuthed }: { mode: 'setup' | 'login'; onAuthed: () =>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs" htmlFor="auth-password">{t('auth.password')}</Label>
-            <Input
+            <PasswordInput
               id="auth-password"
-              type="password"
+              label={t('auth.password')}
               autoComplete={isSetup ? 'new-password' : 'current-password'}
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -257,9 +258,9 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
 
   return (
     <Centered>
-      <div className="mb-6 flex items-center gap-2">
-        <LogoMark />
-        <span className="font-semibold tracking-tight text-sm">SRouter</span>
+      <div className="mb-7 flex items-center justify-center gap-3">
+        <LogoMark className="size-11" />
+        <span className="text-2xl font-semibold tracking-tight">SRouter</span>
       </div>
       <div className="rounded-3xl border bg-card p-6">
         <h1 className="text-base font-medium">{t('auth.forgotPassword')}</h1>
@@ -293,9 +294,9 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs" htmlFor="reset-new-password">{t('auth.newPassword')}</Label>
-              <Input
+              <PasswordInput
                 id="reset-new-password"
-                type="password"
+                label={t('auth.newPassword')}
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
@@ -395,9 +396,9 @@ export function ChangeCredentialsModal({ mode, onClose }: ChangeCredentialsModal
         <form onSubmit={submit} className="space-y-3 mt-4" noValidate>
           <div className="space-y-1.5">
             <Label className="text-xs" htmlFor="cred-current-password">{t('auth.currentPassword')}</Label>
-            <Input
+            <PasswordInput
               id="cred-current-password"
-              type="password"
+              label={t('auth.currentPassword')}
               autoComplete="current-password"
               value={currentPassword}
               onChange={e => setCurrentPassword(e.target.value)}
@@ -410,15 +411,27 @@ export function ChangeCredentialsModal({ mode, onClose }: ChangeCredentialsModal
             <Label className="text-xs" htmlFor="cred-new-value">
               {isPassword ? t('auth.newPassword') : t('auth.newEmail')}
             </Label>
-            <Input
-              id="cred-new-value"
-              type={isPassword ? 'password' : 'email'}
-              autoComplete={isPassword ? 'new-password' : 'email'}
-              value={newValue}
-              onChange={e => setNewValue(e.target.value)}
-              placeholder={isPassword ? t('auth.passwordPlaceholderSetup') : t('auth.emailPlaceholder')}
-              aria-invalid={attempted && !!newValueError}
-            />
+            {isPassword ? (
+              <PasswordInput
+                id="cred-new-value"
+                label={t('auth.newPassword')}
+                autoComplete="new-password"
+                value={newValue}
+                onChange={e => setNewValue(e.target.value)}
+                placeholder={t('auth.passwordPlaceholderSetup')}
+                aria-invalid={attempted && !!newValueError}
+              />
+            ) : (
+              <Input
+                id="cred-new-value"
+                type="email"
+                autoComplete="email"
+                value={newValue}
+                onChange={e => setNewValue(e.target.value)}
+                placeholder={t('auth.emailPlaceholder')}
+                aria-invalid={attempted && !!newValueError}
+              />
+            )}
             {attempted && <FieldError error={newValueError} />}
           </div>
           {error && <p className="text-destructive text-xs">{error}</p>}
