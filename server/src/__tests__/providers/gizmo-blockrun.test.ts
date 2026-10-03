@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+<<<<<<< HEAD
 import type { ChatCompletionChunk, ChatMessage } from '@baiibayu/srouter-shared/types.js';
+=======
+import type { ChatCompletionChunk, ChatMessage } from '@baiibayu/srouter-shared/types.js';
+>>>>>>> 716948f2 (feat(providers): add Gizmo and BlockRun adapters for v0.13.4 (#1396))
 import { GizmoProvider } from '../../providers/gizmo.js';
 import { BlockRunProvider } from '../../providers/blockrun.js';
 import { getProvider } from '../../providers/index.js';
