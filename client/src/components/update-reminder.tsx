@@ -11,8 +11,6 @@ import { Markdown } from '@/components/markdown'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
 
-const RELEASES_URL = 'https://github.com/tashfeenahmed/freellmapi/releases'
-
 /** How often this browser may ask the server, so a dashboard left open in a
  *  tab isn't re-checking on every navigation. The server caches the upstream
  *  answer for six hours on top of this, and does not call GitHub at all while
@@ -254,7 +252,7 @@ export function UpdateReminder() {
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <a
-              href={release.htmlUrl || RELEASES_URL}
+              href={release.htmlUrl}
               target="_blank"
               rel="noreferrer noopener"
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50"

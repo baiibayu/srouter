@@ -626,6 +626,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
         localSha: null,
         lastChecked: null,
         version: null,
+        releasesUrl: null,
       });
     }
 
@@ -636,6 +637,9 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
       localSha: currentIdentity.sha?.slice(0, 7) ?? null,
       lastChecked: cache?.result.checkedAt ?? null,
       version: appVersion(),
+      // Repo-aware releases page for the dashboard's fallback links; null while
+      // no repository is configured, so the client renders no link at all.
+      releasesUrl,
     });
   });
 

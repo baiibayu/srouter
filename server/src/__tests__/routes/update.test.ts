@@ -570,6 +570,7 @@ describe('Update API', () => {
         localSha: null,
         lastChecked: null,
         version: null,
+        releasesUrl: null,
       });
       expect(execMock).not.toHaveBeenCalled();
       expect(fetchMock).not.toHaveBeenCalled();
@@ -584,6 +585,7 @@ describe('Update API', () => {
         localSha: LOCAL_SHA.slice(0, 7),
         lastChecked: null,
         version: VERSION,
+        releasesUrl: 'https://github.com/tashfeenahmed/freellmapi/releases',
       });
     });
 
@@ -596,6 +598,7 @@ describe('Update API', () => {
         localSha: null,
         lastChecked: null,
         version: VERSION,
+        releasesUrl: 'https://github.com/tashfeenahmed/freellmapi/releases',
       });
     });
 
@@ -610,6 +613,7 @@ describe('Update API', () => {
         localSha: LOCAL_SHA.slice(0, 7),
         lastChecked: '2026-07-28T14:00:00.000Z',
         version: VERSION,
+        releasesUrl: 'https://github.com/tashfeenahmed/freellmapi/releases',
       });
       expect(fetchMock).toHaveBeenCalledOnce();
     });
