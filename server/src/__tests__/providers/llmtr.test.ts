@@ -63,7 +63,7 @@ describe('LLMTR provider', () => {
     await expect(getProvider('llmtr')!.validateKey('test-key')).resolves.toBe(true);
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch.mock.calls[0][0]).toBe('https://llmtr.com/v1/chat/completions');
-    expect(JSON.parse(String(fetch.mock.calls[0][1]?.body))).toMatchObject({ model: '__freellmapi_key_validation__', max_tokens: 1, stream: false });
+    expect(JSON.parse(String(fetch.mock.calls[0][1]?.body))).toMatchObject({ model: '__srouter_key_validation__', max_tokens: 1, stream: false });
   });
 
   it.each([401, 403])('rejects invalid credentials (%s)', async status => {

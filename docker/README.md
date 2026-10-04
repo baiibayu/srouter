@@ -91,7 +91,6 @@ Example `srouter.config.json`:
 ```json
 {
   "admin": { "email": "ops@example.com", "password": "change-me-min-8-chars" },
-  "license": "premium license key from freellmapi.co",
   "keys": [
     { "platform": "groq", "key": "gsk_...", "label": "main" }
   ],
@@ -110,16 +109,16 @@ Example `srouter.config.json`:
 
 The optional `admin` entry creates the first dashboard account while no account
 exists (ignored with a warning afterwards — a claimed install can't be taken
-over by config), and `license` activates a Premium key against the license
-service in the background. Both fields are optional; the file carries plaintext
-secrets, so protect it like `ENCRYPTION_KEY`.
+over by config). The file carries plaintext secrets, so protect it like
+`ENCRYPTION_KEY`.
 
 ## Published Image
 
 Images are published to GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/tashfeenahmed/freellmapi:latest
+# Replace <owner> with the GitHub user or org that publishes this repository.
+docker pull ghcr.io/<owner>/srouter:latest
 ```
 
 The Docker workflow builds pull requests without pushing. After this repository receives the workflow on `main`, pushes to `main` and version tags publish images to GHCR automatically.

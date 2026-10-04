@@ -41,7 +41,7 @@ function countRows(dbPath: string): number {
 
 describe('dead stdio pipe', () => {
   it('does not feed an EPIPE loop into server_logs, and the process survives', async () => {
-    dir = mkdtempSync(path.join(tmpdir(), 'freellmapi-epipe-'));
+    dir = mkdtempSync(path.join(tmpdir(), 'srouter-epipe-'));
     const dbPath = path.join(dir, 'epipe.db');
 
     const proc = spawn(process.execPath, ['--import', 'tsx', childScript, dbPath], {

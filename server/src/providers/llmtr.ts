@@ -5,7 +5,7 @@ import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 
 export const LLMTR_BASE_URL = 'https://llmtr.com/v1';
-const VALIDATION_MODEL = '__freellmapi_key_validation__';
+const VALIDATION_MODEL = '__srouter_key_validation__';
 
 function checkModel(requested: string, returned: string): void {
   if (returned !== requested) {

@@ -13,9 +13,3 @@ For getting started as a user, see [en/README.md](en/README.md) (English entry p
 | [en/](en/OVERVIEW.md) | **English** — all domains (api with 00-high-level-index, cli, clients, desktop, env, fallback, glossary, install, logs, proxy, providers, testing, troubleshooting). |
 | [zh-cn/](zh-cn/OVERVIEW.md) | **简体中文** — Chinese translations, one file per English page with the same name (mirrors `en/` exactly; `en/` is authoritative where the two disagree). |
 | [TRANSLATION.md](TRANSLATION.md) | Translating: rules for locale files, the validator, and the settled terminology table. |
-| [index.html](index.html) | Static website asset (not a doc): redirect page to freellmapi.co. |
-| [success.html](success.html) | Static website asset (not a doc): post-install success page. |
-| [install.sh](install.sh) | Unix Docker bootstrap script served by the project website. |
-| [install.ps1](install.ps1) | PowerShell bootstrap script served by the project website. |
-
-> `index.html` and `success.html` are static website assets shipped with the docs directory, not markdown documentation.

@@ -5,9 +5,10 @@ import { fileURLToPath } from 'node:url';
 // Which RELEASE this install is, for the dashboard to display (#703).
 //
 // Deliberately not `server/package.json`: that version tracks the server
-// workspace and has sat at 0.2.1 across many releases, as has the OpenAPI
-// spec's 0.4.1. The number users know the app by lives in desktop/package.json
-// — it is what the release recipe bumps and what the installers are named for.
+// workspace, and before version unification it sat stale across many releases
+// (as did the OpenAPI spec's version). The number users know the app by lives
+// in desktop/package.json — it is what the release recipe bumps and what the
+// installers are named for.
 //
 // Order:
 //   1. SROUTER_VERSION — the desktop shell sets it from app.getVersion(); a
