@@ -464,8 +464,8 @@ export default function FallbackPage() {
                 <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                   <input
                     type="checkbox"
-                    checked={routing?.exploreEnabled ?? false}
-                    disabled={strategyMutation.isPending}
+                    checked={routing?.exploreEnabled ?? true}
+                    disabled={!routing || strategyMutation.isPending}
                     onChange={e => strategyMutation.mutate({ strategy, exploreEnabled: e.target.checked })}
                     className="size-3.5 accent-foreground"
                   />
