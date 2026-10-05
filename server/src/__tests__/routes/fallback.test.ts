@@ -247,7 +247,8 @@ describe('Fallback API', () => {
   // field made it look permanently off and impossible to disable from the UI.
   it('GET /api/fallback/routing reflects the exploration toggle set via PUT', async () => {
     const get0 = await request(app, 'GET', '/api/fallback/routing');
-    expect(get0.body.exploreEnabled).toBe(false);
+    // v0.6.0 default: an absent setting reads as ON.
+    expect(get0.body.exploreEnabled).toBe(true);
 
     const put = await request(app, 'PUT', '/api/fallback/routing', {
       strategy: 'balanced',
@@ -259,10 +260,10 @@ describe('Fallback API', () => {
     const get1 = await request(app, 'GET', '/api/fallback/routing');
     expect(get1.body.exploreEnabled).toBe(true);
 
-    // Restore the default so later tests start clean.
-    await request(app, 'PUT', '/api/fallback/routing', { strategy: 'balanced', exploreEnabled: false });
+    // Restore the default (ON) so later tests start clean.
+    await request(app, 'PUT', '/api/fallback/routing', { strategy: 'balanced', exploreEnabled: true });
     const get2 = await request(app, 'GET', '/api/fallback/routing');
-    expect(get2.body.exploreEnabled).toBe(false);
+    expect(get2.body.exploreEnabled).toBe(true);
   });
 
   // Peak-hours adjustment (#760): opt-in, so the stock payload must report it

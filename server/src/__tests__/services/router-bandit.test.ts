@@ -327,12 +327,14 @@ describe('bandit router', () => {
     }
   });
 
-  it('exploration toggle persists and defaults to off', () => {
-    expect(getExploreEnabled()).toBe(false);
-    setExploreEnabled(true);
+  it('exploration toggle persists and defaults to on', () => {
+    // v0.6.0: an absent setting reads as ON; an explicit opt-out ('0') is the
+    // only value that disables it.
     expect(getExploreEnabled()).toBe(true);
     setExploreEnabled(false);
     expect(getExploreEnabled()).toBe(false);
+    setExploreEnabled(true);
+    expect(getExploreEnabled()).toBe(true);
   });
 
   it('exploration toggle gives an unmeasured model a chance to be tried', () => {
@@ -378,6 +380,26 @@ describe('bandit router', () => {
       else process.env.MODEL_ROUTING_OVERRIDES = prev;
       resetModelWeightOverrides();
     }
+  });
+
+  it('exploration never probes a platform with no usable key', () => {
+    // The probe pool must exclude keyless platforms: a promoted keyless model
+    // can never serve, so every draw spent on it is wasted. Without the pool
+    // filter keyed-new would only collect about half of the explore draws
+    // (~5% of requests, ~100/2000); with it, it collects all of them
+    // (~10%, >150/2000) while keyless-new stays at zero either way.
+    addModel({ platform: 'google', modelId: 'old', name: 'Old', intelligenceRank: 1, sizeLabel: 'Frontier', budget: '~50M', priority: 1 });
+    addModel({ platform: 'groq', modelId: 'keyed-new', name: 'Keyed New', intelligenceRank: 1, sizeLabel: 'Frontier', budget: '~50M', priority: 2 });
+    addModel({ platform: 'orphan', modelId: 'keyless-new', name: 'Keyless New', intelligenceRank: 1, sizeLabel: 'Frontier', budget: '~50M', priority: 3 });
+    getDb().prepare(`DELETE FROM api_keys WHERE platform = 'orphan'`).run();
+    addHistory('google', 'old', { successes: 500, failures: 0, outTokens: 1000, latencyMs: 100, ttfbMs: 100 });
+    setRoutingStrategy('balanced');
+    refreshStatsCache(getDb(), true);
+    setExploreEnabled(true);
+
+    const counts = pickCounts(2000);
+    expect(counts['keyless-new'] ?? 0).toBe(0);
+    expect(counts['keyed-new'] ?? 0).toBeGreaterThan(150);
   });
 
   it('community priors persist, drop invalid entries, and cap effective sample size (#685)', () => {
