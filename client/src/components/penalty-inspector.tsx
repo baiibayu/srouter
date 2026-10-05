@@ -159,7 +159,7 @@ export function PenaltyInspector() {
             type="button"
             onClick={() => clearAll.mutate()}
             disabled={clearAll.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs hover:bg-muted disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs text-destructive transition-colors hover:bg-destructive/20 disabled:opacity-50"
           >
             <Eraser className="size-3.5" />
             {t('penaltyInspector.clearAll')}
