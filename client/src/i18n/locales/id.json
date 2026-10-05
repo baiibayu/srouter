@@ -807,7 +807,9 @@
     "webSearchStored": "Kunci tersimpan",
     "webSearchNotSet": "Belum diatur",
     "webSearchGetKey": "Dapatkan kunci gratis",
-    "webSearchHelp": "Backend untuk POST /v1/web-search. DuckDuckGo dan SearXNG tanpa kunci; Tavily, Brave, Exa free tier (tanpa kartu); TinyFish gratis (12k pencarian/hari). Jika sebuah backend gagal, permintaan menelusuri rantai jatuh balik (DuckDuckGo lebih dulu)."
+    "webSearchHelp": "Backend untuk POST /v1/web-search. DuckDuckGo dan SearXNG tanpa kunci; Tavily, Brave, Exa free tier (tanpa kartu); TinyFish gratis (12k pencarian/hari). Jika sebuah backend gagal, permintaan menelusuri rantai jatuh balik (DuckDuckGo lebih dulu).",
+    "quotaBalanceHint": "Tersisa {remaining} dari {limit} {metric}",
+    "quotaBalanceLeft": "Tersisa {remaining}"
   },
   "backups": {
     "title": "Backups",

@@ -807,7 +807,9 @@
     "webSearchStored": "Key stored",
     "webSearchNotSet": "No key yet",
     "webSearchGetKey": "Get a free key",
-    "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first)."
+    "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
+    "quotaBalanceHint": "เหลือ {remaining} จาก {limit} {metric}",
+    "quotaBalanceLeft": "เหลือ {remaining}"
   },
   "backups": {
     "title": "Backups",
