@@ -1,6 +1,6 @@
 {
   "name": "srouter-desktop",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "SRouter menu-bar app — local OpenAI-compatible LLM router",
   "author": {
     "name": "tashfeenahmed",
