@@ -19,6 +19,8 @@ SRouter (fork & rebrand FreeLLMAPI, MIT — kredit Tashfeen Ahmed). Monorepo: `s
 - Vault: `C:\Users\Hype AMD\basic-memory` (di LUAR repo — jangan ikut di-commit)
 - **Awal sesi**: baca `C:\Users\Hype AMD\basic-memory\MEMORY.md` (indeks) lalu note relevan di `basic-memory\srouter\`.
 - **Checkpoint & akhir sesi**: tulis catatan ke vault (apa selesai, keputusan, sisa/blocked) + update indeks MEMORY.md. Pakai file `.md` langsung di vault (CLI write-note sering gagal parse argumen panjang).
+- **Diskusi/keputusan penting: tulis ke vault SEBELUM bergeser topik** — jangan tunggu akhir sesi. Konteks sesi bisa terkompak/hilang (kejadian 2026-10-05: diskusi Jev hilang setelah lompat ke topik exploration, user marah). Kalau topik sudah selesai atau akan pindah topik → checkpoint dulu, baru lanjut.
+- Kalau lupa pembahasan sebelumnya: pulihkan dari `opencode.db` (`%USERPROFILE%\.local\share\opencode\opencode.db`, tabel `part`+`message`, `json_extract(data,'$.text')`) sebelum bertanya ke user.
 - Jangan menulis memory ke lokasi Copilot Chat lama.
 
 ## Fakta dev kritis
