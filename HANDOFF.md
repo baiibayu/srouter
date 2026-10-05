@@ -49,3 +49,4 @@
 3. Prompt ke OpenCode: tulis spesifik (file mana, hasil apa, cara verifikasi). Sertakan file konteks dengan `-f` bila perlu.
 4. Setelah OpenCode selesai: koordinator verifikasi sendiri (git diff, build, test) — jangan percaya laporan tanpa cek.
 5. Kutip ganda di prompt aman di bash, tapi hindari karakter aneh di path Windows.
+6. **Standar pola worker (keputusan leader 2026-10-05)**: worker **DILARANG commit sendiri** — cukup edit + build + test, lalu laporkan diff. Koordinator (OpenCode lead) yang **commit serial** setelah verifikasi tiap worker. Ini menghilangkan race index satu-working-dir yang sempat terjadi di rilis 0.6.0. Ownership file tetap disjoint per worker; jangan dua worker build/test target yang sama (mis. `server` build) bersamaan. Fallback (bila worker terlanjur commit): `git reset --soft HEAD~1` + unstage file yang bukan miliknya, lalu commit ulang terpisah.
