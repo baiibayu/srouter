@@ -3,6 +3,9 @@
 /** How the global outbound proxy URL is interpreted. Per-key proxies always
  * use the traditional forward-proxy transport. */
 export type ProxyMode = 'forward' | 'fetch-relay';
+/** Per-key budget window: UTC day, ISO week (Monday) or calendar month —
+ *  chosen to match the provider's quota reset cycle. */
+export type BudgetPeriod = 'daily' | 'weekly' | 'monthly';
 
 /** A model declared beside a custom endpoint in an import file (#382). A
  *  capability flag is present only when the paste declared it via a trailing
@@ -347,8 +350,10 @@ export interface ApiKey {
   monthlyRequestCap?: number;
   /** Per-key monthly token cap (0 = unlimited, #1158). */
   monthlyTokenCap?: number;
-  /** Current UTC month's successful usage against the caps above, with the
-   *  ISO time of the next monthly reset. */
+  /** UTC window the caps count against (default monthly, #1158). */
+  budgetPeriod?: BudgetPeriod;
+  /** Current period's successful usage against the caps above, with the
+   *  ISO time of the next period reset. */
   monthlyUsage?: { requests: number; tokens: number; resetsAt: string };
   /** The per-key proxy override with its password masked (#590); '' = none. */
   maskedProxyUrl?: string;

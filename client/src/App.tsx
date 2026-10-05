@@ -137,8 +137,8 @@ function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
 function Brand() {
   return (
     <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
-      <LogoMark />
-      <span className="font-semibold tracking-tight text-sm">SRouter</span>
+      <LogoMark className="size-6" />
+      <span className="font-semibold tracking-tight text-base">SRouter</span>
     </Link>
   )
 }

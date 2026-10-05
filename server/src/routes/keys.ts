@@ -11,7 +11,7 @@ import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../l
 import { assessProviderUrl } from '../lib/url-guard.js';
 import { verifyCredentials } from '../services/auth.js';
 import { getActiveCooldownsForKeys, clearCooldownsForKey } from '../services/ratelimit.js';
-import { getMonthlyBudgetCaps, getMonthlyUsage, nextMonthResetAt } from '../services/key-budget.js';
+import { getMonthlyBudgetCaps, getMonthlyUsage, nextResetAt } from '../services/key-budget.js';
 import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential } from '../services/custom-endpoint.js';
 import { registerCustomModels, registerCustomChatModels } from '../services/custom-model-register.js';
 import { registerCustomMediaModel } from '../services/custom-media-register.js';
@@ -95,13 +95,15 @@ const updateKeySchema = z.object({
   modelScope: z.array(z.string().trim().min(1).max(200)).max(100).nullable().optional(),
   // #590: '' clears the per-key proxy; absent leaves it unchanged.
   proxyUrl: proxyUrlSchema.optional(),
-  // Monthly budget caps (#1158): 0 clears the cap (unlimited).
+  // Monthly budget caps (#1158): 0 clears the cap (unlimited). The period
+  // names the UTC window the caps count against (provider reset cycle).
   monthlyRequestCap: z.number().int().min(0).max(1_000_000_000).optional(),
   monthlyTokenCap: z.number().int().min(0).max(1_000_000_000_000).optional(),
+  budgetPeriod: z.enum(['daily', 'weekly', 'monthly']).optional(),
   // An absent credential leaves the encrypted key untouched.
   key: z.string().trim().min(1).optional(),
-}).refine(data => data.enabled !== undefined || data.label !== undefined || data.modelScope !== undefined || data.proxyUrl !== undefined || data.key !== undefined || data.monthlyRequestCap !== undefined || data.monthlyTokenCap !== undefined, {
-  message: 'At least one of enabled, label, modelScope, proxyUrl, key, monthlyRequestCap or monthlyTokenCap must be provided',
+}).refine(data => data.enabled !== undefined || data.label !== undefined || data.modelScope !== undefined || data.proxyUrl !== undefined || data.key !== undefined || data.monthlyRequestCap !== undefined || data.monthlyTokenCap !== undefined || data.budgetPeriod !== undefined, {
+  message: 'At least one of enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap or budgetPeriod must be provided',
 });
 
 const importKeySchema = z.object({
@@ -392,8 +394,9 @@ keysRouter.get('/', (_req: Request, res: Response) => {
     const budgetCaps = getMonthlyBudgetCaps(Number(row.id));
     // Usage alongside the caps so the dashboard can show "342 of 1,000 this
     // month" instead of only the cap (OpenRouter's GET /api/v1/key returns
-    // limit_remaining for the same reason).
-    const monthlyUsage = getMonthlyUsage(Number(row.id));
+    // limit_remaining for the same reason). The bucket and reset boundary
+    // follow the key's budget period (daily/weekly/monthly, UTC).
+    const monthlyUsage = getMonthlyUsage(Number(row.id), budgetCaps.period);
     return {
       id: row.id,
       platform: row.platform,
@@ -402,10 +405,11 @@ keysRouter.get('/', (_req: Request, res: Response) => {
       baseUrl: row.base_url ?? null,
       monthlyRequestCap: budgetCaps.requestCap,
       monthlyTokenCap: budgetCaps.tokenCap,
+      budgetPeriod: budgetCaps.period,
       monthlyUsage: {
         requests: monthlyUsage.requests,
         tokens: monthlyUsage.tokens,
-        resetsAt: nextMonthResetAt(),
+        resetsAt: nextResetAt(budgetCaps.period),
       },
       status: row.status,
       enabled: row.enabled === 1,
@@ -1826,7 +1830,7 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
     return;
   }
 
-  const { enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap } = parsed.data;
+  const { enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap, budgetPeriod } = parsed.data;
   const updates: string[] = [];
   const values: (string | number | null)[] = [];
   let changedKey: string | undefined;
@@ -1887,6 +1891,11 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
     updates.push('monthly_token_cap = ?');
     values.push(monthlyTokenCap);
   }
+  // Period switch starts the new counter at zero (buckets are namespaced).
+  if (budgetPeriod !== undefined) {
+    updates.push('budget_period = ?');
+    values.push(budgetPeriod);
+  }
   // Deduped; an empty result stores NULL, which the router reads as "unscoped".
   const scopeIds = modelScope == null ? [] : [...new Set(modelScope)];
   if (modelScope !== undefined) {
@@ -1918,5 +1927,6 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
   if (proxyUrl !== undefined) response.maskedProxyUrl = maskProxyUrl(proxyUrl);
   if (key !== undefined) response.maskedKey = maskKey(key);
   if (modelScope !== undefined) response.modelScope = scopeIds.length > 0 ? scopeIds : null;
+  if (budgetPeriod !== undefined) response.budgetPeriod = budgetPeriod;
   res.json(response);
 });

@@ -25,7 +25,7 @@ export function reserveProviderCredential(
   row: { platform: string; key_id: number | null },
   estimatedTokens: number,
   skip: (keyId: number) => boolean = () => false,
-): { credential: ReservedProviderCredential | null; budgetBlocked: boolean } {
+): { credential: ReservedProviderCredential | null; budgetBlocked: boolean; budgetRetryAfterMs?: number } {
   if (row.platform === 'custom' && row.key_id == null) return { credential: null, budgetBlocked: false };
   const bound = row.key_id != null;
   const keys = getDb().prepare(`
@@ -34,6 +34,9 @@ export function reserveProviderCredential(
       AND status IN ('healthy', 'unknown') ORDER BY RANDOM()
   `).all(bound ? row.key_id : row.platform) as KeyRow[];
   let budgetBlocked = false;
+  // Soonest reset among the keys this pass was blocked on — each key's own
+  // period boundary (daily/weekly/monthly, UTC), not always the next month.
+  let budgetRetryAfterMs: number | undefined;
   for (const keyRow of keys) {
     if (skip(keyRow.id)) continue;
     let key: string;
@@ -43,7 +46,12 @@ export function reserveProviderCredential(
       continue;
     }
     const reservation = reserveMonthlyBudget(keyRow.id, estimatedTokens);
-    if (!reservation.allowed) { budgetBlocked = true; continue; }
+    if (!reservation.allowed) {
+      budgetBlocked = true;
+      const ms = reservation.retryAfterSec * 1000;
+      if (budgetRetryAfterMs === undefined || ms < budgetRetryAfterMs) budgetRetryAfterMs = ms;
+      continue;
+    }
     return {
       credential: {
         id: keyRow.id, key,
@@ -51,7 +59,8 @@ export function reserveProviderCredential(
         release: reservation.release,
       },
       budgetBlocked,
+      budgetRetryAfterMs,
     };
   }
-  return { credential: null, budgetBlocked };
+  return { credential: null, budgetBlocked, budgetRetryAfterMs };
 }

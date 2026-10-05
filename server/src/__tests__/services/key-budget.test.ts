@@ -5,6 +5,7 @@ import { pruneRequestAnalytics } from '../../services/request-retention.js';
 import { routePinnedModel, routeRequest } from '../../services/router.js';
 import { routingExhaustionBody, setExhaustionHeaders } from '../../lib/fallback-loop.js';
 import * as ledgerMigration from '../../db/migrations/20260914_000001_key_monthly_usage.js';
+import * as budgetPeriodMigration from '../../db/migrations/20261005_000001_key_budget_period.js';
 import {
   reserveMonthlyBudget,
   getMonthlyBudgetCaps,
@@ -13,6 +14,8 @@ import {
   checkMonthlyBudget,
   secondsUntilNextMonth,
   nextMonthResetAt,
+  periodBucket,
+  nextResetAt,
 } from '../../services/key-budget.js';
 
 // Per-key monthly budget (#1158): caps are opt-in (0 = unlimited), metering is
@@ -71,17 +74,17 @@ describe('key-budget: monthly caps (#1158)', () => {
 
   it('defaults to unlimited (0 caps) for a fresh key', () => {
     insertKey();
-    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 0, tokenCap: 0 });
+    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 0, tokenCap: 0, period: 'monthly' });
     expect(checkMonthlyBudget(keyId, 100)).toEqual({ allowed: true });
   });
 
   it('setMonthlyBudgetCaps persists caps', () => {
     insertKey();
     expect(setMonthlyBudgetCaps(keyId, { requestCap: 10, tokenCap: 5000 })).toBe(true);
-    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 10, tokenCap: 5000 });
+    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 10, tokenCap: 5000, period: 'monthly' });
     // Patching only one field leaves the other untouched.
     setMonthlyBudgetCaps(keyId, { requestCap: 3 });
-    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 3, tokenCap: 5000 });
+    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 3, tokenCap: 5000, period: 'monthly' });
   });
 
   it('counts only the current month’s successful requests', () => {
@@ -158,6 +161,10 @@ describe('key-budget: monthly caps (#1158)', () => {
     recordSuccess(inThisMonth());
     ledgerMigration.up(getDb());
     ledgerMigration.up(getDb());
+    // Re-running the 20260914 migration recreates the original monthly-only
+    // trigger; re-apply the period-aware one (20261005) like a real upgrade
+    // would have it last.
+    budgetPeriodMigration.up(getDb());
     expect(getMonthlyUsage(keyId)).toEqual({ requests: 1, tokens: 150 });
     recordSuccess(inThisMonth());
     expect(getMonthlyUsage(keyId)).toEqual({ requests: 2, tokens: 300 });
@@ -197,7 +204,7 @@ describe('key-budget: monthly caps (#1158)', () => {
     if (!first.allowed) throw new Error('expected a reservation');
     expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
     const nextMonth = Date.parse(nextMonthResetAt());
-    expect(getMonthlyUsage(keyId, nextMonth).requests).toBe(0);
+    expect(getMonthlyUsage(keyId, 'monthly', nextMonth).requests).toBe(0);
     expect(checkMonthlyBudget(keyId, 0, nextMonth).allowed).toBe(true);
     first.release();
   });
@@ -236,5 +243,54 @@ describe('key-budget: monthly caps (#1158)', () => {
     // seconds until that boundary
     const expected = Math.floor((Date.parse('2026-08-01T00:00:00.000Z') - now) / 1000);
     expect(secs).toBe(expected);
+  });
+
+  it('periodBucket and reset boundaries match the trigger SQL (UTC)', () => {
+    const wed = Date.UTC(2026, 9, 7, 15, 30); // 2026-10-07 Wednesday
+    expect(periodBucket('daily', wed)).toBe('d:2026-10-07');
+    expect(periodBucket('weekly', wed)).toBe('w:2026-10-05'); // Monday of that week
+    expect(periodBucket('weekly', Date.UTC(2026, 9, 4))).toBe('w:2026-09-28'); // Sunday rolls back
+    expect(periodBucket('monthly', wed)).toBe('2026-10');
+    expect(nextResetAt('daily', wed)).toBe('2026-10-08T00:00:00.000Z');
+    expect(nextResetAt('weekly', wed)).toBe('2026-10-12T00:00:00.000Z');
+    expect(nextResetAt('monthly', wed)).toBe('2026-11-01T00:00:00.000Z');
+  });
+
+  it('daily period: buckets by UTC day, rejects at the cap, resets at next midnight', () => {
+    insertKey({ monthlyRequestCap: 1 });
+    getDb().prepare("UPDATE api_keys SET budget_period = 'daily' WHERE id = ?").run(keyId);
+    recordSuccess(new Date());
+    expect(getMonthlyUsage(keyId, 'daily').requests).toBe(1);
+    // The monthly bucket stays empty — daily rows are namespaced ('d:').
+    expect(getMonthlyUsage(keyId, 'monthly').requests).toBe(0);
+    const verdict = checkMonthlyBudget(keyId, 0);
+    expect(verdict.allowed).toBe(false);
+    if (!verdict.allowed) {
+      expect(verdict.retryAfterSec).toBeGreaterThan(0);
+      expect(verdict.retryAfterSec).toBeLessThanOrEqual(24 * 3600);
+    }
+    expect(checkMonthlyBudget(keyId, 0, Date.now() + 24 * 3600_000).allowed).toBe(true);
+  });
+
+  it('weekly period: buckets on Monday, rejects at the cap, resets next Monday', () => {
+    insertKey({ monthlyRequestCap: 1 });
+    getDb().prepare("UPDATE api_keys SET budget_period = 'weekly' WHERE id = ?").run(keyId);
+    recordSuccess(new Date());
+    expect(getMonthlyUsage(keyId, 'weekly').requests).toBe(1);
+    expect(getMonthlyUsage(keyId, 'monthly').requests).toBe(0);
+    const verdict = checkMonthlyBudget(keyId, 0);
+    expect(verdict.allowed).toBe(false);
+    if (!verdict.allowed) expect(verdict.retryAfterSec).toBeLessThanOrEqual(7 * 24 * 3600);
+    expect(checkMonthlyBudget(keyId, 0, Date.now() + 7 * 24 * 3600_000).allowed).toBe(true);
+  });
+
+  it('switching the period starts the new counter at zero', () => {
+    insertKey({ monthlyRequestCap: 1 });
+    recordSuccess(new Date());
+    expect(getMonthlyUsage(keyId, 'monthly').requests).toBe(1);
+    expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
+    getDb().prepare("UPDATE api_keys SET budget_period = 'daily' WHERE id = ?").run(keyId);
+    expect(getMonthlyUsage(keyId, 'daily').requests).toBe(0);
+    expect(checkMonthlyBudget(keyId, 0).allowed).toBe(true);
   });
 });

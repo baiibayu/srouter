@@ -1,4 +1,4 @@
-import { nextMonthResetAt } from '../services/key-budget.js';
+import { soonestBudgetResetAt } from '../services/key-budget.js';
 // One shared provider retry/fallback loop for every OpenAI-, Responses- and
 // Anthropic-shaped chat surface (routes/proxy.ts legacy /completions and
 // /chat/completions, routes/responses.ts, routes/anthropic.ts). Each surface
@@ -1164,8 +1164,8 @@ export function routingExhaustionBody(routeErr: any): ExhaustionBody {
   if (classes.includes('monthly_budget') && classes.every(c => c === 'monthly_budget' || c === 'config' || c === 'too_large')) {
     return {
       kind: 'rate_limit', status: 429, type: 'rate_limit_error', code: 'quota_exceeded',
-      retryAtMs: Date.parse(nextMonthResetAt()),
-      message: `Monthly key budget exhausted. Raise the cap or wait until the next UTC month. ${message}`,
+      retryAtMs: Date.parse(soonestBudgetResetAt()),
+      message: `Key budget exhausted for the current period. Raise the cap or wait until the next UTC reset. ${message}`,
     };
   }
 

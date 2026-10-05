@@ -768,13 +768,13 @@ export async function runImageGeneration(model: string | undefined, params: Imag
   // Only a chain rate limited end to end earns a Retry-After (the soonest).
   const hints = new RetryHintTracker();
   for (const row of chain) {
-    const { credential, budgetBlocked } = KEYLESS_CAPABLE.has(row.platform)
-      ? { credential: { id: null, key: null, baseUrl: null, release: () => {} }, budgetBlocked: false }
+    const { credential, budgetBlocked, budgetRetryAfterMs } = KEYLESS_CAPABLE.has(row.platform)
+      ? { credential: { id: null, key: null, baseUrl: null, release: () => {} }, budgetBlocked: false, budgetRetryAfterMs: undefined }
       : reserveProviderCredential(row, 0);
     if (!credential) {
       if (budgetBlocked) {
-        lastError = new MediaError('Monthly key budget exhausted', 429, 'quota_exceeded');
-        hints.record(429, secondsUntilNextMonth() * 1000);
+        lastError = new MediaError('Key budget exhausted', 429, 'quota_exceeded');
+        hints.record(429, budgetRetryAfterMs ?? secondsUntilNextMonth() * 1000);
       }
       continue;
     }
@@ -812,12 +812,12 @@ export async function runVideoGeneration(
   const hints = new RetryHintTracker();
   for (const row of chain) {
     throwIfClientGone(clientSignal);
-    const { credential, budgetBlocked } = reserveProviderCredential(row, 0,
+    const { credential, budgetBlocked, budgetRetryAfterMs } = reserveProviderCredential(row, 0,
       keyId => isOnCooldown(row.platform, row.model_id, keyId));
     if (!credential) {
       if (budgetBlocked) {
-        lastError = new MediaError('Monthly key budget exhausted', 429, 'quota_exceeded');
-        hints.record(429, secondsUntilNextMonth() * 1000);
+        lastError = new MediaError('Key budget exhausted', 429, 'quota_exceeded');
+        hints.record(429, budgetRetryAfterMs ?? secondsUntilNextMonth() * 1000);
       }
       continue;
     }
@@ -1089,12 +1089,12 @@ export async function runTranscription(model: string | undefined, p: Transcripti
   // Only a chain rate limited end to end earns a Retry-After (the soonest).
   const hints = new RetryHintTracker();
   for (const m of usable) {
-    const { credential, budgetBlocked } = reserveProviderCredential({ platform: m.platform, key_id: m.keyId }, 0,
+    const { credential, budgetBlocked, budgetRetryAfterMs } = reserveProviderCredential({ platform: m.platform, key_id: m.keyId }, 0,
       keyId => isOnCooldown(m.platform, m.modelId, keyId));
     if (!credential) {
       if (budgetBlocked) {
-        lastError = new MediaError('Monthly key budget exhausted', 429, 'quota_exceeded');
-        hints.record(429, secondsUntilNextMonth() * 1000);
+        lastError = new MediaError('Key budget exhausted', 429, 'quota_exceeded');
+        hints.record(429, budgetRetryAfterMs ?? secondsUntilNextMonth() * 1000);
       }
       continue;
     }
@@ -1129,13 +1129,13 @@ export async function runSpeech(model: string | undefined, params: SpeechParams)
   // Only a chain rate limited end to end earns a Retry-After (the soonest).
   const hints = new RetryHintTracker();
   for (const row of chain) {
-    const { credential, budgetBlocked } = KEYLESS_CAPABLE.has(row.platform)
-      ? { credential: { id: null, key: null, baseUrl: null, release: () => {} }, budgetBlocked: false }
+    const { credential, budgetBlocked, budgetRetryAfterMs } = KEYLESS_CAPABLE.has(row.platform)
+      ? { credential: { id: null, key: null, baseUrl: null, release: () => {} }, budgetBlocked: false, budgetRetryAfterMs: undefined }
       : reserveProviderCredential(row, 0);
     if (!credential) {
       if (budgetBlocked) {
-        lastError = new MediaError('Monthly key budget exhausted', 429, 'quota_exceeded');
-        hints.record(429, secondsUntilNextMonth() * 1000);
+        lastError = new MediaError('Key budget exhausted', 429, 'quota_exceeded');
+        hints.record(429, budgetRetryAfterMs ?? secondsUntilNextMonth() * 1000);
       }
       continue;
     }

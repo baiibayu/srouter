@@ -6,8 +6,9 @@ import { Dialog, DialogClose, DialogPopup, DialogTitle } from '@/components/ui/d
 import { FieldError } from '@/components/ui/field-error'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X } from 'lucide-react'
-import type { ApiKey } from '../../../../shared/types'
+import type { ApiKey, BudgetPeriod } from '../../../../shared/types'
 import { useI18n } from '@/i18n'
 import { PLATFORMS } from './shared'
 
@@ -23,6 +24,7 @@ type UpdateBody = {
   key?: string
   monthlyRequestCap?: number
   monthlyTokenCap?: number
+  budgetPeriod?: BudgetPeriod
 }
 
 /** Parse a budget-cap input: blank or 0 means unlimited (0); otherwise a
@@ -56,10 +58,12 @@ export function EditKeyDialog({
   const [apiKeyValue, setApiKeyValue] = useState('')
   const [accountId, setAccountId] = useState('')
   const [attempted, setAttempted] = useState(false)
-  // Monthly budget caps (#1158): editable here so the cap is settable from
-  // the dashboard at all; it shipped API-only. Empty = unlimited.
+  // Budget caps (#1158): editable here so the cap is settable from the
+  // dashboard at all; it shipped API-only. Empty = unlimited. The period
+  // picks the UTC window (daily/weekly/monthly) the caps count against.
   const [requestCap, setRequestCap] = useState(capToInput(apiKey.monthlyRequestCap))
   const [tokenCap, setTokenCap] = useState(capToInput(apiKey.monthlyTokenCap))
+  const [period, setPeriod] = useState<BudgetPeriod>(apiKey.budgetPeriod ?? 'monthly')
 
   const needsAccountId = apiKey.platform === 'cloudflare'
   // Every row takes a credential, including the anonymous row of a
@@ -81,7 +85,8 @@ export function EditKeyDialog({
   const capError = requestCapValue === null || tokenCapValue === null
   const requestCapChanged = requestCapValue !== (apiKey.monthlyRequestCap || 0)
   const tokenCapChanged = tokenCapValue !== (apiKey.monthlyTokenCap || 0)
-  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged
+  const periodChanged = period !== (apiKey.budgetPeriod ?? 'monthly')
+  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged
 
   const updateKey = useMutation({
     mutationFn: (body: UpdateBody) =>
@@ -104,6 +109,7 @@ export function EditKeyDialog({
     if (credential) body.key = credential
     if (requestCapChanged && requestCapValue !== null) body.monthlyRequestCap = requestCapValue
     if (tokenCapChanged && tokenCapValue !== null) body.monthlyTokenCap = tokenCapValue
+    if (periodChanged) body.budgetPeriod = period
     if (Object.keys(body).length > 0) updateKey.mutate(body)
     else onOpenChange(false)
   }
@@ -180,7 +186,7 @@ export function EditKeyDialog({
             </p>
           </div>
 
-          {/* Monthly budget (#1158) stays one collapsed line; it opens by
+          {/* Budget caps (#1158) stay one collapsed line; they open by
               default only when a cap is already set, so a cap is never hidden. */}
           <details className="group" open={Boolean(apiKey.monthlyRequestCap || apiKey.monthlyTokenCap) || undefined}>
             <summary className="cursor-pointer select-none text-[11px] text-muted-foreground hover:text-foreground">
@@ -218,11 +224,24 @@ export function EditKeyDialog({
 
                     return `${reqLine} · ${tokLine}${resetLine}`
                   })()
-                : t('keys.monthlyRequestCapLabel')}
+                : t('keys.requestCapLabel')}
             </summary>
-            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            <div className="mt-2 grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label className="text-xs" htmlFor="edit-key-request-cap">{t('keys.monthlyRequestCapLabel')}</Label>
+                <Label className="text-xs" htmlFor="edit-key-budget-period">{t('keys.budgetPeriodLabel')}</Label>
+                <Select value={period} onValueChange={value => setPeriod(value as BudgetPeriod)}>
+                  <SelectTrigger id="edit-key-budget-period" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily" label={t('keys.budgetPeriodDaily')}>{t('keys.budgetPeriodDaily')}</SelectItem>
+                    <SelectItem value="weekly" label={t('keys.budgetPeriodWeekly')}>{t('keys.budgetPeriodWeekly')}</SelectItem>
+                    <SelectItem value="monthly" label={t('keys.budgetPeriodMonthly')}>{t('keys.budgetPeriodMonthly')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="edit-key-request-cap">{t('keys.requestCapLabel')}</Label>
                 <Input
                   id="edit-key-request-cap"
                   inputMode="numeric"
@@ -234,7 +253,7 @@ export function EditKeyDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs" htmlFor="edit-key-token-cap">{t('keys.monthlyTokenCapLabel')}</Label>
+                <Label className="text-xs" htmlFor="edit-key-token-cap">{t('keys.tokenCapLabel')}</Label>
                 <Input
                   id="edit-key-token-cap"
                   inputMode="numeric"
