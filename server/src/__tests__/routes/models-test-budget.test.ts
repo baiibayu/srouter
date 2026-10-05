@@ -22,7 +22,8 @@ const post = async (path: string, body?: object) => {
 beforeEach(async () => {
   process.env.ENCRYPTION_KEY='0'.repeat(64); initDb(':memory:'); const db=getDb();
   const {encrypted,iv,authTag}=encrypt('synthetic-test-key');
-  keyId=Number(db.prepare("INSERT INTO api_keys(platform,label,encrypted_key,iv,auth_tag,status,enabled,monthly_request_cap) VALUES ('groq','test',?,?,?,'healthy',1,1)").run(encrypted,iv,authTag).lastInsertRowid);
+  // Pin manual monthly so the ledger bucket matches the monthly expectations below.
+  keyId=Number(db.prepare("INSERT INTO api_keys(platform,label,encrypted_key,iv,auth_tag,status,enabled,monthly_request_cap,budget_period_mode) VALUES ('groq','test',?,?,?,'healthy',1,1,'manual')").run(encrypted,iv,authTag).lastInsertRowid);
   ids = [++sequence,++sequence];
   for(const id of ids) db.prepare("INSERT INTO models(id,platform,model_id,display_name,intelligence_rank,speed_rank,size_label,enabled) VALUES (?,'groq',?,'Test',1,1,'Small',1)").run(id,'test-'+id);
   server=createApp().listen(0,'127.0.0.1');

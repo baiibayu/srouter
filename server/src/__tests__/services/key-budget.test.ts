@@ -6,6 +6,7 @@ import { routePinnedModel, routeRequest } from '../../services/router.js';
 import { routingExhaustionBody, setExhaustionHeaders } from '../../lib/fallback-loop.js';
 import * as ledgerMigration from '../../db/migrations/20260914_000001_key_monthly_usage.js';
 import * as budgetPeriodMigration from '../../db/migrations/20261005_000001_key_budget_period.js';
+import * as autoBudgetPeriodMigration from '../../db/migrations/20261005_000002_key_budget_period_auto.js';
 import {
   reserveMonthlyBudget,
   getMonthlyBudgetCaps,
@@ -16,6 +17,8 @@ import {
   nextMonthResetAt,
   periodBucket,
   nextResetAt,
+  resolveAutoPeriod,
+  syncAutoBudgetPeriod,
 } from '../../services/key-budget.js';
 
 // Per-key monthly budget (#1158): caps are opt-in (0 = unlimited), metering is
@@ -24,16 +27,24 @@ import {
 
 let keyId = 0;
 
-function insertKey(overrides: { status?: string; monthlyRequestCap?: number; monthlyTokenCap?: number } = {}) {
+function insertKey(overrides: {
+  status?: string;
+  monthlyRequestCap?: number;
+  monthlyTokenCap?: number;
+  budgetPeriodMode?: 'auto' | 'manual';
+  budgetPeriod?: 'daily' | 'weekly' | 'monthly';
+} = {}) {
   const { encrypted, iv, authTag } = encrypt('sk-test');
   const result = getDb().prepare(`
-    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, monthly_request_cap, monthly_token_cap)
-    VALUES ('groq', 'test', ?, ?, ?, ?, 1, ?, ?)
+    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, monthly_request_cap, monthly_token_cap, budget_period, budget_period_mode)
+    VALUES ('groq', 'test', ?, ?, ?, ?, 1, ?, ?, ?, ?)
   `).run(
     encrypted, iv, authTag,
     overrides.status ?? 'healthy',
     overrides.monthlyRequestCap ?? 0,
     overrides.monthlyTokenCap ?? 0,
+    overrides.budgetPeriod ?? 'monthly',
+    overrides.budgetPeriodMode ?? 'auto',
   );
   keyId = Number(result.lastInsertRowid);
 }
@@ -74,21 +85,23 @@ describe('key-budget: monthly caps (#1158)', () => {
 
   it('defaults to unlimited (0 caps) for a fresh key', () => {
     insertKey();
-    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 0, tokenCap: 0, period: 'monthly' });
+    // groq has daily limits → auto resolves to daily
+    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 0, tokenCap: 0, period: 'daily', mode: 'auto', source: 'daily-limit' });
     expect(checkMonthlyBudget(keyId, 100)).toEqual({ allowed: true });
   });
 
   it('setMonthlyBudgetCaps persists caps', () => {
     insertKey();
     expect(setMonthlyBudgetCaps(keyId, { requestCap: 10, tokenCap: 5000 })).toBe(true);
-    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 10, tokenCap: 5000, period: 'monthly' });
+    // groq has daily limits → auto resolves to daily
+    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 10, tokenCap: 5000, period: 'daily', mode: 'auto', source: 'daily-limit' });
     // Patching only one field leaves the other untouched.
     setMonthlyBudgetCaps(keyId, { requestCap: 3 });
-    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 3, tokenCap: 5000, period: 'monthly' });
+    expect(getMonthlyBudgetCaps(keyId)).toEqual({ requestCap: 3, tokenCap: 5000, period: 'daily', mode: 'auto', source: 'daily-limit' });
   });
 
   it('counts only the current month’s successful requests', () => {
-    insertKey();
+    insertKey({ budgetPeriodMode: 'manual' });
     recordSuccess(inThisMonth()); // counts: 1 req, 150 tokens
     recordSuccess(inThisMonth()); // counts: 2 req, 300 tokens
     recordFailure(inThisMonth()); // excluded (status != success)
@@ -100,7 +113,7 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('rejects at the request cap with a next-month Retry-After', () => {
-    insertKey({ monthlyRequestCap: 2 });
+    insertKey({ monthlyRequestCap: 2, budgetPeriodMode: 'manual' });
     recordSuccess(inThisMonth());
     recordSuccess(inThisMonth());
 
@@ -115,7 +128,7 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('rejects at the token cap, counting the estimated tokens of THIS request', () => {
-    insertKey({ monthlyTokenCap: 1000 });
+    insertKey({ monthlyTokenCap: 1000, budgetPeriodMode: 'manual' });
     recordSuccess(inThisMonth()); // 150 tokens used
 
     // 150 + 900 > 1000 → rejected.
@@ -125,13 +138,13 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('blocks requests with no token estimate once the token cap is fully spent', () => {
-    insertKey({ monthlyTokenCap: 150 });
+    insertKey({ monthlyTokenCap: 150, budgetPeriodMode: 'manual' });
     recordSuccess(inThisMonth());
     expect(checkMonthlyBudget(keyId, 0)).toMatchObject({ allowed: false, reason: 'monthly_token_cap' });
   });
 
   it('does not reject when the cap is hit exactly on the boundary request', () => {
-    insertKey({ monthlyRequestCap: 2 });
+    insertKey({ monthlyRequestCap: 2, budgetPeriodMode: 'manual' });
     recordSuccess(inThisMonth());
     recordSuccess(inThisMonth());
     // usage.requests === cap → rejected (strictly at/over the cap counts spent).
@@ -139,7 +152,7 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('retains spent budgets when request logs are pruned', () => {
-    insertKey({ monthlyRequestCap: 2 });
+    insertKey({ monthlyRequestCap: 2, budgetPeriodMode: 'manual' });
     recordSuccess(inThisMonth()); recordSuccess(inThisMonth());
     expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
     const old = process.env.REQUEST_ANALYTICS_MAX_ROWS;
@@ -198,7 +211,7 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('resets completed usage at the next month while retaining active reservations', () => {
-    insertKey({ monthlyRequestCap: 2 });
+    insertKey({ monthlyRequestCap: 2, budgetPeriodMode: 'manual' });
     recordSuccess(inThisMonth());
     const first = reserveMonthlyBudget(keyId, 100);
     if (!first.allowed) throw new Error('expected a reservation');
@@ -210,7 +223,7 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('enforces reservations through real route selection and exposes the monthly retry header', () => {
-    insertKey({ monthlyRequestCap: 1 });
+    insertKey({ monthlyRequestCap: 1, budgetPeriodMode: 'manual' });
     const db = getDb();
     const model = db.prepare("SELECT id FROM models WHERE platform = 'groq' LIMIT 1").get() as { id: number };
     db.prepare('UPDATE models SET enabled = 1, rpm_limit = NULL, rpd_limit = NULL, tpm_limit = NULL, tpd_limit = NULL WHERE id = ?').run(model.id);
@@ -273,8 +286,8 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('weekly period: buckets on Monday, rejects at the cap, resets next Monday', () => {
-    insertKey({ monthlyRequestCap: 1 });
-    getDb().prepare("UPDATE api_keys SET budget_period = 'weekly' WHERE id = ?").run(keyId);
+    insertKey({ monthlyRequestCap: 1, budgetPeriodMode: 'manual' });
+    getDb().prepare("UPDATE api_keys SET budget_period = 'weekly', budget_period_mode = 'manual' WHERE id = ?").run(keyId);
     recordSuccess(new Date());
     expect(getMonthlyUsage(keyId, 'weekly').requests).toBe(1);
     expect(getMonthlyUsage(keyId, 'monthly').requests).toBe(0);
@@ -285,12 +298,117 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('switching the period starts the new counter at zero', () => {
-    insertKey({ monthlyRequestCap: 1 });
+    insertKey({ monthlyRequestCap: 1, budgetPeriodMode: 'manual' });
     recordSuccess(new Date());
     expect(getMonthlyUsage(keyId, 'monthly').requests).toBe(1);
     expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
-    getDb().prepare("UPDATE api_keys SET budget_period = 'daily' WHERE id = ?").run(keyId);
+    getDb().prepare("UPDATE api_keys SET budget_period = 'daily', budget_period_mode = 'manual' WHERE id = ?").run(keyId);
     expect(getMonthlyUsage(keyId, 'daily').requests).toBe(0);
     expect(checkMonthlyBudget(keyId, 0).allowed).toBe(true);
+  });
+
+  // --- AUTO MODE TESTS ---
+
+  function insertKeyWithPlatform(platform: string, budgetPeriodMode: 'auto' | 'manual' = 'auto') {
+    const { encrypted, iv, authTag } = encrypt('sk-test');
+    const result = getDb().prepare(`
+      INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, budget_period, budget_period_mode)
+      VALUES (?, 'test', ?, ?, ?, 'healthy', 1, 'monthly', ?)
+    `).run(platform, encrypted, iv, authTag, budgetPeriodMode);
+    return Number(result.lastInsertRowid);
+  }
+
+  function recordSuccessFor(keyId: number, now: Date) {
+    getDb().prepare(
+      `INSERT INTO requests (platform, model_id, key_id, status, input_tokens, output_tokens, latency_ms, error, created_at)
+       VALUES ('test', 'model', ?, 'success', 100, 50, 100, NULL, ?)`,
+    ).run(keyId, now.toISOString().slice(0, 19).replace('T', ' '));
+  }
+
+  describe('resolveAutoPeriod', () => {
+    it('returns daily/daily-limit when the platform has a per-day limit', () => {
+      const db = getDb();
+      db.prepare(
+        `INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, enabled)
+         VALUES ('srouter-auto-daily-1', 'm1', 'M1', 1, 1, NULL, 1000, NULL, NULL, '', 1)`,
+      ).run();
+      expect(resolveAutoPeriod('srouter-auto-daily-1')).toEqual({ period: 'daily', source: 'daily-limit' });
+    });
+
+    it('returns monthly/monthly-label when the platform has a monthly budget label but no daily limits', () => {
+      const db = getDb();
+      db.prepare(
+        `INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, enabled)
+         VALUES ('srouter-auto-monthly-1', 'm2', 'M2', 1, 1, NULL, NULL, NULL, NULL, '~1M', 1)`,
+      ).run();
+      expect(resolveAutoPeriod('srouter-auto-monthly-1')).toEqual({ period: 'monthly', source: 'monthly-label' });
+    });
+
+    it('returns monthly/fallback when the platform has no models', () => {
+      expect(resolveAutoPeriod('srouter-auto-none-1')).toEqual({ period: 'monthly', source: 'fallback' });
+    });
+  });
+
+  describe('syncAutoBudgetPeriod', () => {
+    it('updates budget_period to the resolved period for auto-mode keys', () => {
+      const db = getDb();
+      db.prepare(
+        `INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, enabled)
+         VALUES ('srouter-auto-daily-2', 'm1', 'M1', 1, 1, NULL, 1000, NULL, NULL, '', 1)`,
+      ).run();
+      const id = insertKeyWithPlatform('srouter-auto-daily-2', 'auto');
+      const result = syncAutoBudgetPeriod(id);
+      expect(result).toEqual({ mode: 'auto', period: 'daily', source: 'daily-limit' });
+      const row = db.prepare('SELECT budget_period, budget_period_mode FROM api_keys WHERE id = ?').get(id);
+      expect(row.budget_period).toBe('daily');
+      expect(row.budget_period_mode).toBe('auto');
+    });
+
+    it('leaves manual keys untouched', () => {
+      const db = getDb();
+      db.prepare(
+        `INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, enabled)
+         VALUES ('srouter-auto-daily-3', 'm1', 'M1', 1, 1, NULL, 1000, NULL, NULL, '', 1)`,
+      ).run();
+      const id = insertKeyWithPlatform('srouter-auto-daily-3', 'manual');
+      const result = syncAutoBudgetPeriod(id);
+      expect(result).toEqual({ mode: 'manual', period: 'monthly', source: 'manual' });
+      const row = db.prepare('SELECT budget_period, budget_period_mode FROM api_keys WHERE id = ?').get(id);
+      expect(row.budget_period).toBe('monthly');
+      expect(row.budget_period_mode).toBe('manual');
+    });
+
+    it('getMonthlyBudgetCaps triggers sync and returns the synced period', () => {
+      const db = getDb();
+      db.prepare(
+        `INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, enabled)
+         VALUES ('srouter-auto-daily-4', 'm1', 'M1', 1, 1, NULL, 1000, NULL, NULL, '', 1)`,
+      ).run();
+      const id = insertKeyWithPlatform('srouter-auto-daily-4', 'auto');
+      const caps = getMonthlyBudgetCaps(id);
+      expect(caps).toMatchObject({ period: 'daily', mode: 'auto', source: 'daily-limit' });
+    });
+  });
+
+  it('auto key on a daily platform buckets requests as d:YYYY-MM-DD via the trigger', () => {
+    const db = getDb();
+    db.prepare(
+      `INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, enabled)
+       VALUES ('srouter-auto-daily-5', 'm1', 'M1', 1, 1, NULL, 1000, NULL, NULL, '', 1)`,
+    ).run();
+    // Ensure migrations are applied (initDb does this; here we re-apply like the backfill test does)
+    ledgerMigration.down(db);
+    ledgerMigration.up(db);
+    budgetPeriodMigration.up(db);
+    autoBudgetPeriodMigration.up(db);
+
+    const id = insertKeyWithPlatform('srouter-auto-daily-5', 'auto');
+    syncAutoBudgetPeriod(id); // flips budget_period to 'daily'
+
+    recordSuccessFor(id, new Date());
+    const usage = getMonthlyUsage(id, 'daily');
+    expect(usage.requests).toBe(1);
+    // Monthly bucket stays empty — daily rows are namespaced ('d:').
+    expect(getMonthlyUsage(id, 'monthly').requests).toBe(0);
   });
 });

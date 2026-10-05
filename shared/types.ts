@@ -4,8 +4,14 @@
  * use the traditional forward-proxy transport. */
 export type ProxyMode = 'forward' | 'fetch-relay';
 /** Per-key budget window: UTC day, ISO week (Monday) or calendar month —
- *  chosen to match the provider's quota reset cycle. */
-export type BudgetPeriod = 'daily' | 'weekly' | 'monthly';
+ *  chosen to match the provider's quota reset cycle. `'auto'` follows the
+ *  provider's catalog declaration (resolved to a concrete window). */
+export type BudgetPeriod = 'auto' | 'daily' | 'weekly' | 'monthly';
+/** The concrete windows a period resolves to (auto is never stored/checked). */
+export type ConcreteBudgetPeriod = Exclude<BudgetPeriod, 'auto'>;
+/** Where a key's concrete period came from: a manual pick, the provider's
+ *  per-day limit fields, its monthly budget label, or the unknown fallback. */
+export type BudgetPeriodSource = 'manual' | 'daily-limit' | 'monthly-label' | 'fallback';
 
 /** A model declared beside a custom endpoint in an import file (#382). A
  *  capability flag is present only when the paste declared it via a trailing
@@ -350,8 +356,14 @@ export interface ApiKey {
   monthlyRequestCap?: number;
   /** Per-key monthly token cap (0 = unlimited, #1158). */
   monthlyTokenCap?: number;
-  /** UTC window the caps count against (default monthly, #1158). */
+  /** Budget window the caps count against: a concrete pick, or `'auto'` to
+   *  follow the provider's catalog-declared reset cycle (default). */
   budgetPeriod?: BudgetPeriod;
+  /** For `'auto'`: the concrete window currently in effect (indicator in UI). */
+  resolvedBudgetPeriod?: ConcreteBudgetPeriod;
+  /** For `'auto'`: why that window was chosen (daily-limit / monthly-label /
+   *  fallback); `'manual'` when the period was picked explicitly. */
+  budgetPeriodSource?: BudgetPeriodSource;
   /** Current period's successful usage against the caps above, with the
    *  ISO time of the next period reset. */
   monthlyUsage?: { requests: number; tokens: number; resetsAt: string };

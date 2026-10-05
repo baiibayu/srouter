@@ -44,9 +44,12 @@ describe('GET /api/keys monthly budget usage', () => {
     });
     expect(created.status).toBe(201);
     const keyId = created.body.id as number;
+    // Pin manual monthly: groq auto-resolves to daily, but this test asserts
+    // the monthly contract (month-boundary reset timestamp included).
     const patched = await request(app, 'PATCH', `/api/keys/${keyId}`, {
       monthlyRequestCap: 1000,
       monthlyTokenCap: 500000,
+      budgetPeriod: 'monthly',
     });
     expect(patched.status).toBe(200);
 

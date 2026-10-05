@@ -15,8 +15,10 @@ beforeAll(async () => {
   initDb(':memory:');
   const db = getDb();
   const secret = encrypt('synthetic-budget-test-key');
-  const keyId = Number(db.prepare(`INSERT INTO api_keys (platform, encrypted_key, iv, auth_tag, enabled, status, monthly_request_cap)
-    VALUES ('groq', ?, ?, ?, 1, 'healthy', 1)`).run(secret.encrypted, secret.iv, secret.authTag).lastInsertRowid);
+  // Pin manual monthly: groq auto-resolves to daily, but this suite exercises
+  // the monthly exhaustion contract (bucket + nextMonthResetAt).
+  const keyId = Number(db.prepare(`INSERT INTO api_keys (platform, encrypted_key, iv, auth_tag, enabled, status, monthly_request_cap, budget_period_mode)
+    VALUES ('groq', ?, ?, ?, 1, 'healthy', 1, 'manual')`).run(secret.encrypted, secret.iv, secret.authTag).lastInsertRowid);
   model = (db.prepare("SELECT model_id FROM models WHERE platform = 'groq' LIMIT 1").get() as { model_id: string }).model_id;
   db.prepare(`INSERT INTO requests (platform, model_id, key_id, status, input_tokens, output_tokens, latency_ms)
     VALUES ('groq', ?, ?, 'success', 10, 5, 1)`).run(model, keyId);

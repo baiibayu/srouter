@@ -63,7 +63,7 @@ export function EditKeyDialog({
   // picks the UTC window (daily/weekly/monthly) the caps count against.
   const [requestCap, setRequestCap] = useState(capToInput(apiKey.monthlyRequestCap))
   const [tokenCap, setTokenCap] = useState(capToInput(apiKey.monthlyTokenCap))
-  const [period, setPeriod] = useState<BudgetPeriod>(apiKey.budgetPeriod ?? 'monthly')
+  const [period, setPeriod] = useState<BudgetPeriod>(apiKey.budgetPeriod ?? 'auto')
 
   const needsAccountId = apiKey.platform === 'cloudflare'
   // Every row takes a credential, including the anonymous row of a
@@ -85,7 +85,7 @@ export function EditKeyDialog({
   const capError = requestCapValue === null || tokenCapValue === null
   const requestCapChanged = requestCapValue !== (apiKey.monthlyRequestCap || 0)
   const tokenCapChanged = tokenCapValue !== (apiKey.monthlyTokenCap || 0)
-  const periodChanged = period !== (apiKey.budgetPeriod ?? 'monthly')
+  const periodChanged = period !== (apiKey.budgetPeriod ?? 'auto')
   const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged
 
   const updateKey = useMutation({
@@ -234,6 +234,7 @@ export function EditKeyDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="auto" label={t('keys.budgetPeriodAuto')}>{t('keys.budgetPeriodAuto')}</SelectItem>
                     <SelectItem value="daily" label={t('keys.budgetPeriodDaily')}>{t('keys.budgetPeriodDaily')}</SelectItem>
                     <SelectItem value="weekly" label={t('keys.budgetPeriodWeekly')}>{t('keys.budgetPeriodWeekly')}</SelectItem>
                     <SelectItem value="monthly" label={t('keys.budgetPeriodMonthly')}>{t('keys.budgetPeriodMonthly')}</SelectItem>
@@ -265,6 +266,15 @@ export function EditKeyDialog({
                 />
               </div>
             </div>
+            {period === 'auto' && apiKey.resolvedBudgetPeriod && (
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                {apiKey.budgetPeriodSource === 'daily-limit'
+                  ? t('keys.autoResolvedDaily')
+                  : apiKey.budgetPeriodSource === 'monthly-label'
+                    ? t('keys.autoResolvedMonthly')
+                    : t('keys.autoResolvedFallback')}
+              </p>
+            )}
             <p className="mt-1.5 text-[11px] text-muted-foreground">{t('keys.capEditHint')}</p>
           </details>
 

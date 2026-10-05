@@ -39,6 +39,7 @@ import * as quotaSnapshotFreshness from '../migrations/20260915_000001_quota_sna
 import * as requestModelAttribution from '../migrations/20260913_000001_request_model_attribution.js';
 import * as unifiedKeySrPrefix from '../migrations/20261004_000001_unified_key_sr_prefix.js';
 import * as keyBudgetPeriod from '../migrations/20261005_000001_key_budget_period.js';
+import * as keyBudgetPeriodAuto from '../migrations/20261005_000002_key_budget_period_auto.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -90,6 +91,7 @@ export const KEY_MONTHLY_USAGE_FILENAME = '20260914_000001_key_monthly_usage.ts'
 export const QUOTA_SNAPSHOT_FRESHNESS_FILENAME = '20260915_000001_quota_snapshot_freshness.ts';
 export const UNIFIED_KEY_SR_PREFIX_FILENAME = '20261004_000001_unified_key_sr_prefix.ts';
 export const KEY_BUDGET_PERIOD_FILENAME = '20261005_000001_key_budget_period.ts';
+export const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_period_auto.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -132,4 +134,5 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: QUOTA_SNAPSHOT_FRESHNESS_FILENAME, module: quotaSnapshotFreshness },
   { filename: UNIFIED_KEY_SR_PREFIX_FILENAME, module: unifiedKeySrPrefix },
   { filename: KEY_BUDGET_PERIOD_FILENAME, module: keyBudgetPeriod },
+  { filename: KEY_BUDGET_PERIOD_AUTO_FILENAME, module: keyBudgetPeriodAuto },
 ];

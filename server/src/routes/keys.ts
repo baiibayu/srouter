@@ -11,7 +11,7 @@ import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../l
 import { assessProviderUrl } from '../lib/url-guard.js';
 import { verifyCredentials } from '../services/auth.js';
 import { getActiveCooldownsForKeys, clearCooldownsForKey } from '../services/ratelimit.js';
-import { getMonthlyBudgetCaps, getMonthlyUsage, nextResetAt } from '../services/key-budget.js';
+import { getMonthlyBudgetCaps, getMonthlyUsage, nextResetAt, resolveAutoPeriod, syncAutoBudgetPeriod } from '../services/key-budget.js';
 import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential } from '../services/custom-endpoint.js';
 import { registerCustomModels, registerCustomChatModels } from '../services/custom-model-register.js';
 import { registerCustomMediaModel } from '../services/custom-media-register.js';
@@ -99,7 +99,7 @@ const updateKeySchema = z.object({
   // names the UTC window the caps count against (provider reset cycle).
   monthlyRequestCap: z.number().int().min(0).max(1_000_000_000).optional(),
   monthlyTokenCap: z.number().int().min(0).max(1_000_000_000_000).optional(),
-  budgetPeriod: z.enum(['daily', 'weekly', 'monthly']).optional(),
+  budgetPeriod: z.enum(['auto', 'daily', 'weekly', 'monthly']).optional(),
   // An absent credential leaves the encrypted key untouched.
   key: z.string().trim().min(1).optional(),
 }).refine(data => data.enabled !== undefined || data.label !== undefined || data.modelScope !== undefined || data.proxyUrl !== undefined || data.key !== undefined || data.monthlyRequestCap !== undefined || data.monthlyTokenCap !== undefined || data.budgetPeriod !== undefined, {
@@ -405,7 +405,9 @@ keysRouter.get('/', (_req: Request, res: Response) => {
       baseUrl: row.base_url ?? null,
       monthlyRequestCap: budgetCaps.requestCap,
       monthlyTokenCap: budgetCaps.tokenCap,
-      budgetPeriod: budgetCaps.period,
+      budgetPeriod: budgetCaps.mode === 'auto' ? 'auto' : budgetCaps.period,
+      resolvedBudgetPeriod: budgetCaps.period,
+      budgetPeriodSource: budgetCaps.source,
       monthlyUsage: {
         requests: monthlyUsage.requests,
         tokens: monthlyUsage.tokens,
@@ -1893,8 +1895,19 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
   }
   // Period switch starts the new counter at zero (buckets are namespaced).
   if (budgetPeriod !== undefined) {
-    updates.push('budget_period = ?');
-    values.push(budgetPeriod);
+    const platformRow = getDb().prepare('SELECT platform FROM api_keys WHERE id = ?').get(id) as { platform: string } | undefined;
+    if (!platformRow) {
+      res.status(404).json({ error: { message: 'Key not found' } });
+      return;
+    }
+    if (budgetPeriod === 'auto') {
+      const resolved = resolveAutoPeriod(platformRow.platform);
+      updates.push('budget_period = ?', 'budget_period_mode = ?');
+      values.push(resolved.period, 'auto');
+    } else {
+      updates.push('budget_period = ?', 'budget_period_mode = ?');
+      values.push(budgetPeriod, 'manual');
+    }
   }
   // Deduped; an empty result stores NULL, which the router reads as "unscoped".
   const scopeIds = modelScope == null ? [] : [...new Set(modelScope)];
@@ -1927,6 +1940,11 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
   if (proxyUrl !== undefined) response.maskedProxyUrl = maskProxyUrl(proxyUrl);
   if (key !== undefined) response.maskedKey = maskKey(key);
   if (modelScope !== undefined) response.modelScope = scopeIds.length > 0 ? scopeIds : null;
-  if (budgetPeriod !== undefined) response.budgetPeriod = budgetPeriod;
+  if (budgetPeriod !== undefined) {
+    response.budgetPeriod = budgetPeriod;
+    const after = syncAutoBudgetPeriod(id);
+    response.resolvedBudgetPeriod = after.period;
+    response.budgetPeriodSource = after.source;
+  }
   res.json(response);
 });

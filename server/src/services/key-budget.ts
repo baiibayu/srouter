@@ -19,14 +19,74 @@
  * until their route is released. Actual provider usage is settled by the
  * request-log transaction; token estimates are an admission guard, not an
  * exact upstream billing cap. Caps are opt-in (0 = unlimited).
+ *
+ * AUTO MODE: a key may leave its period to the provider's catalog
+ * declaration (`budget_period_mode = 'auto'`). resolveAutoPeriod() reads the
+ * `models` table for that platform — a per-day limit field (tpd_limit or
+ * rpd_limit) means the provider resets daily, a non-empty
+ * monthly_token_budget means a monthly allowance, otherwise the unknown
+ * fallback is monthly. The resolved CONCRETE period is written into
+ * `budget_period` (the trigger reads that column and must stay concrete —
+ * 'auto' is never stored there); `budget_period_mode` stays 'auto' so the
+ * UI can tell a resolved key from a manually-picked one. Weekly is never
+ * produced by auto resolution: the catalog carries no weekly field, so
+ * weekly remains a manual choice only.
  */
 import { getDb } from '../db/index.js';
+import type {
+  BudgetPeriod,
+  ConcreteBudgetPeriod,
+  BudgetPeriodSource,
+} from '@srouter/shared/types.js';
 
-export type BudgetPeriod = 'daily' | 'weekly' | 'monthly';
-export const BUDGET_PERIODS: readonly BudgetPeriod[] = ['daily', 'weekly', 'monthly'];
+/** Re-exported so consumers can import the shared types from here. */
+export type { BudgetPeriod, ConcreteBudgetPeriod, BudgetPeriodSource };
+
+export const BUDGET_PERIODS: readonly ConcreteBudgetPeriod[] = ['daily', 'weekly', 'monthly'];
 
 export function asBudgetPeriod(raw: unknown): BudgetPeriod {
   return raw === 'daily' || raw === 'weekly' || raw === 'monthly' ? raw : 'monthly';
+}
+
+/** Cast a stored/external value to a concrete period (auto is never stored). */
+export function asConcreteBudgetPeriod(raw: unknown): ConcreteBudgetPeriod {
+  return raw === 'daily' || raw === 'weekly' ? raw : 'monthly';
+}
+
+/** Resolve the auto budget period for a platform from the catalog. */
+export function resolveAutoPeriod(platform: string): {
+  period: ConcreteBudgetPeriod;
+  source: BudgetPeriodSource;
+} {
+  const db = getDb();
+  const row = db.prepare(
+    `SELECT
+      EXISTS(SELECT 1 FROM models WHERE platform = ? AND (tpd_limit IS NOT NULL OR rpd_limit IS NOT NULL)) AS has_daily,
+      EXISTS(SELECT 1 FROM models WHERE platform = ? AND monthly_token_budget <> '') AS has_monthly`,
+  ).get(platform, platform) as { has_daily: number; has_monthly: number };
+  if (row.has_daily) return { period: 'daily', source: 'daily-limit' };
+  if (row.has_monthly) return { period: 'monthly', source: 'monthly-label' };
+  return { period: 'monthly', source: 'fallback' };
+}
+
+/** Synchronize an auto-mode key's concrete period with the catalog. */
+export function syncAutoBudgetPeriod(keyId: number): {
+  mode: 'auto' | 'manual';
+  period: ConcreteBudgetPeriod;
+  source: BudgetPeriodSource;
+} {
+  const row = getDb().prepare(
+    'SELECT platform, budget_period, budget_period_mode FROM api_keys WHERE id = ?',
+  ).get(keyId) as { platform: string; budget_period: string; budget_period_mode: string } | undefined;
+  if (!row) return { mode: 'manual', period: 'monthly', source: 'manual' };
+  if (row.budget_period_mode === 'manual') {
+    return { mode: 'manual', period: asConcreteBudgetPeriod(row.budget_period), source: 'manual' };
+  }
+  const resolved = resolveAutoPeriod(row.platform);
+  if (resolved.period !== row.budget_period) {
+    getDb().prepare('UPDATE api_keys SET budget_period = ? WHERE id = ?').run(resolved.period, keyId);
+  }
+  return { mode: 'auto', period: resolved.period, source: resolved.source };
 }
 
 export interface MonthlyBudgetCaps {
@@ -35,7 +95,11 @@ export interface MonthlyBudgetCaps {
   /** 0 = unlimited. */
   tokenCap: number;
   /** UTC window the caps are counted against. */
-  period: BudgetPeriod;
+  period: ConcreteBudgetPeriod;
+  /** Whether the period is auto-resolved or manually chosen. */
+  mode: 'auto' | 'manual';
+  /** For 'auto': why the period was chosen. */
+  source: BudgetPeriodSource;
 }
 
 export interface MonthlyUsage {
@@ -50,7 +114,7 @@ export type BudgetVerdict =
   | { allowed: false; reason: 'monthly_request_cap' | 'monthly_token_cap'; retryAfterSec: number };
 
 /** Ledger bucket for a period at `now` — must match the trigger's SQL. */
-export function periodBucket(period: BudgetPeriod, now = Date.now()): string {
+export function periodBucket(period: ConcreteBudgetPeriod, now = Date.now()): string {
   const d = new Date(now);
   if (period === 'monthly') return d.toISOString().slice(0, 7);
   const day = d.toISOString().slice(0, 10);
@@ -59,7 +123,7 @@ export function periodBucket(period: BudgetPeriod, now = Date.now()): string {
   return `w:${new Date(mondayMs).toISOString().slice(0, 10)}`;
 }
 
-function utcNextPeriodStartMs(period: BudgetPeriod, now: number): number {
+function utcNextPeriodStartMs(period: ConcreteBudgetPeriod, now: number): number {
   const d = new Date(now);
   if (period === 'monthly') {
     const month = d.getUTCMonth() + 1;
@@ -87,11 +151,12 @@ function activeReservations(): Set<Reservation> {
 }
 
 export function getMonthlyBudgetCaps(keyId: number): MonthlyBudgetCaps {
+  const sync = syncAutoBudgetPeriod(keyId);
   const row = getDb().prepare(
-    'SELECT monthly_request_cap, monthly_token_cap, budget_period FROM api_keys WHERE id = ?',
-  ).get(keyId) as { monthly_request_cap: number; monthly_token_cap: number; budget_period: string } | undefined;
-  if (!row) return { requestCap: 0, tokenCap: 0, period: 'monthly' };
-  return { requestCap: row.monthly_request_cap, tokenCap: row.monthly_token_cap, period: asBudgetPeriod(row.budget_period) };
+    'SELECT monthly_request_cap, monthly_token_cap FROM api_keys WHERE id = ?',
+  ).get(keyId) as { monthly_request_cap: number; monthly_token_cap: number } | undefined;
+  if (!row) return { requestCap: 0, tokenCap: 0, period: 'monthly', mode: 'manual', source: 'manual' };
+  return { requestCap: row.monthly_request_cap, tokenCap: row.monthly_token_cap, period: sync.period, mode: sync.mode, source: sync.source };
 }
 
 export function setMonthlyBudgetCaps(
@@ -113,10 +178,10 @@ export function setMonthlyBudgetCaps(
   return result.changes > 0;
 }
 
-export function getMonthlyUsage(keyId: number, period: BudgetPeriod = 'monthly', now = Date.now()): MonthlyUsage {
-  const row = getDb().prepare(`
-    SELECT requests, tokens FROM key_monthly_usage WHERE key_id = ? AND month = ?
-  `).get(keyId, periodBucket(period, now)) as MonthlyUsage | undefined;
+export function getMonthlyUsage(keyId: number, period: ConcreteBudgetPeriod = 'monthly', now = Date.now()): MonthlyUsage {
+  const row = getDb().prepare(
+    `SELECT requests, tokens FROM key_monthly_usage WHERE key_id = ? AND month = ?`
+  ).get(keyId, periodBucket(period, now)) as MonthlyUsage | undefined;
   return { requests: Number(row?.requests ?? 0), tokens: Number(row?.tokens ?? 0) };
 }
 
@@ -162,7 +227,7 @@ export function reserveMonthlyBudget(
 }
 
 /** Seconds from `now` until the next boundary of the period — the Retry-After value. */
-export function secondsUntilNextPeriod(period: BudgetPeriod, now = Date.now()): number {
+export function secondsUntilNextPeriod(period: ConcreteBudgetPeriod, now = Date.now()): number {
   return Math.max(1, Math.floor((utcNextPeriodStartMs(period, now) - now) / 1000));
 }
 
@@ -172,7 +237,7 @@ export function secondsUntilNextMonth(now = Date.now()): number {
 }
 
 /** ISO timestamp of the next period boundary (for headers / diagnostics). */
-export function nextResetAt(period: BudgetPeriod, now = Date.now()): string {
+export function nextResetAt(period: ConcreteBudgetPeriod, now = Date.now()): string {
   return new Date(utcNextPeriodStartMs(period, now)).toISOString();
 }
 
