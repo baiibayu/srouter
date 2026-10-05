@@ -299,8 +299,8 @@
     "enabledOfShown": "{enabled} of {shown} shown models are in the chain"
   },
   "strategies": {
-    "explore": "Explore unmeasured models",
-    "exploreHint": "Give models with no reliability or speed data a 10% chance to go first so they build a track record. Your real request is what gets sent, so it may be answered by an untested model. For a custom endpoint, use Probe endpoint on the Keys page to test it without live traffic.",
+    "explore": "Explore unmeasured models (on by default)",
+    "exploreHint": "On by default: models with no reliability or speed data get a 10% chance to go first so they build a track record. Your real request is what gets sent, so it may be answered by an untested model. For a custom endpoint, use Probe endpoint on the Keys page to test it without live traffic.",
     "keySelection": "Key selection",
     "keySelectionAuto": "Auto",
     "keySelectionLeastRemaining": "Least remaining",

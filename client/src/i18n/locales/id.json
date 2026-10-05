@@ -299,8 +299,8 @@
     "enabledOfShown": "{enabled} dari {shown} model yang tampil ada di rantai"
   },
   "strategies": {
-    "explore": "Jelajahi model yang belum terukur",
-    "exploreHint": "Memberi model tanpa data keandalan atau kecepatan peluang 10% untuk dicoba lebih dulu agar mengumpulkan rekam jejak. Yang dikirim adalah permintaan Anda yang sebenarnya, jadi bisa dijawab oleh model yang belum teruji. Untuk endpoint kustom, pakai «Uji endpoint» di halaman Kunci tanpa memakai lalu lintas nyata.",
+    "explore": "Jelajahi model yang belum terukur (aktif secara bawaan)",
+    "exploreHint": "Secara bawaan: model tanpa data keandalan atau kecepatan mendapat peluang 10% untuk dicoba lebih dulu agar mengumpulkan rekam jejak. Yang dikirim adalah permintaan Anda yang sebenarnya, jadi bisa dijawab oleh model yang belum teruji. Untuk endpoint kustom, pakai «Uji endpoint» di halaman Kunci tanpa memakai lalu lintas nyata.",
     "keySelection": "Pemilihan kunci",
     "keySelectionAuto": "Otomatis",
     "keySelectionLeastRemaining": "Sisa paling sedikit",
