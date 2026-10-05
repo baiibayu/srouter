@@ -458,11 +458,11 @@ export function setRoutingStrategy(strategy: RoutingStrategy): void {
 }
 
 // ── Exploration toggle (persisted) ─────────────────────────────────────────
-// Off by default: existing routing behavior unchanged. When on, routeRequest
-// gives unmeasured models a guaranteed chance to be tried (EXPLORE_CHANCE) so
-// they acquire reliability/speed samples instead of losing every bandit draw.
+// On by default: unmeasured models get a guaranteed chance to be tried
+// (EXPLORE_CHANCE) so they acquire reliability/speed samples instead of
+// losing every bandit draw. Set to '0' to opt out from the dashboard.
 export function getExploreEnabled(): boolean {
-  return getSetting(EXPLORE_KEY) === '1';
+  return getSetting(EXPLORE_KEY) !== '0';
 }
 
 export function setExploreEnabled(enabled: boolean): void {
@@ -1977,6 +1977,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
   const chain = (prefetchedChain ?? getActiveChain(db)).filter(e => e.enabled);
 
   const sortedChain = orderChain(chain, strategy, true, task);
+  const keyCounts = usableKeyCountsByPlatform(db);
 
   // Exploration toggle (#685/#707 follow-up): when enabled, give a model with
   // no reliability/speed samples a guaranteed chance to be tried, so it stops
@@ -2001,6 +2002,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
     const overrides = getModelWeightOverrides();
     const unmeasured = sortedChain.filter(e => {
       if (overrides.get(e.model_id) === 0) return false;
+      if ((keyCounts.get(e.platform) ?? 0) <= 0) return false;
       const stats = statsCache?.get(modelStatsKey(e.platform, e.model_id, e.endpoint_scope));
       if ((stats?.successes ?? 0) + (stats?.failures ?? 0) >= EXPLORE_MIN_SAMPLES) return false;
       // Mirror the main loop's gates below so exploration only samples
@@ -2065,7 +2067,6 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
   // An explicit pin is exempt: the client named that model, so it still gets
   // walked and still reports "no enabled+healthy key for platform" against its
   // own label rather than vanishing into an aggregate.
-  const keyCounts = usableKeyCountsByPlatform(db);
   const isRoutable = (e: ChainRow) =>
     e.model_db_id === preferredModelDbId || (keyCounts.get(e.platform) ?? 0) > 0;
   const routableChain = sortedChain.filter(isRoutable);
