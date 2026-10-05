@@ -1,6 +1,6 @@
 {
   "name": "srouter",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Set up coding agents to use an SRouter gateway",
   "license": "MIT",
   "repository": {
