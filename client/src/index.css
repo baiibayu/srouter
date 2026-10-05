@@ -53,7 +53,8 @@
 }
 
 /* Brand palette from the SRouter logo:
-   ring #046CD6→#23CBEF (blue→cyan) · S-stroke #FF8706→#F90E01 (orange→red) */
+   ring #046CD6→#23CBEF (blue→cyan) · S-stroke #FF8706→#F90E01 (orange→red)
+   · destructive = S-stroke red, AA-tuned (#EB0D00 light / #FF6B57 dark) */
 :root {
     --background: oklch(0.992 0.004 245);
     --foreground: oklch(0.18 0.01 255);
@@ -69,7 +70,7 @@
     --muted-foreground: oklch(0.52 0.015 257);
     --accent: oklch(0.955 0.015 245);
     --accent-foreground: oklch(0.22 0.02 255);
-    --destructive: oklch(0.577 0.245 27.325);
+    --destructive: oklch(0.593 0.24 29.7);
     --border: oklch(0.91 0.01 255);
     --input: oklch(0.91 0.01 255);
     --ring: oklch(0.543 0.182 256);
@@ -104,7 +105,7 @@
     --muted-foreground: oklch(0.68 0.01 257);
     --accent: oklch(0.245 0.03 249);
     --accent-foreground: oklch(0.98 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
+    --destructive: oklch(0.708 0.185 30);
     --border: oklch(0.85 0.03 256 / 10%);
     --input: oklch(0.85 0.03 256 / 14%);
     --ring: oklch(0.707 0.138 231);
