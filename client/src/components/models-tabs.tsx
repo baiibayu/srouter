@@ -10,7 +10,7 @@ export function ModelsTabs() {
   const { t } = useI18n()
   const tab = (isActive: boolean) =>
     `inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors ${
-      isActive ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+      isActive ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
     }`
   return (
     <div className="inline-flex gap-0.5 sm:gap-1 rounded-xl border p-1 overflow-x-auto">

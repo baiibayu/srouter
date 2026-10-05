@@ -124,7 +124,7 @@ function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
       className={({ isActive }) =>
         `relative text-sm px-1 py-4 transition-colors duration-150 ${
           isActive
-            ? 'text-foreground font-medium after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-foreground after:rounded-full'
+            ? 'text-foreground font-medium after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-primary after:rounded-full'
             : 'text-muted-foreground hover:text-foreground'
         }`
       }
