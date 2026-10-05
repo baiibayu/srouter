@@ -247,6 +247,28 @@ export abstract class BaseProvider {
   abstract validateKey(apiKey: string, quotaContext?: QuotaObservationContext): Promise<KeyValidationResult>;
 
   /**
+   * Optional quota/balance probe (#1403). Providers whose API exposes a
+   * key-info/quota endpoint override this to fetch the provider-reported
+   * limit/remaining and persist them as a `source: 'quota_api'` observation,
+   * so the dashboard shows a real balance instead of a text-label guess.
+   * Must never throw into the caller: the default implementation does no
+   * network at all and returns false; implementations catch transport errors
+   * and return false so a quota probe can never change a health verdict.
+   * Returns true when an observation was recorded.
+   */
+  async fetchQuota(_apiKey: string, _quotaContext?: QuotaObservationContext): Promise<boolean> {
+    return false;
+  }
+
+  /** Whether this provider actually has a quota endpoint to probe (#1403).
+   * fetchQuota alone can't answer it: OpenAICompatProvider overrides the
+   * method for every instance, spec or not. Routes that owe the operator a
+   * "this platform has no quota endpoint" answer must use this instead. */
+  get hasQuotaProbe(): boolean {
+    return false;
+  }
+
+  /**
    * Turn a conventional 401/403 validation response into a diagnostic result.
    * Providers still return a simple boolean when no useful error body exists,
    * but preserving the upstream message here lets the health service persist
