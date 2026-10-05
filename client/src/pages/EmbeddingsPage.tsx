@@ -310,7 +310,7 @@ export default function EmbeddingsPage() {
                       </span>
                     )}
                     {f.family === defaultFamily ? (
-                      <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-foreground text-background font-medium">
+                      <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-primary text-primary-foreground font-medium">
                         {t('embeddings.defaultBadge')}
                       </span>
                     ) : (

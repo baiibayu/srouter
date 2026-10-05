@@ -221,7 +221,7 @@ export default function FusionPage() {
                             selected ? 'bg-muted/50' : atCap ? 'opacity-40' : 'hover:bg-muted/30'
                           }`}
                         >
-                          <span className={`flex size-4 items-center justify-center rounded border ${selected ? 'bg-foreground text-background' : ''}`}>
+                          <span className={`flex size-4 items-center justify-center rounded border ${selected ? 'bg-primary text-primary-foreground' : ''}`}>
                             {selected && <Check className="size-3" />}
                           </span>
                           <span className="min-w-0 flex-1">

@@ -97,7 +97,7 @@ export function ArtifactPanel({ artifact, open, width, onWidthChange, onWidthCom
   const shown = open && mounted
   const tabClass = (active: boolean) =>
     `inline-flex size-7 items-center justify-center rounded-lg transition-colors ${
-      active ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+      active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
     }`
 
   return (

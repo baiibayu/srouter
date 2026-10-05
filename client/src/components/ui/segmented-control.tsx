@@ -32,7 +32,7 @@ export function SegmentedControl<T extends string>({
           onClick={() => onValueChange(o.value)}
           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${
             value === o.value
-              ? 'bg-foreground text-background font-medium'
+              ? 'bg-primary text-primary-foreground font-medium'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >

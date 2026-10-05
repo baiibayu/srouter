@@ -125,7 +125,7 @@ function OptionBar<T extends string>({
             onClick={() => onValueChange(option.value)}
             className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs transition-colors ${
               selected
-                ? 'bg-foreground font-medium text-background'
+                ? 'bg-primary font-medium text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
@@ -924,8 +924,8 @@ function UpdateChecker({ active }: { active: boolean }) {
 
           <div aria-live="polite" className="space-y-4 px-6 py-5">
             {activity.length > 0 && (
-              <div className="overflow-hidden rounded-xl border bg-zinc-950 text-zinc-300 shadow-inner dark:bg-black/40">
-                <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2 text-[11px] text-zinc-400">
+              <div className="overflow-hidden rounded-xl border bg-[oklch(0.17_0.028_255)] text-[oklch(0.87_0.018_255)] shadow-inner dark:bg-black/40">
+                <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2 text-[11px] text-[oklch(0.74_0.025_255)]">
                   <SquareTerminal className="size-3.5" />
                   <span>{checking ? t('keys.checking') : t('settings.updatesTitle')}</span>
                 </div>
@@ -1137,7 +1137,7 @@ export function SettingsDialog({
             type="button"
             onClick={save}
             disabled={busy !== null}
-            className="rounded-lg bg-foreground px-4 py-2 text-xs font-medium text-background transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
           >
             {busy === 'save' ? t('common.saving') : t('common.saveChanges')}
           </button>

@@ -42,7 +42,7 @@ function OutlookPool({ pool, generatedAt, windowMinutes, minimumRequests }: {
             <span className="tabular-nums text-foreground">{number(pool.remainingPct)}%</span>
           </div>
           <div className="my-3 h-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={t('keys.quotaRemaining')} aria-valuenow={pool.remainingPct} aria-valuemin={0} aria-valuemax={100}>
-            <div className={cn('h-full rounded-full bg-foreground/40', pool.warning && 'bg-amber-500/80')} style={{ width: `${pool.remainingPct}%` }} />
+            <div className={cn('h-full rounded-full bg-primary/70', pool.warning && 'bg-amber-500/80')} style={{ width: `${pool.remainingPct}%` }} />
           </div>
         </>
       ) : <p className="my-3 text-sm text-muted-foreground">{pool.remaining != null

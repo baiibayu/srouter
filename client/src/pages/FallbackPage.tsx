@@ -380,7 +380,7 @@ export default function FallbackPage() {
                     onClick={() => strategyMutation.mutate({ strategy: s.key })}
                     className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
                       s.key === strategy
-                        ? 'bg-foreground text-background font-medium'
+                        ? 'bg-primary text-primary-foreground font-medium'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
@@ -540,14 +540,14 @@ export default function FallbackPage() {
                 <button
                   onClick={() => setFilterVision(v => !v)}
                   aria-pressed={filterVision}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filterVision ? 'bg-foreground text-background border-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filterVision ? 'bg-primary text-primary-foreground border-primary font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
                 >
                   {t('models.vision')}
                 </button>
                 <button
                   onClick={() => setFilterTools(v => !v)}
                   aria-pressed={filterTools}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filterTools ? 'bg-foreground text-background border-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filterTools ? 'bg-primary text-primary-foreground border-primary font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
                 >
                   {t('models.tools')}
                 </button>
@@ -556,7 +556,7 @@ export default function FallbackPage() {
                     <button
                       key={b.key}
                       onClick={() => setMinContext(b.key)}
-                      className={`px-2.5 py-1 text-xs rounded-lg transition-colors tabular-nums ${minContext === b.key ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                      className={`px-2.5 py-1 text-xs rounded-lg transition-colors tabular-nums ${minContext === b.key ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
                     >
                       {b.tKey ? t(`models.${b.tKey}`) : b.label}
                     </button>
