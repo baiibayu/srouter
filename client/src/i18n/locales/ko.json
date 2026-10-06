@@ -166,21 +166,17 @@
     "compressionRunPreview": "미리보기 실행",
     "updatesTitle": "업데이트",
     "checkForUpdates": "업데이트 확인",
-    "lastChecked": "마지막 확인: {when}",
-    "currentVersion": "현재 빌드:",
     "updateAvailable": "업데이트 사용 가능",
-    "changelog": "변경 사항",
     "upToDate": "최신 상태",
     "buildAhead": "이 빌드는 공식 main 브랜치보다 앞서 있습니다.",
     "buildDiverged": "이 빌드는 공식 main 브랜치에서 분기되었습니다.",
     "buildUnknown": "이 사용자 지정 빌드는 공식 main 브랜치와 비교할 수 없습니다.",
     "notGitInstall": "이 설치에는 커밋 정보가 포함되어 있지 않습니다.",
     "checkFailed": "업데이트를 확인할 수 없습니다.",
-    "contactsGithub": "확인은 수동으로 진행되며 GitHub에 연결합니다.",
     "autoUpdateCheck": "자동 업데이트 확인",
     "autoUpdateCheckHelp": "하루에 한 번 GitHub에서 새 릴리스를 확인하고 알림을 표시합니다. 기본값은 꺼짐입니다.",
     "openReleases": "GitHub 릴리스 열기",
-    "restartAfterUpdate": "빌드가 완료되면 srouter를 다시 시작하세요.",
+    "restartAfterUpdate": "빌드가 완료되면 SRouter를 다시 시작하세요.",
     "syncSchedule": "Model Sync",
     "syncScheduleHint": "How often the model catalog is refreshed from the server",
     "syncIntervalOff": "Off",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "더 새로운 버전의 SRouter가 설치되었습니다.",
     "reload": "새로고침"
@@ -1342,5 +1333,12 @@
     "open": "열기",
     "title": "SRouter 지원",
     "message": "SRouter이 당신의 작업에 도움이 된다면, 개발을 지원해 주세요. 모든 기여가 프로젝트의 성장에 도움이 됩니다. 감사합니다!"
+  },
+  "updates": {
+    "versionAvailable": "버전 {version}을(를) 사용할 수 있습니다",
+    "versionReady": "버전 {version}을(를) 설치할 준비가 되었습니다",
+    "releaseNotes": "릴리스 노트",
+    "tryAgain": "다시 시도",
+    "offline": "인터넷 연결을 확인한 후 다시 시도하세요."
   }
 }

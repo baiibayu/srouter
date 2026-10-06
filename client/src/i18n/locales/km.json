@@ -166,17 +166,13 @@
     "compressionRunPreview": "ដំណើរការមើលជាមុន",
     "updatesTitle": "ការអាប់ដេត",
     "checkForUpdates": "ពិនិត្យមើលការអាប់ដេត",
-    "lastChecked": "ពិនិត្យចុងក្រោយ៖ {when}",
-    "currentVersion": "ប៊ីលបច្ចុប្បន្ន៖",
     "updateAvailable": "មានការអាប់ដេត",
-    "changelog": "អ្វីដែលបានផ្លាស់ប្តូរ",
     "upToDate": "ទាន់សម័យ",
     "buildAhead": "ប៊ីលនេះនាំមុខសាខា main ផ្លូវការ។",
     "buildDiverged": "ប៊ីលនេះបានបែកចេញពីសាខា main ផ្លូវការ។",
     "buildUnknown": "មិនអាចប្រៀបធៀបប៊ីលផ្ទាល់ខ្លួននេះជាមួយសាខា main ផ្លូវការបានទេ។",
     "notGitInstall": "ការដំឡើងនេះមិនមានព័ត៌មាន commit ទេ។",
     "checkFailed": "មិនអាចពិនិត្យរកការអាប់ដេតបានទេ។",
-    "contactsGithub": "ការពិនិត្យធ្វើឡើងដោយដៃ និងភ្ជាប់ទៅ GitHub។",
     "autoUpdateCheck": "ការពិនិត្យអាប់ដេតដោយស្វ័យប្រវត្តិ",
     "autoUpdateCheckHelp": "ពិនិត្យ GitHub ម្ដងក្នុងមួយថ្ងៃរកមើលការចេញផ្សាយថ្មី ហើយបង្ហាញការរំលឹក។ បិទតាមលំនាំដើម។",
     "openReleases": "បើក GitHub Releases",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "កំណែថ្មីជាងរបស់ SRouter ត្រូវបានដំឡើង។",
     "reload": "ផ្ទុកឡើងវិញ"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "កំណែ {version} មានហើយ",
+    "versionReady": "កំណែ {version} រួចរាល់សម្រាប់ដំឡើង",
+    "releaseNotes": "កំណត់ចំណាំការចេញផ្សាយ",
+    "tryAgain": "ព្យាយាមម្ដងទៀត",
+    "offline": "សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយព្យាយាមម្ដងទៀត។"
   }
 }

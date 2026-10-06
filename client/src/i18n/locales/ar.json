@@ -166,17 +166,13 @@
     "compressionRunPreview": "تشغيل المعاينة",
     "updatesTitle": "التحديثات",
     "checkForUpdates": "التحقق من وجود تحديثات",
-    "lastChecked": "آخر فحص: {when}",
-    "currentVersion": "البنية الحالية:",
     "updateAvailable": "يتوفر تحديث",
-    "changelog": "ما الذي تغيّر",
     "upToDate": "محدّث",
     "buildAhead": "هذه البنية متقدمة على الفرع main الرسمي.",
     "buildDiverged": "تباعدت هذه البنية عن الفرع main الرسمي.",
     "buildUnknown": "لا يمكن مقارنة هذه البنية المخصصة بالفرع main الرسمي.",
     "notGitInstall": "لا يتضمن هذا التثبيت معلومات الالتزام.",
     "checkFailed": "تعذر التحقق من وجود تحديثات.",
-    "contactsGithub": "تُجرى عمليات التحقق يدويًا وتتصل بـ GitHub.",
     "autoUpdateCheck": "التحقق التلقائي من التحديثات",
     "autoUpdateCheckHelp": "يتحقق من GitHub مرة واحدة يوميًا بحثًا عن إصدار جديد ويعرض تذكيرًا. مُعطَّل افتراضيًا.",
     "openReleases": "فتح إصدارات GitHub",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "تم تثبيت إصدار أحدث من SRouter.",
     "reload": "إعادة التحميل"
@@ -1342,5 +1333,12 @@
     "open": "فتح",
     "title": "ادعم SRouter",
     "message": "إذا كان SRouter يساعدك في عملك، فكر في دعم التطوير. كل مساهمة تُبقي المشروع حيًا ونمائيًا. شكرًا!"
+  },
+  "updates": {
+    "versionAvailable": "الإصدار {version} متاح",
+    "versionReady": "الإصدار {version} جاهز للتثبيت",
+    "releaseNotes": "ملاحظات الإصدار",
+    "tryAgain": "أعد المحاولة",
+    "offline": "تحقّق من اتصالك بالإنترنت ثم أعد المحاولة."
   }
 }

@@ -166,17 +166,13 @@
     "compressionRunPreview": "Önizlemeyi çalıştır",
     "updatesTitle": "Güncellemeler",
     "checkForUpdates": "Güncellemeleri kontrol et",
-    "lastChecked": "Son kontrol: {when}",
-    "currentVersion": "Mevcut derleme:",
     "updateAvailable": "Güncelleme mevcut",
-    "changelog": "Neler değişti",
     "upToDate": "Güncel",
     "buildAhead": "Bu derleme resmi main dalının ilerisinde.",
     "buildDiverged": "Bu derleme resmi main dalından ayrışmış.",
     "buildUnknown": "Bu özel derleme resmi main dalıyla karşılaştırılamıyor.",
     "notGitInstall": "Bu kurulum commit bilgisi içermiyor.",
     "checkFailed": "Güncellemeler denetlenemedi.",
-    "contactsGithub": "Denetimler elle yapılır ve GitHub ile iletişim kurar.",
     "autoUpdateCheck": "Otomatik güncelleme denetimi",
     "autoUpdateCheckHelp": "Yeni bir sürüm için günde bir kez GitHub'ı denetler ve bir hatırlatma gösterir. Varsayılan olarak kapalıdır.",
     "openReleases": "GitHub sürümlerini aç",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "Yeni sürüm mevcut",
-    "whatsNew": "v{version} sürümündeki yenilikler",
-    "publishedOn": "Yayımlanma: {date}",
-    "noNotes": "Bu sürüm için sürüm notu yayımlanmadı.",
-    "openRelease": "Sürüm sayfasını aç",
-    "dismissVersion": "Bu sürümü yoksay",
     "dismiss": "Yoksay",
     "newBuild": "SRouter'nin daha yeni bir sürümü yüklü.",
     "reload": "Yeniden yükle"
@@ -1342,5 +1333,12 @@
     "open": "Aç",
     "title": "SRouter’i destekle",
     "message": "SRouter işine yardımcı oluyorsa, geliştirmeyi desteklemeyi düşün. Her katkı projeyi canlı ve büyüyen tutar. Teşekkürler!"
+  },
+  "updates": {
+    "versionAvailable": "{version} sürümü kullanılabilir",
+    "versionReady": "{version} sürümü yüklenmeye hazır",
+    "releaseNotes": "Sürüm notları",
+    "tryAgain": "Tekrar dene",
+    "offline": "İnternet bağlantınızı kontrol edip tekrar deneyin."
   }
 }

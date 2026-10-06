@@ -166,21 +166,17 @@
     "compressionRunPreview": "プレビューを実行",
     "updatesTitle": "アップデート",
     "checkForUpdates": "アップデートをチェックする",
-    "lastChecked": "最終チェック日: {when}",
-    "currentVersion": "現在のビルド:",
     "updateAvailable": "アップデートがあります",
-    "changelog": "変更内容",
     "upToDate": "最新版です",
     "buildAhead": "このビルドは公式のmainより先行しています。",
     "buildDiverged": "このビルドは公式のmainから分岐しています。",
     "buildUnknown": "このカスタムビルドは公式のmainと比較できません。",
     "notGitInstall": "このインストールにはコミット情報が含まれていません。",
     "checkFailed": "アップデートを確認できませんでした。",
-    "contactsGithub": "確認は手動で行われ、GitHubに接続します。",
     "autoUpdateCheck": "自動アップデートチェック",
     "autoUpdateCheckHelp": "1日1回、新しいリリースがないかGitHubを確認し、通知を表示します。既定では無効です。",
     "openReleases": "GitHub Releasesを開く",
-    "restartAfterUpdate": "ビルド完了後にsrouterを再起動してください。",
+    "restartAfterUpdate": "ビルド完了後にSRouterを再起動してください。",
     "syncSchedule": "Model Sync",
     "syncScheduleHint": "How often the model catalog is refreshed from the server",
     "syncIntervalOff": "Off",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "新しいバージョンの SRouter がインストールされています。",
     "reload": "再読み込み"
@@ -1342,5 +1333,12 @@
     "open": "開く",
     "title": "SRouterをサポート",
     "message": "SRouterがあなたの仕事に役立ったら、開発へのご支援を検討してください。すべての貢献がプロジェクトの成長を支えます。ありがとうございます！"
+  },
+  "updates": {
+    "versionAvailable": "バージョン {version} が利用可能です",
+    "versionReady": "バージョン {version} をインストールする準備ができました",
+    "releaseNotes": "リリースノート",
+    "tryAgain": "再試行",
+    "offline": "インターネット接続を確認して、もう一度お試しください。"
   }
 }

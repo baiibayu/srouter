@@ -166,17 +166,13 @@
     "compressionRunPreview": "Kør forhåndsvisning",
     "updatesTitle": "Opdateringer",
     "checkForUpdates": "Tjek for opdateringer",
-    "lastChecked": "Sidst tjekket: {when}",
-    "currentVersion": "Nuværende build:",
     "updateAvailable": "Opdatering tilgængelig",
-    "changelog": "Hvad er ændret",
     "upToDate": "Opdateret",
     "buildAhead": "Denne build er foran den officielle main-gren.",
     "buildDiverged": "Denne build er divergeret fra den officielle main-gren.",
     "buildUnknown": "Denne tilpassede build kan ikke sammenlignes med den officielle main-gren.",
     "notGitInstall": "Denne installation indeholder ikke commit-oplysninger.",
     "checkFailed": "Det var ikke muligt at søge efter opdateringer.",
-    "contactsGithub": "Tjek udføres manuelt og kontakter GitHub.",
     "autoUpdateCheck": "Automatisk opdateringstjek",
     "autoUpdateCheckHelp": "Tjekker GitHub én gang om dagen for en ny udgivelse og viser en påmindelse. Slået fra som standard.",
     "openReleases": "Åbn GitHub-udgivelser",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "En nyere version af SRouter er installeret.",
     "reload": "Genindlæs"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "Version {version} er tilgængelig",
+    "versionReady": "Version {version} er klar til installation",
+    "releaseNotes": "Udgivelsesnoter",
+    "tryAgain": "Prøv igen",
+    "offline": "Tjek din internetforbindelse, og prøv igen."
   }
 }

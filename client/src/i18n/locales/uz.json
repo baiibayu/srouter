@@ -166,17 +166,13 @@
     "compressionRunPreview": "Oldindan ko'rishni ishga tushirish",
     "updatesTitle": "Yangilanishlar",
     "checkForUpdates": "Yangilanishlarni tekshiring",
-    "lastChecked": "Oxirgi tekshirilgan: {when}",
-    "currentVersion": "Joriy build:",
     "updateAvailable": "Yangilanish mavjud",
-    "changelog": "Nimalar o'zgardi",
     "upToDate": "Eng so'nggi versiya",
     "buildAhead": "Bu build rasmiy main tarmog'idan oldinda.",
     "buildDiverged": "Bu build rasmiy main tarmog'idan ajralib ketgan.",
     "buildUnknown": "Bu maxsus buildni rasmiy main tarmog'i bilan taqqoslab bo'lmaydi.",
     "notGitInstall": "Bu o'rnatishda commit ma'lumoti mavjud emas.",
     "checkFailed": "Yangilanishlarni tekshirib bo'lmadi.",
-    "contactsGithub": "Tekshiruvlar qo'lda bajariladi va GitHub bilan bog'lanadi.",
     "autoUpdateCheck": "Avtomatik yangilanish tekshiruvi",
     "autoUpdateCheckHelp": "Kuniga bir marta yangi nashr uchun GitHub'ni tekshiradi va eslatma ko'rsatadi. Sukut bo'yicha o'chirilgan.",
     "openReleases": "GitHub relizlarini ochish",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "SRouter ning yangiroq versiyasi o‘rnatilgan.",
     "reload": "Qayta yuklash"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "{version} versiyasi mavjud",
+    "versionReady": "{version} versiyasi o‘rnatishga tayyor",
+    "releaseNotes": "Reliz eslatmalari",
+    "tryAgain": "Qayta urinish",
+    "offline": "Internet aloqangizni tekshirib, qayta urinib ko‘ring."
   }
 }

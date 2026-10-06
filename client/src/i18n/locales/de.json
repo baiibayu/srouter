@@ -166,17 +166,13 @@
     "compressionRunPreview": "Vorschau ausführen",
     "updatesTitle": "Aktualisierungen",
     "checkForUpdates": "Suchen Sie nach Updates",
-    "lastChecked": "Zuletzt überprüft: {when}",
-    "currentVersion": "Aktueller Build:",
     "updateAvailable": "Aktualisierung verfügbar",
-    "changelog": "Was ist neu",
     "upToDate": "Auf dem neuesten Stand",
     "buildAhead": "Dieser Build ist dem offiziellen main-Branch voraus.",
     "buildDiverged": "Dieser Build ist vom offiziellen main-Branch abgewichen.",
     "buildUnknown": "Dieser benutzerdefinierte Build kann nicht mit dem offiziellen main-Branch verglichen werden.",
     "notGitInstall": "Diese Installation enthält keine Commit-Informationen.",
     "checkFailed": "Aktualisierungen konnten nicht geprüft werden.",
-    "contactsGithub": "Prüfungen erfolgen manuell und stellen eine Verbindung zu GitHub her.",
     "autoUpdateCheck": "Automatische Updateprüfung",
     "autoUpdateCheckHelp": "Prüft einmal täglich auf GitHub, ob es eine neue Version gibt, und zeigt eine Erinnerung an. Standardmäßig deaktiviert.",
     "openReleases": "GitHub-Releases öffnen",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "Eine neuere Version von SRouter ist installiert.",
     "reload": "Neu laden"
@@ -1342,5 +1333,12 @@
     "open": "Öffnen",
     "title": "SRouter unterstützen",
     "message": "Wenn SRouter bei deiner Arbeit hilft, erwäge eine Unterstützung der Entwicklung. Jeder Beitrag hält das Projekt am Leben und lässt es wachsen. Danke!"
+  },
+  "updates": {
+    "versionAvailable": "Version {version} ist verfügbar",
+    "versionReady": "Version {version} ist bereit zur Installation",
+    "releaseNotes": "Versionshinweise",
+    "tryAgain": "Erneut versuchen",
+    "offline": "Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
   }
 }

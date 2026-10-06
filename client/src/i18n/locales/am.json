@@ -166,21 +166,17 @@
     "compressionRunPreview": "ቅድመ-እይታ አሂድ",
     "updatesTitle": "ዝማኔዎች",
     "checkForUpdates": "ዝማኔዎችን ያረጋግጡ",
-    "lastChecked": "ለመጨረሻ ጊዜ የተፈተሸው {when}",
-    "currentVersion": "የአሁኑ ግንባታ:",
     "updateAvailable": "ዝማኔ አለ",
-    "changelog": "ምን ተለውጧል",
     "upToDate": "ወቅታዊ ነው",
     "buildAhead": "ይህ ግንባታ ከይፋዊው main ቀድሟል።",
     "buildDiverged": "ይህ ግንባታ ከይፋዊው main ተለይቷል።",
     "buildUnknown": "ይህ ብጁ ግንባታ ከይፋዊው main ጋር ሊነጻጸር አይችልም።",
     "notGitInstall": "ይህ ጭነት የcommit መረጃን አያካትትም።",
     "checkFailed": "ዝማኔዎችን መፈተሽ አልተቻለም።",
-    "contactsGithub": "ፍተሻዎች በእጅ የሚከናወኑ ሲሆን GitHubን ያገናኛሉ።",
     "autoUpdateCheck": "ራስ-ሰር የዝማኔ ፍተሻ",
     "autoUpdateCheckHelp": "በቀን አንድ ጊዜ ለአዲስ ልቀት GitHubን ይፈትሻል እና ማስታወሻ ያሳያል። በነባሪነት ጠፍቷል።",
     "openReleases": "የGitHub ልቀቶችን ክፈት",
-    "restartAfterUpdate": "ግንባታው ከተጠናቀቀ በኋላ srouterን እንደገና ያስጀምሩ።",
+    "restartAfterUpdate": "ግንባታው ከተጠናቀቀ በኋላ SRouterን እንደገና ያስጀምሩ።",
     "syncSchedule": "Model Sync",
     "syncScheduleHint": "How often the model catalog is refreshed from the server",
     "syncIntervalOff": "Off",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "አዲስ የSRouter ስሪት ተጭኗል።",
     "reload": "እንደገና ጫን"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "ስሪት {version} ይገኛል",
+    "versionReady": "ስሪት {version} ለመጫን ዝግጁ ነው",
+    "releaseNotes": "የልቀት ማስታወሻዎች",
+    "tryAgain": "እንደገና ሞክር",
+    "offline": "የበይነመረብ ግንኙነትዎን ያረጋግጡና እንደገና ይሞክሩ።"
   }
 }

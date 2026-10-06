@@ -166,17 +166,13 @@
     "compressionRunPreview": "Suorita esikatselu",
     "updatesTitle": "Päivitykset",
     "checkForUpdates": "Tarkista päivitykset",
-    "lastChecked": "Viimeksi tarkistettu: {when}",
-    "currentVersion": "Nykyinen koontiversio:",
     "updateAvailable": "Päivitys saatavilla",
-    "changelog": "Mikä muuttui",
     "upToDate": "Ajan tasalla",
     "buildAhead": "Tämä koontiversio on virallista main-haaraa edellä.",
     "buildDiverged": "Tämä koontiversio on erkaantunut virallisesta main-haarasta.",
     "buildUnknown": "Tätä mukautettua koontiversiota ei voi verrata viralliseen main-haaraan.",
     "notGitInstall": "Tämä asennus ei sisällä commit-tietoja.",
     "checkFailed": "Päivitysten tarkistaminen epäonnistui.",
-    "contactsGithub": "Tarkistukset tehdään manuaalisesti ja ne ottavat yhteyden GitHubiin.",
     "autoUpdateCheck": "Automaattinen päivitystarkistus",
     "autoUpdateCheckHelp": "Tarkistaa GitHubista kerran päivässä, onko uutta julkaisua, ja näyttää muistutuksen. Oletuksena pois päältä.",
     "openReleases": "Avaa GitHub-julkaisut",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "SRouter:n uudempi versio on asennettu.",
     "reload": "Lataa uudelleen"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "Versio {version} on saatavilla",
+    "versionReady": "Versio {version} on valmis asennettavaksi",
+    "releaseNotes": "Julkaisutiedot",
+    "tryAgain": "Yritä uudelleen",
+    "offline": "Tarkista internetyhteys ja yritä uudelleen."
   }
 }

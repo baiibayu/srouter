@@ -166,17 +166,13 @@
     "compressionRunPreview": "Endesha hakikisho",
     "updatesTitle": "Masasisho",
     "checkForUpdates": "Angalia masasisho",
-    "lastChecked": "Mara ya mwisho kuangaliwa: {when}",
-    "currentVersion": "Toleo la sasa:",
     "updateAvailable": "Sasisho linapatikana",
-    "changelog": "Kilichobadilika",
     "upToDate": "Imesasishwa",
     "buildAhead": "Toleo hili liko mbele ya tawi rasmi la main.",
     "buildDiverged": "Toleo hili limejitenga na tawi rasmi la main.",
     "buildUnknown": "Toleo hili maalum haliwezi kulinganishwa na tawi rasmi la main.",
     "notGitInstall": "Usakinishaji huu hauna taarifa za commit.",
     "checkFailed": "Imeshindikana kuangalia masasisho.",
-    "contactsGithub": "Ukaguzi hufanywa mwenyewe na huwasiliana na GitHub.",
     "autoUpdateCheck": "Ukaguzi wa masasisho otomatiki",
     "autoUpdateCheckHelp": "Hukagua GitHub mara moja kwa siku kwa toleo jipya na kuonyesha ukumbusho. Imezimwa kwa chaguo-msingi.",
     "openReleases": "Fungua Matoleo ya GitHub",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "Toleo jipya la SRouter limesakinishwa.",
     "reload": "Pakia upya"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "Toleo {version} linapatikana",
+    "versionReady": "Toleo {version} liko tayari kusakinishwa",
+    "releaseNotes": "Maelezo ya toleo",
+    "tryAgain": "Jaribu tena",
+    "offline": "Kagua muunganisho wako wa intaneti kisha ujaribu tena."
   }
 }
