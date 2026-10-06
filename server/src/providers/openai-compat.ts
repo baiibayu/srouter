@@ -12,7 +12,7 @@ import { extractThinkFromMessage } from '../lib/think-tags.js';
 import { repairToolArguments, toolSchemaMap } from '../lib/tool-args.js';
 import { invalidToolCallReasons, isToolArgumentValidationEnabled } from '../lib/tool-validate.js';
 import { recordQuotaObservation, recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
-import type { QuotaMetric } from '@freellmapi/shared/types.js';
+import type { QuotaMetric } from '@baiibayu/srouter-shared/types.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { isAbortLikeError } from '../lib/error-classify.js';
 import { contentToString } from '../lib/content.js';

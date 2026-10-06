@@ -5,7 +5,7 @@ import { checkKeyHealth, checkAllKeys, pollKeyQuota, supportsQuotaPolling } from
 import { getDegradationStatus } from '../services/degradation.js';
 import { hasProvider, resolveProvider } from '../providers/index.js';
 import { getQuotaStateForKeys } from '../services/provider-quota.js';
-import type { Platform } from '@freellmapi/shared/types.js';
+import type { Platform } from '@baiibayu/srouter-shared/types.js';
 
 export const healthRouter = Router();
 

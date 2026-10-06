@@ -166,17 +166,13 @@
     "compressionRunPreview": "ਝਲਕ ਚਲਾਓ",
     "updatesTitle": "ਅੱਪਡੇਟ",
     "checkForUpdates": "ਅੱਪਡੇਟ ਲਈ ਚੈੱਕ ਕਰੋ",
-    "lastChecked": "ਪਿਛਲੀ ਵਾਰ ਜਾਂਚ ਕੀਤੀ ਗਈ: {when}",
-    "currentVersion": "ਮੌਜੂਦਾ ਬਿਲਡ:",
     "updateAvailable": "ਅੱਪਡੇਟ ਉਪਲਬਧ ਹੈ",
-    "changelog": "ਕੀ ਬਦਲਿਆ ਹੈ",
     "upToDate": "ਨਵੀਨਤਮ ਹੈ",
     "buildAhead": "ਇਹ ਬਿਲਡ ਅਧਿਕਾਰਤ main ਸ਼ਾਖਾ ਤੋਂ ਅੱਗੇ ਹੈ।",
     "buildDiverged": "ਇਹ ਬਿਲਡ ਅਧਿਕਾਰਤ main ਸ਼ਾਖਾ ਤੋਂ ਵੱਖ ਹੋ ਗਿਆ ਹੈ।",
     "buildUnknown": "ਇਸ ਕਸਟਮ ਬਿਲਡ ਦੀ ਤੁਲਨਾ ਅਧਿਕਾਰਤ main ਸ਼ਾਖਾ ਨਾਲ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕਦੀ।",
     "notGitInstall": "ਇਸ ਇੰਸਟਾਲੇਸ਼ਨ ਵਿੱਚ commit ਜਾਣਕਾਰੀ ਸ਼ਾਮਲ ਨਹੀਂ ਹੈ।",
     "checkFailed": "ਅੱਪਡੇਟਾਂ ਦੀ ਜਾਂਚ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ।",
-    "contactsGithub": "ਜਾਂਚਾਂ ਹੱਥੀਂ ਚਲਾਈਆਂ ਜਾਂਦੀਆਂ ਹਨ ਅਤੇ GitHub ਨਾਲ ਸੰਪਰਕ ਕਰਦੀਆਂ ਹਨ।",
     "autoUpdateCheck": "ਆਪਣੇ-ਆਪ ਅੱਪਡੇਟ ਜਾਂਚ",
     "autoUpdateCheckHelp": "ਦਿਨ ਵਿੱਚ ਇੱਕ ਵਾਰ ਨਵੀਂ ਰਿਲੀਜ਼ ਲਈ GitHub ਦੀ ਜਾਂਚ ਕਰਦਾ ਹੈ ਅਤੇ ਯਾਦ-ਦਹਾਨੀ ਦਿਖਾਉਂਦਾ ਹੈ। ਮੂਲ ਰੂਪ ਵਿੱਚ ਬੰਦ।",
     "openReleases": "GitHub Releases ਖੋਲ੍ਹੋ",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "SRouter ਦਾ ਨਵਾਂ ਸੰਸਕਰਣ ਇੰਸਟਾਲ ਹੈ।",
     "reload": "ਮੁੜ ਲੋਡ ਕਰੋ"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "ਸੰਸਕਰਣ {version} ਉਪਲਬਧ ਹੈ",
+    "versionReady": "ਸੰਸਕਰਣ {version} ਇੰਸਟਾਲ ਲਈ ਤਿਆਰ ਹੈ",
+    "releaseNotes": "ਰਿਲੀਜ਼ ਨੋਟਸ",
+    "tryAgain": "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+    "offline": "ਆਪਣਾ ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਜਾਂਚੋ ਅਤੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"
   }
 }

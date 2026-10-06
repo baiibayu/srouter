@@ -166,17 +166,13 @@
     "compressionRunPreview": "รันตัวอย่าง",
     "updatesTitle": "การอัปเดต",
     "checkForUpdates": "ตรวจสอบการอัปเดต",
-    "lastChecked": "ตรวจสอบล่าสุด: {when}",
-    "currentVersion": "บิลด์ปัจจุบัน:",
     "updateAvailable": "มีการอัปเดต",
-    "changelog": "มีอะไรเปลี่ยนแปลง",
     "upToDate": "เป็นเวอร์ชันล่าสุด",
     "buildAhead": "บิลด์นี้ล้ำหน้า main อย่างเป็นทางการ",
     "buildDiverged": "บิลด์นี้แยกออกจาก main อย่างเป็นทางการ",
     "buildUnknown": "ไม่สามารถเปรียบเทียบบิลด์ที่ปรับแต่งนี้กับ main อย่างเป็นทางการได้",
     "notGitInstall": "การติดตั้งนี้ไม่มีข้อมูล commit",
     "checkFailed": "ไม่สามารถตรวจสอบการอัปเดตได้",
-    "contactsGithub": "การตรวจสอบเป็นแบบดำเนินการเองและมีการติดต่อ GitHub",
     "autoUpdateCheck": "ตรวจสอบการอัปเดตอัตโนมัติ",
     "autoUpdateCheckHelp": "ตรวจสอบ GitHub วันละครั้งว่ามีเวอร์ชันใหม่หรือไม่ และแสดงการแจ้งเตือน ปิดไว้ตามค่าเริ่มต้น",
     "openReleases": "เปิด GitHub Releases",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "ติดตั้ง SRouter เวอร์ชันใหม่กว่าแล้ว",
     "reload": "โหลดใหม่"
@@ -1342,5 +1333,12 @@
     "open": "เปิด",
     "title": "SRouter สถานที่อย่าง",
     "message": "หาก SRouter ช่วยงานของคุณ พิจารณาสนับสนุนการพัฒนา ทุกการมีส่วนร่วมทำให้โปรเจกต์ยังอยู่และเติบโต ขอบคุณ!"
+  },
+  "updates": {
+    "versionAvailable": "มีเวอร์ชัน {version} แล้ว",
+    "versionReady": "เวอร์ชัน {version} พร้อมติดตั้งแล้ว",
+    "releaseNotes": "บันทึกประจำรุ่น",
+    "tryAgain": "ลองอีกครั้ง",
+    "offline": "ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง"
   }
 }

@@ -166,17 +166,13 @@
     "compressionRunPreview": "ಪೂರ್ವವೀಕ್ಷಣೆ ರನ್ ಮಾಡಿ",
     "updatesTitle": "ನವೀಕರಣಗಳು",
     "checkForUpdates": "ನವೀಕರಣಗಳಿಗಾಗಿ ಪರಿಶೀಲಿಸಿ",
-    "lastChecked": "ಕೊನೆಯದಾಗಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ: {when}",
-    "currentVersion": "ಪ್ರಸ್ತುತ ಬಿಲ್ಡ್:",
     "updateAvailable": "ನವೀಕರಣ ಲಭ್ಯವಿದೆ",
-    "changelog": "ಏನು ಬದಲಾಗಿದೆ",
     "upToDate": "ನವೀಕೃತವಾಗಿದೆ",
     "buildAhead": "ಈ ಬಿಲ್ಡ್ ಅಧಿಕೃತ main ಶಾಖೆಗಿಂತ ಮುಂದಿದೆ.",
     "buildDiverged": "ಈ ಬಿಲ್ಡ್ ಅಧಿಕೃತ main ಶಾಖೆಯಿಂದ ಬೇರೆಯಾಗಿದೆ.",
     "buildUnknown": "ಈ ಕಸ್ಟಮ್ ಬಿಲ್ಡ್ ಅನ್ನು ಅಧಿಕೃತ main ಶಾಖೆಯೊಂದಿಗೆ ಹೋಲಿಸಲಾಗುವುದಿಲ್ಲ.",
     "notGitInstall": "ಈ ಸ್ಥಾಪನೆಯು ಕಮಿಟ್ ಮಾಹಿತಿಯನ್ನು ಒಳಗೊಂಡಿಲ್ಲ.",
     "checkFailed": "ನವೀಕರಣಗಳಿಗಾಗಿ ಪರಿಶೀಲಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
-    "contactsGithub": "ಪರಿಶೀಲನೆಗಳನ್ನು ಹಸ್ತಚಾಲಿತವಾಗಿ ಮಾಡಲಾಗುತ್ತದೆ ಮತ್ತು ಅವು GitHub ಅನ್ನು ಸಂಪರ್ಕಿಸುತ್ತವೆ.",
     "autoUpdateCheck": "ಸ್ವಯಂಚಾಲಿತ ನವೀಕರಣ ಪರಿಶೀಲನೆ",
     "autoUpdateCheckHelp": "ದಿನಕ್ಕೊಮ್ಮೆ ಹೊಸ ಬಿಡುಗಡೆಗಾಗಿ GitHub ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತದೆ ಮತ್ತು ಜ್ಞಾಪನೆ ತೋರಿಸುತ್ತದೆ. ಪೂರ್ವನಿಯೋಜಿತವಾಗಿ ಆಫ್ ಆಗಿದೆ.",
     "openReleases": "GitHub ಬಿಡುಗಡೆಗಳನ್ನು ತೆರೆಯಿರಿ",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "SRouter ನ ಹೊಸ ಆವೃತ್ತಿ ಸ್ಥಾಪಿಸಲಾಗಿದೆ.",
     "reload": "ಮರುಲೋಡ್"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "ಆವೃತ್ತಿ {version} ಲಭ್ಯವಿದೆ",
+    "versionReady": "ಆವೃತ್ತಿ {version} ಸ್ಥಾಪನೆಗೆ ಸಿದ್ಧವಾಗಿದೆ",
+    "releaseNotes": "ಬಿಡುಗಡೆ ಟಿಪ್ಪಣಿಗಳು",
+    "tryAgain": "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
+    "offline": "ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
   }
 }

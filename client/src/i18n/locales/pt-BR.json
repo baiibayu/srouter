@@ -166,17 +166,13 @@
     "compressionRunPreview": "Executar prévia",
     "updatesTitle": "Atualizações",
     "checkForUpdates": "Verificar atualizações",
-    "lastChecked": "Última verificação: {when}",
-    "currentVersion": "Build atual:",
     "updateAvailable": "Atualização disponível",
-    "changelog": "O que mudou",
     "upToDate": "Atualizado",
     "buildAhead": "Esta build está à frente da branch main oficial.",
     "buildDiverged": "Esta build divergiu da branch main oficial.",
     "buildUnknown": "Esta build personalizada não pode ser comparada à branch main oficial.",
     "notGitInstall": "Esta instalação não inclui informações do commit.",
     "checkFailed": "Não foi possível verificar se há atualizações.",
-    "contactsGithub": "As verificações são manuais e acessam o GitHub.",
     "autoUpdateCheck": "Verificação automática de atualizações",
     "autoUpdateCheckHelp": "Consulta o GitHub uma vez por dia em busca de uma nova versão e exibe um lembrete. Desativado por padrão.",
     "openReleases": "Abrir releases no GitHub",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "Uma versão mais recente do SRouter está instalada.",
     "reload": "Recarregar"
@@ -1342,5 +1333,12 @@
     "open": "Abrir",
     "title": "Apoie o SRouter",
     "message": "Se o SRouter ajuda no seu trabalho, considere apoiar o desenvolvimento. Cada contribuição mantém o projeto vivo e crescendo. Obrigado!"
+  },
+  "updates": {
+    "versionAvailable": "A versão {version} está disponível",
+    "versionReady": "A versão {version} está pronta para instalar",
+    "releaseNotes": "Notas da versão",
+    "tryAgain": "Tentar novamente",
+    "offline": "Verifique sua conexão com a internet e tente novamente."
   }
 }

@@ -166,17 +166,13 @@
     "compressionRunPreview": "Rulează previzualizarea",
     "updatesTitle": "Actualizări",
     "checkForUpdates": "Verifică actualizările",
-    "lastChecked": "Ultima verificare: {when}",
-    "currentVersion": "Versiunea curentă:",
     "updateAvailable": "Actualizare disponibilă",
-    "changelog": "Ce s-a schimbat",
     "upToDate": "La zi",
     "buildAhead": "Această versiune este înaintea ramurii main oficiale.",
     "buildDiverged": "Această versiune a deviat de la ramura main oficială.",
     "buildUnknown": "Această versiune personalizată nu poate fi comparată cu ramura main oficială.",
     "notGitInstall": "Această instalare nu include informații despre commit.",
     "checkFailed": "Nu s-au putut verifica actualizările.",
-    "contactsGithub": "Verificările sunt inițiate manual și contactează GitHub.",
     "autoUpdateCheck": "Verificare automată a actualizărilor",
     "autoUpdateCheckHelp": "Verifică GitHub o dată pe zi dacă există o versiune nouă și afișează o notificare. Dezactivat implicit.",
     "openReleases": "Deschide versiunile GitHub",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "Este instalată o versiune mai nouă de SRouter.",
     "reload": "Reîncarcă"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "Versiunea {version} este disponibilă",
+    "versionReady": "Versiunea {version} este gata de instalare",
+    "releaseNotes": "Note de lansare",
+    "tryAgain": "Încearcă din nou",
+    "offline": "Verifică conexiunea la internet și încearcă din nou."
   }
 }

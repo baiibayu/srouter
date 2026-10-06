@@ -166,17 +166,13 @@
     "compressionRunPreview": "Kör förhandsvisning",
     "updatesTitle": "Uppdateringar",
     "checkForUpdates": "Kolla efter uppdateringar",
-    "lastChecked": "Senast kontrollerat: {when}",
-    "currentVersion": "Aktuell version:",
     "updateAvailable": "Uppdatering tillgänglig",
-    "changelog": "Vad har ändrats",
     "upToDate": "Uppdaterad",
     "buildAhead": "Den här versionen ligger före officiella main.",
     "buildDiverged": "Den här versionen har avvikit från officiella main.",
     "buildUnknown": "Den här anpassade versionen kan inte jämföras med officiella main.",
     "notGitInstall": "Den här installationen innehåller ingen commit-information.",
     "checkFailed": "Det gick inte att söka efter uppdateringar.",
-    "contactsGithub": "Kontroller görs manuellt och kontaktar GitHub.",
     "autoUpdateCheck": "Automatisk uppdateringskontroll",
     "autoUpdateCheckHelp": "Kontrollerar GitHub en gång om dagen efter en ny version och visar en påminnelse. Av som standard.",
     "openReleases": "Öppna GitHub Releases",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "En nyare version av SRouter är installerad.",
     "reload": "Läs in igen"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "Version {version} är tillgänglig",
+    "versionReady": "Version {version} är redo att installeras",
+    "releaseNotes": "Versionsinformation",
+    "tryAgain": "Försök igen",
+    "offline": "Kontrollera internetanslutningen och försök igen."
   }
 }

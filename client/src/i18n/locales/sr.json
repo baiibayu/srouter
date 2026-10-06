@@ -166,17 +166,13 @@
     "compressionRunPreview": "Покрени преглед",
     "updatesTitle": "Ажурирања",
     "checkForUpdates": "Проверите ажурирања",
-    "lastChecked": "Последња провера: {when}",
-    "currentVersion": "Тренутна верзија:",
     "updateAvailable": "Доступно је ажурирање",
-    "changelog": "Шта је промењено",
     "upToDate": "Ажурно",
     "buildAhead": "Ова верзија је испред званичне гране main.",
     "buildDiverged": "Ова верзија се разишла са званичном граном main.",
     "buildUnknown": "Ова прилагођена верзија се не може упоредити са званичном граном main.",
     "notGitInstall": "Ова инсталација не садржи информације о комиту.",
     "checkFailed": "Провера ажурирања није успела.",
-    "contactsGithub": "Провере се покрећу ручно и повезују се са GitHub-ом.",
     "autoUpdateCheck": "Аутоматска провера ажурирања",
     "autoUpdateCheckHelp": "Једном дневно проверава GitHub за ново издање и приказује подсетник. Подразумевано искључено.",
     "openReleases": "Отвори GitHub издања",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "Инсталирана је новија верзија SRouter-ја.",
     "reload": "Поново учитај"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "Доступна је верзија {version}",
+    "versionReady": "Верзија {version} је спремна за инсталацију",
+    "releaseNotes": "Белешке о издању",
+    "tryAgain": "Покушај поново",
+    "offline": "Проверите интернет везу и покушајте поново."
   }
 }

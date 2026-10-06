@@ -166,17 +166,13 @@
     "compressionRunPreview": "Εκτέλεση προεπισκόπησης",
     "updatesTitle": "Ενημερώσεις",
     "checkForUpdates": "Έλεγχος για ενημερώσεις",
-    "lastChecked": "Τελευταίος έλεγχος: {when}",
-    "currentVersion": "Τρέχον build:",
     "updateAvailable": "Διαθέσιμη ενημέρωση",
-    "changelog": "Τι άλλαξε",
     "upToDate": "Ενημερωμένο",
     "buildAhead": "Αυτό το build είναι μπροστά από το επίσημο main.",
     "buildDiverged": "Αυτό το build έχει αποκλίνει από το επίσημο main.",
     "buildUnknown": "Αυτό το προσαρμοσμένο build δεν μπορεί να συγκριθεί με το επίσημο main.",
     "notGitInstall": "Αυτή η εγκατάσταση δεν περιλαμβάνει πληροφορίες commit.",
     "checkFailed": "Δεν ήταν δυνατός ο έλεγχος για ενημερώσεις.",
-    "contactsGithub": "Οι έλεγχοι γίνονται χειροκίνητα και επικοινωνούν με το GitHub.",
     "autoUpdateCheck": "Αυτόματος έλεγχος ενημερώσεων",
     "autoUpdateCheckHelp": "Ελέγχει το GitHub μία φορά την ημέρα για νέα έκδοση και εμφανίζει υπενθύμιση. Απενεργοποιημένο από προεπιλογή.",
     "openReleases": "Άνοιγμα εκδόσεων GitHub",
@@ -1251,11 +1247,6 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
     "dismiss": "Dismiss",
     "newBuild": "Έχει εγκατασταθεί νεότερη έκδοση του SRouter.",
     "reload": "Επαναφόρτωση"
@@ -1342,5 +1333,12 @@
     "open": "Open",
     "title": "Support SRouter",
     "message": "If SRouter helps your work, consider supporting development. Every contribution keeps the project alive and growing. Thank you!"
+  },
+  "updates": {
+    "versionAvailable": "Η έκδοση {version} είναι διαθέσιμη",
+    "versionReady": "Η έκδοση {version} είναι έτοιμη για εγκατάσταση",
+    "releaseNotes": "Σημειώσεις έκδοσης",
+    "tryAgain": "Δοκιμάστε ξανά",
+    "offline": "Ελέγξτε τη σύνδεσή σας στο διαδίκτυο και δοκιμάστε ξανά."
   }
 }

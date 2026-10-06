@@ -1,23 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  AlertTriangle,
-  ArrowRight,
   Bell,
   Check,
-  CheckCircle2,
-  ChevronsUpDown,
   Clock,
-  ExternalLink,
+  ChevronsUpDown,
   FlaskConical,
   Gauge,
+  Info,
   Loader2,
   Monitor,
   Moon,
-  RefreshCw,
   Search,
   SlidersHorizontal,
-  Sparkles,
-  SquareTerminal,
   Sun,
   Wrench,
   X,
@@ -29,16 +23,113 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { UPDATE_CHECK_CHANGED_EVENT } from '@/components/update-reminder'
-import { DesktopUpdateActions } from '@/components/desktop-update'
-import { DockerUpdateNow } from '@/components/docker-update'
-import { useDesktopUpdater } from '@/lib/desktop-updater'
 import { Switch } from '@/components/ui/switch'
+import { Tooltip } from '@/components/tooltip'
 import { SUPPORTED_LOCALES, type Locale, useI18n } from '@/i18n'
 import { type Theme, useTheme } from '@/theme-context'
 import { apiFetch } from '@/lib/api'
-import { InfoHint, OptionBar, Row, SectionHeader } from '@/components/config-rows'
 import { ComplexityGateRow } from '@/components/tools-config'
+
+// Small info affordance used next to labels a first-time user can't be expected
+// to understand. It's a real <button> so it reaches the tooltip by keyboard
+// (the shared Tooltip opens on focus as well as hover); self-evident settings
+// like language and theme deliberately have none.
+function InfoHint({ text }: { text: string }) {
+  return (
+    <Tooltip text={text}>
+      <button
+        type="button"
+        aria-label={text}
+        onClick={event => event.preventDefault()}
+        className="inline-flex rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        <Info className="size-3.5" />
+      </button>
+    </Tooltip>
+  )
+}
+
+// One settings row: label (plus optional info hint) on the start edge, control
+// on the end edge, stacking on narrow widths. Every row in the dialog uses this
+// so labels, spacing and alignment stay identical across sections.
+function Row({
+  label,
+  hint,
+  control,
+  children,
+}: {
+  label: string
+  hint?: string
+  /** Inline control, aligned with the label. */
+  control?: ReactNode
+  /** Full-width control rendered under the label. */
+  children?: ReactNode
+}) {
+  return (
+    <div className="border-b border-border/60 py-4 last:border-b-0 last:pb-0">
+      <div className={control ? 'flex flex-wrap items-center justify-between gap-x-6 gap-y-2' : 'space-y-2.5'}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium">{label}</span>
+          {hint && <InfoHint text={hint} />}
+        </div>
+        {control ?? children}
+      </div>
+    </div>
+  )
+}
+
+function SectionHeader({ title, description, hint }: { title: string; description?: string; hint?: string }) {
+  return (
+    <div className="mb-5 space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <h2 className="font-heading text-base leading-snug font-medium">{title}</h2>
+        {hint && <InfoHint text={hint} />}
+      </div>
+      {description && <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>}
+    </div>
+  )
+}
+
+// Shared pill-bar idiom (same visual as SegmentedControl, with room for icons).
+function OptionBar<T extends string>({
+  value,
+  onValueChange,
+  options,
+  ariaLabel,
+  className,
+}: {
+  value: T
+  onValueChange: (value: T) => void
+  options: Array<{ value: T; label: string; icon?: typeof Monitor }>
+  ariaLabel: string
+  className?: string
+}) {
+  return (
+    <div role="radiogroup" aria-label={ariaLabel} className={`grid gap-1 rounded-xl border p-1 ${className ?? ''}`}>
+      {options.map(option => {
+        const Icon = option.icon
+        const selected = value === option.value
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onValueChange(option.value)}
+            className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs transition-colors ${
+              selected
+                ? 'bg-foreground font-medium text-background'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            {Icon && <Icon className="size-3.5 shrink-0" />}
+            <span className="truncate">{option.label}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 function LanguageCombobox() {
   const { locale, setLocale, t } = useI18n()
@@ -507,7 +598,6 @@ function SyncScheduleRow() {
     />
   )
 }
-
 function GeneralSection({ active }: { active: boolean }) {
   const { t } = useI18n()
   const { theme, setTheme } = useTheme()
@@ -536,460 +626,10 @@ function GeneralSection({ active }: { active: boolean }) {
         )}
       />
       <SyncScheduleRow />
-      <UpdateChecker active={active} />
       {/* System One (Jev-B complexity gate): the one agent-facing switch that
           belongs in Settings — the rest of the tooling surface lives on the
           Models tabs and the Keys page. */}
       <ComplexityGateRow active={active} />
-    </>
-  )
-}
-
-type UpdateStatus = 'idle' | 'current' | 'available' | 'ahead' | 'diverged' | 'unknown' | 'unsupported' | 'disabled'
-type CheckedUpdateStatus = Exclude<UpdateStatus, 'idle'>
-type Installation = 'source' | 'docker' | 'desktop' | 'unknown'
-
-interface UpdateStatusInfo {
-  status: UpdateStatus
-  installation: Installation
-  localSha: string | null
-  lastChecked: string | null
-  /** The release this build is, or null when it cannot be established honestly. */
-  version: string | null
-  /** Releases page of the configured repository, or null when none is set. */
-  releasesUrl?: string | null
-/** A Docker install wired to its updater sidecar ("Update now"). */
-  selfUpdate?: boolean
-}
-
-interface UpdateCheckInfo {
-  status: CheckedUpdateStatus
-  installation: Installation
-  localSha: string | null
-  checkedAt: string
-  version: string | null
-  selfUpdate?: boolean
-  remoteSha?: string
-  remoteDate?: string
-  remoteMessage?: string
-  changes?: Array<{
-    sha: string
-    message: string
-    date?: string
-  }>
-}
-
-function formatDateTime(value: string | null | undefined, locale: Locale) {
-  if (!value) return null
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return null
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(date)
-  } catch {
-    return null
-  }
-}
-
-/**
- * The one update surface in the dashboard: which build this is, and — on demand —
- * whether official `main` has moved past it (#491).
- *
- * The collapsed row is deliberately wordless, as the version row it replaces was
- * (#703): a proper noun, a version number, an arrow and icons, so it reads the
- * same in all 60 shipped locales. Words only appear behind the button, in the
- * dialog, where the commits and the deployment-specific upgrade command are —
- * and those strings are translated.
- *
- * Comparison happens on the server, against the local commit rather than a
- * release tag, so a source or container install that tracks `main` gets a true
- * answer instead of one that depends on tagging discipline. Nothing is fetched
- * until the button is clicked: a dashboard that phoned GitHub on open would make
- * an outbound request on behalf of an operator who never asked for one.
- */
-function UpdateChecker({ active }: { active: boolean }) {
-  const { locale, t } = useI18n()
-  // The desktop shell knows its own version outright; browser and container
-  // installs ask the server, which resolves it from the release manifest.
-  const shellVersion = typeof window !== 'undefined'
-    ? (window as { __SROUTER_VERSION__?: string | null }).__SROUTER_VERSION__ ?? null
-    : null
-  const [statusInfo, setStatusInfo] = useState<UpdateStatusInfo | null>(null)
-  const [checkResult, setCheckResult] = useState<UpdateCheckInfo | null>(null)
-  const [loadingStatus, setLoadingStatus] = useState(true)
-  const [checking, setChecking] = useState(false)
-  const [error, setError] = useState(false)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [activity, setActivity] = useState<string[]>([])
-  // Opt-in for the automatic reminder pill (#782). `null` until the server has
-  // answered, so the row never renders a state that isn't the stored one.
-  const [autoCheck, setAutoCheck] = useState<boolean | null>(null)
-  // Present only in a desktop build that can replace itself; otherwise the
-  // dialog keeps pointing at the releases page.
-  const desktopUpdater = useDesktopUpdater()
-  const desktopPhase = desktopUpdater?.state.phase
-  // In the desktop app the updater's own feed (latest*.yml) is the authority
-  // on what can be installed; the server's GitHub comparison only adds the
-  // changelog.
-  const desktopUpdate = desktopUpdater
-    && (desktopPhase === 'available' || desktopPhase === 'downloading' || desktopPhase === 'ready' || desktopPhase === 'error')
-    ? desktopUpdater
-    : null
-
-  useEffect(() => {
-    if (!active) return
-    let cancelled = false
-    apiFetch<{ enabled: boolean }>('/api/settings/update-check')
-      .then(result => {
-        if (!cancelled) setAutoCheck(result.enabled)
-      })
-      .catch(() => { /* leave the row out rather than claim a state */ })
-    return () => { cancelled = true }
-  }, [active])
-
-  async function toggleAutoCheck(enabled: boolean) {
-    const previous = autoCheck
-    setAutoCheck(enabled)
-    try {
-      const result = await apiFetch<{ enabled: boolean }>('/api/settings/update-check', {
-        method: 'PUT',
-        body: JSON.stringify({ enabled }),
-      })
-      setAutoCheck(result.enabled)
-      // The reminder is mounted outside this dialog; tell it to re-check now
-      // instead of leaving a stale pill (or no pill) until the next reload.
-      window.dispatchEvent(new Event(UPDATE_CHECK_CHANGED_EVENT))
-    } catch {
-      setAutoCheck(previous)
-    }
-  }
-
-  useEffect(() => {
-    if (!active) return
-    let cancelled = false
-    apiFetch<UpdateStatusInfo>('/api/update/status')
-      .then(result => {
-        if (!cancelled) setStatusInfo(result)
-      })
-      .catch(() => {
-        if (!cancelled) setError(true)
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingStatus(false)
-      })
-    return () => { cancelled = true }
-  }, [active])
-
-  async function check() {
-    const desktopCheck = desktopUpdater?.check()
-    setChecking(true)
-    setError(false)
-    setCheckResult(null)
-    setActivity([
-      statusInfo?.localSha
-        ? `${t('settings.currentVersion')} ${statusInfo.localSha}`
-        : t('settings.notGitInstall'),
-      t('keys.checking'),
-    ])
-    try {
-      const result = await apiFetch<UpdateCheckInfo>('/api/update/check')
-      setCheckResult(result)
-      setStatusInfo({
-        status: result.status,
-        installation: result.installation,
-        localSha: result.localSha,
-        lastChecked: result.checkedAt,
-        version: result.version,
-        releasesUrl: statusInfo?.releasesUrl ?? null,
-      })
-      const desktopState = await desktopCheck
-      const desktopFound = desktopState?.phase === 'available' || desktopState?.phase === 'downloading' || desktopState?.phase === 'ready'
-      const resultMessage = desktopFound || result.status === 'available'
-        ? t('settings.updateAvailable')
-        : result.status === 'current'
-          ? t('settings.upToDate')
-          : result.status === 'ahead'
-            ? t('settings.buildAhead')
-            : result.status === 'diverged'
-              ? t('settings.buildDiverged')
-              : result.status === 'unknown'
-                ? t('settings.buildUnknown')
-                : t('settings.notGitInstall')
-      setActivity(current => [current[0], resultMessage])
-    } catch {
-      setError(true)
-      setActivity(current => current.slice(0, 1))
-    } finally {
-      setChecking(false)
-    }
-  }
-
-  function openChecker() {
-    setDialogOpen(true)
-    void check()
-  }
-
-  const info = checkResult
-  const currentSha = info?.localSha ?? statusInfo?.localSha
-  const version = shellVersion ?? info?.version ?? statusInfo?.version ?? null
-  const lastChecked = formatDateTime(checkResult?.checkedAt, locale)
-  const remoteDate = formatDateTime(checkResult?.remoteDate, locale)
-  const statusMessage = info?.status === 'current'
-    ? t('settings.upToDate')
-    : info?.status === 'ahead'
-      ? t('settings.buildAhead')
-      : info?.status === 'diverged'
-        ? t('settings.buildDiverged')
-        : info?.status === 'unknown'
-          ? t('settings.buildUnknown')
-          : info?.status === 'unsupported'
-            ? t('settings.notGitInstall')
-            : null
-
-  const status = info?.status ?? statusInfo?.status
-
-  if ((loadingStatus && !statusInfo) || statusInfo?.status === 'disabled') return null
-  // Neither a release version nor a commit to compare: say nothing rather than
-  // render a row that can only fail.
-  if (!version && !currentSha) return null
-
-  return (
-    <>
-      <Row
-        label="SRouter"
-        hint={t('settings.contactsGithub')}
-        control={(
-          <div className="flex items-center gap-2 text-sm tabular-nums">
-            {version
-              ? <span>v{version}</span>
-              : <code className="font-mono text-xs">{currentSha}</code>}
-            {desktopUpdate && 'version' in desktopUpdate.state ? (
-              <button
-                type="button"
-                onClick={openChecker}
-                title={t('settings.updateAvailable')}
-                className="flex items-center gap-1 text-primary underline underline-offset-2"
-              >
-                <ArrowRight className="size-3.5" aria-hidden />
-                <span>v{desktopUpdate.state.version}</span>
-              </button>
-            ) : status === 'available' && (
-              <button
-                type="button"
-                onClick={openChecker}
-                title={t('settings.updateAvailable')}
-                className="flex items-center gap-1 text-primary underline underline-offset-2"
-              >
-                <ArrowRight className="size-3.5" aria-hidden />
-                <span className={info?.remoteSha ? 'font-mono' : undefined}>
-                  {info?.remoteSha ?? t('settings.updateAvailable')}
-                </span>
-              </button>
-            )}
-            {status === 'current' && !desktopUpdate && <Check className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />}
-            {error && statusInfo?.releasesUrl && (
-              <a
-                href={statusInfo.releasesUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                title={statusInfo.releasesUrl}
-                className="text-primary underline underline-offset-2"
-              >
-                {statusInfo.releasesUrl.replace('https://', '')}
-              </a>
-            )}
-            <button
-              type="button"
-              onClick={openChecker}
-              disabled={loadingStatus || checking}
-              title={t('settings.checkForUpdates')}
-              aria-label={t('settings.checkForUpdates')}
-              className="inline-flex rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
-            >
-              <RefreshCw className={`size-3.5 ${checking ? 'animate-spin' : ''}`} aria-hidden />
-            </button>
-          </div>
-        )}
-      />
-
-      {autoCheck !== null && (
-        <Row
-          label={t('settings.autoUpdateCheck')}
-          hint={t('settings.autoUpdateCheckHelp')}
-          control={(
-            <Switch
-              aria-label={t('settings.autoUpdateCheck')}
-              checked={autoCheck}
-              onCheckedChange={checked => void toggleAutoCheck(checked)}
-            />
-          )}
-        />
-      )}
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogPopup maxWidth="max-w-xl" className="p-0">
-          <div className="flex items-start justify-between gap-4 border-b px-6 py-5">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <RefreshCw className={`size-4 ${checking ? 'animate-spin' : ''}`} />
-              </div>
-              <div className="min-w-0">
-                <DialogTitle>{t('settings.updatesTitle')}</DialogTitle>
-                {(version || currentSha) && (
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {t('settings.currentVersion')}{' '}
-                    <code className="font-mono">
-                      {[version ? `v${version}` : null, currentSha].filter(Boolean).join(' · ')}
-                    </code>
-                  </p>
-                )}
-              </div>
-            </div>
-            <DialogClose
-              aria-label={t('common.dismiss')}
-              className="-me-1 rounded-lg p-1 text-muted-foreground/70 transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <X className="size-4" />
-            </DialogClose>
-          </div>
-
-          <div aria-live="polite" className="space-y-4 px-6 py-5">
-            {activity.length > 0 && (
-              <div className="overflow-hidden rounded-xl border bg-[oklch(0.17_0.028_255)] text-[oklch(0.87_0.018_255)] shadow-inner dark:bg-black/40">
-                <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2 text-[11px] text-[oklch(0.74_0.025_255)]">
-                  <SquareTerminal className="size-3.5" />
-                  <span>{checking ? t('keys.checking') : t('settings.updatesTitle')}</span>
-                </div>
-                <div className="space-y-1.5 px-3 py-3 font-mono text-[11px] leading-relaxed">
-                  {activity.map((entry, index) => (
-                    <p key={`${index}-${entry}`} className="flex gap-2 break-words [overflow-wrap:anywhere]">
-                      <span className={index === activity.length - 1 && checking ? 'text-amber-400' : 'text-emerald-400'}>&gt;</span>
-                      <span>{entry}</span>
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {info?.status === 'available' && (
-              <div className="space-y-4">
-                <div className="flex gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
-                  <Sparkles className="mt-0.5 size-5 shrink-0 text-primary" />
-                  <div className="min-w-0 space-y-1">
-                    <p className="text-sm font-medium">{t('settings.updateAvailable')}</p>
-                    {info.remoteMessage && (
-                      <p className="break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">{info.remoteMessage}</p>
-                    )}
-                    {(info.remoteSha || remoteDate) && (
-                      <p className="break-all font-mono text-[11px] text-muted-foreground">
-                        {[info.remoteSha, remoteDate].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {info.changes && info.changes.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      <Check className="size-3.5" />
-                      {t('settings.changelog')}
-                    </h3>
-                    <ol className="max-h-52 divide-y overflow-y-auto rounded-xl border">
-                      {info.changes.map(change => {
-                        const changeDate = formatDateTime(change.date, locale)
-                        return (
-                          <li key={change.sha} className="flex gap-3 px-3 py-2.5">
-                            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                            <div className="min-w-0">
-                              <p className="break-words text-xs [overflow-wrap:anywhere]">{change.message}</p>
-                              <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                                {[change.sha, changeDate].filter(Boolean).join(' · ')}
-                              </p>
-                            </div>
-                          </li>
-                        )
-                      })}
-                    </ol>
-                  </div>
-                )}
-
-                {info.installation === 'docker' && info.selfUpdate && <DockerUpdateNow />}
-                {info.installation === 'docker' && (
-                  <div className="flex gap-2 rounded-xl border bg-muted/30 p-3">
-                    <SquareTerminal className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    <code className="whitespace-pre-wrap break-all font-mono text-[11px]">docker compose pull && docker compose up -d</code>
-                  </div>
-                )}
-                {info.installation === 'source' && (
-                  <div className="space-y-2">
-                    <div className="flex gap-2 rounded-xl border bg-muted/30 p-3">
-                      <SquareTerminal className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                      <code className="whitespace-pre-wrap break-all font-mono text-[11px]">git pull && npm ci && npm run build</code>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">{t('settings.restartAfterUpdate')}</p>
-                  </div>
-                )}
-                {(info.installation === 'desktop' || info.installation === 'unknown') && statusInfo && !desktopUpdater && (
-                  <a
-                    href={statusInfo.releasesUrl ?? undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-medium underline underline-offset-4"
-                  >
-                    {t('settings.openReleases')}
-                    <ExternalLink className="size-3" />
-                  </a>
-                )}
-              </div>
-            )}
-
-            {desktopUpdate && (
-              <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
-                {'version' in desktopUpdate.state && (
-                  <p className="flex items-center gap-2 text-sm font-medium">
-                    <Sparkles className="size-4 shrink-0 text-primary" aria-hidden />
-                    {t('settings.updateAvailable')} <span className="tabular-nums">v{desktopUpdate.state.version}</span>
-                  </p>
-                )}
-                <DesktopUpdateActions updater={desktopUpdate} />
-              </div>
-            )}
-
-            {statusMessage && !desktopUpdate && (
-              <div className={`flex gap-3 rounded-xl border p-4 ${info?.status === 'current' ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
-                {info?.status === 'current'
-                  ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-500" />
-                  : <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-500" />}
-                <p className="text-sm">{statusMessage}</p>
-              </div>
-            )}
-
-            {error && (
-              <div role="alert" className="flex gap-3 rounded-xl border border-destructive/25 bg-destructive/5 p-4">
-                <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
-                <p className="text-sm text-destructive">{t('settings.checkFailed')}</p>
-              </div>
-            )}
-
-            <div className="flex flex-col-reverse items-stretch justify-between gap-3 border-t pt-4 sm:flex-row sm:items-center">
-              <div className="space-y-0.5">
-                {lastChecked && <p className="text-[11px] text-muted-foreground">{t('settings.lastChecked', { when: lastChecked })}</p>}
-              </div>
-              <button
-                type="button"
-                onClick={() => void check()}
-                disabled={checking}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors hover:bg-muted disabled:opacity-50"
-              >
-                <RefreshCw className={`size-3.5 ${checking ? 'animate-spin' : ''}`} />
-                {checking ? t('keys.checking') : t('settings.checkForUpdates')}
-              </button>
-            </div>
-          </div>
-        </DialogPopup>
-      </Dialog>
     </>
   )
 }
@@ -1010,9 +650,8 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPopup maxWidth="max-w-3xl" className="flex h-[min(85vh,85dvh)] flex-col overflow-hidden p-0 sm:p-0">
-        {/* Compact header — minimal vertical padding so more room for content. */}
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b px-5 py-3 sm:px-6">
+      <DialogPopup maxWidth="max-w-3xl" className="flex flex-col overflow-y-hidden p-0">
+        <div className="flex items-center justify-between gap-4 border-b px-5 py-4 sm:px-6">
           <DialogTitle>{t('settings.title')}</DialogTitle>
           <DialogClose
             aria-label={t('common.dismiss')}
@@ -1022,9 +661,7 @@ export function SettingsDialog({
           </DialogClose>
         </div>
 
-        {/* Flex row: sidebar + content scroller. Both flex-1 so the content
-            scroller fills all remaining height after header & footer. */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
           {/* Sidebar on ≥sm, scrollable tab strip below it — the same
               breakpoint-swap the navbar uses for its own navigation. */}
           <nav
@@ -1053,8 +690,8 @@ export function SettingsDialog({
             })}
           </nav>
 
-          {/* Content scroller — flex-1 fills remaining height, scrolls overflow. */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
+          {/* min-height keeps the popup from resizing as sections are switched. */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:min-h-[27rem] sm:px-6 sm:py-6">
             {section === 'general' && <GeneralSection active={open} />}
             {loading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1075,19 +712,19 @@ export function SettingsDialog({
           </div>
         </div>
 
-        {/* Footer — always rendered to keep height stable; hidden when no
-            save action is needed (general section). */}
-        <div className={`flex shrink-0 items-center justify-end gap-3 border-t px-5 py-2.5 sm:px-6 ${compressionSection && config ? '' : 'invisible'}`}>
-          {error && <p className="me-auto text-xs text-destructive">{error}</p>}
-          <button
-            type="button"
-            onClick={save}
-            disabled={busy !== null}
-            className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
-          >
-            {busy === 'save' ? t('common.saving') : t('common.saveChanges')}
-          </button>
-        </div>
+        {compressionSection && config && (
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t px-5 py-3 sm:px-6">
+            {error && <p className="me-auto text-xs text-destructive">{error}</p>}
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy !== null}
+              className="rounded-lg bg-foreground px-4 py-2 text-xs font-medium text-background transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+            >
+              {busy === 'save' ? t('common.saving') : t('common.saveChanges')}
+            </button>
+          </div>
+        )}
       </DialogPopup>
     </Dialog>
   )
