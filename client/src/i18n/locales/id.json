@@ -1256,5 +1256,15 @@
     "discoverRemoved": "{count} model dihapus dari provider {provider}",
     "degraded": "Mode degraded aktif — hanya {healthy}/{total} provider sehat ({pct}%)",
     "updateAvailable": "Update tersedia: v{version}"
+  },
+  "routingStrip": {
+    "canceled": "Dibatalkan",
+    "title": "Perutean langsung",
+    "mode": "Mode",
+    "processing": "Memproses…",
+    "idle": "Menunggu permintaan…",
+    "failed": "Gagal",
+    "afterAttempts": "Sukses setelah {n} percobaan",
+    "activeCount": "{n} aktif"
   }
 }

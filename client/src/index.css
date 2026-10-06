@@ -273,6 +273,16 @@ html {
   box-shadow: 0 4px 12px oklch(0 0 0 / 25%);
 }
 
+/* ── Live routing strip: marching dashes while a request is in flight ─── */
+@keyframes sr-flow {
+  to { background-position: 16px 0; }
+}
+.sr-flow-line {
+  background-image: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 16px);
+  background-size: 16px 100%;
+  animation: sr-flow 0.5s linear infinite;
+}
+
 /* ── Code block polish ────────────────────────────────────────────────── */
 .code-highlight .hljs-emphasis { font-style: italic; }
 .code-highlight .hljs-strong { font-weight: 600; }

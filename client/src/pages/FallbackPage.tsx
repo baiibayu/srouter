@@ -47,6 +47,7 @@ import { FloatingBar } from '@/components/floating-bar'
 import { ModelsTabs } from '@/components/models-tabs'
 import { Tooltip } from '@/components/tooltip'
 import { PenaltyInspector } from '@/components/penalty-inspector'
+import { RoutingStrip } from '@/components/routing-strip'
 import { PeakHoursControls } from '@/components/peak-hours-controls'
 import { ChainManager } from '@/components/chain-manager'
 
@@ -341,6 +342,9 @@ export default function FallbackPage() {
       <div className="space-y-6">
         {/* First-run checklist: hides itself once the install has keys + a request */}
         <GettingStarted />
+
+        {/* Live routing strip — gateway → mode → provider → outcome */}
+        <RoutingStrip strategy={strategy} />
 
         {/* Monthly token budget — moved to the top */}
         {tokenUsage && tokenUsage.totalBudget > 0 && <TokenUsageBar data={tokenUsage} />}

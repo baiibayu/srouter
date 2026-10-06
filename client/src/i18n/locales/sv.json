@@ -716,7 +716,8 @@
     "budgetPeriodAuto": "Auto (follow provider)",
     "autoResolvedDaily": "Detected provider cycle: daily",
     "autoResolvedMonthly": "Detected provider cycle: monthly",
-    "autoResolvedFallback": "Provider cycle unknown, defaulting to monthly",    "capUnlimitedPlaceholder": "Obegränsat",
+    "autoResolvedFallback": "Provider cycle unknown, defaulting to monthly",
+    "capUnlimitedPlaceholder": "Obegränsat",
     "capEditHint": "Caps reset at the next period boundary, 00:00 UTC. Leave blank for unlimited.",
     "monthlyUsageLine": "{requests} förfrågningar, {tokens} tokens denna månad",
     "monthlyUsageRequests": "{requests} requests",
@@ -1255,5 +1256,15 @@
     "discoverRemoved": "{count} models removed from provider {provider}",
     "degraded": "Degraded mode active — only {healthy}/{total} providers healthy ({pct}%)",
     "updateAvailable": "Update available: v{version}"
+  },
+  "routingStrip": {
+    "canceled": "Canceled",
+    "title": "Live routing",
+    "mode": "Mode",
+    "processing": "Processing…",
+    "idle": "Waiting for a request…",
+    "failed": "Failed",
+    "afterAttempts": "Success after {n} attempts",
+    "activeCount": "{n} active"
   }
 }
