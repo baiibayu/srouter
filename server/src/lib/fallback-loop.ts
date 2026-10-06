@@ -53,6 +53,7 @@ import {
 import { sanitizeProviderErrorMessage, summarizeAttemptError } from './error-redaction.js';
 import { benchForTools, clearToolRejections, noteToolRejection, toolCapabilityKey } from './tool-capability.js';
 import { parseProviderReportedSize } from './provider-size-parser.js';
+import { recordRouteTrace } from './route-live.js';
 import { checkKeyHealth, markKeyHealthyFromRequest } from '../services/health.js';
 import { noteModelRetirementSignal } from '../services/model-retirement.js';
 import { getDb, getSetting } from '../db/index.js';
@@ -1376,13 +1377,24 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
   // request every recorded failure is consecutive by construction (a success
   // ends the loop), so this is "max upstream failures per request".
   const breaker = newBreaker(hooks.breakerLimit);
-  const stopIfBreakerTripped = (): boolean => {
+  // Shared terminal for the client-gone stops below: these returns skip the
+  // surfaces entirely (nothing to render), so no ok/fail trace would ever come
+  // and the routing strip would keep the last attempt pinned on "processing"
+  // until MAX_AGE_MS. Only surfaces that trace start/next pass a requestId
+  // (Proxy/Responses); anthropic/inbound-chat never do, so they stay silent.
+  const traceCanceled = (platform?: string, model?: string, attempt?: number): void => {
+    const requestId = hooks.logIdentity?.requestId;
+    if (!requestId || !platform || !model || attempt == null) return;
+    recordRouteTrace({ event: 'canceled', requestId, attempt, platform, model });
+  };
+  const stopIfBreakerTripped = (route?: { platform: string; modelId: string }, attempt?: number): boolean => {
     if (!recordBreakerFailure(breaker)) return false;
     // Tripped after the client already hung up: stop the chain, but there is
     // no socket to render an exhaustion body to (mirrors the loop-top
     // clientGone check).
     if (hooks.clientGone?.()) {
       console.log(`[FallbackLoop] breaker tripped after client disconnect — stopping without rendering (${attempts.length} failed attempt(s))`);
+      traceCanceled(route?.platform, route?.modelId, attempt);
       return true;
     }
     hooks.onExhausted(
@@ -1398,6 +1410,8 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
     // gone — so return without calling any exhaustion hook.
     if (attempt > 0 && hooks.clientGone?.()) {
       console.log(`[FallbackLoop] client disconnected — stopping failover after ${attempts.length} failed attempt(s)`);
+      const prior = attempts[attempts.length - 1];
+      traceCanceled(prior?.platform, prior?.modelId, attempt - 1);
       return;
     }
 
@@ -1523,6 +1537,7 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
         logRequest(route.platform, route.modelId, route.keyId, 'canceled', 0, 0, elapsedMs,
           `client disconnected after ${(elapsedMs / 1000).toFixed(1)}s; upstream request canceled`);
         traceAttempt('client_abort');
+        traceCanceled(route.platform, route.modelId, attempt);
         return;
       }
       // Time-budget hedge abort: the wall-clock retry budget expired while this
@@ -1569,7 +1584,7 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
         attempts.push({ platform: route.platform, modelId: route.modelId, keyOrdinal: keyOrdinal(route), errorClass: 'auth' });
         traceAttempt('auth', err);
         lastError = err;
-        if (stopIfBreakerTripped()) return;
+        if (stopIfBreakerTripped(route, attempt)) return;
         continue;
       }
       if (isRetryableError(err)) {
@@ -1604,7 +1619,7 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
         // either: three prose answers to a json_schema request say nothing
         // about whether candidate four is up. Once the empty-completion streak
         // lifts the exemption (#751), the failure counts everywhere.
-        if (!exempt && stopIfBreakerTripped()) return;
+        if (!exempt && stopIfBreakerTripped(route, attempt)) return;
         continue;
       }
       traceAttempt(classifyAttemptError(err), err);

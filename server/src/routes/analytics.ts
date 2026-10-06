@@ -3,9 +3,18 @@ import type { Request, Response } from 'express';
 import { getDb } from '../db/index.js';
 import { FALLBACK_INPUT_PER_M, FALLBACK_OUTPUT_PER_M } from '../db/model-pricing.js';
 import { providerIdFor, providerDisplayName } from '../lib/provider-identity.js';
+import { getLiveRoutes } from '../lib/route-live.js';
 import { normalizeBaseUrl } from '../lib/endpoint-scope.js';
 
 export const analyticsRouter = Router();
+
+// The dashboard's live routing strip: what the router is serving right now and
+// what it finished most recently. Backed by the in-memory tracker in
+// lib/route-live (fed by traceRouteEvent), so a poll costs no SQL and the
+// state resets honestly with the process.
+analyticsRouter.get('/live', (_req: Request, res: Response) => {
+  res.json(getLiveRoutes());
+});
 
 // The endpoint identity of a request, in SQL: the serving key's base_url, ''
 // when the key is gone or carries none (every catalog key). Custom endpoints

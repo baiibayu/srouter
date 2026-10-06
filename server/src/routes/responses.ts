@@ -1375,6 +1375,13 @@ responsesRouter.post('/responses', async (req: Request, res: Response) => {
             // TTFB window.
             if (clientGone && !streamStarted) {
               console.log(`[Responses] client disconnected before first token from ${route.displayName} — dropping attempt without benching`);
+              traceRouteEvent('Responses', {
+                event: 'canceled',
+                requestId: requestGroupId,
+                attempt,
+                platform: route.platform,
+                model: route.modelId,
+              });
               return 'committed';
             }
             // finish_reason 'length' = the model spent the whole output budget

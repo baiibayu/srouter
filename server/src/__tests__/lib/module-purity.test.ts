@@ -41,6 +41,9 @@ const PURE_MODULES = [
   'provider-identity.ts',
   'provider-size-parser.ts',
   'retry-hint.ts',
+  // In-memory tracker for the dashboard's live routing strip: no imports by
+  // design, so the strip's data source cannot drag the request path around.
+  'route-live.ts',
   'structured-output.ts',
   'tool-args.ts',
   'tool-call-rescue.ts',

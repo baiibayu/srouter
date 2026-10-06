@@ -37,6 +37,7 @@ import { isUnifyEnabled, getModelGroups, resolveRequestedIdForDispatch } from '.
 import { buildModelListing, type NormalizedModel } from '../services/model-listing.js';
 import { claudeFamilyDiscoveryEntries } from '../services/anthropic-map.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
+import { recordRouteTrace } from '../lib/route-live.js';
 
 export const proxyRouter = Router();
 
@@ -123,7 +124,7 @@ function withExecutionId(body: unknown, executionId: string): unknown {
   return { ...(body as Record<string, unknown>), execution_id: executionId };
 }
 
-type TraceEvent = 'start' | 'next' | 'ok' | 'fail';
+type TraceEvent = 'start' | 'next' | 'ok' | 'fail' | 'canceled';
 
 export function traceRouteEvent(
   scope: 'Proxy' | 'Responses',
@@ -155,6 +156,10 @@ export function traceRouteEvent(
   if (opts.inputTokens != null) parts.push(`in=${opts.inputTokens}`);
   if (opts.outputTokens != null) parts.push(`out=${opts.outputTokens}`);
   if (opts.error) parts.push(`err=${JSON.stringify(opts.error)}`);
+  // Mirror the trace into the in-memory live tracker the dashboard's routing
+  // strip reads (lib/route-live). One call here covers every Proxy/Responses
+  // start/next/ok/fail/canceled without touching the request path.
+  recordRouteTrace(opts);
   console.log(parts.join(' '));
 }
 
@@ -1279,6 +1284,13 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
           // benched the healthy model+key for 90s and logged a provider error.
           if (clientGone && !headerSent && !sawText) {
             console.log(`[Proxy] client disconnected before first token from ${route.displayName} — dropping attempt without benching`);
+            traceRouteEvent('Proxy', {
+              event: 'canceled',
+              requestId: requestGroupId,
+              attempt,
+              platform: route.platform,
+              model: route.modelId,
+            });
             return 'committed';
           }
 
@@ -2462,6 +2474,13 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
           // TTFB window.
           if (clientGone && !headerSent && heldText.trim().length === 0 && completedCalls.length === 0) {
             console.log(`[Proxy] client disconnected before first token from ${route.displayName} — dropping attempt without benching`);
+            traceRouteEvent('Proxy', {
+              event: 'canceled',
+              requestId: requestGroupId,
+              attempt,
+              platform: route.platform,
+              model: route.modelId,
+            });
             return 'committed';
           }
 
