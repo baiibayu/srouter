@@ -1233,7 +1233,8 @@
       "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
       "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
       "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
-      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways.",
+      "reasonix": "DeepSeek 네이티브 터미널 코딩 에이전트로, 프리픽스 캐싱을 중심으로 설계되어 긴 세션도 저렴하게 유지됩니다."
     },
     "modelNoteFull": "설정이 모든 모델을 가져옵니다 (auto, auto:*, fusion)",
     "modelNoteDefault": "설정은 auto만 가져옵니다 — 다른 모델은 에이전트 UI에서 선택하세요"

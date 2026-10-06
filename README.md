@@ -207,10 +207,12 @@ SRouter includes automated configuration generators (`setup-*`) that inspect you
 <td align="center"><img src="repo-assets/agents/hermes-agent.png" width="64" alt="Hermes"><br/><b>Hermes</b></td>
 <td align="center"><img src="repo-assets/agents/pi.png" width="64" alt="Pi"><br/><b>Pi</b></td>
 <td align="center"><img src="repo-assets/agents/atomcode.png" width="64" alt="AtomCode"><br/><b>AtomCode</b></td>
+<td align="center"><img src="repo-assets/agents/reasonix.png" width="64" alt="Reasonix"><br/><b>Reasonix</b></td>
 </tr>
 </table>
 
 </div>
+
 
 ```bash
 # Automatic setup with your SRouter instance

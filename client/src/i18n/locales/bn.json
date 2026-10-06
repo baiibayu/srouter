@@ -1233,7 +1233,8 @@
       "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
       "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
       "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
-      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways.",
+      "reasonix": "DeepSeek-এর জন্য তৈরি টার্মিনাল কোডিং এজেন্ট, প্রিফিক্স ক্যাশিং ঘিরে গড়া যাতে দীর্ঘ সেশনও সস্তা থাকে।"
     },
     "modelNoteFull": "Setup brings in every model (auto, auto:*, fusion)",
     "modelNoteDefault": "Setup brings in only auto — pick other models in the agent UI"

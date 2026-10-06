@@ -2,7 +2,7 @@
 
 # Clients & coding agents
 
-[← Back to README](../README.md) · [Documentation index](../README.md)
+[← Back to README](../README.md) · [Documentation index](../README.md) · [All supported agents](02-supported-agents.md)
 
 - [OpenAI-compatible clients](#openai-compatible-clients)
 - [Coding agents](#coding-agents)
@@ -60,6 +60,7 @@ context windows.
 | **OpenClaw** | `setup-openclaw` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
 | **Hermes Agent** | `setup-hermes` | `http://localhost:20268/v1` | OpenAI Chat (`provider: custom`) |
 | **Pi** | `setup-pi` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
+| **Reasonix** | `setup-reasonix` | `http://localhost:20268/v1` | OpenAI Chat (`kind = "openai"`) |
 | **Factory Droid** | `setup-droid` | `http://localhost:20268/v1` | OpenAI Chat (`provider: generic-chat-completion-api`) |
 | **QwenPaw** | Manual setup | `http://localhost:20268/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` prints the guide | public `https://…/v1` | OpenAI Chat |
@@ -68,7 +69,7 @@ context windows.
 The root-vs-`/v1` distinction matters: Claude Code expects the server root
 because it appends the Anthropic Messages path. OpenAI-compatible clients in
 this table—including Cline, Aider, Goose, Codex, Continue, OpenCode, Qwen,
-Roo, Kilo, Crush, MiMo Code, Oh My Pi, OpenClaw, Hermes Agent, Pi, Factory Droid, QwenPaw, and DeepSeek Harness—expect their configured
+Roo, Kilo, Crush, MiMo Code, Oh My Pi, OpenClaw, Hermes Agent, Pi, Factory Droid, Reasonix, QwenPaw, and DeepSeek Harness—expect their configured
 base URL to include `/v1`.
 
 ### DeepSeek Harness (`dsh`)
@@ -258,6 +259,35 @@ Other keys in `settings.json` are kept, but the `customModels` array is
 replaced as a whole — re-add any other custom models you had. Install with
 `curl -fsSL https://app.factory.ai/cli | sh` (or `npm install -g droid`);
 `--model <id>` pins the entry.
+
+### Reasonix (`reasonix`)
+
+[Reasonix](https://github.com/esengine/DeepSeek-Reasonix) is a DeepSeek-native
+terminal coding agent built around prefix-cache stability. Every endpoint is a
+`[[providers]]` entry in `~/.reasonix/config.toml` (`%APPDATA%\reasonix` on
+Windows, `$REASONIX_HOME` when set). `setup-reasonix` adds one named
+`srouter` — `kind = "openai"`, the gateway's `/v1` as `base_url`, and every
+model in the live catalog, the chosen model first — and points `default_model`
+at `srouter/<model>`. The entry names its key with
+`api_key_env = "SROUTER_API_KEY"`; the value goes to `~/.reasonix/.env`
+(0600), which Reasonix loads itself, so nothing needs exporting. Your other
+`[[providers]]` entries and settings are left as they were, and a rerun
+replaces only the `srouter` entry.
+
+```bash
+npx srouter setup-reasonix --url http://localhost:20268 --api-key <unified-key>
+npm install -g reasonix
+reasonix -p "Say hello"
+```
+
+Every catalog model is in `/model` as `srouter/<id>`. `--profile <name>`
+adds a `srouter-<name>` entry instead, picked with
+`reasonix --model srouter-<name>/<model>`, and leaves the default model
+alone; `--model <id>` pins the default. A zero `price` keeps Reasonix's cost
+readout at $0. Reasonix Studio only lists the providers in
+`[desktop].provider_access` when that list is set, so add `"srouter"` there
+(or under Settings → Model → Access). Reasonix sends `Reasonix/<version>` as
+its user agent, which is what the Agents page's "seen recently" badge keys on.
 
 ### QwenPaw
 
