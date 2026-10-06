@@ -15,6 +15,11 @@ const sse = (returnedModel: string) => new Response([
   { id: 's', object: 'chat.completion.chunk', created: 1, model: returnedModel, choices: [], usage: completion.usage },
 ].map(c => `data: ${JSON.stringify(c)}\n\n`).join('') + 'data: [DONE]\n\n', { headers: { 'Content-Type': 'text/event-stream' } });
 
+// These cases assert the wire shape of one probe, so they run against a
+// provider with probe pacing off rather than waiting out the real gap floor
+// between cases. Pacing itself is covered in llmtr-validation-pacing.test.ts.
+const unpaced = () => new LlmtrProvider({ validationMinGapMs: 0 });
+
 describe('LLMTR provider', () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -60,7 +65,7 @@ describe('LLMTR provider', () => {
 
   it('validates via authenticated model resolution, not the public roster', async () => {
     const fetch = vi.spyOn(global, 'fetch').mockResolvedValue(json({ error: { type: 'model_not_found', message: 'Model not found' } }, 404));
-    await expect(getProvider('llmtr')!.validateKey('test-key')).resolves.toBe(true);
+    await expect(unpaced().validateKey('test-key')).resolves.toBe(true);
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch.mock.calls[0][0]).toBe('https://llmtr.com/v1/chat/completions');
     expect(JSON.parse(String(fetch.mock.calls[0][1]?.body))).toMatchObject({ model: '__srouter_key_validation__', max_tokens: 1, stream: false });
@@ -68,12 +73,12 @@ describe('LLMTR provider', () => {
 
   it.each([401, 403])('rejects invalid credentials (%s)', async status => {
     vi.spyOn(global, 'fetch').mockResolvedValue(json({ error: { type: 'auth_error', message: 'Invalid API key' } }, status));
-    await expect(getProvider('llmtr')!.validateKey('bad-key')).resolves.toMatchObject({ valid: false });
+    await expect(unpaced().validateKey('bad-key')).resolves.toMatchObject({ valid: false });
   });
 
   it.each([200, 400, 402, 404, 429, 500])('keeps inconclusive validation errors inconclusive (%s)', async status => {
     vi.spyOn(global, 'fetch').mockResolvedValue(json({ error: { type: 'other' } }, status, { 'Retry-After': '17' }));
-    await expect(getProvider('llmtr')!.validateKey('test-key')).rejects.toMatchObject({ status, retryAfterMs: 17_000 });
+    await expect(unpaced().validateKey('test-key')).rejects.toMatchObject({ status, retryAfterMs: 17_000 });
   });
 
   it('#1390: a 403 refusing automated validation probes is inconclusive, never invalid', async () => {
@@ -89,7 +94,7 @@ describe('LLMTR provider', () => {
 
   it('does not accept an HTML 404', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue(new Response('not JSON', { status: 404 }));
-    await expect(getProvider('llmtr')!.validateKey('test-key')).rejects.toMatchObject({ status: 404 });
+    await expect(unpaced().validateKey('test-key')).rejects.toMatchObject({ status: 404 });
   });
 
   it.each([402, 429])('preserves upstream quota status and backoff without retry (%s)', async status => {
