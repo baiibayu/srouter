@@ -1,5 +1,5 @@
 // Runs from server/prepack (npm pack & npm publish): stage everything the
-// published @srouter/server tarball needs that does not live under server/.
+// published @srouterhq/server tarball needs that does not live under server/.
 //   - client/dist  -> server/client/dist  (the dashboard the server serves;
 //     inside the installed package its lookup lands on <package>/client/dist,
 //     the second candidate after the dev-checkout path)
