@@ -3,11 +3,11 @@
   "version": "0.9.0",
   "description": "SRouter menu-bar app — local OpenAI-compatible LLM router",
   "author": {
-    "name": "tashfeenahmed",
-    "email": "tashfene@gmail.com",
-    "url": "https://github.com/tashfeenahmed"
+    "name": "baiibayu",
+    "email": "baiibayu.dev@gmail.com",
+    "url": "https://github.com/baiibayu"
   },
-  "homepage": "https://freellmapi.co/",
+  "homepage": "https://github.com/baiibayu/srouter",
   "private": true,
   "type": "module",
   "main": "build/main.mjs",

@@ -18,7 +18,7 @@
 SRouter 发布单个生产镜像，内含 Express 服务器和构建好的 React 仪表盘：
 
 ```bash
-docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # 或固定到某个发布版本，如 :v1.2.3
+docker pull ghcr.io/baiibayu/srouter:latest   # 或固定到某个发布版本，如 :v1.2.3
 ```
 
 已发布的标签：`latest`（默认分支）、`v*.*.*`（git release 标签）和 `sha-<commit>`。镜像是多架构的（`linux/amd64` + `linux/arm64`，所以树莓派也能跑）。
@@ -36,8 +36,8 @@ docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # 或固定到某个发布
 前置条件：Docker、Docker Compose、OpenSSL。macOS/Linux：
 
 ```bash
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 
 # 生成用于静态存储密钥的加密密钥
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
@@ -46,7 +46,7 @@ printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 docker compose up -d
 ```
 
-Windows PowerShell 版本和 curl 一行命令引导见 [docs/zh-cn/install/01-install.md#docker-compose](../install/01-install.md#docker-compose)。然后跟踪日志：
+Windows PowerShell 的对应步骤见 [docs/zh-cn/install/01-install.md#docker-compose](../install/01-install.md#docker-compose)。然后跟踪日志：
 
 ```bash
 docker compose logs -f srouter
@@ -103,5 +103,5 @@ runtime 阶段在 `EXPOSE 20268` 之前切换到 `USER node`。服务器数据�
 想分辨自己撞上的是哪种情况，直接问容器本身：
 
 ```bash
-docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec srouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```

@@ -75,7 +75,7 @@ extra_hosts:
 想分辨自己撞上的是哪种情况，直接问容器本身：
 
 ```bash
-docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec srouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```
 
 ## 相关的入站限流旋钮

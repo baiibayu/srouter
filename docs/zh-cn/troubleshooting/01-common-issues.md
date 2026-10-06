@@ -10,7 +10,7 @@
 
 **修复：** 在 Docker Desktop 上使用 `host.docker.internal`，Linux 上使用 `172.17.0.1` 或宿主机局域网 IP，并确保代理（Clash / v2rayN / sing-box）监听 `0.0.0.0` 而非 `127.0.0.1`。Compose 的 `host-gateway` 映射：`extra_hosts: ["host.docker.internal:host-gateway"]`。
 
-**诊断：** `docker exec SRouter curl -v http://host.docker.internal:11434/api/tags`。
+**诊断：** `docker compose exec srouter curl -v http://host.docker.internal:11434/api/tags`。
 
 ## 空链 `400`
 

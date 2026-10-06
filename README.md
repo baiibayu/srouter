@@ -9,7 +9,7 @@ Aggregate free tiers from dozens of providers, plus custom OpenAI-compatible cha
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-**[freellmapi.co](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=repository&utm_content=readme_top)** · browse the full catalog: 474 model families, 635 free endpoints
+**474 model families · 635 free endpoints** — the full list lives in your dashboard's Models page
 
 **English** · [简体中文](README.zh-cn.md)
 
@@ -20,8 +20,7 @@ Aggregate free tiers from dozens of providers, plus custom OpenAI-compatible cha
 ![SRouter dashboard — Models page with the monthly token budget](repo-assets/github-hero.png)
 
 
-Your router updates its own model catalog from a signed feed: new free models, quota changes, and compatibility fixes land without a `git pull`. Free installs get the monthly snapshot, so a model reaches them 30 days after it joins the live feed; premium routers get it the same day.
-**[Go live at freellmapi.co](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=premium&utm_content=readme_top#pricing)** ($19/yr, cancel anytime).
+Your router updates its own model catalog from a signed feed: new free models, quota changes, and compatibility fixes land without a `git pull`.
 
 </div>
 
@@ -38,7 +37,7 @@ Your router updates its own model catalog from a signed feed: new free models, q
 - [Desktop app](#desktop-app)
 - [Works with OpenAI-compatible clients](#works-with-openai-compatible-clients)
 - [Languages](#languages)
-- [Premium (live catalog)](#premium-live-catalog)
+- [Live catalog](#live-catalog)
 - [Using the API](#using-the-api)
 - [Screenshots](#screenshots)
 - [How it works](#how-it-works)
@@ -55,7 +54,7 @@ Every serious AI lab now offers a free tier, a few million tokens a month, a few
 
 The problem is that stacking them by hand is painful: thirty-four different SDKs, thirty-four different rate limits, thirty-four places a request can fail. SRouter collapses that into one OpenAI-compatible endpoint. Point any OpenAI client library at your local server, and it routes transparently across whichever providers you've added keys for.
 
-And the free-tier landscape shifts weekly: providers launch models, retire them, and change quotas without notice. SRouter tracks all of that for you. The router pulls a signed model catalog from [freellmapi.co](https://freellmapi.co) on its own, so your install keeps up without a `git pull`. See [Premium (live catalog)](#premium-live-catalog) for how fast it keeps up.
+And the free-tier landscape shifts weekly: providers launch models, retire them, and change quotas without notice. SRouter tracks all of that for you. The router pulls a signed model catalog on its own, so your install keeps up without a `git pull`. See [Live catalog](#live-catalog) for how it stays current.
 
 ![The free tier, stacked — ~7.4B tokens of free inference per month across 34 providers](repo-assets/free-tier.png)
 
@@ -91,7 +90,7 @@ And the free-tier landscape shifts weekly: providers launch models, retire them,
 
 Plus a **custom** provider — point chat, embedding, image, or audio models at any OpenAI-compatible endpoint (llama.cpp, LM Studio, vLLM, a local Ollama, or a remote gateway) from the Keys page.
 
-The full, always-current list lives at **[freellmapi.co/models](https://freellmapi.co/models.html)** with per-model rate limits, context windows, and free-token budgets.
+The full, always-current list lives in your dashboard's **Models** page, with per-model rate limits, context windows, and free-token budgets.
 
 ## Compatible CLIs & coding agents
 
@@ -157,7 +156,7 @@ Based on public documentation, July 2026 — corrections welcome.
 - **Unified models & profiles** — the same model on several providers collapses into one entry with strict in-group failover; named fallback-chain profiles (a coding chain, a vision chain) switch from the dashboard or per request via `auto:<profile>`, and custom chains can be renamed in place from the chain manager.
 - **Per-key rate tracking** — RPM/RPD/TPM/TPD counters per `(platform, model, key)` that learn providers' reported ceilings, so routing always stays under every cap.
 - **Per-key budgets that follow the provider's cycle** — optional request/token caps per key count against daily, weekly, or monthly UTC windows, and the period **auto-resolves from the provider's catalog** (daily limits → daily, monthly quota → monthly, otherwise monthly fallback) with the detected cycle shown in the dashboard. Manual selection stays as an escape hatch for providers without catalog metadata and for weekly windows.
-- **Self-updating model catalog** — the router syncs a signed catalog from freellmapi.co twice a day: new models, quota changes, and provider quirk fixes land automatically. Free installs track the monthly snapshot, which each model joins 30 days after it lands in the live feed; premium routers get it same-day. [Premium →](#premium-live-catalog)
+- **Self-updating model catalog** — the router syncs a signed catalog twice a day: new models, quota changes, and provider quirk fixes land automatically. [Live catalog →](#live-catalog)
 - **Sticky sessions & context handoff** — conversations stay on one model for 30 minutes; an optional compact handoff note keeps the thread coherent when a mid-chat switch does happen. [Details →](docs/en/clients/01-agent-clients.md#context-handoff)
 - **Prompt compression (opt-in)** — a shared, fail-open request pipeline can deduplicate prompts, filter tool output, compact repeated JSON, and trim stale context before cache lookup and routing. [Details →](docs/en/compression/01-compression-pipeline.md)
 - **Encrypted keys, one token out** — provider keys are AES-256-GCM encrypted in SQLite and decrypted in-memory per request; your apps only ever see a single unified `srouter-…` bearer token.
@@ -170,17 +169,17 @@ The scope is deliberately narrow — see [what's not supported yet](docs/en/arch
 
 ## Quick start
 
-**One-liner** (Docker required — sets up `~/freellmapi`, generates an encryption key, pulls the image, and starts the container):
+**Docker Compose** (Docker required):
 
 ```bash
-curl -fsSL https://freellmapi.co/install.sh | bash
+git clone https://github.com/baiibayu/srouter.git && cd srouter
 ```
 
-Prefer to read before you pipe to bash? [The script is here](https://freellmapi.co/install.sh). Re-running it is safe: your `.env` (and encryption key) is preserved and the container updates to `:latest`.
+Set up `.env` and start the container per **[Docker Compose →](docs/en/install/01-install.md#docker-compose)** — it walks through the encryption key, first boot, and updates. Re-running later is safe: `.env` and your data are preserved.
 
 Open http://localhost:20268, add your provider keys on the **Keys** page, reorder the **Fallback Chain** to taste, and grab your unified API key from the **Keys** page header. That unified key is what you point your OpenAI SDK at.
 
-On Windows, the easiest path is the desktop **[`.exe` installer from Releases](https://github.com/tashfeenahmed/freellmapi/releases/latest)** (below). On Android, see the experimental [Termux guide](docs/en/install/02-android-termux.md).
+On Windows, the easiest path is the desktop **[`.exe` installer from Releases](https://github.com/baiibayu/srouter/releases/latest)** (below). On Android, see the experimental [Termux guide](docs/en/install/02-android-termux.md).
 
 Everything else — Docker Compose, local development, declarative startup config, production builds, LAN access, and backups — is in **[docs/en/install/01-install.md](docs/en/install/01-install.md)**.
 
@@ -190,7 +189,7 @@ A native menu-bar app lives in [`desktop/`](./desktop): the entire router + dash
 
 ![SRouter desktop app](repo-assets/desktop.png)
 
-**[Download from Releases](https://github.com/tashfeenahmed/freellmapi/releases/latest)** — the macOS `.dmg` and the Windows `.exe` installer are attached to every release. No account or password to set up: the only credential you need is the unified API key from the tray popover. Build-from-source steps and where your data lives: [docs/en/install/01-install.md#desktop-app](docs/en/install/01-install.md#desktop-app).
+**[Download from Releases](https://github.com/baiibayu/srouter/releases/latest)** — the macOS `.dmg` and the Windows `.exe` installer are attached to every release. No account or password to set up: the only credential you need is the unified API key from the tray popover. Build-from-source steps and where your data lives: [docs/en/install/01-install.md#desktop-app](docs/en/install/01-install.md#desktop-app).
 
 For macOS 12 Monterey or later, choose **arm64 (Apple Silicon)** or **x64 (Intel)**. Both Mac builds also include a ZIP download.
 
@@ -260,10 +259,10 @@ add a language, copy `en.json`, translate the values, and register the locale in
 strings); `npm test` checks every locale for key/placeholder parity — PRs
 welcome.
 
-## Premium (live catalog)
+## Live catalog
 
 The router keeps its model catalog fresh on its own: it pulls a signed catalog
-from [freellmapi.co](https://freellmapi.co) twice a day and applies new models,
+twice a day and applies new models,
 quota changes, and provider quirk fixes to your local DB. Your own
 enable/disable choices and custom providers are never touched, and every
 download is verified against a pinned Ed25519 key before it is applied.
@@ -271,30 +270,15 @@ download is verified against a pinned Ed25519 key before it is applied.
 The catalog currently tracks **34 providers**, **474 model families**, **635
 free provider/model endpoints** (584 chat, 41 embeddings, 7 transcription, 3
 video), and roughly **7.4 billion tokens per month** of listed free-tier
-capacity. Browse the full set at
-**[freellmapi.co/models](https://freellmapi.co/models.html)**.
+capacity. The full set is browsable from your dashboard's
+**Models** page.
 
-Free installs pull the same signed catalog, but from the monthly snapshot: a
-model joins it 30 days after it lands in the live feed, so the free build
-currently sits about 303 models behind. Nothing expires and nothing is
-crippled — it just arrives later.
-
-Premium keeps that signed catalog live on every router you run. When a provider
-launches a strong free model, quietly tightens a quota, or breaks a wire format,
-live-feed routers receive the update the same day we ship it.
-
-**[Go live at freellmapi.co →](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=premium&utm_content=readme_bottom#pricing)**
-
-- $19/year or $49 once, lifetime. Stripe checkout; cancel anytime, self-serve.
-- One `fla_` key covers every router you run: desktop, homelab, Raspberry Pi.
-- Activate in the dashboard under **Premium**; cancel or manage billing
-  self-serve at [freellmapi.co/manage](https://freellmapi.co/manage).
-- The router itself stays MIT-licensed and fully free, forever. Premium is only
-  the live feed, and it's what funds the daily model testing and catalog
-  maintenance that keeps the catalog working.
+The signed catalog ships as a monthly snapshot: a model joins it about 30 days
+after it lands in the live feed, so your local set stays a little behind.
+Nothing expires and nothing is crippled — it just arrives later.
 
 The catalog server never sees your prompts, completions, or provider keys — the
-router stays fully self-hosted either way.
+router stays fully self-hosted.
 
 ## Using the API
 
@@ -350,7 +334,7 @@ One request in, the best free model out: the router picks the highest-priority m
 
 ## FAQ
 
-**Do I need a password?** Not for the desktop app — the dashboard signs itself in with a hidden local account, so there is nothing to set up and nothing to forget. Open it from the tray icon → **Open Dashboard**. Server installs (Docker, one-liner, `npm run dev`) do have an email + password account.
+**Do I need a password?** Not for the desktop app — the dashboard signs itself in with a hidden local account, so there is nothing to set up and nothing to forget. Open it from the tray icon → **Open Dashboard**. Server installs (Docker, `npm run dev`) do have an email + password account.
 
 **I forgot the password on a server install.** Click **Forgot password?** on the login page. There is no email to send a link to, so the one-time code is printed to the server log — read it with `docker compose logs -f srouter` (or in the terminal running the server, or in the desktop log file), then enter it on the reset form. The code lasts 15 minutes.
 

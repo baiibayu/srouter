@@ -27,7 +27,7 @@ installFileLogger(); // 在 createApp / 服务端启动之前
 
 ### Electron-builder 发布
 
-`desktop/electron-builder.yml` `publish: { provider: github, owner: tashfeenahmed, repo: SRouter }` —— 产物（`dmg`、`nsis`、`zip`、`AppImage`、`deb`、`tar.xz`、`rpm`）在 `desktop-release.yml` 上上传（`*.rpm` 通配自 d8fae97）。按渠道生成 `latest.yml` / `latest-mac.yml`。
+`desktop/electron-builder.yml` `publish: { provider: github, owner: baiibayu, repo: SRouter }` —— 产物（`dmg`、`nsis`、`zip`、`AppImage`、`deb`、`tar.xz`、`rpm`）在 `desktop-release.yml` 上上传（`*.rpm` 通配自 d8fae97）。按渠道生成 `latest.yml` / `latest-mac.yml`。
 
 ### 构建标识
 

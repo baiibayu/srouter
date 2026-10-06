@@ -16,7 +16,7 @@ files:
 # attaches the files itself. See #703.
 publish:
   provider: github
-  owner: tashfeenahmed
+  owner: baiibayu
   repo: srouter
 asar: true
 # Linux chrome-sandbox must be mode 4755 (setuid) in the .deb; otherwise

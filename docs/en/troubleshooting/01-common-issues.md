@@ -10,7 +10,7 @@
 
 **Fix:** Use `host.docker.internal` (Docker Desktop) or `172.17.0.1` / host's LAN IP (Linux), and ensure the proxy (Clash/v2rayN/sing-box) listens on `0.0.0.0` not `127.0.0.1`. Compose `host-gateway` mapping: `extra_hosts: ["host.docker.internal:host-gateway"]`.
 
-**Diagnose:** `docker exec SRouter curl -v http://host.docker.internal:11434/api/tags`.
+**Diagnose:** `docker compose exec srouter curl -v http://host.docker.internal:11434/api/tags`.
 
 ## Empty chain `400`
 

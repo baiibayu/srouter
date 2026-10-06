@@ -18,7 +18,7 @@ The production image, the Compose quickstart, and everything about running SRout
 SRouter publishes a single production image containing the Express server and the built React dashboard:
 
 ```bash
-docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # or pin a release, e.g. :v1.2.3
+docker pull ghcr.io/baiibayu/srouter:latest   # or pin a release, e.g. :v1.2.3
 ```
 
 Published tags: `latest` (default branch), `v*.*.*` (git release tags), and `sha-<commit>`. The image is multi-arch (`linux/amd64` + `linux/arm64`, so it runs on a Raspberry Pi).
@@ -36,8 +36,8 @@ Build shape ([Dockerfile](../../../Dockerfile)):
 Prerequisites: Docker, Docker Compose, OpenSSL. macOS/Linux:
 
 ```bash
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 
 # Generate an encryption key for at-rest key storage
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
@@ -46,7 +46,7 @@ printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 docker compose up -d
 ```
 
-Windows PowerShell variant and a curl one-liner bootstrap live in [docs/en/install/01-install.md#docker-compose](../install/01-install.md#docker-compose). Then follow the logs:
+Windows PowerShell steps live in [docs/en/install/01-install.md#docker-compose](../install/01-install.md#docker-compose). Then follow the logs:
 
 ```bash
 docker compose logs -f srouter
@@ -103,5 +103,5 @@ Providers unreachable from the container, but fine from the host? A container ha
 To see which case you are hitting, ask the container directly:
 
 ```bash
-docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec srouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```

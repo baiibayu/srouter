@@ -22,7 +22,7 @@ name: CLI release
 # attaches provenance automatically.
 #
 # One-time setup on npmjs.com (Package settings → Trusted Publisher):
-#   Organization or user: tashfeenahmed
+#   Organization or user: baiibayu
 #   Repository:           srouter
 #   Workflow filename:    cli-release.yml
 # Trusted publishing cannot bootstrap a package that does not exist yet — npm

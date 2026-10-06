@@ -127,7 +127,7 @@ A second, unrelated way a container can be cut off from providers while the host
 To see which case you are hitting, ask the container directly:
 
 ```bash
-docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+docker compose exec srouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 ```
 
 ## TRUST_PROXY: inbound vs outbound

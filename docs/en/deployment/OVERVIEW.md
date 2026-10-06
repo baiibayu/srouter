@@ -6,7 +6,7 @@
 
 Operating SRouter in Docker: the published image, Compose quickstart, persistence, healthchecks, the container-networking gotchas, and the ongoing maintenance work — upgrading, backups, and declarative configuration. Content is derived from [`Dockerfile`](../../../Dockerfile), [`docker-compose.yml`](../../../docker-compose.yml), [`.dockerignore`](../../../.dockerignore), and [docs/en/install/01-install.md](../install/01-install.md).
 
-For installation paths beyond Docker (one-liner script, local development, desktop app), see [Install & deploy](../install/01-install.md).
+For installation paths beyond Docker (local development, desktop app), see [Install & deploy](../install/01-install.md).
 
 ## File index
 
@@ -19,7 +19,7 @@ For installation paths beyond Docker (one-liner script, local development, deskt
 
 | Aspect | Value |
 | --- | --- |
-| Image | `ghcr.io/tashfeenahmed/freellmapi:latest` |
+| Image | `ghcr.io/baiibayu/srouter:latest` |
 | Port | 20268 (published on `127.0.0.1` by default; `HOST_BIND=0.0.0.0` opens it to the LAN) |
 | Data volume | Named volume `srouter-data`, mounted at `/app/server/data` |
 | Runtime user | `node` (non-root) |

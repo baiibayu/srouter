@@ -34,8 +34,8 @@ node --version
 然后克隆并启动 SRouter：
 
 ```bash
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 npm install --no-audit --no-fund
 npm run dev
 ```

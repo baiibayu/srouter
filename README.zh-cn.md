@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#参与贡献)
 
-**[freellmapi.co](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=repository&utm_content=readme_top)** · 浏览完整目录：474 个模型系列，635 个免费端点
+**474 个模型系列 · 635 个免费端点** —— 完整列表在你的仪表盘「模型」页里浏览
 
 [English](README.md) · **简体中文**
 
@@ -19,7 +19,7 @@
 
 
 你的路由器会从签名源自行更新模型目录：新的免费模型、额度变更和兼容性修复，都不需要 `git pull` 就能生效。
-**[前往 freellmapi.co 启用](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=premium&utm_content=readme_top#pricing)**（每年 $19，随时可取消）。
+
 
 </div>
 
@@ -36,7 +36,7 @@
 - [桌面应用](#桌面应用)
 - [兼容 OpenAI 的客户端](#兼容-openai-的客户端)
 - [语言](#语言)
-- [Premium 实时目录](#premium-实时目录)
+- [实时目录](#实时目录)
 - [使用 API](#使用-api)
 - [截图](#截图)
 - [工作原理](#工作原理)
@@ -54,7 +54,7 @@
 
 问题在于手工叠加太痛苦：三十四套不同的 SDK，三十四种不同的限流规则，三十四个请求可能失败的地方。SRouter 把这些收拢成一个 OpenAI 兼容端点。把任意 OpenAI 客户端库指向你的本地服务，它就会在你添加过密钥的提供方之间透明路由。
 
-而且免费额度的格局每周都在变：提供方会上线新模型、下线旧模型，并且不打招呼就调整额度。这些 SRouter 都替你盯着。路由器会自行从 [freellmapi.co](https://freellmapi.co) 拉取经过签名的模型目录，所以你的部署不用 `git pull` 也能跟上。跟进速度见 [Premium 实时目录](#premium-实时目录)。
+而且免费额度的格局每周都在变：提供方会上线新模型、下线旧模型，并且不打招呼就调整额度。这些 SRouter 都替你盯着。路由器会自行拉取经过签名的模型目录，所以你的部署不用 `git pull` 也能跟上。保持最新的方式见 [实时目录](#实时目录)。
 
 ![叠加后的免费额度 —— 34 家提供方合计每月约 74 亿词元的免费推理](repo-assets/free-tier.png)
 
@@ -90,7 +90,7 @@
 
 此外还有 **自定义** 提供方：在密钥页上，把聊天、嵌入、图像或音频模型指向任意 OpenAI 兼容端点（llama.cpp、LM Studio、vLLM、本地 Ollama，或者一个远程网关）。
 
-完整且始终最新的列表在 **[freellmapi.co/models](https://freellmapi.co/models.html)**，含每个模型的限流规则、上下文窗口和免费词元额度。
+完整且始终最新的列表在仪表盘的 **模型** 页里，含每个模型的限流规则、上下文窗口和免费词元额度。
 
 ## 兼容的 CLI 与编程智能体
 
@@ -149,7 +149,7 @@
 - **统一模型与配置档** —— 同一个模型在多家提供方上会合并成一个条目，并在组内严格故障转移；命名的回退链配置档（比如一条编程链、一条视觉链）可以在仪表盘里切换，也可以按请求用 `auto:<profile>` 指定。
 - **按密钥的限流跟踪** —— 以 `(平台, 模型, 密钥)` 为单位的 RPM/RPD/TPM/TPD 计数器，会学习提供方公布的上限，让路由始终不越线。
 - **按密钥的预算自动跟随提供方周期** —— 可选的每密钥请求/Token 上限按每日、每周或每月（UTC）窗口计数，周期会**根据提供方目录自动判定**（日限额→每日、月配额→每月、否则回退每月），控制面板会显示检测到的周期；目录元数据缺失的提供方以及每周窗口仍可手动指定。
-- **自更新的模型目录** —— 路由器每天两次从 freellmapi.co 同步经过签名的目录：新模型、额度变更和提供方的怪癖修复都会自动生效。[Premium →](#premium-实时目录)
+- **自更新的模型目录** —— 路由器每天两次同步经过签名的目录：新模型、额度变更和提供方的怪癖修复都会自动生效。[实时目录 →](#实时目录)
 - **粘性会话与上下文交接** —— 对话会在同一个模型上停留 30 分钟；如果中途确实换了模型，可选的精简交接说明能让话题保持连贯。[详情 →](docs/en/clients/01-agent-clients.md#context-handoff)
 - **提示词压缩（可选开启）** —— 一条共享且失败即放行的请求流程，可以在缓存查找和路由之前对提示词去重、过滤工具输出、压紧重复的 JSON，并裁掉过时的上下文。[详情 →](docs/zh-cn/compression/01-compression-pipeline.md)
 - **密钥加密存储，对外只有一个令牌** —— 提供方密钥以 AES-256-GCM 加密存放在 SQLite 中，每次请求时在内存里解密；你的应用自始至终只看到一个统一的 `srouter-…` bearer 令牌。
@@ -162,17 +162,17 @@
 
 ## 快速开始
 
-**一行命令**（需要 Docker。它会建好 `~/freellmapi`、生成加密密钥、拉取镜像并启动容器）：
+**Docker Compose**（需要 Docker）：
 
 ```bash
-curl -fsSL https://freellmapi.co/install.sh | bash
+git clone https://github.com/baiibayu/srouter.git && cd srouter
 ```
 
-不放心直接管道给 bash？[脚本在这里](https://freellmapi.co/install.sh)。重复执行是安全的：你的 `.env`（以及加密密钥）会被保留，容器会更新到 `:latest`。
+按 **[Docker Compose →](docs/zh-cn/install/01-install.md#docker-compose)** 配好 `.env` 并启动容器——里面讲了加密密钥、首次启动和更新方式。重复执行是安全的：`.env` 和你的数据都会保留。
 
 打开 http://localhost:20268 ，在 **密钥** 页添加你的提供方密钥，按喜好调整 **回退链** 的顺序，然后在 **密钥** 页顶部拿到你的统一 API 密钥。这个统一密钥就是你的 OpenAI SDK 要指向的东西。
 
-在 Windows 上，最省事的方式是下面提到的桌面版 **[Releases 里的 `.exe` 安装包](https://github.com/tashfeenahmed/freellmapi/releases/latest)**。Android 上可参考实验性的 [Termux 指南](docs/zh-cn/install/02-android-termux.md)。
+在 Windows 上，最省事的方式是下面提到的桌面版 **[Releases 里的 `.exe` 安装包](https://github.com/baiibayu/srouter/releases/latest)**。Android 上可参考实验性的 [Termux 指南](docs/zh-cn/install/02-android-termux.md)。
 
 其余内容，包括 Docker Compose、本地开发、声明式启动配置、生产构建、局域网访问和备份，都在 **[docs/zh-cn/install/01-install.md](docs/zh-cn/install/01-install.md)**。
 
@@ -182,7 +182,7 @@ curl -fsSL https://freellmapi.co/install.sh | bash
 
 ![SRouter 桌面应用](repo-assets/desktop.png)
 
-**[从 Releases 下载](https://github.com/tashfeenahmed/freellmapi/releases/latest)** —— 每个版本都附带 macOS 的 `.dmg` 和 Windows 的 `.exe` 安装包。不需要注册账号或设置密码：你唯一需要的凭据就是托盘悬浮窗里的统一 API 密钥。从源码构建的步骤，以及数据存放位置，见 [docs/zh-cn/install/01-install.md#桌面应用](docs/zh-cn/install/01-install.md#桌面应用)。
+**[从 Releases 下载](https://github.com/baiibayu/srouter/releases/latest)** —— 每个版本都附带 macOS 的 `.dmg` 和 Windows 的 `.exe` 安装包。不需要注册账号或设置密码：你唯一需要的凭据就是托盘悬浮窗里的统一 API 密钥。从源码构建的步骤，以及数据存放位置，见 [docs/zh-cn/install/01-install.md#桌面应用](docs/zh-cn/install/01-install.md#桌面应用)。
 
 macOS 要求 12 Monterey 或更高版本；Apple Silicon 请选择 **arm64**，Intel 请选择 **x64**。两种 Mac 构建都提供 ZIP 下载。
 
@@ -227,22 +227,15 @@ SRouter 在设计上是本地优先、单用户的。你的提供方密钥留在
 
 中文的术语约定见 [docs/TRANSLATION.md](docs/TRANSLATION.md)，提交翻译前请先过一遍，这样 README 和仪表盘里的说法能对得上。
 
-## Premium 实时目录
+## 实时目录
 
-路由器会自行保持模型目录的新鲜：它每天两次从 [freellmapi.co](https://freellmapi.co) 拉取经过签名的目录，把新模型、额度变更和提供方的怪癖修复应用到你的本地数据库。你自己的启用/停用选择和自定义提供方永远不会被动到，而且每次下载在应用之前都会用固定的 Ed25519 公钥验签。
+路由器会自行保持模型目录的新鲜：它每天两次拉取经过签名的目录，把新模型、额度变更和提供方的怪癖修复应用到你的本地数据库。你自己的启用/停用选择和自定义提供方永远不会被动到，而且每次下载在应用之前都会用固定的 Ed25519 公钥验签。
 
-目录目前收录 **34 家提供方**、**474 个模型系列**、**635 个免费提供方/模型端点**（584 个聊天、41 个嵌入、7 个转录、3 个视频），以及大约 **每月 74 亿词元** 的免费额度容量。完整内容可在 **[freellmapi.co/models](https://freellmapi.co/models.html)** 浏览。
+目录目前收录 **34 家提供方**、**474 个模型系列**、**635 个免费提供方/模型端点**（584 个聊天、41 个嵌入、7 个转录、3 个视频），以及大约 **每月 74 亿词元** 的免费额度容量。完整内容可在仪表盘的 **模型** 页浏览。
 
-Premium 让这份签名目录在你运行的每一个路由器上保持实时。当某家提供方上线了一个强力的免费模型、悄悄收紧了额度，或者改坏了协议格式，订阅了实时源的路由器会在我们发布的第一时间收到更新。
+这份签名目录以每月快照的形式发布：一个模型要在进入实时源约 30 天后才加入快照，所以你本地的列表会稍稍滞后。什么都不会过期，什么功能都不会被砍——只是到得晚一些。
 
-**[前往 freellmapi.co 启用 →](https://freellmapi.co/?utm_source=github&utm_medium=readme&utm_campaign=premium&utm_content=readme_bottom#pricing)**
-
-- 每年 $19，或一次性 $49 永久有效。Stripe 支付，随时可自助取消。
-- 一个 `fla_` 密钥覆盖你运行的所有路由器：桌面、家庭服务器、树莓派。
-- 在仪表盘的 **Premium** 页激活；取消或管理账单可自助前往 [freellmapi.co/manage](https://freellmapi.co/manage)。
-- 路由器本身永远保持 MIT 许可、完全免费。Premium 只是那条实时源，而正是它资助了每天的模型测试和目录维护，让这份目录始终可用。
-
-目录服务器不会看到你的提示词、补全结果或提供方密钥。无论是否订阅，路由器都完全自托管。
+目录服务器不会看到你的提示词、补全结果或提供方密钥，路由器始终完全自托管。
 
 ## 使用 API
 

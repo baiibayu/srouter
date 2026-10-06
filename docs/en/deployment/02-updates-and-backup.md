@@ -103,4 +103,4 @@ If two custom endpoints serve the same model id, add `"endpoint"` to a `models` 
 }
 ```
 
-Catalog side: an install keeps its model roster current from the signed catalog feed (the full catalog is listed at freellmapi.co/models), so no manual roster maintenance is required alongside upgrades.
+Catalog side: an install keeps its model roster current from the signed catalog feed (the full list lives in the dashboard's Models page), so no manual roster maintenance is required alongside upgrades.

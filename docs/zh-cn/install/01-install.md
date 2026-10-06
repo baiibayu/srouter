@@ -4,7 +4,7 @@
 
 [← 返回 README](../README.md) · [文档索引](../README.md)
 
-把 SRouter 跑起来所需的一切：一行命令、Docker Compose、本地开发、声明式配置、生产构建、桌面应用，以及你的数据存放在哪里。
+把 SRouter 跑起来所需的一切：Docker Compose、本地开发、声明式配置、生产构建、桌面应用，以及你的数据存放在哪里。
 
 - [快速开始](#快速开始)
 - [Docker Compose](#docker-compose)
@@ -16,21 +16,24 @@
 
 ## 快速开始
 
-需要 Docker。它会建好 `~/freellmapi`、生成加密密钥、拉取镜像并启动容器：
+需要 Docker 或 Node.js 20+。先克隆仓库，再挑一条路径：
 
 ```bash
-curl -fsSL https://freellmapi.co/install.sh | bash
+git clone https://github.com/baiibayu/srouter.git && cd srouter
 ```
 
-不放心直接管道给 bash？[脚本在这里](https://freellmapi.co/install.sh)。重复执行是安全的：你的 `.env`（以及加密密钥）会被保留，容器会更新到 `:latest`。可以用 `SROUTER_DIR`、`PORT` 或 `HOST_BIND` 环境变量覆盖默认值。
+- **Docker** —— 按下文的 [Docker Compose](#docker-compose) 步骤（生成加密密钥 + `docker compose up -d`）。
+- **源码运行** —— 按 [本地开发](#本地开发) 步骤（`npm install` + `npm run dev`）。
 
-在 Windows 上，最省事的方式是桌面版 **[Releases 里的 `.exe` 安装包](https://github.com/tashfeenahmed/freellmapi/releases/latest)**（见[下文](#桌面应用)）；上面的 Docker 步骤在 WSL 或任意 bash shell 里同样可用。
+两条路径都会持久化你的数据；重复执行是安全的，`.env` 和数据库都会保留。
+
+在 Windows 上，最省事的方式是桌面版 **[Releases 里的 `.exe` 安装包](https://github.com/baiibayu/srouter/releases/latest)**（见[下文](#桌面应用)）；**[Docker Compose](#docker-compose)** 的步骤在 WSL 或任意 bash shell 里同样可用。
 
 在 Android 上，参见实验性的 [Termux 安装指南](02-android-termux.md)。它使用 Node 内置的 SQLite 驱动，不需要 Android NDK。
 
 打开 http://localhost:20268 ，在 **密钥** 页添加你的提供方密钥，按喜好调整 **回退链** 的顺序，然后在 **密钥** 页顶部拿到你的统一 API 密钥。这个统一密钥就是你的 OpenAI SDK 要指向的东西。
 
-你的部署会自行从签名的目录源保持更新。当前的完整目录列在 [freellmapi.co/models](https://freellmapi.co/models.html)。
+你的部署会自行从签名的目录源保持更新。当前列表可在仪表盘的 **模型** 页浏览。
 
 ## Docker Compose
 
@@ -40,8 +43,8 @@ curl -fsSL https://freellmapi.co/install.sh | bash
 
 *在 macOS / Linux 上（Bash）：*
 ```bash
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 
 # 生成用于静态存储密钥的加密密钥
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
@@ -52,8 +55,8 @@ docker compose up -d
 
 *在 Windows 上（PowerShell）：*
 ```powershell
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 
 $Bytes = New-Object Byte[] 32
 [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($Bytes)
@@ -78,7 +81,7 @@ docker compose up -d
 > 想知道自己属于哪一种，直接问容器：
 >
 > ```bash
-> docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+> docker compose exec srouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 > ```
 
 ## 本地开发
@@ -87,8 +90,8 @@ docker compose up -d
 
 *在 macOS / Linux 上（Bash）：*
 ```bash
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 npm install
 ENCRYPTION_KEY="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
 printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
@@ -97,8 +100,8 @@ npm run dev
 
 *在 Windows 上（PowerShell）：*
 ```powershell
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 npm install
 $ENCRYPTION_KEY = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 "ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=20268" | Out-File -Encoding utf8 .env
@@ -188,7 +191,7 @@ node server/dist/index.js     # 服务和仪表盘都在 :20268 上提供
 SRouter 发布一个生产镜像，里面包含 Express 服务和构建好的 React 仪表盘：
 
 ```bash
-docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # 也可以固定到某个版本，例如 :v1.2.3
+docker pull ghcr.io/baiibayu/srouter:latest   # 也可以固定到某个版本，例如 :v1.2.3
 ```
 
 镜像是多架构的（`linux/amd64` 和 `linux/arm64`，所以树莓派上也能跑）。发布的标签有：`latest`（默认分支）、`v*.*.*`（git 发布标签）和 `sha-<commit>`。
@@ -227,7 +230,7 @@ SROUTER_DB_BACKUP_INTERVAL_MS=300000
 
 ![SRouter 桌面应用](../../../repo-assets/desktop.png)
 
-**[从 Releases 下载](https://github.com/tashfeenahmed/freellmapi/releases/latest)** —— macOS 的 `.dmg` 和 Windows 的 `.exe` 安装包由 [`desktop-release`](../../../.github/workflows/desktop-release.yml) 工作流在每个版本发布时构建并附带。你也可以花几分钟从本仓库自己构建：
+**[从 Releases 下载](https://github.com/baiibayu/srouter/releases/latest)** —— macOS 的 `.dmg` 和 Windows 的 `.exe` 安装包由 [`desktop-release`](../../../.github/workflows/desktop-release.yml) 工作流在每个版本发布时构建并附带。你也可以花几分钟从本仓库自己构建：
 
 **Mac 下载：** Apple Silicon 请选择 `arm64`，Intel 请选择 `x64`。两者都要求 macOS 12 Monterey 或更高版本，并提供 DMG 和 ZIP 下载。
 

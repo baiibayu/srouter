@@ -1,6 +1,6 @@
 services:
   srouter:
-    image: ghcr.io/tashfeenahmed/freellmapi:latest
+    image: ghcr.io/baiibayu/srouter:latest
     build:
       context: .
       dockerfile: Dockerfile

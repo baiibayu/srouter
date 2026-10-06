@@ -27,7 +27,7 @@ The tray menu exposes both folders; `openBackupsFolder` resolves to `<userData>/
 
 ### Electron-builder publish
 
-`desktop/electron-builder.yml` `publish: { provider: github, owner: tashfeenahmed, repo: SRouter }` — artifacts (`dmg`, `nsis`, `zip`, `AppImage`, `deb`, `tar.xz`, `rpm`) upload on `desktop-release.yml` (`*.rpm` glob since d8fae97). `latest.yml` / `latest-mac.yml` generated per channel.
+`desktop/electron-builder.yml` `publish: { provider: github, owner: baiibayu, repo: SRouter }` — artifacts (`dmg`, `nsis`, `zip`, `AppImage`, `deb`, `tar.xz`, `rpm`) upload on `desktop-release.yml` (`*.rpm` glob since d8fae97). `latest.yml` / `latest-mac.yml` generated per channel.
 
 ### Build identity
 

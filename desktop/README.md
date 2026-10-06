@@ -1,11 +1,11 @@
 # SRouter Desktop
 
-Lean Electron menu-bar app for [SRouter](https://github.com/tashfeenahmed/freellmapi):
+Lean Electron menu-bar app for [SRouter](https://github.com/baiibayu/srouter):
 runs the whole router locally on `127.0.0.1:31415`, with a dark-glass tray
 popover (live 24h request chart, quick stats, copy URL/key) and the full
 dashboard in a native-feeling window.
 
-Download an installer from [Releases](https://github.com/tashfeenahmed/freellmapi/releases/latest),
+Download an installer from [Releases](https://github.com/baiibayu/srouter/releases/latest),
 or build against the server and client sources in this checkout.
 
 On macOS, choose **arm64** for Apple Silicon (M-series) or **x64** for Intel.

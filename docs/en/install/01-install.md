@@ -4,9 +4,9 @@
 
 [← Back to README](../README.md) · [Documentation index](../README.md)
 
-Everything about getting SRouter running: the one-liner, Docker Compose, local development, declarative config, production builds, the desktop app, where your data lives, and how to reset a password, read the logs, or uninstall.
+Everything about getting SRouter running: Docker Compose, local development, declarative config, production builds, the desktop app, where your data lives, and how to reset a password, read the logs, or uninstall.
 
-- [Quick start (one-liner)](#quick-start-one-liner)
+- [Quick start](#quick-start)
 - [Docker Compose](#docker-compose)
 - [Local development](#local-development)
 - [Declarative startup config](#declarative-startup-config)
@@ -15,23 +15,26 @@ Everything about getting SRouter running: the one-liner, Docker Compose, local d
 - [Credentials and where your data lives](#credentials-and-where-your-data-lives)
 - [FAQ: passwords, logs, uninstall](#faq-passwords-logs-uninstall)
 
-## Quick start (one-liner)
+## Quick start
 
-Docker required — sets up `~/freellmapi`, generates an encryption key, pulls the image, and starts the container:
+Docker or Node.js 20+ required. Clone the repo, then pick a path:
 
 ```bash
-curl -fsSL https://freellmapi.co/install.sh | bash
+git clone https://github.com/baiibayu/srouter.git && cd srouter
 ```
 
-Prefer to read before you pipe to bash? [The script is here](https://freellmapi.co/install.sh). Re-running it is safe: your `.env` (and encryption key) is preserved and the container updates to `:latest`. Override the defaults with `SROUTER_DIR`, `PORT`, or `HOST_BIND` env vars.
+- **Docker** — the [Docker Compose](#docker-compose) steps below (encryption key + `docker compose up -d`).
+- **From source** — the [Local development](#local-development) steps (`npm install` + `npm run dev`).
 
-On Windows, the easiest path is the desktop **[`.exe` installer from Releases](https://github.com/tashfeenahmed/freellmapi/releases/latest)** ([below](#desktop-app)); the Docker steps work in WSL or any bash shell.
+Both persist your data; re-running is safe — `.env` and the database are preserved.
+
+On Windows, the easiest path is the desktop **[`.exe` installer from Releases](https://github.com/baiibayu/srouter/releases/latest)** ([below](#desktop-app)); the Docker steps work in WSL or any bash shell.
 
 On Android, see the experimental [Termux installation guide](02-android-termux.md). It uses Node's built-in SQLite driver and does not require the Android NDK.
 
 Open http://localhost:20268, add your provider keys on the **Keys** page, reorder the **Fallback Chain** to taste, and grab your unified API key from the **Keys** page header. That unified key is what you point your OpenAI SDK at.
 
-Your install keeps itself updated from the signed catalog feed. The current full catalog is listed at [freellmapi.co/models](https://freellmapi.co/models.html).
+Your install keeps itself updated from the signed catalog feed. Browse the current list in the dashboard's **Models** page.
 
 ## Docker Compose
 
@@ -41,8 +44,8 @@ Runs the API and dashboard together on port 20268 and persists SQLite in a named
 
 *On macOS / Linux (Bash):*
 ```bash
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 
 # Generate an encryption key for at-rest key storage
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
@@ -53,8 +56,8 @@ docker compose up -d
 
 *On Windows (PowerShell):*
 ```powershell
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 
 $Bytes = New-Object Byte[] 32
 [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($Bytes)
@@ -79,7 +82,7 @@ docker compose up -d
 > To see which of these you are hitting, ask the container directly:
 >
 > ```bash
-> docker compose exec SRouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
+> docker compose exec srouter node -e "fetch('https://generativelanguage.googleapis.com/').then(r=>console.log('ok',r.status)).catch(e=>console.log('fail',e.cause?.code||e.message))"
 > ```
 
 ## Local development
@@ -88,8 +91,8 @@ docker compose up -d
 
 *On macOS / Linux (Bash):*
 ```bash
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 npm install
 ENCRYPTION_KEY="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
 printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
@@ -98,8 +101,8 @@ npm run dev
 
 *On Windows (PowerShell):*
 ```powershell
-git clone https://github.com/tashfeenahmed/freellmapi.git
-cd SRouter
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
 npm install
 $ENCRYPTION_KEY = node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 "ENCRYPTION_KEY=$ENCRYPTION_KEY`nPORT=20268" | Out-File -Encoding utf8 .env
@@ -168,7 +171,6 @@ instead of duplicated.
 ```json
 {
   "admin": { "email": "ops@example.com", "password": "change-me-min-8-chars" },
-  "license": "premium license key from freellmapi.co",
   "keys": [
     { "platform": "groq", "key": "gsk_...", "label": "main" },
     { "platform": "google", "key": "AIza...", "enabled": true }
@@ -195,7 +197,7 @@ instead of duplicated.
 }
 ```
 
-Two optional top-level fields cover first-run provisioning:
+One optional top-level field covers first-run provisioning:
 
 - **`admin`** creates the first dashboard account, but only while no account
   exists — a claimed install ignores the entry with a warning, so the config
@@ -203,15 +205,9 @@ Two optional top-level fields cover first-run provisioning:
   listener starts, an `admin` entry also closes the unauthenticated
   first-run setup window entirely: no setup code is minted and
   `POST /api/auth/setup` answers 409 from the first request on.
-- **`license`** is a Premium key from freellmapi.co. It is validated against
-  the license service before being stored — the same contract as the
-  dashboard's Premium page — then a live-tier catalog sync starts right away.
-  Activation runs in the background so an unreachable license service never
-  delays boot; a stored key identical to the configured one short-circuits
-  before any network call, and a changed key re-activates (rotation).
 
-The config carries plaintext secrets (provider keys, the admin password, the
-license key), so protect the file or env value exactly like `ENCRYPTION_KEY`.
+The config carries plaintext secrets (provider keys and the admin password),
+so protect the file or env value exactly like `ENCRYPTION_KEY`.
 
 If two custom endpoints serve the same model id, add `"endpoint"` to a `models`
 or `fallback` entry to say which one you mean — the endpoint's URL, or the short
@@ -231,7 +227,7 @@ than one endpoint is rejected rather than applied to an arbitrary one:
 SRouter publishes a single production image that contains the Express server and the built React dashboard:
 
 ```bash
-docker pull ghcr.io/tashfeenahmed/freellmapi:latest   # or pin a release, e.g. :v1.2.3
+docker pull ghcr.io/baiibayu/srouter:latest   # or pin a release, e.g. :v1.2.3
 ```
 
 The image is multi-arch (`linux/amd64` + `linux/arm64`, so it runs on a Raspberry Pi). Published tags: `latest` (default branch), `v*.*.*` (git release tags), and `sha-<commit>`.
@@ -278,7 +274,7 @@ request stats.
 
 ![SRouter desktop app](../../../repo-assets/desktop.png)
 
-**[Download from Releases](https://github.com/tashfeenahmed/freellmapi/releases/latest)** — the macOS `.dmg` and the Windows `.exe` installer are built and attached to every release by the [`desktop-release`](../../../.github/workflows/desktop-release.yml) workflow. Or build it from this repo in a few minutes:
+**[Download from Releases](https://github.com/baiibayu/srouter/releases/latest)** — the macOS `.dmg` and the Windows `.exe` installer are built and attached to every release by the [`desktop-release`](../../../.github/workflows/desktop-release.yml) workflow. Or build it from this repo in a few minutes:
 
 **Mac downloads:** choose `arm64` for Apple Silicon or `x64` for Intel. Both require macOS 12 Monterey or later and include DMG and ZIP downloads.
 
@@ -335,7 +331,7 @@ install. For the server (non-desktop) deployment, the equivalent state is the
 hidden local account, so there is nothing to remember and nothing to reset. If
 you cannot see the dashboard, open it from the tray icon → **Open Dashboard**.
 
-**Server installs** (Docker, one-liner, `npm run dev`) do have an email +
+**Server installs** (Docker, `npm run dev`) do have an email +
 password account, and there is no email delivery to send a reset link to. The
 flow is a one-time code printed to the server log:
 
@@ -359,7 +355,6 @@ rather than clicking repeatedly.
 |----------------|--------------------|
 | Docker Compose | `docker compose logs -f srouter` |
 | Plain Docker | `docker logs -f <container>` (`docker ps` lists the name) |
-| One-liner install | `cd ~/freellmapi && docker compose logs -f srouter` |
 | `npm run dev` / `node server/dist/index.js` | the terminal the server is running in |
 | Desktop app | `<data dir>/logs/srouter.log` — tray icon → right-click → **Open Logs Folder** |
 
@@ -393,8 +388,8 @@ the top.
 
 ```bash
 docker compose down -v            # -v also drops the srouter-data volume
-docker image rm ghcr.io/tashfeenahmed/freellmapi:latest
-rm -rf ~/freellmapi               # the one-liner's directory: .env + compose file
+docker image rm ghcr.io/baiibayu/srouter:latest
+rm -rf ~/srouter               # your clone's directory: .env + compose file
 ```
 
 Leave off `-v` if you want to keep the database for a later reinstall.
