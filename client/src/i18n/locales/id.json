@@ -223,7 +223,11 @@
     "downloadingUpdate": "Mengunduh… {percent}%",
     "restartToUpdate": "Mulai ulang untuk memperbarui",
     "updateReadyHint": "Selesai diunduh. SRouter mencadangkan data Anda, memulai ulang, lalu membuka versi baru.",
-    "updateInstallFailed": "Pembaruan tidak dapat dipasang."
+    "updateInstallFailed": "Pembaruan tidak dapat dipasang.",
+    "updateNow": "Perbarui sekarang",
+    "updatingContainer": "Menarik image baru dan memulai ulang. Halaman ini dimuat ulang saat SRouter kembali.",
+    "updateNowFailed": "Pembaru tidak menerima permintaan. Pastikan kontainer watchtower berjalan.",
+    "updateNowTimeout": "SRouter belum dimulai ulang setelah 5 menit. Periksa log kontainer watchtower."
   },
   "models": {
     "title": "Model",

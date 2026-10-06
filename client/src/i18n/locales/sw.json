@@ -223,7 +223,11 @@
     "downloadingUpdate": "Inapakua… {percent}%",
     "restartToUpdate": "Anzisha upya ili kusasisha",
     "updateReadyHint": "Imepakuliwa. SRouter huhifadhi nakala ya data yako, huanza upya na kufungua toleo jipya.",
-    "updateInstallFailed": "Sasisho halikuweza kusakinishwa."
+    "updateInstallFailed": "Sasisho halikuweza kusakinishwa.",
+    "updateNow": "Sasisha sasa",
+    "updatingContainer": "Inavuta picha mpya na kuanza upya. Ukurasa huu utapakia upya SRouter itakaporudi.",
+    "updateNowFailed": "Kisasishaji hakikukubali ombi. Hakikisha kontena la watchtower linafanya kazi.",
+    "updateNowTimeout": "SRouter haijaanza upya baada ya dakika 5. Angalia kumbukumbu za kontena la watchtower."
   },
   "models": {
     "title": "Mifano",

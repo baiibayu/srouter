@@ -223,7 +223,11 @@
     "downloadingUpdate": "Sťahuje sa… {percent} %",
     "restartToUpdate": "Reštartovať a aktualizovať",
     "updateReadyHint": "Stiahnuté. SRouter zálohuje vaše údaje, reštartuje sa a otvorí novú verziu.",
-    "updateInstallFailed": "Aktualizáciu sa nepodarilo nainštalovať."
+    "updateInstallFailed": "Aktualizáciu sa nepodarilo nainštalovať.",
+    "updateNow": "Aktualizovať teraz",
+    "updatingContainer": "Sťahuje sa nový obraz a prebieha reštart. Stránka sa znova načíta, keď bude SRouter späť.",
+    "updateNowFailed": "Aktualizátor žiadosť neprijal. Skontrolujte, či kontajner watchtower beží.",
+    "updateNowTimeout": "SRouter sa ani po 5 minútach nereštartoval. Skontrolujte logy kontajnera watchtower."
   },
   "models": {
     "title": "Modely",

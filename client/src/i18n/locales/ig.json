@@ -223,7 +223,11 @@
     "downloadingUpdate": "Na-ebudata… {percent}%",
     "restartToUpdate": "Malitegharịa ka imelite",
     "updateReadyHint": "Ebudatala. SRouter na-echekwa data gị, malitegharịa ma mepee ụdị ọhụrụ.",
-    "updateInstallFailed": "Enweghị ike itinye mmelite ahụ."
+    "updateInstallFailed": "Enweghị ike itinye mmelite ahụ.",
+    "updateNow": "Melite ugbu a",
+    "updatingContainer": "Na-adọta onyonyo ọhụrụ ma na-amalitegharị. Ibe a ga-ebugharị mgbe SRouter lọghachiri.",
+    "updateNowFailed": "Onye mmelite anabataghị arịrịọ ahụ. Lelee ma akpa watchtower na-arụ ọrụ.",
+    "updateNowTimeout": "SRouter amalitegharịbeghị mgbe nkeji 5 gachara. Lelee ndekọ akpa watchtower."
   },
   "models": {
     "title": "Ụdị",

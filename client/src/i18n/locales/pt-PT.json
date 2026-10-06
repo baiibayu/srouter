@@ -223,7 +223,11 @@
     "downloadingUpdate": "A transferir… {percent}%",
     "restartToUpdate": "Reiniciar para atualizar",
     "updateReadyHint": "Transferida. O SRouter faz uma cópia de segurança dos seus dados, reinicia e abre a nova versão.",
-    "updateInstallFailed": "Não foi possível instalar a atualização."
+    "updateInstallFailed": "Não foi possível instalar a atualização.",
+    "updateNow": "Atualizar agora",
+    "updatingContainer": "A transferir a nova imagem e a reiniciar. Esta página recarrega quando o SRouter voltar.",
+    "updateNowFailed": "O atualizador não aceitou o pedido. Verifique se o contentor watchtower está em execução.",
+    "updateNowTimeout": "O SRouter não reiniciou ao fim de 5 minutos. Verifique os registos do contentor watchtower."
   },
   "models": {
     "title": "Modelos",

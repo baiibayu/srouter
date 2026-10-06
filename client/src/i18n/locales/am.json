@@ -223,7 +223,11 @@
     "downloadingUpdate": "በማውረድ ላይ… {percent}%",
     "restartToUpdate": "ለማዘመን እንደገና አስጀምር",
     "updateReadyHint": "ወርዷል። SRouter ውሂብዎን ያስቀምጣል፣ እንደገና ይጀምራል እና አዲሱን ስሪት ይከፍታል።",
-    "updateInstallFailed": "ዝማኔው ሊጫን አልቻለም።"
+    "updateInstallFailed": "ዝማኔው ሊጫን አልቻለም።",
+    "updateNow": "አሁን አዘምን",
+    "updatingContainer": "አዲሱን ምስል እያወረደ እንደገና በመጀመር ላይ። SRouter ሲመለስ ይህ ገጽ እንደገና ይጫናል።",
+    "updateNowFailed": "አዘማኙ ጥያቄውን አልተቀበለም። የwatchtower ኮንቴይነር እየሰራ መሆኑን ያረጋግጡ።",
+    "updateNowTimeout": "SRouter ከ5 ደቂቃ በኋላም እንደገና አልጀመረም። የwatchtower ኮንቴይነርን ምዝግብ ማስታወሻዎች ይመልከቱ።"
   },
   "models": {
     "title": "ሞዴሎች",

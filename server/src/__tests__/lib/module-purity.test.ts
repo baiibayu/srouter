@@ -35,6 +35,8 @@ const PURE_MODULES = [
   // Shared by the provider, media and embeddings request paths (#1331).
   'credential.ts',
   'error-classify.ts',
+  // Signal handling for the container's PID 1; the server, DB and process are injected.
+  'graceful-shutdown.ts',
   'header-value.ts',
   // HTML entity/tag helpers shared by the web-search parser and the fetch
   // route; string functions over their arguments, no I/O by design.

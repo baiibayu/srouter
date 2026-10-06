@@ -223,7 +223,11 @@
     "downloadingUpdate": "Nagda-download… {percent}%",
     "restartToUpdate": "I-restart para mag-update",
     "updateReadyHint": "Na-download na. Iba-backup ng SRouter ang iyong data, magre-restart, at bubuksan ang bagong bersyon.",
-    "updateInstallFailed": "Hindi ma-install ang update."
+    "updateInstallFailed": "Hindi ma-install ang update.",
+    "updateNow": "I-update ngayon",
+    "updatingContainer": "Kinukuha ang bagong image at nagre-restart. Magre-reload ang page na ito kapag bumalik ang SRouter.",
+    "updateNowFailed": "Hindi tinanggap ng updater ang request. Tingnan kung tumatakbo ang watchtower container.",
+    "updateNowTimeout": "Hindi pa nagre-restart ang SRouter pagkalipas ng 5 minuto. Tingnan ang logs ng watchtower container."
   },
   "models": {
     "title": "Mga Modelo",
