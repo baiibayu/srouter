@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Télécharger la mise à jour",
+    "downloadingUpdate": "Téléchargement… {percent} %",
+    "restartToUpdate": "Redémarrer pour mettre à jour",
+    "updateReadyHint": "Téléchargée. SRouter sauvegarde vos données, redémarre et ouvre la nouvelle version.",
+    "updateInstallFailed": "La mise à jour n’a pas pu être installée."
   },
   "models": {
     "title": "Modèles",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relatif au répertoire de la base de données. Les sauvegardes ne peuvent pas être écrites en dehors de ce répertoire.",
     "save": "Enregistrer la planification",
-    "saved": "Enregistré"
+    "saved": "Enregistré",
+    "preUpdate": "Avant mise à jour"
   },
   "status": {
     "healthy": "sain",
@@ -1246,7 +1252,9 @@
     "noNotes": "Aucune note de version n'a été publiée pour cette version.",
     "openRelease": "Ouvrir la page de la version",
     "dismissVersion": "Ignorer cette version",
-    "dismiss": "Ignorer"
+    "dismiss": "Ignorer",
+    "newBuild": "Une version plus récente de SRouter est installée.",
+    "reload": "Recharger"
   },
   "freeTier": {
     "poolsToggle": "Pools de l'offre gratuite ({count})",

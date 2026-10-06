@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "আপডেট ডাউনলোড করুন",
+    "downloadingUpdate": "ডাউনলোড হচ্ছে… {percent}%",
+    "restartToUpdate": "আপডেট করতে রিস্টার্ট করুন",
+    "updateReadyHint": "ডাউনলোড হয়েছে। SRouter আপনার ডেটার ব্যাকআপ নেয়, রিস্টার্ট করে এবং নতুন সংস্করণ খোলে।",
+    "updateInstallFailed": "আপডেট ইনস্টল করা যায়নি।"
   },
   "models": {
     "title": "মডেল",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "আপডেটের আগে"
   },
   "status": {
     "healthy": "সুস্থ",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "SRouter-এর একটি নতুন সংস্করণ ইনস্টল হয়েছে।",
+    "reload": "রিলোড"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "புதுப்பிப்பைப் பதிவிறக்கு",
+    "downloadingUpdate": "பதிவிறக்குகிறது… {percent}%",
+    "restartToUpdate": "புதுப்பிக்க மறுதொடக்கம் செய்",
+    "updateReadyHint": "பதிவிறக்கப்பட்டது. SRouter உங்கள் தரவைக் காப்புப்பிரதி எடுத்து, மறுதொடக்கம் செய்து புதிய பதிப்பைத் திறக்கும்.",
+    "updateInstallFailed": "புதுப்பிப்பை நிறுவ முடியவில்லை."
   },
   "models": {
     "title": "மாதிரிகள்",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "புதுப்பிப்புக்கு முன்"
   },
   "status": {
     "healthy": "ஆரோக்கியமான",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "SRouter-இன் புதிய பதிப்பு நிறுவப்பட்டுள்ளது.",
+    "reload": "மீண்டும் ஏற்று"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

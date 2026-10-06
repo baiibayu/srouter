@@ -16,7 +16,7 @@ interface BackupMeta {
   filename: string
   filesize: number
   isFull: boolean
-  source: 'manual' | 'scheduled' | 'pre-restore'
+  source: 'manual' | 'scheduled' | 'pre-restore' | 'pre-update'
   createdAt: string
   tables: string[]
 }
@@ -232,7 +232,9 @@ function BackupsPanel() {
                       ? t('backups.scheduled')
                       : item.source === 'pre-restore'
                         ? t('backups.preRestore')
-                        : t('backups.manual')}
+                        : item.source === 'pre-update'
+                          ? t('backups.preUpdate')
+                          : t('backups.manual')}
                   </Badge>
                   <div className="inline-flex items-center gap-1">
                     <Button
@@ -284,27 +286,25 @@ function BackupsPanel() {
         )}
       </div>
 
-      <AutoBackupForm schedule={schedule?.schedule ?? null} onSaved={invalidate} />
+      {/* Keyed on the stored schedule so the form re-seeds when it loads or
+          changes, rather than copying props into state from an effect. */}
+      <AutoBackupForm
+        key={JSON.stringify(schedule?.schedule ?? null)}
+        schedule={schedule?.schedule ?? null}
+        onSaved={invalidate}
+      />
     </div>
   )
 }
 
 function AutoBackupForm({ schedule, onSaved }: { schedule: BackupSchedule | null; onSaved: () => void }) {
   const { t } = useI18n()
-  const [enabled, setEnabled] = useState(false)
-  const [time, setTime] = useState('03:00')
-  const [intervalDays, setIntervalDays] = useState('1')
-  const [backupPath, setBackupPath] = useState('')
+  const [enabled, setEnabled] = useState(schedule?.enabled ?? false)
+  const [time, setTime] = useState(schedule?.time ?? '03:00')
+  const [intervalDays, setIntervalDays] = useState(String(schedule?.intervalDays ?? 1))
+  const [backupPath, setBackupPath] = useState(schedule?.backupPath ?? '')
   const [savedFlash, setSavedFlash] = useState(false)
 
-  const [syncedSchedule, setSyncedSchedule] = useState<BackupSchedule | null>(null)
-  if (schedule && schedule !== syncedSchedule) {
-    setSyncedSchedule(schedule)
-    setEnabled(schedule.enabled)
-    setTime(schedule.time)
-    setIntervalDays(String(schedule.intervalDays))
-    setBackupPath(schedule.backupPath ?? '')
-  }
 
   const save = useMutation({
     meta: { silenceToast: true },

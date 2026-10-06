@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Atsisiųsti naujinimą",
+    "downloadingUpdate": "Atsisiunčiama… {percent} %",
+    "restartToUpdate": "Paleisti iš naujo ir atnaujinti",
+    "updateReadyHint": "Atsisiųsta. SRouter padaro jūsų duomenų atsarginę kopiją, pasileidžia iš naujo ir atidaro naują versiją.",
+    "updateInstallFailed": "Naujinimo įdiegti nepavyko."
   },
   "models": {
     "title": "Modeliai",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Prieš naujinimą"
   },
   "status": {
     "healthy": "Sveika",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Įdiegta naujesnė SRouter versija.",
+    "reload": "Įkelti iš naujo"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

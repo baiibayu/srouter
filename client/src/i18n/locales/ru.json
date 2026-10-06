@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Скачать обновление",
+    "downloadingUpdate": "Загрузка… {percent}%",
+    "restartToUpdate": "Перезапустить для обновления",
+    "updateReadyHint": "Загружено. SRouter создаёт резервную копию данных, перезапускается и открывает новую версию.",
+    "updateInstallFailed": "Не удалось установить обновление."
   },
   "models": {
     "title": "Модели",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Перед обновлением"
   },
   "status": {
     "healthy": "здоровый",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Установлена более новая версия SRouter.",
+    "reload": "Перезагрузить"
   },
   "freeTier": {
     "poolsToggle": "Пулы бесплатного тарифа ({count})",

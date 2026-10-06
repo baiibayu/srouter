@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Yangilanishni yuklab olish",
+    "downloadingUpdate": "Yuklab olinmoqda… {percent}%",
+    "restartToUpdate": "Yangilash uchun qayta ishga tushirish",
+    "updateReadyHint": "Yuklab olindi. SRouter maʼlumotlaringizning zaxira nusxasini oladi, qayta ishga tushadi va yangi versiyani ochadi.",
+    "updateInstallFailed": "Yangilanishni o‘rnatib bo‘lmadi."
   },
   "models": {
     "title": "Modellar",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Yangilanishdan oldin"
   },
   "status": {
     "healthy": "sog'lom",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "SRouter ning yangiroq versiyasi o‘rnatilgan.",
+    "reload": "Qayta yuklash"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

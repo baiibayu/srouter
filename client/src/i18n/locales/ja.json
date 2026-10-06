@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "アップデートをダウンロード",
+    "downloadingUpdate": "ダウンロード中… {percent}%",
+    "restartToUpdate": "再起動してアップデート",
+    "updateReadyHint": "ダウンロード完了。SRouter はデータをバックアップしてから再起動し、新しいバージョンを開きます。",
+    "updateInstallFailed": "アップデートをインストールできませんでした。"
   },
   "models": {
     "title": "モデル",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "アップデート前"
   },
   "status": {
     "healthy": "健康な",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "新しいバージョンの SRouter がインストールされています。",
+    "reload": "再読み込み"
   },
   "freeTier": {
     "poolsToggle": "無料枠プール（{count}）",

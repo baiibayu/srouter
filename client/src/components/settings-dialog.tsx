@@ -30,6 +30,8 @@ import {
 } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { UPDATE_CHECK_CHANGED_EVENT } from '@/components/update-reminder'
+import { DesktopUpdateActions } from '@/components/desktop-update'
+import { useDesktopUpdater } from '@/lib/desktop-updater'
 import { Switch } from '@/components/ui/switch'
 import { SUPPORTED_LOCALES, type Locale, useI18n } from '@/i18n'
 import { type Theme, useTheme } from '@/theme-context'
@@ -620,6 +622,17 @@ function UpdateChecker({ active }: { active: boolean }) {
   // Opt-in for the automatic reminder pill (#782). `null` until the server has
   // answered, so the row never renders a state that isn't the stored one.
   const [autoCheck, setAutoCheck] = useState<boolean | null>(null)
+  // Present only in a desktop build that can replace itself; otherwise the
+  // dialog keeps pointing at the releases page.
+  const desktopUpdater = useDesktopUpdater()
+  const desktopPhase = desktopUpdater?.state.phase
+  // In the desktop app the updater's own feed (latest*.yml) is the authority
+  // on what can be installed; the server's GitHub comparison only adds the
+  // changelog.
+  const desktopUpdate = desktopUpdater
+    && (desktopPhase === 'available' || desktopPhase === 'downloading' || desktopPhase === 'ready' || desktopPhase === 'error')
+    ? desktopUpdater
+    : null
 
   useEffect(() => {
     if (!active) return
@@ -666,6 +679,7 @@ function UpdateChecker({ active }: { active: boolean }) {
   }, [active])
 
   async function check() {
+    const desktopCheck = desktopUpdater?.check()
     setChecking(true)
     setError(false)
     setCheckResult(null)
@@ -686,7 +700,9 @@ function UpdateChecker({ active }: { active: boolean }) {
         version: result.version,
         releasesUrl: statusInfo?.releasesUrl ?? null,
       })
-      const resultMessage = result.status === 'available'
+      const desktopState = await desktopCheck
+      const desktopFound = desktopState?.phase === 'available' || desktopState?.phase === 'downloading' || desktopState?.phase === 'ready'
+      const resultMessage = desktopFound || result.status === 'available'
         ? t('settings.updateAvailable')
         : result.status === 'current'
           ? t('settings.upToDate')
@@ -745,7 +761,17 @@ function UpdateChecker({ active }: { active: boolean }) {
             {version
               ? <span>v{version}</span>
               : <code className="font-mono text-xs">{currentSha}</code>}
-            {status === 'available' && (
+            {desktopUpdate && 'version' in desktopUpdate.state ? (
+              <button
+                type="button"
+                onClick={openChecker}
+                title={t('settings.updateAvailable')}
+                className="flex items-center gap-1 text-primary underline underline-offset-2"
+              >
+                <ArrowRight className="size-3.5" aria-hidden />
+                <span>v{desktopUpdate.state.version}</span>
+              </button>
+            ) : status === 'available' && (
               <button
                 type="button"
                 onClick={openChecker}
@@ -758,8 +784,8 @@ function UpdateChecker({ active }: { active: boolean }) {
                 </span>
               </button>
             )}
-            {status === 'current' && <Check className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />}
-            {error && statusInfo?.releasesUrl && (
+            {status === 'current' && !desktopUpdate && <Check className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />}
+            {error && (
               <a
                 href={statusInfo.releasesUrl}
                 target="_blank"
@@ -900,7 +926,7 @@ function UpdateChecker({ active }: { active: boolean }) {
                     <p className="text-[11px] text-muted-foreground">{t('settings.restartAfterUpdate')}</p>
                   </div>
                 )}
-                {(info.installation === 'desktop' || info.installation === 'unknown') && statusInfo?.releasesUrl && (
+                {(info.installation === 'desktop' || info.installation === 'unknown') && !desktopUpdater && (
                   <a
                     href={statusInfo.releasesUrl}
                     target="_blank"
@@ -914,7 +940,19 @@ function UpdateChecker({ active }: { active: boolean }) {
               </div>
             )}
 
-            {statusMessage && (
+            {desktopUpdate && (
+              <div className="space-y-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
+                {'version' in desktopUpdate.state && (
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <Sparkles className="size-4 shrink-0 text-primary" aria-hidden />
+                    {t('settings.updateAvailable')} <span className="tabular-nums">v{desktopUpdate.state.version}</span>
+                  </p>
+                )}
+                <DesktopUpdateActions updater={desktopUpdate} />
+              </div>
+            )}
+
+            {statusMessage && !desktopUpdate && (
               <div className={`flex gap-3 rounded-xl border p-4 ${info?.status === 'current' ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
                 {info?.status === 'current'
                   ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-500" />

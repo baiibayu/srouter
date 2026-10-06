@@ -40,6 +40,22 @@ contextBridge.exposeInMainWorld(
   versionArg ? versionArg.slice('--srouter-version='.length) : null,
 );
 
+// The in-app updater (the Settings update dialog and the update reminder). Like the session bridge above, deliberately
+// narrow: it can only check for, download and install the release published at
+// baiibayu/srouter — the feed URL and signature checks live in the main
+// process and nothing here can point them anywhere else.
+contextBridge.exposeInMainWorld('__SROUTER_UPDATER__', {
+  state: () => ipcRenderer.invoke('srouter:update-state'),
+  check: () => ipcRenderer.invoke('srouter:update-check'),
+  download: () => ipcRenderer.invoke('srouter:update-download'),
+  install: () => ipcRenderer.invoke('srouter:update-install'),
+  subscribe: (listener: (state: unknown) => void) => {
+    const handler = (_event: unknown, state: unknown) => listener(state);
+    ipcRenderer.on('srouter:update-state', handler);
+    return () => { ipcRenderer.removeListener('srouter:update-state', handler); };
+  },
+});
+
 // `desktop` class on <html> identifies the desktop shell. On macOS, `desktop-mac`
 // activates the translucent glass backdrop that pairs with native vibrancy;
 // on Windows and Linux, the solid theme background is preserved so contrast and

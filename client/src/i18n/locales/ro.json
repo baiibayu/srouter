@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Descarcă actualizarea",
+    "downloadingUpdate": "Se descarcă… {percent}%",
+    "restartToUpdate": "Repornește pentru actualizare",
+    "updateReadyHint": "Descărcat. SRouter face o copie de rezervă a datelor, repornește și deschide noua versiune.",
+    "updateInstallFailed": "Actualizarea nu a putut fi instalată."
   },
   "models": {
     "title": "Modele",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Înainte de actualizare"
   },
   "status": {
     "healthy": "Sănătos",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Este instalată o versiune mai nouă de SRouter.",
+    "reload": "Reîncarcă"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
