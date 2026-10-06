@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "下載更新",
+    "downloadingUpdate": "正在下載… {percent}%",
+    "restartToUpdate": "重新啟動以更新",
+    "updateReadyHint": "已下載。SRouter 會先備份你的資料，然後重新啟動並開啟新版本。",
+    "updateInstallFailed": "無法安裝更新。"
   },
   "models": {
     "title": "模型",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "更新前"
   },
   "status": {
     "healthy": "健康",
@@ -1246,7 +1252,9 @@
     "noNotes": "此版本未发布更新说明。",
     "openRelease": "打开发布页",
     "dismissVersion": "忽略此版本",
-    "dismiss": "忽略"
+    "dismiss": "忽略",
+    "newBuild": "已安裝較新版本的 SRouter。",
+    "reload": "重新載入"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

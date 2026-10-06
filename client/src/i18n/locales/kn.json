@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "ಅಪ್‌ಡೇಟ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+    "downloadingUpdate": "ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ… {percent}%",
+    "restartToUpdate": "ಅಪ್‌ಡೇಟ್ ಮಾಡಲು ಮರುಪ್ರಾರಂಭಿಸಿ",
+    "updateReadyHint": "ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ. SRouter ನಿಮ್ಮ ಡೇಟಾದ ಬ್ಯಾಕಪ್ ತೆಗೆದು, ಮರುಪ್ರಾರಂಭಿಸಿ ಹೊಸ ಆವೃತ್ತಿಯನ್ನು ತೆರೆಯುತ್ತದೆ.",
+    "updateInstallFailed": "ಅಪ್‌ಡೇಟ್ ಅನ್ನು ಸ್ಥಾಪಿಸಲಾಗಲಿಲ್ಲ."
   },
   "models": {
     "title": "ಮಾದರಿಗಳು",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "ಅಪ್‌ಡೇಟ್‌ಗೆ ಮುನ್ನ"
   },
   "status": {
     "healthy": "ಆರೋಗ್ಯಕರ",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "SRouter ನ ಹೊಸ ಆವೃತ್ತಿ ಸ್ಥಾಪಿಸಲಾಗಿದೆ.",
+    "reload": "ಮರುಲೋಡ್"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

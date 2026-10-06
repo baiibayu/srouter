@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Sauke sabuntawa",
+    "downloadingUpdate": "Ana saukewa… {percent}%",
+    "restartToUpdate": "Sake farawa don sabuntawa",
+    "updateReadyHint": "An sauke. SRouter yana adana bayananka, sai ya sake farawa ya buɗe sabon sigar.",
+    "updateInstallFailed": "Ba a iya shigar da sabuntawar ba."
   },
   "models": {
     "title": "Samfura",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Kafin sabuntawa"
   },
   "status": {
     "healthy": "lafiya",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "An shigar da sabon sigar SRouter.",
+    "reload": "Sake lodawa"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

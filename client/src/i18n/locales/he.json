@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "הורדת העדכון",
+    "downloadingUpdate": "מוריד… {percent}%",
+    "restartToUpdate": "הפעלה מחדש לעדכון",
+    "updateReadyHint": "ההורדה הושלמה. SRouter מגבה את הנתונים שלך, מופעל מחדש ופותח את הגרסה החדשה.",
+    "updateInstallFailed": "לא ניתן היה להתקין את העדכון."
   },
   "models": {
     "title": "דגמים",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "לפני עדכון"
   },
   "status": {
     "healthy": "בריא",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "הותקנה גרסה חדשה יותר של SRouter.",
+    "reload": "טעינה מחדש"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

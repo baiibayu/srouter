@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "അപ്‌ഡേറ്റ് ഡൗൺലോഡ് ചെയ്യുക",
+    "downloadingUpdate": "ഡൗൺലോഡ് ചെയ്യുന്നു… {percent}%",
+    "restartToUpdate": "അപ്‌ഡേറ്റിനായി റീസ്റ്റാർട്ട് ചെയ്യുക",
+    "updateReadyHint": "ഡൗൺലോഡ് ചെയ്തു. SRouter നിങ്ങളുടെ ഡാറ്റ ബാക്കപ്പ് ചെയ്ത് റീസ്റ്റാർട്ട് ചെയ്ത് പുതിയ പതിപ്പ് തുറക്കും.",
+    "updateInstallFailed": "അപ്‌ഡേറ്റ് ഇൻസ്റ്റാൾ ചെയ്യാനായില്ല."
   },
   "models": {
     "title": "മോഡലുകൾ",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "അപ്‌ഡേറ്റിന് മുമ്പ്"
   },
   "status": {
     "healthy": "ആരോഗ്യമുള്ള",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "SRouter-യുടെ പുതിയ പതിപ്പ് ഇൻസ്റ്റാൾ ചെയ്തിട്ടുണ്ട്.",
+    "reload": "റീലോഡ്"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "යාවත්කාලීනය බාගන්න",
+    "downloadingUpdate": "බාගනිමින්… {percent}%",
+    "restartToUpdate": "යාවත්කාලීන කිරීමට නැවත අරඹන්න",
+    "updateReadyHint": "බාගත විය. SRouter ඔබගේ දත්ත උපස්ථ කර, නැවත ආරම්භ වී නව අනුවාදය විවෘත කරයි.",
+    "updateInstallFailed": "යාවත්කාලීනය ස්ථාපනය කළ නොහැකි විය."
   },
   "models": {
     "title": "ආකෘති",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "යාවත්කාලීනයට පෙර"
   },
   "status": {
     "healthy": "සෞඛ්ය සම්පන්න",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "SRouter හි නවතම අනුවාදයක් ස්ථාපනය කර ඇත.",
+    "reload": "නැවත පූරණය"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

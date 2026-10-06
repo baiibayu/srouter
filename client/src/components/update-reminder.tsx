@@ -10,6 +10,8 @@ import {
 import { Markdown } from '@/components/markdown'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
+import { DesktopUpdateActions } from '@/components/desktop-update'
+import { useDesktopUpdater } from '@/lib/desktop-updater'
 
 /** How often this browser may ask the server, so a dashboard left open in a
  *  tab isn't re-checking on every navigation. The server caches the upstream
@@ -102,6 +104,7 @@ export function UpdateReminder() {
   const [refresh, setRefresh] = useState(0)
   const version = shellVersion ?? serverVersion
   const openRef = useRef(false)
+  const desktopUpdater = useDesktopUpdater()
 
   // Read by the async check to decide whether it may replace what the operator
   // is currently reading. Synced in an effect, not during render.
@@ -248,6 +251,12 @@ export function UpdateReminder() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">{t('update.noNotes')}</p>
+          )}
+
+          {desktopUpdater && (
+            <div className="mt-5">
+              <DesktopUpdateActions updater={desktopUpdater} />
+            </div>
           )}
 
           <div className="mt-5 flex flex-wrap items-center gap-3">

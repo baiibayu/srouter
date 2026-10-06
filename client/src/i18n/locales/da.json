@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Hent opdatering",
+    "downloadingUpdate": "Henter… {percent} %",
+    "restartToUpdate": "Genstart for at opdatere",
+    "updateReadyHint": "Hentet. SRouter tager backup af dine data, genstarter og åbner den nye version.",
+    "updateInstallFailed": "Opdateringen kunne ikke installeres."
   },
   "models": {
     "title": "Modeller",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Før opdatering"
   },
   "status": {
     "healthy": "sundt",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "En nyere version af SRouter er installeret.",
+    "reload": "Genindlæs"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Lataa päivitys",
+    "downloadingUpdate": "Ladataan… {percent} %",
+    "restartToUpdate": "Käynnistä uudelleen päivittääksesi",
+    "updateReadyHint": "Ladattu. SRouter varmuuskopioi tietosi, käynnistyy uudelleen ja avaa uuden version.",
+    "updateInstallFailed": "Päivitystä ei voitu asentaa."
   },
   "models": {
     "title": "Mallit",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Ennen päivitystä"
   },
   "status": {
     "healthy": "terve",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "SRouter:n uudempi versio on asennettu.",
+    "reload": "Lataa uudelleen"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",

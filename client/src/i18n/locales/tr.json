@@ -220,7 +220,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Güncellemeyi indir",
+    "downloadingUpdate": "İndiriliyor… %{percent}",
+    "restartToUpdate": "Güncellemek için yeniden başlat",
+    "updateReadyHint": "İndirildi. SRouter verilerinizi yedekler, yeniden başlar ve yeni sürümü açar.",
+    "updateInstallFailed": "Güncelleme yüklenemedi."
   },
   "models": {
     "title": "Modeller",
@@ -845,7 +850,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Veritabanı dizinine göre göreli yol. Yedekler bu dizinin dışına yazılamaz.",
     "save": "Zamanlamayı kaydet",
-    "saved": "Kaydedildi"
+    "saved": "Kaydedildi",
+    "preUpdate": "Güncelleme öncesi"
   },
   "status": {
     "healthy": "sağlıklı",
@@ -1248,7 +1254,9 @@
     "noNotes": "Bu sürüm için sürüm notu yayımlanmadı.",
     "openRelease": "Sürüm sayfasını aç",
     "dismissVersion": "Bu sürümü yoksay",
-    "dismiss": "Yoksay"
+    "dismiss": "Yoksay",
+    "newBuild": "SRouter'nin daha yeni bir sürümü yüklü.",
+    "reload": "Yeniden yükle"
   },
   "freeTier": {
     "poolsToggle": "Ücretsiz katman havuzları ({count})",

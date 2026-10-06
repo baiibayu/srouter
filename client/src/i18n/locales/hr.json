@@ -218,7 +218,12 @@
     "complexityGateJevModelHelp": "Defaults to the host's model — for example cloudflare/clef on system-one.dev.",
     "jevHostOpenrouter": "OpenRouter",
     "jevHostDetected": "detected",
-    "jevKeyFromProvider": "Automatic — from the linked provider key"
+    "jevKeyFromProvider": "Automatic — from the linked provider key",
+    "downloadUpdate": "Preuzmi ažuriranje",
+    "downloadingUpdate": "Preuzimanje… {percent} %",
+    "restartToUpdate": "Ponovno pokreni za ažuriranje",
+    "updateReadyHint": "Preuzeto. SRouter sigurnosno kopira vaše podatke, ponovno se pokreće i otvara novu verziju.",
+    "updateInstallFailed": "Ažuriranje se nije moglo instalirati."
   },
   "models": {
     "title": "Modeli",
@@ -843,7 +848,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Prije ažuriranja"
   },
   "status": {
     "healthy": "Zdravo",
@@ -1246,7 +1252,9 @@
     "noNotes": "No release notes were published for this version.",
     "openRelease": "Open release page",
     "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Instalirana je novija verzija SRouter-ja.",
+    "reload": "Ponovno učitaj"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
