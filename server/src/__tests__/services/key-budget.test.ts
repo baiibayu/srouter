@@ -184,7 +184,12 @@ describe('key-budget: monthly caps (#1158)', () => {
   });
 
   it('reserves the last request slot and releases it after an unsuccessful attempt', () => {
-    insertKey({ monthlyRequestCap: 1 });
+    // manual, not auto: an auto key for groq resolves to a DAILY period, and
+    // recordSuccess(inThisMonth()) pins day 5 — once today is no longer the
+    // 5th, the cap check reads a different bucket than the seeded row and this
+    // test fails forever (the 2026-10-06 date bomb). The other cap tests all
+    // pin 'manual' for the same reason.
+    insertKey({ monthlyRequestCap: 1, budgetPeriodMode: 'manual' });
     const first = reserveMonthlyBudget(keyId, 100);
     expect(first.allowed).toBe(true);
     expect(reserveMonthlyBudget(keyId, 100).allowed).toBe(false);

@@ -1,8 +1,26 @@
 {
   "name": "@srouter/server",
-  "version": "0.8.0",
-  "private": true,
+  "version": "0.9.0",
+  "description": "SRouter gateway server — free open-source LLM router with a multi-provider failover proxy and dashboard",
+  "license": "MIT",
   "type": "module",
+  "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baiibayu/srouter.git",
+    "directory": "server"
+  },
+  "homepage": "https://github.com/baiibayu/srouter/tree/main/server#readme",
+  "bugs": {
+    "url": "https://github.com/baiibayu/srouter/issues"
+  },
+  "files": [
+    "dist",
+    "client/dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -18,10 +36,10 @@
     "db:migration:down": "tsx src/db/migrate/cli.ts down",
     "db:migration:fresh": "tsx src/db/migrate/cli.ts fresh",
     "db:migration:status": "tsx src/db/migrate/cli.ts status",
-    "db:migration:create": "tsx src/db/migrate/cli.ts create"
+    "db:migration:create": "tsx src/db/migrate/cli.ts create",
+    "prepack": "node ../scripts/prepare-server-pack.mjs"
   },
   "dependencies": {
-    "@srouter/shared": "*",
     "ajv": "^8.20.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
@@ -36,6 +54,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@srouter/shared": "*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",

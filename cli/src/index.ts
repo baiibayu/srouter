@@ -11,6 +11,7 @@ import { getTool, tools } from './tools.js';
 import { resolveLaunchModel, type ResolvedModel } from './models.js';
 import { DOCTOR_TOOLS, diagnose, exitCodeFor, formatReport, type ToolReport } from './doctor.js';
 import { keysHelp, runKeys, type KeyCommandOptions } from './keys.js';
+import { resolveServe, runServe } from './serve.js';
 import type { CatalogModel, GenerateContext } from './types.js';
 
 interface CliOptions extends KeyCommandOptions {
@@ -261,13 +262,20 @@ export function resolvePinnedModel(
 
 function help(): string {
   return [
-    'srouter coding-agent setup and provider key management',
+    'srouter — run the gateway or set up coding agents',
     '',
     'Usage:',
+    '  srouter                                Start the gateway (dashboard on http://localhost:20268)',
+    '  srouter serve [options]                Same, with options:',
+    '      --port N        HTTP port (default 20268)',
+    '      --host H        Bind address (default ::)',
+    '      --data-dir DIR  Data directory (default ~/.srouter)',
+    '      --no-browser    Do not open the dashboard in a browser',
     '  srouter <command> [--url URL] [--api-key KEY] [--profile NAME] [--model ID] [--dry-run]',
     '',
     'Commands:',
     ...tools.map(tool => `  ${tool.command.padEnd(17)} ${tool.name}`),
+    '  serve, start       Start the gateway server (also the default with no arguments)',
     '  doctor [tool…]    Check whether a tool\'s requests actually reach this gateway',
     '                    (--timeout MS raises the probe wait on a slow link)',
     '  launch            Run Claude Code with credentials injected into the child environment',
@@ -453,6 +461,10 @@ async function runDoctor(options: CliOptions): Promise<number> {
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
+  // Bare `srouter`, `serve`/`start`, and a leading serve flag run the gateway;
+  // help and every other command fall through to the dispatch below unchanged.
+  const serve = resolveServe(argv);
+  if (serve) return runServe(serve);
   const { command, options } = parseArgs(argv);
   if (!command || command === 'help' || argv.includes('--help') || argv.includes('-h')) {
     process.stdout.write(`${command === 'keys' ? keysHelp() : help()}\n`);

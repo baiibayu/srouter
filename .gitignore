@@ -45,3 +45,7 @@ client/scripts/tmp-add-sync-i18n.mjs
 .playwright-mcp/
 server/server-out.log
 server/server-err.log
+
+# Staged into server/ by scripts/prepare-server-pack.mjs (npm pack)
+server/client/
+server/LICENSE

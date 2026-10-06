@@ -1,6 +1,6 @@
 # SRouter
 
-Point your coding agent at a [SRouter](https://github.com/tashfeenahmed/freellmapi)
+Point your coding agent at a [SRouter](https://github.com/baiibayu/srouter)
 gateway in one command. The generators read the models your server is actually
 serving and write the config file each tool expects.
 
@@ -10,6 +10,22 @@ npx srouter setup-claude --url http://localhost:20268 --api-key <your-key>
 
 No install step, no account. The unified API key comes from your SRouter
 dashboard (or the tray popover in the desktop app).
+
+## Run the gateway
+
+The same package also ships the gateway itself — install it once and `srouter`
+runs the whole thing (dashboard on `http://localhost:20268`, data in
+`~/.srouter`):
+
+```bash
+npm install -g srouter
+srouter                                   # start + open the dashboard
+srouter serve --port 3000 --no-browser    # headless / custom port
+```
+
+Upgrades are the usual `npm install -g srouter@latest`; your data directory
+survives updates. Then point agents at it with the `setup-*` commands below
+(`npx` still works for those without installing).
 
 ## Commands
 
@@ -104,12 +120,12 @@ them into the child process environment for that run only.
 
 ## Requirements
 
-Node.js >= 20.18. A running SRouter gateway
-([install guide](https://github.com/tashfeenahmed/freellmapi/blob/main/docs/en/install/01-install.md)).
+Node.js >= 20.18. A running SRouter gateway (`srouter` starts one, or see the
+[install guide](https://github.com/baiibayu/srouter/blob/main/docs/en/install/01-install.md)).
 
 ## Links
 
-- [Clients & coding agents guide](https://github.com/tashfeenahmed/freellmapi/blob/main/docs/en/clients/01-agent-clients.md)
-- [Issue tracker](https://github.com/tashfeenahmed/freellmapi/issues)
+- [Clients & coding agents guide](https://github.com/baiibayu/srouter/blob/main/docs/en/clients/01-agent-clients.md)
+- [Issue tracker](https://github.com/baiibayu/srouter/issues)
 
 MIT © Tashfeen Ahmed

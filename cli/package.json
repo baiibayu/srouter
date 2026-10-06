@@ -1,20 +1,22 @@
 {
   "name": "srouter",
-  "version": "0.8.0",
-  "description": "Set up coding agents to use an SRouter gateway",
+  "version": "0.9.0",
+  "description": "SRouter — free open-source LLM router: run the gateway, set up coding agents, manage provider keys",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tashfeenahmed/freellmapi.git",
+    "url": "git+https://github.com/baiibayu/srouter.git",
     "directory": "cli"
   },
-  "homepage": "https://github.com/tashfeenahmed/freellmapi/tree/main/cli#readme",
+  "homepage": "https://github.com/baiibayu/srouter/tree/main/cli#readme",
   "bugs": {
-    "url": "https://github.com/tashfeenahmed/freellmapi/issues"
+    "url": "https://github.com/baiibayu/srouter/issues"
   },
   "keywords": [
     "srouter",
     "llm",
+    "llm-router",
+    "gateway",
     "openai-compatible",
     "claude-code",
     "codex",
@@ -44,6 +46,8 @@
     "dist/keys.d.ts",
     "dist/models.js",
     "dist/models.d.ts",
+    "dist/serve.js",
+    "dist/serve.d.ts",
     "dist/tools.js",
     "dist/tools.d.ts",
     "dist/types.js",
@@ -60,6 +64,7 @@
     "node": ">=20.18.0 <25.0.0"
   },
   "dependencies": {
+    "@srouter/server": "^0.9.0",
     "jsonc-parser": "^3.3.1",
     "yaml": "^2.9.0"
   },

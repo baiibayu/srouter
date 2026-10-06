@@ -3,6 +3,7 @@ import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { keysRouter } from './routes/keys.js';
 import { clientProfilesRouter } from './routes/client-profiles.js';
@@ -352,9 +353,17 @@ export function createApp(config?: Config) {
   // Set serveStaticAssets: false in Config to skip static serving entirely
   // (e.g. in runtimes that serve assets through a different mechanism).
   if (cfg.serveStaticAssets) {
+    // CLIENT_DIST wins (embedders: the desktop app ships the dashboard in
+    // extraResources). Otherwise try both layouts: the dev checkout first
+    // (client/dist two levels up from server/dist), then the installed npm
+    // package (client/dist staged next to dist/ by
+    // scripts/prepare-server-pack.mjs — the two-level-up guess lands above
+    // node_modules there, so it alone would 404 a packaged dashboard).
     const clientDist = cfg.clientDist
       ? path.resolve(cfg.clientDist)
-      : path.resolve(__dirname, '../../client/dist');
+      : ([path.resolve(__dirname, '../../client/dist'), path.resolve(__dirname, '../client/dist')]
+          .find(dir => fs.existsSync(path.join(dir, 'index.html')))
+          ?? path.resolve(__dirname, '../../client/dist'));
     // Gzip the dashboard bundle (1+ MB uncompressed). Mounted HERE — after
     // every API/proxy router and the error handler — so it only wraps the
     // static-file / SPA-fallback responses below it. The /v1 and /api handlers

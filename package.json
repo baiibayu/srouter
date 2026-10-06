@@ -16,6 +16,7 @@
     "build": "npm run build -w server && npm run build -w cli && npm run build -w client",
     "lint": "npm run lint -w server && npm run lint -w cli",
     "build:server": "npm run build -w server",
+    "release": "npm run build && npm publish -w server && npm publish -w cli",
     "test:migrations": "npm run test:migrations -w server",
     "desktop:dev": "npm run build -w client && npm --prefix desktop run dev",
     "desktop:dist": "npm run build -w client && npm --prefix desktop run dist",
