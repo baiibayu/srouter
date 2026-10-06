@@ -223,7 +223,11 @@
     "downloadingUpdate": "در حال دانلود… {percent}٪",
     "restartToUpdate": "راه‌اندازی مجدد برای به‌روزرسانی",
     "updateReadyHint": "دانلود شد. SRouter از داده‌های شما پشتیبان می‌گیرد، دوباره راه‌اندازی می‌شود و نسخهٔ جدید را باز می‌کند.",
-    "updateInstallFailed": "به‌روزرسانی نصب نشد."
+    "updateInstallFailed": "به‌روزرسانی نصب نشد.",
+    "updateNow": "اکنون به‌روزرسانی کن",
+    "updatingContainer": "در حال دریافت ایمیج جدید و راه‌اندازی مجدد. وقتی SRouter برگردد این صفحه دوباره بارگذاری می‌شود.",
+    "updateNowFailed": "به‌روزرسان درخواست را نپذیرفت. بررسی کنید کانتینر watchtower در حال اجراست.",
+    "updateNowTimeout": "SRouter پس از ۵ دقیقه دوباره راه‌اندازی نشده است. گزارش‌های کانتینر watchtower را بررسی کنید."
   },
   "models": {
     "title": "مدل ها",

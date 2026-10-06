@@ -223,7 +223,11 @@
     "downloadingUpdate": "İndiriliyor… %{percent}",
     "restartToUpdate": "Güncellemek için yeniden başlat",
     "updateReadyHint": "İndirildi. SRouter verilerinizi yedekler, yeniden başlar ve yeni sürümü açar.",
-    "updateInstallFailed": "Güncelleme yüklenemedi."
+    "updateInstallFailed": "Güncelleme yüklenemedi.",
+    "updateNow": "Şimdi güncelle",
+    "updatingContainer": "Yeni imaj çekiliyor ve yeniden başlatılıyor. SRouter geri geldiğinde bu sayfa yenilenecek.",
+    "updateNowFailed": "Güncelleyici isteği kabul etmedi. watchtower konteynerinin çalıştığından emin olun.",
+    "updateNowTimeout": "SRouter 5 dakika sonra hâlâ yeniden başlamadı. watchtower konteynerinin günlüklerine bakın."
   },
   "models": {
     "title": "Modeller",

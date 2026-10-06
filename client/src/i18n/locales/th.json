@@ -223,7 +223,11 @@
     "downloadingUpdate": "กำลังดาวน์โหลด… {percent}%",
     "restartToUpdate": "รีสตาร์ตเพื่ออัปเดต",
     "updateReadyHint": "ดาวน์โหลดแล้ว SRouter จะสำรองข้อมูลของคุณ รีสตาร์ต และเปิดเวอร์ชันใหม่",
-    "updateInstallFailed": "ไม่สามารถติดตั้งอัปเดตได้"
+    "updateInstallFailed": "ไม่สามารถติดตั้งอัปเดตได้",
+    "updateNow": "อัปเดตตอนนี้",
+    "updatingContainer": "กำลังดึงอิมเมจใหม่และรีสตาร์ต หน้านี้จะโหลดใหม่เมื่อ SRouter กลับมา",
+    "updateNowFailed": "ตัวอัปเดตไม่รับคำขอ ตรวจสอบว่าคอนเทนเนอร์ watchtower กำลังทำงาน",
+    "updateNowTimeout": "SRouter ยังไม่รีสตาร์ตหลังผ่านไป 5 นาที ตรวจสอบบันทึกของคอนเทนเนอร์ watchtower"
   },
   "models": {
     "title": "โมเดล",

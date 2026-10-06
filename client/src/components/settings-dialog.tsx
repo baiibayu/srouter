@@ -31,6 +31,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { UPDATE_CHECK_CHANGED_EVENT } from '@/components/update-reminder'
 import { DesktopUpdateActions } from '@/components/desktop-update'
+import { DockerUpdateNow } from '@/components/docker-update'
 import { useDesktopUpdater } from '@/lib/desktop-updater'
 import { Switch } from '@/components/ui/switch'
 import { SUPPORTED_LOCALES, type Locale, useI18n } from '@/i18n'
@@ -557,6 +558,8 @@ interface UpdateStatusInfo {
   version: string | null
   /** Releases page of the configured repository, or null when none is set. */
   releasesUrl?: string | null
+/** A Docker install wired to its updater sidecar ("Update now"). */
+  selfUpdate?: boolean
 }
 
 interface UpdateCheckInfo {
@@ -565,6 +568,7 @@ interface UpdateCheckInfo {
   localSha: string | null
   checkedAt: string
   version: string | null
+  selfUpdate?: boolean
   remoteSha?: string
   remoteDate?: string
   remoteMessage?: string
@@ -911,6 +915,7 @@ function UpdateChecker({ active }: { active: boolean }) {
                   </div>
                 )}
 
+                {info.installation === 'docker' && info.selfUpdate && <DockerUpdateNow />}
                 {info.installation === 'docker' && (
                   <div className="flex gap-2 rounded-xl border bg-muted/30 p-3">
                     <SquareTerminal className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

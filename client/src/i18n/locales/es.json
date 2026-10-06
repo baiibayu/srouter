@@ -223,7 +223,11 @@
     "downloadingUpdate": "Descargando… {percent} %",
     "restartToUpdate": "Reiniciar para actualizar",
     "updateReadyHint": "Descargada. SRouter hace una copia de seguridad de tus datos, se reinicia y abre la nueva versión.",
-    "updateInstallFailed": "No se pudo instalar la actualización."
+    "updateInstallFailed": "No se pudo instalar la actualización.",
+    "updateNow": "Actualizar ahora",
+    "updatingContainer": "Descargando la nueva imagen y reiniciando. Esta página se recargará cuando SRouter vuelva.",
+    "updateNowFailed": "El actualizador no aceptó la solicitud. Comprueba que el contenedor watchtower está en marcha.",
+    "updateNowTimeout": "SRouter no se ha reiniciado tras 5 minutos. Revisa los registros del contenedor watchtower."
   },
   "models": {
     "title": "Modelos",

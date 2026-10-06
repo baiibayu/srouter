@@ -46,6 +46,8 @@ interface CheckResult {
   checkedAt: string;
   /** The release this build is (#703), or null when it cannot be established. */
   version: string | null;
+  /** A Docker install wired to its updater sidecar can update itself (POST /apply). */
+  selfUpdate?: boolean;
   remoteSha?: string;
   remoteMessage?: string;
   remoteDate?: string;
@@ -100,7 +102,7 @@ export interface UpdateRouterOptions {
   env?: NodeJS.ProcessEnv;
   cwd?: string;
   now?: () => number;
-  logger?: Pick<Console, 'error'>;
+  logger?: Pick<Console, 'error' | 'log'>;
   version?: () => string | null;
   /** Reads the opt-in flag; injectable so the endpoint is testable without a DB. */
   autoCheckEnabled?: () => boolean;
@@ -340,6 +342,11 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   const autoCheckEnabled = options.autoCheckEnabled ?? isAutoUpdateCheckEnabled;
   const updateCheckDisabled = env.SROUTER_UPDATE_CHECK?.trim().toLowerCase() === 'off';
   const githubToken = env.SROUTER_UPDATE_GITHUB_TOKEN?.trim();
+  // docker-compose.yml's opt-in `autoupdate` profile runs a Watchtower sidecar
+  const selfUpdateUrl = env.SROUTER_SELF_UPDATE_URL?.trim().replace(/\/+$/, '');
+  const selfUpdateToken = env.SROUTER_SELF_UPDATE_TOKEN?.trim();
+  const selfUpdateConfigured = Boolean(selfUpdateUrl && selfUpdateToken);
+  const canSelfUpdate = (installation: Installation) => installation === 'docker' && selfUpdateConfigured;
   /**
    * The fork's own owner/repo, and the one valid comparison target. There is
    * deliberately no upstream default: this fork replaced upstream, and
@@ -407,16 +414,19 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
     const checkedAtMs = now();
     const baseResult = {
       installation: currentIdentity.installation,
+      ...(canSelfUpdate(currentIdentity.installation) ? { selfUpdate: true } : {}),
       localSha: currentIdentity.sha!.slice(0, 7),
       checkedAt: new Date(checkedAtMs).toISOString(),
       version: appVersion(),
     };
-    // A desktop build can only be replaced by installing a published release,
-    // so it must compare against the latest tag rather than `main` (#1270):
-    // untagged commits on main have no installer, and offering them produced
-    // an "Update available" that did nothing when clicked.
+    // A desktop build or a container can only be replaced by a published
+    // release — an installer, or the :latest image, which follows releases —
+    // so both compare against the latest tag rather than `main` (#1270):
+    // untagged commits on main have nothing to install, and offering them
+    // produced an "Update available" that did nothing when acted on.
+    const releaseOnly = currentIdentity.installation === 'desktop' || currentIdentity.installation === 'docker';
     let compareTarget = 'main';
-    if (currentIdentity.installation === 'desktop') {
+    if (releaseOnly) {
       try {
         compareTarget = (await latestRelease()).tagName;
       } catch {
@@ -436,7 +446,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
     if (response.status === 401 || response.status === 403 || response.status === 429) {
       // The Atom feed tracks `main` only; for a desktop install it would
       // reintroduce the bug this branch fixes, so let the rate limit surface.
-      if (currentIdentity.installation === 'desktop') {
+      if (releaseOnly) {
         throw new Error(`GitHub compare request returned HTTP ${response.status}`);
       }
       const atomResponse = await fetchImpl(`https://github.com/${repository}/commits/main.atom`, {
@@ -634,6 +644,7 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
     res.json({
       status: currentIdentity.sha ? (cache?.result.status ?? 'idle') : 'unsupported',
       installation: currentIdentity.installation,
+      ...(canSelfUpdate(currentIdentity.installation) ? { selfUpdate: true } : {}),
       localSha: currentIdentity.sha?.slice(0, 7) ?? null,
       lastChecked: cache?.result.checkedAt ?? null,
       version: appVersion(),
@@ -641,6 +652,43 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
       // no repository is configured, so the client renders no link at all.
       releasesUrl,
     });
+  });
+
+  /**
+   * Docker "Update now": asks the Watchtower sidecar to pull the newer image
+   * and recreate this container. `async=true` makes it answer 202 at once —
+   * the update replaces the very process handling this request, so a
+   * synchronous call could never return. The dashboard then waits for the
+   * server to come back on the new build.
+   */
+  router.post('/apply', async (_req: Request, res: Response) => {
+    const currentIdentity = await resolveIdentity();
+    if (!canSelfUpdate(currentIdentity.installation)) {
+      return res.status(409).json({
+        error: {
+          message: 'This install cannot update itself. Enable the autoupdate profile in docker-compose.yml.',
+          type: 'not_configured',
+        },
+      });
+    }
+    try {
+      const response = await fetchImpl(`${selfUpdateUrl}/v1/update?async=true`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${selfUpdateToken}` },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      logger.log('[update] asked the updater sidecar to pull the latest image');
+      return res.status(202).json({ started: true });
+    } catch (err) {
+      logger.error(`[update] the updater sidecar did not accept the update: ${err instanceof Error ? err.message : String(err)}`);
+      return res.status(502).json({
+        error: {
+          message: 'The updater did not accept the request',
+          type: 'upstream_error',
+        },
+      });
+    }
   });
 
   return router;
