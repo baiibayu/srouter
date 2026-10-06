@@ -51,6 +51,7 @@ installing).
 | `setup-hermes` | Hermes Agent (`hermes`) |
 | `setup-pi` | Pi (`pi`) |
 | `setup-droid` | Factory Droid (`droid`) |
+| `setup-reasonix` | Reasonix (`reasonix`) |
 | `setup-cursor` | Cursor |
 | `setup-generic` | Any OpenAI-compatible client |
 | `launch` | Run Claude Code with credentials injected into the child process |

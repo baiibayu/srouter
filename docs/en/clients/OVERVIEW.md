@@ -15,6 +15,7 @@ server-enforced system prompts.
 
 | File | Description |
 | --- | --- |
+| [02-supported-agents.md](02-supported-agents.md) | Every supported agent at a glance: logo grid, one-line setup command and base URL for each. |
 | [01-agent-clients.md](01-agent-clients.md) | Complete reference for coding-agent generators (`setup-claude`, `setup-codex`, `setup-dsh`, etc.), manual base URLs, Ollama clients, headerless URL tokens, MCP server, VS Code autocomplete, and Context Handoff. |
 | [02-client-profiles.md](02-client-profiles.md) | Client profiles: per-client `sk-cp-` API keys, server-enforced system prompts (prepend mechanics, what cannot be overridden), endpoint support matrix, security boundary, rotation/disable lifecycle, and what profiles deliberately do not do. |
 

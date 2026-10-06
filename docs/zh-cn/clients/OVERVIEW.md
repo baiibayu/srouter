@@ -8,6 +8,7 @@
 
 | 文件 | 范围 |
 |------|-------|
+| [`02-supported-agents.md`](02-supported-agents.md) | 所有支持的智能体一览：图标、一行配置命令和各自的 base URL。 |
 | [`01-agent-clients.md`](01-agent-clients.md) | 编程智能体生成器（`setup-claude`、`setup-codex`、`setup-dsh` 等）、手工 base URL、Ollama 客户端、无头 URL 令牌、MCP 服务、VS Code 补全与 Context Handoff 的完整参考。 |
 | [`02-client-profiles.md`](02-client-profiles.md) | 客户端配置文件：按客户端发放的 `sk-cp-` API 密钥、服务器强制的系统提示词（前置注入机制与不可覆盖性）、端点支持矩阵、安全边界、轮换/停用生命周期，以及配置文件刻意不提供的能力。 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 本域文档修订历史 |
