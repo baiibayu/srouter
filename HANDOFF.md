@@ -8,7 +8,7 @@
 
 | Agent | Lokasi kerja | Branch | Catatan |
 |-------|--------------|--------|---------|
-| OpenCode | `C:\Users\Hype AMD\Downloads\APP\SRouter` (repo utama) | main | HEAD 258f1120 (**0.8.0**); remote `upstream` = tashfeenahmed/freellmapi |
+| OpenCode | `C:\Users\Hype AMD\Downloads\APP\SRouter` (repo utama) | main | HEAD 12be16ba (**0.9.0**); remote `upstream` = tashfeenahmed/freellmapi |
 | Hermes | repo utama (jangan edit file yang sama saat OpenCode aktif); task paralel → worktree baru `git worktree add` | main / branch task | |
 
 - Clone lama `C:\Users\Hype AMD\.freellmapi` (main a34cfc7c, 1 commit di belakang repo utama) = ARSIP — jangan dipakai untuk kerja baru.
