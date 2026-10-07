@@ -47,3 +47,23 @@ describe('updaterProxy', () => {
     expect(updaterProxy('http://me:p%40ss@proxy.lan:3128')).toEqual({ rules: 'http://proxy.lan:3128', username: 'me', password: 'p@ss' });
   });
 });
+
+describe('updaterProxy', () => {
+  it('leaves the session on system settings when no proxy is set', () => {
+    expect(updaterProxy('')).toBeNull();
+    expect(updaterProxy('not a url')).toBeNull();
+    expect(updaterProxy('ftp://proxy:21')).toBeNull();
+  });
+
+  it('turns the app proxy into Chromium proxy rules', () => {
+    expect(updaterProxy('http://127.0.0.1:7890')).toEqual({ rules: 'http://127.0.0.1:7890', username: '', password: '' });
+    expect(updaterProxy('http://proxy.lan')).toEqual({ rules: 'http://proxy.lan:80', username: '', password: '' });
+    expect(updaterProxy('socks5h://127.0.0.1:1080')?.rules).toBe('socks5://127.0.0.1:1080');
+    expect(updaterProxy('socks4a://10.0.0.1:1080')?.rules).toBe('socks4://10.0.0.1:1080');
+    expect(updaterProxy('http://[::1]:3128')?.rules).toBe('http://[::1]:3128');
+  });
+
+  it('splits the credentials off for the login event', () => {
+    expect(updaterProxy('http://me:p%40ss@proxy.lan:3128')).toEqual({ rules: 'http://proxy.lan:3128', username: 'me', password: 'p@ss' });
+  });
+});
