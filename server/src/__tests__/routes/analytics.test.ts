@@ -134,6 +134,38 @@ describe('Analytics API', () => {
     expect(body.totalRequests).toBe(2);
   });
 
+  // The dashboard's "vs previous period" deltas pin an explicit window on the
+  // same summary endpoint: since/until bracket the twin period instead of the
+  // rolling [getSinceTimestamp(range), now) default. Malformed params must
+  // fall back to that default rather than 500 or match nothing.
+  it('honours explicit since/until window overrides on summary', async () => {
+    insertRequest('2026-05-27 10:00:00');
+    insertRequest('2026-05-28 10:00:00');
+    insertRequest('2026-05-29 10:00:00');
+
+    const explicit = await request(
+      app,
+      `/api/analytics/summary?range=24h&since=${encodeURIComponent('2026-05-27 00:00:00')}&until=${encodeURIComponent('2026-05-28 23:59:59')}`,
+    );
+    expect(explicit.status).toBe(200);
+    expect(explicit.body.totalRequests).toBe(2);
+    expect(explicit.body.totalInputTokens).toBe(2);
+
+    // until alone caps the rolling window: [24h start, 05-28 23:59:59) is empty
+    const capped = await request(
+      app,
+      `/api/analytics/summary?range=24h&until=${encodeURIComponent('2026-05-28 23:59:59')}`,
+    );
+    expect(capped.status).toBe(200);
+    expect(capped.body.totalRequests).toBe(0);
+
+    // malformed since falls back to the range default (open-ended until)
+    const malformed = await request(app, '/api/analytics/summary?range=24h&since=banana');
+    expect(malformed.status).toBe(200);
+    expect(malformed.body.totalRequests).toBe(1);
+    expect(malformed.body.totalInputTokens).toBe(1);
+  });
+
   // Regression guard for the hour-key FORMAT written by the real production
   // writer (lib/request-log.logRequest). The bug this prevents: the writer
   // stores keys as SQLite's 'YYYY-MM-DD HH:00:00' (space), but the summary

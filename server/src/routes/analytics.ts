@@ -54,7 +54,7 @@ function getSinceTimestamp(range: string): string {
 // `requests` table is pruned by REQUEST_ANALYTICS_MAX_ROWS, so any analytics
 // count that depends on a >=7d window must read from the hourly table to stay
 // accurate. Hourly resolution is fine for any UI range the dashboard exposes.
-function readAggregateSince(since: string) {
+function readAggregateSince(since: string, until: string) {
   const db = getDb();
   // Hour keys are created_at truncated to the hour, so they share SQLite's
   // canonical 'YYYY-MM-DD HH:00:00' text (space separator). The range cutoff is
@@ -71,8 +71,8 @@ function readAggregateSince(since: string) {
       COALESCE(SUM(output_tokens), 0) as total_output_tokens,
       MIN(hour) as first_request_at
     FROM request_hourly
-    WHERE hour >= ?
-  `).get(aggregateSince) as {
+    WHERE hour >= ? AND hour < ?
+  `).get(aggregateSince, until) as {
     total_requests: number;
     success_count: number;
     error_count: number;
@@ -92,9 +92,17 @@ function readLifetimeSettings() {
 }
 
 // Summary stats
+//
+// Optional `since`/`until` (SQLite 'YYYY-MM-DD HH:MM:SS' UTC) pin an explicit
+// window instead of the rolling one derived from `range`. The dashboard's
+// "vs previous period" stat fetches the twin window this way; absent or
+// malformed params keep the old open-ended [since, now) behavior.
 analyticsRouter.get('/summary', (req: Request, res: Response) => {
   const range = (req.query.range as string) ?? '7d';
-  const since = getSinceTimestamp(range);
+  const validWindow = (value: unknown): string | null =>
+    typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value) ? value : null;
+  const since = validWindow(req.query.since) ?? getSinceTimestamp(range);
+  const until = validWindow(req.query.until) ?? '9999-12-31 23:59:59';
   const db = getDb();
 
   // Totals (request count, token sums, success rate, lifetime first_request_at)
@@ -104,7 +112,7 @@ analyticsRouter.get('/summary', (req: Request, res: Response) => {
   // (platform, model_id); for those we fall back to the raw rows but they're
   // only reported for ranges where recent activity still exists. The aggregate
   // is the source of truth for headline numbers.
-  const aggregate = readAggregateSince(since);
+  const aggregate = readAggregateSince(since, until);
   const totalRequests = aggregate.total_requests ?? 0;
   // Success rate over success+error only: a 'canceled' request (#752 — client
   // hung up) still counts in the totals but is neither a success nor a
@@ -115,8 +123,8 @@ analyticsRouter.get('/summary', (req: Request, res: Response) => {
   // Avg latency is only meaningful at the raw row level; the hourly bucket
   // doesn't preserve it. Fall back to a 0/null when no recent raw rows exist.
   const latencyRow = db.prepare(`
-    SELECT AVG(latency_ms) as avg_latency_ms FROM requests WHERE created_at >= ?
-  `).get(since) as { avg_latency_ms: number | null } | undefined;
+    SELECT AVG(latency_ms) as avg_latency_ms FROM requests WHERE created_at >= ? AND created_at < ?
+  `).get(since, until) as { avg_latency_ms: number | null } | undefined;
 
   // Estimated savings is a per-request priced value, so it lives on the raw
   // rows. For ranges where the raw table is empty we report 0 (no recent
@@ -130,8 +138,8 @@ analyticsRouter.get('/summary', (req: Request, res: Response) => {
     ), 0) as est_savings
     FROM requests r
     LEFT JOIN models m ON m.platform = r.platform AND m.model_id = r.model_id
-    WHERE r.created_at >= ?
-  `).get(FALLBACK_INPUT_PER_M, FALLBACK_OUTPUT_PER_M, since) as { est_savings: number };
+    WHERE r.created_at >= ? AND r.created_at < ?
+  `).get(FALLBACK_INPUT_PER_M, FALLBACK_OUTPUT_PER_M, since, until) as { est_savings: number };
 
   // Pin-honor stats are also raw-row scoped. We still report them when present
   // (typically 24h/7d) and gracefully drop them when the raw window is empty.
@@ -139,8 +147,8 @@ analyticsRouter.get('/summary', (req: Request, res: Response) => {
     SELECT
       SUM(CASE WHEN requested_model IS NOT NULL THEN 1 ELSE 0 END) as pinned_count,
       SUM(CASE WHEN requested_model = model_id THEN 1 ELSE 0 END) as pin_honored_count
-    FROM requests WHERE created_at >= ?
-  `).get(since) as { pinned_count: number | null; pin_honored_count: number | null };
+    FROM requests WHERE created_at >= ? AND created_at < ?
+  `).get(since, until) as { pinned_count: number | null; pin_honored_count: number | null };
 
   // Latency percentiles, time-to-first-token, and the chat/embedding split all
   // live on the raw rows (the hourly aggregate keeps neither latency nor a
@@ -153,17 +161,17 @@ analyticsRouter.get('/summary', (req: Request, res: Response) => {
   // ORDER BY latency_ms ASC, so if it were counted but not filtered the offset
   // math would shift and a NULL could be selected (rendered as 0).
   const rawCount = (db.prepare(
-    `SELECT COUNT(*) as c FROM requests WHERE created_at >= ? AND latency_ms IS NOT NULL`
-  ).get(since) as { c: number }).c;
+    `SELECT COUNT(*) as c FROM requests WHERE created_at >= ? AND created_at < ? AND latency_ms IS NOT NULL`
+  ).get(since, until) as { c: number }).c;
   const percentileAt = (fraction: number): number | null => {
     if (rawCount === 0) return null;
     const offset = Math.floor((rawCount - 1) * fraction);
     const row = db.prepare(`
       SELECT latency_ms FROM requests
-      WHERE created_at >= ? AND latency_ms IS NOT NULL
+      WHERE created_at >= ? AND created_at < ? AND latency_ms IS NOT NULL
       ORDER BY latency_ms ASC
       LIMIT 1 OFFSET ?
-    `).get(since, offset) as { latency_ms: number } | undefined;
+    `).get(since, until, offset) as { latency_ms: number } | undefined;
     return row ? Math.round(row.latency_ms) : null;
   };
   const p50LatencyMs = percentileAt(0.5);
@@ -171,15 +179,15 @@ analyticsRouter.get('/summary', (req: Request, res: Response) => {
 
   const ttfbRow = db.prepare(`
     SELECT AVG(ttfb_ms) as avg_ttfb_ms FROM requests
-    WHERE created_at >= ? AND ttfb_ms IS NOT NULL
-  `).get(since) as { avg_ttfb_ms: number | null } | undefined;
+    WHERE created_at >= ? AND created_at < ? AND ttfb_ms IS NOT NULL
+  `).get(since, until) as { avg_ttfb_ms: number | null } | undefined;
   const avgTtfbMs = ttfbRow?.avg_ttfb_ms != null ? Math.round(ttfbRow.avg_ttfb_ms) : null;
 
   const typeRows = db.prepare(`
     SELECT request_type, COUNT(*) as count FROM requests
-    WHERE created_at >= ?
+    WHERE created_at >= ? AND created_at < ?
     GROUP BY request_type
-  `).all(since) as Array<{ request_type: string; count: number }>;
+  `).all(since, until) as Array<{ request_type: string; count: number }>;
   const requestTypeCounts = { chat: 0, embedding: 0 };
   for (const row of typeRows) {
     if (row.request_type === 'embedding') requestTypeCounts.embedding = row.count;

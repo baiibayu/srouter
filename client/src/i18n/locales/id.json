@@ -1,5 +1,18 @@
 {
+  "dashboard": {
+    "title": "Dasbor",
+    "description": "Gateway-mu sekilas — sambungkan agen, pantau lalu lintas langsung, dan lihat statistik periode berjalan.",
+    "connect": "Endpoint & kunci",
+    "endpoint": "Endpoint",
+    "apiKey": "Kunci API",
+    "vsPrevious": "vs periode sebelumnya",
+    "totalTokens": "Total token",
+    "estCost": "Est. biaya",
+    "topModels": "Model teratas",
+    "snippet": "Contoh singkat"
+  },
   "nav": {
+    "dashboard": "Dasbor",
     "models": "Model",
     "playground": "Taman bermain",
     "keys": "Kunci",

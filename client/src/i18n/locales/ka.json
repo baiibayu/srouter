@@ -1,5 +1,18 @@
 {
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Your gateway at a glance — connect an agent, watch live traffic, and track the current period.",
+    "connect": "Endpoint & key",
+    "endpoint": "Endpoint",
+    "apiKey": "API key",
+    "vsPrevious": "vs previous period",
+    "totalTokens": "Total tokens",
+    "estCost": "Est. cost",
+    "topModels": "Top models",
+    "snippet": "Quick example"
+  },
   "nav": {
+    "dashboard": "Dashboard",
     "models": "მოდელები",
     "playground": "სათამაშო მოედანი",
     "keys": "გასაღებები",

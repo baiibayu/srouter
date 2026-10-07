@@ -26,7 +26,6 @@ import {
   TriangleAlert,
   Zap,
   X,
-  type LucideIcon,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { SegmentedControl } from '@/components/ui/segmented-control'
@@ -37,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PageHeader } from '@/components/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip as HoverTooltip } from '@/components/tooltip'
+import { Stat, Panel } from '@/components/stat'
 import { SortableHeader } from '@/components/sortable-header'
 import { formatSqliteUtcToLocalTime } from '@/lib/utils'
 import { sortRows, useTableSort, type SortValueFn } from '@/lib/table-sort'
@@ -320,41 +320,6 @@ function formatTokens(n?: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return String(n)
-}
-
-function Stat({ icon: Icon, label, value, sub, hint, className }: { icon: LucideIcon; label: string; value: string | number; sub?: string; hint?: string; className?: string }) {
-  const card = (
-    <div className="rounded-3xl border bg-card px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{label}</p>
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <Icon className="size-3.5" aria-hidden="true" />
-        </span>
-      </div>
-      <p className={`text-xl font-semibold tabular-nums mt-1 ${className ?? ''}`}>{value}</p>
-      {/* Optional second figure, so one card can carry two related numbers
-          instead of spending another slot in the summary row. */}
-      {sub ? <p className="text-[11px] text-muted-foreground tabular-nums truncate">{sub}</p> : null}
-    </div>
-  )
-  // Same portal tooltip as the routing strategy chips. Opens BELOW the card:
-  // the stats row sits right under the sticky navbar.
-  return hint ? <HoverTooltip text={hint} side="bottom" className="block">{card}</HoverTooltip> : card
-}
-
-function Panel({ icon: Icon, title, actions, children }: { icon: LucideIcon; title: string; actions?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="rounded-3xl border bg-card">
-      <div className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-sm font-medium">
-          <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-          {title}
-        </h3>
-        {actions}
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  )
 }
 
 // Platform swatch shared by the ladder and the per-provider table; same color

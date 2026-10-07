@@ -1,6 +1,6 @@
 {
   "name": "srouter",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "SRouter — free open-source LLM router: run the gateway, set up coding agents, manage provider keys",
   "license": "MIT",
   "repository": {

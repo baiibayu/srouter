@@ -41,6 +41,7 @@ import AudioPage from '@/pages/AudioPage'
 import MediaDetailPage from '@/pages/MediaDetailPage'
 import EmbeddingDetailPage from '@/pages/EmbeddingDetailPage'
 import AnalyticsPage from '@/pages/AnalyticsPage'
+import DashboardPage from '@/pages/DashboardPage'
 import LogsPage from '@/pages/LogsPage'
 // PremiumPage removed — catalog sync is fully automatic now.
 import NotFoundPage from '@/pages/NotFoundPage'
@@ -68,6 +69,7 @@ const queryClient = new QueryClient({
 })
 
 const navItems = [
+  { to: '/dashboard', labelKey: 'nav.dashboard' },
   { to: '/models', labelKey: 'nav.models' },
   { to: '/playground', labelKey: 'nav.playground' },
   { to: '/keys', labelKey: 'nav.keys' },
@@ -569,7 +571,8 @@ function App() {
                 <PageContainer>
                   <PageBoundary>
                     <Routes>
-                      <Route path="/" element={<Navigate to="/models/chat" replace />} />
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/dashboard" element={<DashboardPage />} />
                       <Route path="/models" element={<Navigate to="/models/chat" replace />} />
                       <Route path="/models/chat" element={<FallbackPage />} />
                       <Route path="/models/chat/:id" element={<ModelDetailPage />} />
