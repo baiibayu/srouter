@@ -11,6 +11,7 @@ import { ZhipuProvider } from './zhipu.js';
 import { SailProvider } from './sail.js';
 import { AclideProvider } from './aclide.js';
 import { SpekaProvider } from './speka.js';
+import { TyphoonProvider } from './typhoon.js';
 import { LlmtrProvider } from './llmtr.js';
 import { GizmoProvider } from './gizmo.js';
 import { BlockRunProvider } from './blockrun.js';
@@ -63,6 +64,7 @@ register(new OpenAICompatProvider({
 register(new SailProvider());
 register(new AclideProvider());
 register(new SpekaProvider());
+register(new TyphoonProvider());
 register(new LlmtrProvider());
 register(new GizmoProvider());
 register(new BlockRunProvider());
@@ -594,14 +596,9 @@ register(new OpenAICompatProvider({
   baseUrl: 'https://inference-api.nousresearch.com/v1',
 }));
 
-// OpenTyphoon (SCB 10X, Thailand) — no-card free tier on
-// api.opentyphoon.ai/v1. Responses may be used for the lab's research unless
-// the option is disabled in the portal settings.
-register(new OpenAICompatProvider({
-  platform: 'typhoon',
-  name: 'OpenTyphoon',
-  baseUrl: 'https://api.opentyphoon.ai/v1',
-}));
+// OpenTyphoon (SCB 10X, Thailand) — dedicated adapter with custom key
+// validation (see providers/typhoon.ts). Registered earlier in the file via
+// register(new TyphoonProvider()).
 
 // Plugsky — no-card free gateway (plugsky.com/v1); smoke-tested against
 // /v1/models 2026-10-08.
