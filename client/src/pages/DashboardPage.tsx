@@ -24,7 +24,7 @@ import { RoutingStrip } from '@/components/routing-strip'
 import { CopyButton } from '@/components/copy-button'
 import { ApiUsageBlock, apiBaseUrl } from '@/components/api-usage'
 import { Button } from '@/components/ui/button'
-import { formatTokens, platformColors, type RoutingData, type TokenUsageData } from '@/lib/routing'
+import { formatPercent, formatTokens, platformColors, type RoutingData, type TokenUsageData } from '@/lib/routing'
 
 // Response shapes consumed here are a subset of what server analytics emits
 // (the full types live in AnalyticsPage; only the fields this page reads are
@@ -36,6 +36,9 @@ interface SummaryResponse {
   totalInputTokens: number
   totalOutputTokens: number
   estimatedCostSavings: number
+  // First request ever (lifetime, never pruned) — drives the savings
+  // projection below, same as on the Analytics page.
+  firstRequestAt?: string | null
 }
 
 interface ByModelRow {
@@ -74,6 +77,12 @@ const RANGE_MS: Record<TimeRange, number> = {
 // both views (key mirrored from AnalyticsPage's RANGE_KEY).
 const RANGE_KEY = 'analytics.range'
 
+// Standby-monitoring cadence: the dashboard is the page users leave open to
+// watch traffic, so every stats query polls on one shared clock (routing keeps
+// its 15s, the live strip its 3s). Server cost is single-digit-ms SQLite
+// reads per cycle; react-query pauses interval polls while the tab is hidden.
+const STATS_POLL_MS = 30_000
+
 function readStoredRange(): TimeRange {
   try {
     const v = localStorage.getItem(RANGE_KEY)
@@ -100,6 +109,10 @@ function maskKey(key?: string): string {
 export default function DashboardPage() {
   const { t } = useI18n()
   const [range, setRange] = useState<TimeRange>(readStoredRange)
+  // Anchor for the savings projection, captured once per mount (calling
+  // Date.now() during render is impure and non-deterministic) — same pattern
+  // as AnalyticsPage.
+  const [now] = useState(() => Date.now())
   const updateRange = (next: TimeRange) => {
     setRange(next)
     try {
@@ -112,6 +125,7 @@ export default function DashboardPage() {
   const { data: tokenUsage } = useQuery<TokenUsageData>({
     queryKey: ['fallback', 'token-usage'],
     queryFn: () => apiFetch('/api/fallback/token-usage'),
+    refetchInterval: STATS_POLL_MS,
   })
 
   const { data: routing } = useQuery<RoutingData>({
@@ -124,6 +138,7 @@ export default function DashboardPage() {
   const { data: summary, isPending: summaryPending } = useQuery<SummaryResponse>({
     queryKey: ['analytics', 'summary', range],
     queryFn: () => apiFetch(`/api/analytics/summary?range=${range}`),
+    refetchInterval: STATS_POLL_MS,
   })
 
   // Twin window for the "vs previous period" deltas: the same length ending
@@ -138,16 +153,27 @@ export default function DashboardPage() {
         `/api/analytics/summary?range=${range}&since=${encodeURIComponent(toSqliteUtc(now - 2 * span))}&until=${encodeURIComponent(toSqliteUtc(now - span))}`,
       )
     },
+    refetchInterval: STATS_POLL_MS,
   })
 
   const { data: byModel } = useQuery<ByModelRow[]>({
     queryKey: ['analytics', 'by-model', range],
     queryFn: () => apiFetch(`/api/analytics/by-model?range=${range}`),
+    refetchInterval: STATS_POLL_MS,
+  })
+
+  // Savings baseline: the last-30-days figure (shared cache key with
+  // AnalyticsPage, so visiting both pages costs one fetch).
+  const { data: summary30 } = useQuery<SummaryResponse>({
+    queryKey: ['analytics', 'summary', '30d'],
+    queryFn: () => apiFetch(`/api/analytics/summary?range=30d`),
+    refetchInterval: STATS_POLL_MS,
   })
 
   const { data: byPlatform } = useQuery<ByPlatformRow[]>({
     queryKey: ['analytics', 'by-platform', range],
     queryFn: () => apiFetch(`/api/analytics/by-platform?range=${range}`),
+    refetchInterval: STATS_POLL_MS,
   })
 
   const { data: keyData } = useQuery<UnifiedKeyResponse>({
@@ -162,8 +188,50 @@ export default function DashboardPage() {
     [byModel],
   )
 
+  // Est. savings shares Est. cost's paid-API valuation (identical server
+  // formula), so as a second window total it was a near-twin card. Mirror the
+  // Analytics page instead: one stable 30-day figure — extrapolated until 30
+  // days of history exist — with the window's actual amount in the hover hint.
+  const actualSavings = summary?.estimatedCostSavings ?? 0
+  const baseSavings = summary30?.estimatedCostSavings ?? 0
+  const spanDays = (() => {
+    if (!summary30?.firstRequestAt) return 30
+    // SQLite stores UTC "YYYY-MM-DD HH:MM:SS"
+    const first = new Date(summary30.firstRequestAt.replace(' ', 'T') + 'Z').getTime()
+    const days = (now - first) / 86_400_000
+    if (!Number.isFinite(days)) return 30
+    return Math.min(Math.max(days, 1 / 24), 30)
+  })()
+  const extrapolated = spanDays < 29.5
+  const savings30d = extrapolated ? baseSavings * (30 / spanDays) : baseSavings
+  const rangeLabel =
+    range === '24h'
+      ? t('analytics.rangeLabel24h')
+      : range === '7d'
+        ? t('analytics.rangeLabel7d')
+        : range === '30d'
+          ? t('analytics.rangeLabel30d')
+          : t('analytics.rangeLabel90d')
+  const spanLabel =
+    spanDays >= 2
+      ? t('analytics.spanDays', { count: Math.round(spanDays) })
+      : t('analytics.spanHours', { count: Math.max(1, Math.round(spanDays * 24)) })
+  const savingsHint = extrapolated
+    ? t('analytics.savingsHint', {
+        actual: actualSavings.toFixed(2),
+        range: rangeLabel,
+        span: spanLabel,
+      })
+    : t('analytics.savingsHintExact', { actual: actualSavings.toFixed(2), range: rangeLabel })
+
   const topModels = useMemo(() => (byModel ?? []).slice(0, 10), [byModel])
   const topPlatforms = useMemo(() => (byPlatform ?? []).slice(0, 5), [byPlatform])
+  // Server orders both lists by requests desc, so the first row is the max —
+  // the bar-in-row scale. The share bar divides by the window total (but never
+  // by less than the visible rows) so the muted remainder is "everything else".
+  const topModelMax = topModels[0]?.requests ?? 0
+  const platformTotal = topPlatforms.reduce((sum, row) => sum + row.requests, 0)
+  const providerDenom = Math.max(summary?.totalRequests ?? 0, platformTotal)
 
   const strategy = routing?.strategy ?? 'balanced'
   const showBudget = !!tokenUsage && tokenUsage.totalBudget > 0
@@ -213,63 +281,57 @@ export default function DashboardPage() {
       />
 
       <div className="space-y-6">
-        {/* Connect (left) + monthly budget (right). On installs without a
-            configured budget the connect card spans the full width. */}
-        <div className={`grid gap-6 items-start ${showBudget ? 'lg:grid-cols-2' : ''}`}>
-          <div className="space-y-6">
-            {/* First-run checklist: hides itself once keys + a request exist */}
-            <GettingStarted />
+        {/* First-run checklist: hides itself once keys + a request exist */}
+        <GettingStarted />
 
-            <Panel
-              icon={Link2}
-              title={t('dashboard.connect')}
-              actions={
-                <Link to="/keys">
-                  <Button variant="ghost" size="sm">
-                    {t('nav.keys')}
-                  </Button>
-                </Link>
-              }
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {t('dashboard.endpoint')}
-                    </p>
-                    <code className="block truncate font-mono text-xs">{apiBaseUrl()}</code>
-                  </div>
-                  <CopyButton text={apiBaseUrl()} className="size-7 shrink-0" label={t('common.copy')} />
+        {/* Endpoint & key lead the page. The two copy rows share a line now
+            that the card no longer splits the hero with the budget bar. */}
+        <Panel
+          icon={Link2}
+          title={t('dashboard.connect')}
+          actions={
+            <Link to="/keys">
+              <Button variant="ghost" size="sm">
+                {t('nav.keys')}
+              </Button>
+            </Link>
+          }
+        >
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {t('dashboard.endpoint')}
+                  </p>
+                  <code className="block truncate font-mono text-xs">{apiBaseUrl()}</code>
                 </div>
-
-                <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {t('dashboard.apiKey')}
-                    </p>
-                    <code className="block truncate font-mono text-xs">{maskKey(keyData?.apiKey)}</code>
-                  </div>
-                  <CopyButton
-                    text={keyData?.apiKey ?? ''}
-                    className="size-7 shrink-0"
-                    label={t('common.copy')}
-                  />
-                </div>
-
-                <ApiUsageBlock snippet={snippet} title={t('dashboard.snippet')} />
+                <CopyButton text={apiBaseUrl()} className="size-7 shrink-0" label={t('common.copy')} />
               </div>
-            </Panel>
+
+              <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {t('dashboard.apiKey')}
+                  </p>
+                  <code className="block truncate font-mono text-xs">{maskKey(keyData?.apiKey)}</code>
+                </div>
+                <CopyButton
+                  text={keyData?.apiKey ?? ''}
+                  className="size-7 shrink-0"
+                  label={t('common.copy')}
+                />
+              </div>
+            </div>
+
+            <ApiUsageBlock snippet={snippet} title={t('dashboard.snippet')} />
           </div>
+        </Panel>
 
-          {showBudget && <TokenUsageBar data={tokenUsage} />}
-        </div>
-
-        {/* Live routing strip — gateway → mode → provider → outcome */}
-        <RoutingStrip strategy={strategy} />
 
         {/* Headline stats for the selected window; four of them carry the
             percent change against the twin window fetched above. */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {statSkeleton ? (
             Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[74px] rounded-3xl" />)
           ) : (
@@ -307,11 +369,19 @@ export default function DashboardPage() {
               <Stat
                 icon={TrendingUp}
                 label={t('analytics.estSavings')}
-                value={`$${(summary?.estimatedCostSavings ?? 0).toFixed(2)}`}
+                value={`$${savings30d.toFixed(2)}`}
+                hint={savingsHint}
               />
             </>
           )}
         </div>
+
+        {/* Live routing strip — gateway → mode → provider → outcome */}
+        <RoutingStrip strategy={strategy} />
+
+        {/* Monthly token budget sits with the analysis blocks, after the
+            headline numbers it qualifies. */}
+        {showBudget && <TokenUsageBar data={tokenUsage} />}
 
         {/* Top lists: what carried the window. Server already orders both
             endpoints by requests desc; this only caps the display. */}
@@ -322,11 +392,33 @@ export default function DashboardPage() {
             ) : topModels.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">{t('common.noData')}</p>
             ) : (
-              <ol className="space-y-1.5">
+              <>
+                {/* Column labels: "1.2K · 840K" alone reads as two mystery
+                    numbers; the header makes the units explicit. */}
+                <div className="mb-1.5 flex items-center gap-2.5 px-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <span className="w-4 shrink-0" />
+                  <span className="size-2 shrink-0" />
+                  <span className="min-w-0 flex-1" />
+                  <span className="w-16 shrink-0 text-right">{t('analytics.requests')}</span>
+                  <span className="w-14 shrink-0 text-right">{t('dashboard.tokens')}</span>
+                </div>
+                <ol className="space-y-1.5">
                 {topModels.map((row, i) => (
                   <li
                     key={`${row.platform}:${row.endpoint ?? ''}:${row.modelId}`}
                     className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 text-xs"
+                    style={
+                      topModelMax > 0
+                        ? {
+                            backgroundImage: `linear-gradient(to right, ${
+                              platformColors[row.platform] ?? '#94a3b8'
+                            }22 ${((row.requests / topModelMax) * 100).toFixed(2)}%, transparent ${(
+                              (row.requests / topModelMax) *
+                              100
+                            ).toFixed(2)}%)`,
+                          }
+                        : undefined
+                    }
                   >
                     <span className="w-4 shrink-0 text-right font-mono text-muted-foreground tabular-nums">
                       {i + 1}
@@ -338,12 +430,16 @@ export default function DashboardPage() {
                     <span className="min-w-0 flex-1 truncate" title={row.displayName}>
                       {row.displayName}
                     </span>
-                    <span className="shrink-0 text-muted-foreground tabular-nums">
-                      {row.requests.toLocaleString()} · {formatTokens(row.totalInputTokens + row.totalOutputTokens)}
+                    <span className="w-16 shrink-0 text-right text-muted-foreground tabular-nums">
+                      {row.requests.toLocaleString()}
+                    </span>
+                    <span className="w-14 shrink-0 text-right text-muted-foreground tabular-nums">
+                      {formatTokens(row.totalInputTokens + row.totalOutputTokens)}
                     </span>
                   </li>
                 ))}
-              </ol>
+                </ol>
+              </>
             )}
           </Panel>
 
@@ -353,28 +449,61 @@ export default function DashboardPage() {
             ) : topPlatforms.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">{t('common.noData')}</p>
             ) : (
-              <ol className="space-y-1.5">
-                {topPlatforms.map((row, i) => (
-                  <li
-                    key={row.providerId}
-                    className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 text-xs"
-                  >
-                    <span className="w-4 shrink-0 text-right font-mono text-muted-foreground tabular-nums">
-                      {i + 1}
-                    </span>
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: platformColors[row.platform] ?? '#94a3b8' }}
-                    />
-                    <span className="min-w-0 flex-1 truncate" title={row.endpoint || row.platform}>
-                      {row.endpoint || row.platform}
-                    </span>
-                    <span className="shrink-0 text-muted-foreground tabular-nums">
-                      {row.requests.toLocaleString()} · {formatTokens(row.totalInputTokens + row.totalOutputTokens)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
+              <>
+                {/* Share-of-window bar: the same stacked-bar language as the
+                    budget component; the list below carries the exact counts. */}
+                <div
+                  className="mb-3 flex h-2.5 w-full gap-px overflow-hidden rounded-full bg-muted"
+                  aria-hidden="true"
+                >
+                  {providerDenom > 0 &&
+                    topPlatforms.map((row) => (
+                      <div
+                        key={row.providerId}
+                        style={{
+                          width: `${Math.min(100, (row.requests / providerDenom) * 100)}%`,
+                          backgroundColor: platformColors[row.platform] ?? '#94a3b8',
+                        }}
+                      />
+                    ))}
+                </div>
+                <div className="mb-1.5 flex items-center gap-2.5 px-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <span className="w-4 shrink-0" />
+                  <span className="size-2 shrink-0" />
+                  <span className="min-w-0 flex-1" />
+                  <span className="w-16 shrink-0 text-right">{t('analytics.requests')}</span>
+                  <span className="w-14 shrink-0 text-right">{t('dashboard.tokens')}</span>
+                  <span className="w-10 shrink-0 text-right">%</span>
+                </div>
+                <ol className="space-y-1.5">
+                  {topPlatforms.map((row, i) => (
+                    <li
+                      key={row.providerId}
+                      className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 text-xs"
+                    >
+                      <span className="w-4 shrink-0 text-right font-mono text-muted-foreground tabular-nums">
+                        {i + 1}
+                      </span>
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: platformColors[row.platform] ?? '#94a3b8' }}
+                      />
+                      <span className="min-w-0 flex-1 truncate" title={row.endpoint || row.platform}>
+                        {row.endpoint || row.platform}
+                      </span>
+                      <span className="w-16 shrink-0 text-right text-muted-foreground tabular-nums">
+                        {row.requests.toLocaleString()}
+                      </span>
+                      <span className="w-14 shrink-0 text-right text-muted-foreground tabular-nums">
+                        {formatTokens(row.totalInputTokens + row.totalOutputTokens)}
+                      </span>
+                      <span className="w-10 shrink-0 text-right text-muted-foreground tabular-nums">
+                        {providerDenom > 0 ? formatPercent(row.requests / providerDenom) : '—'}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </>
             )}
           </Panel>
         </div>

@@ -4,7 +4,7 @@
 
 [← Back to README](../README.md) · [Documentation index](../README.md)
 
-Any OpenAI-compatible client works (Anthropic / Claude clients too — see [Anthropic / Claude clients](#anthropic--claude-clients)). Base URL `http://localhost:20268/v1`, unified key from the dashboard's Keys page. An interactive OpenAPI viewer covering every proxy endpoint is served at `GET /v1/docs`; the spec itself lives at `GET /v1/openapi.json`.
+Any OpenAI-compatible client works (Anthropic / Claude clients too — see [Anthropic / Claude clients](#anthropic--claude-clients)). Base URL `http://localhost:20268/v1`, unified key from the dashboard's Keys page. The same page also mints **client-profile keys** (`sk-cp-…`) — per-client credentials that authenticate this API and carry a server-enforced system prompt; see [Client profiles](../clients/02-client-profiles.md). An interactive OpenAPI viewer covering every proxy endpoint is served at `GET /v1/docs`; the spec itself lives at `GET /v1/openapi.json`.
 
 - [Chat completions](#chat-completions)
 - [Routing strategies (`auto:*`)](#routing-strategies-auto)
@@ -455,7 +455,7 @@ Authenticated dashboard clients can set `monthlyRequestCap` and `monthlyTokenCap
 through `PATCH /api/keys/:id`. Both are nonnegative integers; `0` means unlimited.
 These limits apply to an upstream provider key across chat, embeddings, and
 keyed media requests, and reset at 00:00 UTC on the first of each month. They do
-not apply separately to downstream client profiles.
+not apply separately to downstream [client profiles](../clients/02-client-profiles.md).
 
 Successful request counts and reported tokens are stored in a durable monthly
 ledger. Request-log cleanup does not clear this ledger. Existing retained request

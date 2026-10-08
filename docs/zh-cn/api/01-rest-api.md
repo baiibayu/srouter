@@ -4,7 +4,7 @@
 
 [← 返回 README](../README.md) · [文档索引](../README.md)
 
-任何兼容 OpenAI 的客户端都能用（Anthropic / Claude 客户端也可以，见 [Anthropic 与 Claude 客户端](#anthropic-与-claude-客户端)）。Base URL 为 `http://localhost:20268/v1`，统一密钥在仪表盘的密钥页获取。`GET /v1/docs` 提供一个覆盖所有代理端点的交互式 OpenAPI 浏览器；规范文件本身在 `GET /v1/openapi.json`。
+任何兼容 OpenAI 的客户端都能用（Anthropic / Claude 客户端也可以，见 [Anthropic 与 Claude 客户端](#anthropic-与-claude-客户端)）。Base URL 为 `http://localhost:20268/v1`，统一密钥在仪表盘的密钥页获取。同一页也会签发**客户端配置文件密钥**（`sk-cp-…`）——按客户端发放的凭据，可认证本 API 并携带服务器强制的系统提示词，详见[客户端配置文件](../clients/02-client-profiles.md)。`GET /v1/docs` 提供一个覆盖所有代理端点的交互式 OpenAPI 浏览器；规范文件本身在 `GET /v1/openapi.json`。
 
 - [聊天补全](#聊天补全)
 - [路由策略 `auto:*`](#路由策略-auto)

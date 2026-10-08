@@ -24,8 +24,10 @@ SRouter (fork & rebrand FreeLLMAPI, MIT — kredit Tashfeen Ahmed). Monorepo: `s
 - Jangan menulis memory ke lokasi Copilot Chat lama.
 
 ## Fakta dev kritis
+- **Cek spek/beban mesin SEBELUM kerja berat; JANGAN asumsi semua mesin sama** — kontributor bisa punya spek jauh lebih bagus maupun lebih rendah. Prinsip: satu heavy job satu waktu (jangan rangkap build+test paralel), test pakai script resmi, run panjang = **detached + poll** — overload bisa freeze dan freeze = kecepatan NOL; tetap prioritaskan kecepatan & keberhasilan dengan cara yang benar (sekali jalan hijau). Spek mesin lokal TIDAK ditulis di file repo (hanya di vault).
 - Server: `npm run build` di `server/` = tsc; jalan `node server/dist/index.js` port **20268**. Setelah build WAJIB restart proses node.
-- Client: build = `tsc -b && vite build`; dist diserve dari disk oleh server.
+- **Test server: `npm test` di `server/`** (forks, sekuensial `--fileParallelism=false`). **JANGAN `npx vitest run` telanjang** — paralel default → timer inflation → flaky (hedge/bandit/compression); suite sekuensial lambat (~10 menit) → jalankan detached.
+- Client: `npm test` di `client/` = vitest + `check:i18n`; build = `tsc -b && vite build`; dist diserve dari disk oleh server.
 - Client fetch: `apiFetch` dari `@/lib/api`.
 - i18n: `client/src/i18n/locales/en.json` + `id.json`.
 - UI: Base UI (@base-ui/react) — PopoverTrigger tidak punya `asChild`.

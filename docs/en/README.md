@@ -8,7 +8,7 @@ This is the user entry point — start here to install the gateway, call the Ope
 
 - **[Install & deploy](install/01-install.md)** — quick start, Docker Compose, local development, declarative startup config, the Docker image, backups, the desktop app, where your data lives, and an FAQ on password resets, logs and uninstalling.
 - **[API reference](api/01-rest-api.md)** — chat completions, `auto:*` routing strategies, streaming, tool calling, vision, Gemini Google Search grounding, embeddings, response headers, and the Anthropic Messages surface.
-- **[Clients & coding agents](clients/01-agent-clients.md)** — OpenAI-compatible clients, recipes for Claude Code / Codex CLI / Cline / Continue / Aider / opencode / Cursor, the MCP server, editor autocomplete, and Context Handoff.
+- **[Clients & coding agents](clients/01-agent-clients.md)** — OpenAI-compatible clients, recipes for Claude Code / Codex CLI / Cline / Continue / Aider / opencode / Cursor, the MCP server, editor autocomplete, Context Handoff, and per-client [client profiles](clients/02-client-profiles.md) with server-enforced prompts.
 - **[Prompt compression](compression/01-compression-pipeline.md)** — request-side modes, safeguards, per-request controls, custom tool-output filters, statistics, and preview APIs.
 - **[Proxy transports](proxy/OVERVIEW.md)** — outbound proxy transports — forward vs Fetch Relay, system auto-detect, `TRUST_PROXY` for inbound; see [Fetch Relay transport](proxy/01-fetch-relay.md) for the relay protocol and Cloudflare Worker reference.
 - **[Architecture & internals](architecture/00-high-level-index.md)** — how the router works, routing and operational details, what's not supported, honest limitations, and the provider Terms-of-Service review.

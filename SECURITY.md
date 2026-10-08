@@ -8,7 +8,7 @@ any of those are taken seriously. Thanks for reporting them responsibly.
 
 | Version | Supported |
 | ------- | --------- |
-| 0.10.x (current) | Yes — security fixes land here |
+| 0.1.x (current) | Yes — security fixes land here |
 | 0.0.x | No — please upgrade |
 
 

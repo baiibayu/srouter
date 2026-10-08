@@ -7,14 +7,16 @@
 This domain covers all integration guides for connecting coding agents, CLI tools,
 and OpenAI-compatible clients to SRouter. It documents the automated setup
 generators, manual configuration recipes, URL tokens for headerless clients, the
-Ollama emulation surface, the MCP server interface, and the Context Handoff
-feature for mid-conversation model switches.
+Ollama emulation surface, the MCP server interface, the Context Handoff
+feature for mid-conversation model switches, and client-profile keys with
+server-enforced system prompts.
 
 ## File index
 
 | File | Description |
 | --- | --- |
 | [01-agent-clients.md](01-agent-clients.md) | Complete reference for coding-agent generators (`setup-claude`, `setup-codex`, `setup-dsh`, etc.), manual base URLs, Ollama clients, headerless URL tokens, MCP server, VS Code autocomplete, and Context Handoff. |
+| [02-client-profiles.md](02-client-profiles.md) | Client profiles: per-client `sk-cp-` API keys, server-enforced system prompts (prepend mechanics, what cannot be overridden), endpoint support matrix, security boundary, rotation/disable lifecycle, and what profiles deliberately do not do. |
 
 ## Related
 

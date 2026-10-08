@@ -1214,7 +1214,9 @@ function emitSyncNotifications(result: SyncResult): void {
         modelId: '*',
         platform: '',
         displayName: `${inserted} model baru`,
-        message: `${inserted} model baru ditambahkan dari katalog`,
+        // Empty sub-line: the localized title already carries the count and
+        // source — this sentence only repeated it in server-side Indonesian.
+        message: '',
         data: { key: 'notifications.catalogAdded', vars: { count: inserted } },
         timestamp: now,
         read: false,
@@ -1232,7 +1234,7 @@ function emitSyncNotifications(result: SyncResult): void {
         modelId: '*',
         platform: '',
         displayName: `${removed} model dihapus`,
-        message: `${removed} model dihapus karena sudah tidak ada di katalog`,
+        message: '',
         data: { key: 'notifications.catalogRemoved', vars: { count: removed } },
         timestamp: now,
         read: false,
@@ -1262,7 +1264,7 @@ function emitSyncNotifications(result: SyncResult): void {
         modelId: '*',
         platform: '',
         displayName: `${updated} model diperbarui`,
-        message: `${updated} model diperbarui dari katalog terbaru`,
+        message: '',
         data: { key: 'notifications.catalogUpdated', vars: { count: updated } },
         timestamp: now,
         read: false,

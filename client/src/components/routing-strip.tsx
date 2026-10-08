@@ -9,10 +9,13 @@ import type { RoutingStrategy } from '@/lib/routing'
 // Live routing strip on the home page: [SRouter] → [mode] → [provider] →
 // [outcome]. The connector lines march (CSS-only, .sr-flow-line) while a
 // request is in flight; when the router is idle the strip shows the last
-// decision instead. Data comes from GET /api/analytics/live — an in-memory
-// tracker fed by the server's route traces — polled at the same cadence as the
-// penalty inspector. No new dependency, no websocket: a 3s poll is plenty for
-// a visualization and costs one in-memory read server-side.
+// decision instead. Two or more concurrent requests branch into one lane per
+// request off the shared SRouter→mode trunk (capped, overflow is a bare "+N");
+// a single request renders the plain one-liner. Data comes from
+// GET /api/analytics/live — an in-memory tracker fed by the server's route
+// traces — polled at the same cadence as the penalty inspector. No new
+// dependency, no websocket: a 3s poll is plenty for a visualization and costs
+// one in-memory read server-side.
 
 interface LiveRoute {
   platform: string
@@ -37,6 +40,9 @@ const STRATEGY_TKEY: Record<RoutingStrategy, string> = {
   reliable: 'reliable',
   custom: 'custom',
 }
+
+/** Concurrent lanes drawn before the overflow collapses into a "+N" chip. */
+const MAX_LANES = 4
 
 /** Platform slug → display name. Catalog labels carry pricing parentheses
  *  ("Groq (free …)") that would blow up the node, so the suffix is dropped. */
@@ -68,7 +74,7 @@ function StripNode({
   return (
     <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
       {sub && (
-        <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{sub}</div>
+        <div className="max-w-[10rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{sub}</div>
       )}
       <div className={`mt-0.5 flex items-center gap-1.5 text-sm font-medium ${tone}`}>
         {icon}
@@ -92,6 +98,12 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
   // While in flight the provider node follows the newest attempt's pick; once
   // idle it falls back to what the last request was served by.
   const current = active[active.length - 1] ?? last
+  // 2+ in flight → one lane per request off the shared trunk. The header badge
+  // already carries the exact count (i18n'd), so lane overflow is a bare
+  // numeric "+N" chip — no new i18n key either way.
+  const branching = active.length > 1
+  const lanes = active.slice(0, MAX_LANES)
+  const hiddenLanes = active.length - lanes.length
 
   const outcome = processing ? (
     <StripNode
@@ -152,13 +164,43 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
           icon={<GitBranch className="size-4 shrink-0 text-muted-foreground" />}
         />
         <StripLine processing={processing} />
-        <StripNode
-          sub={t('common.provider')}
-          label={current ? platformLabel(current.platform) : '—'}
-          icon={<Server className="size-4 shrink-0 text-muted-foreground" />}
-        />
-        <StripLine processing={processing} />
-        {outcome}
+        {branching ? (
+          // One branch per in-flight request; the model line under the
+          // provider tells same-provider lanes apart (order is the server's
+          // insertion order, stable within a 3s poll — index keys are fine).
+          <div className="flex min-w-0 flex-col gap-1.5 py-0.5">
+            {lanes.map((lane, i) => (
+              <div key={i} className="flex min-w-0 items-center gap-2">
+                <StripNode
+                  sub={lane.model || t('common.provider')}
+                  label={platformLabel(lane.platform)}
+                  icon={<Server className="size-4 shrink-0 text-muted-foreground" />}
+                />
+                <StripLine processing={processing} />
+                <StripNode
+                  label={t('routingStrip.processing')}
+                  tone="text-primary"
+                  icon={<Loader2 className="size-4 shrink-0 animate-spin" />}
+                />
+              </div>
+            ))}
+            {hiddenLanes > 0 && (
+              <span className="self-start rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                +{hiddenLanes}
+              </span>
+            )}
+          </div>
+        ) : (
+          <>
+            <StripNode
+              sub={t('common.provider')}
+              label={current ? platformLabel(current.platform) : '—'}
+              icon={<Server className="size-4 shrink-0 text-muted-foreground" />}
+            />
+            <StripLine processing={processing} />
+            {outcome}
+          </>
+        )}
       </div>
     </section>
   )

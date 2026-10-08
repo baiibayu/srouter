@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
-import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell, ChevronDown, KeyRound, LogOut, Menu, MoreHorizontal, Search, Settings, Sparkles } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import {
@@ -243,25 +243,20 @@ interface SyncNotification {
 
 function NotificationBell() {
   const { t } = useI18n()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
-  const [notifications, setNotifications] = useState<SyncNotification[]>([])
-  const [unread, setUnread] = useState(0)
-
-  function fetchNotifications() {
-    apiFetch<{ notifications: SyncNotification[]; unread: number }>('/api/settings/notifications')
-      .then(data => {
-        setNotifications(data.notifications)
-        setUnread(data.unread)
-      })
-      .catch(() => {})
-  }
-
-  // Fetch on mount and poll every 30 seconds
-  useEffect(() => {
-    fetchNotifications()
-    const id = setInterval(fetchNotifications, 30_000)
-    return () => clearInterval(id)
-  }, [])
+  // Bell is read-side only: sync/discover/health write notifications
+  // server-side regardless of this tab, so the query just decides when the
+  // screen catches up. refetchInterval keeps a focused tab fresh every 30s,
+  // pauses while the tab is hidden, and the window-focus refetch (global
+  // default) makes the badge truthful the moment the user looks back.
+  const { data } = useQuery<{ notifications: SyncNotification[]; unread: number }>({
+    queryKey: ['settings', 'notifications'],
+    queryFn: () => apiFetch('/api/settings/notifications'),
+    refetchInterval: 30_000,
+  })
+  const notifications = data?.notifications ?? []
+  const unread = data?.unread ?? 0
 
   function markRead() {
     apiFetch('/api/settings/notifications/read', { method: 'POST' })
@@ -269,7 +264,7 @@ function NotificationBell() {
         // Re-read from the server instead of zeroing locally: a pending
         // update_available row deliberately survives the mark-all (it keeps
         // the badge until the update lands), so server truth must win.
-        fetchNotifications()
+        void queryClient.invalidateQueries({ queryKey: ['settings', 'notifications'] })
       })
       .catch(() => {})
   }

@@ -7,6 +7,7 @@
     "apiKey": "API key",
     "vsPrevious": "vs previous period",
     "totalTokens": "Total tokens",
+    "tokens": "Tokens",
     "estCost": "Est. cost",
     "topModels": "Top models",
     "snippet": "Quick example"
