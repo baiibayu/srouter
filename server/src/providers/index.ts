@@ -12,6 +12,7 @@ import { SailProvider } from './sail.js';
 import { AclideProvider } from './aclide.js';
 import { SpekaProvider } from './speka.js';
 import { TyphoonProvider } from './typhoon.js';
+import { PlugskyProvider } from './plugsky.js';
 import { LlmtrProvider } from './llmtr.js';
 import { GizmoProvider } from './gizmo.js';
 import { BlockRunProvider } from './blockrun.js';
@@ -65,6 +66,7 @@ register(new SailProvider());
 register(new AclideProvider());
 register(new SpekaProvider());
 register(new TyphoonProvider());
+register(new PlugskyProvider());
 register(new LlmtrProvider());
 register(new GizmoProvider());
 register(new BlockRunProvider());
@@ -602,11 +604,7 @@ register(new OpenAICompatProvider({
 
 // Plugsky — no-card free gateway (plugsky.com/v1); smoke-tested against
 // /v1/models 2026-10-08.
-register(new OpenAICompatProvider({
-  platform: 'plugsky',
-  name: 'Plugsky',
-  baseUrl: 'https://plugsky.com/v1',
-}));
+register(new PlugskyProvider());
 
 // Token Harbor — no-card gateway (tokenharbor.ai/v1). `:free` model ids ride
 // a rolling 7-day value-based allowance (60 RPM account-wide) and rotate as
