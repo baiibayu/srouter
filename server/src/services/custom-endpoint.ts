@@ -70,11 +70,50 @@ function defaultCustomEndpointLabel(baseUrl: string): string {
 
 function insertKey(db: Db, baseUrl: string, secret: string, label: string | undefined): ResolvedEndpointKey {
   const { encrypted, iv, authTag } = encrypt(secret);
+  // A second credential joins the endpoint's group (#1176): the group names the
+  // endpoint, not the row, so a new key must not land back in the "Custom" pile.
   const r = db.prepare(`
-    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, base_url)
-    VALUES ('custom', ?, ?, ?, ?, 'unknown', 1, ?)
-  `).run(label ?? defaultCustomEndpointLabel(baseUrl), encrypted, iv, authTag, baseUrl);
+    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, base_url, group_label)
+    VALUES ('custom', ?, ?, ?, ?, 'unknown', 1, ?, ?)
+  `).run(label ?? defaultCustomEndpointLabel(baseUrl), encrypted, iv, authTag, baseUrl, customEndpointGroup(db, baseUrl));
   return { keyId: Number(r.lastInsertRowid), storedKey: secret, created: true };
+}
+
+// ── Endpoint groups (#1176) ──────────────────────────────────────────────────
+// An operator-chosen label that sorts custom endpoints into named groups on the
+// Keys page AND lets a request pin a model to that group: `custom:<model>#<group>`
+// routes across every endpoint in the group serving that model (see
+// model-groups.ts). NULL is the legacy single "Custom" group.
+//
+// The label belongs to the ENDPOINT (base_url), like models do (#640): every key
+// in an endpoint's pool carries the same value, so moving one key moves them all
+// and a model can never sit in two groups at once.
+
+/** Trim and collapse whitespace; blank means "no group" (null). */
+export function normalizeGroupLabel(raw: string | null | undefined): string | null {
+  const label = (raw ?? '').trim().replace(/\s+/g, ' ');
+  return label || null;
+}
+
+/** The group an endpoint's keys carry, or null when it has none. */
+export function customEndpointGroup(db: Db, baseUrl: string): string | null {
+  const row = db.prepare(`
+    SELECT group_label FROM api_keys
+     WHERE platform = 'custom' AND base_url = ? AND group_label IS NOT NULL
+     ORDER BY id LIMIT 1
+  `).get(baseUrl) as { group_label: string } | undefined;
+  return row?.group_label ?? null;
+}
+
+/**
+ * Put the endpoint `keyId` belongs to into `label` (null = back to "Custom"),
+ * across its whole key pool. Returns the number of key rows updated.
+ */
+export function setCustomEndpointGroup(db: Db, keyId: number, label: string | null): number {
+  const ids = [...customEndpointKeyIds(db, keyId)];
+  const placeholders = ids.map(() => '?').join(', ');
+  return db.prepare(`UPDATE api_keys SET group_label = ? WHERE platform = 'custom' AND id IN (${placeholders})`)
+    .run(label, ...ids).changes;
 }
 
 /**

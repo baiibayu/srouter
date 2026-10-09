@@ -6,18 +6,17 @@ import path from 'path';
 import { getDb } from '../db/index.js';
 import { resolveProvider, getAllProviders } from '../providers/index.js';
 import { OpenAICompatProvider, isAnonymousCredential } from '../providers/openai-compat.js';
+import { getSyncState } from '../services/catalog-sync.js';
 import { encrypt, decrypt, maskKey } from '../lib/crypto.js';
 import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../lib/key-parser.js';
 import { assessProviderUrl } from '../lib/url-guard.js';
 import { verifyCredentials } from '../services/auth.js';
 import { getActiveCooldownsForKeys, clearCooldownsForKey } from '../services/ratelimit.js';
-import { getMonthlyBudgetCaps, getMonthlyUsage, nextResetAt, resolveAutoPeriod, syncAutoBudgetPeriod } from '../services/key-budget.js';
-import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential } from '../services/custom-endpoint.js';
+import { getMonthlyBudgetCaps, getMonthlyUsage, nextMonthResetAt } from '../services/key-budget.js';
+import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential, normalizeGroupLabel, setCustomEndpointGroup } from '../services/custom-endpoint.js';
 import { registerCustomModels, registerCustomChatModels } from '../services/custom-model-register.js';
 import { registerCustomMediaModel } from '../services/custom-media-register.js';
 import { discoverEndpointModels, probeEndpointModel, classifyModelId, ModelDiscoveryError } from '../services/model-discovery.js';
-import { autoDiscoverModels } from '../services/auto-discover.js';
-import { syncCatalog } from '../services/catalog-sync.js';
 import { probeEmbeddingDimensions, registerCustomEmbeddingModel } from '../services/embeddings.js';
 import { endpointScopeForBaseUrl, normalizeBaseUrl } from '../lib/endpoint-scope.js';
 import { recordCustomModelTombstone } from '../services/custom-model-tombstone.js';
@@ -32,33 +31,30 @@ import {
   triggerBuiltinModelDiscovery,
 } from '../services/builtin-model-discovery.js';
 import type { Db } from '../db/types.js';
-import type { Platform } from '@baiibayu/srouter-shared/types.js';
+import type { Platform } from '@freellmapi/shared/types.js';
 import { parseModelScope } from '../lib/model-scope.js';
 import { KEY_PROXY_URL_ERROR, KEY_PROXY_URL_MAX, decryptProxyUrl, encryptProxyUrl, isValidKeyProxyUrl, maskProxyUrl } from '../lib/key-proxy.js';
 
 export const keysRouter = Router();
 
-// Active providers — must match shared/providers/platforms.ts (the single
-// source of truth for the provider LIST; enforced by
-// __tests__/routes/keys-platform-sync.test.ts) + 'custom'. Kept as a literal
-// here only because z.enum() needs a const tuple. Moonshot and MiniMax direct
-// integrations were dropped in V4. SambaNova was dropped in V23 (free tier
-// permanently retired). xAI, Cerebras, GitHub Models, NavyAI and Experiential
-// were dropped in 2026-10. HuggingFace is RETAINED (grandfathered accounts
-// still receive the monthly credit). LLMTR restored 2026-10-11.
+// Active providers — must match providers/index.ts registrations + shared/types.ts Platform.
+// Moonshot and MiniMax direct integrations were dropped in V4. HuggingFace
+// was dropped in V4 and re-added in V13 via the router.huggingface.co route.
+// SambaNova was dropped in V23 (free tier permanently retired).
 const PLATFORMS = [
   'aclide',
   'speka',
+  'typhoon',
+  'plugsky',
   'llmtr',
   'gizmo',
   'blockrun',
   'moondream',
-  'google', 'groq', 'sail', 'electronhub', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'bai', 'radeon', 'nvidia', 'mistral',
-  'openrouter', 'cohere', 'cloudflare', 'zhipu', 'ollama',
-  'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'reka', 'siliconflow',
+  'google', 'groq', 'cerebras', 'sail', 'electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'bai', 'radeon', 'nvidia', 'mistral',
+  'openrouter', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama',
+  'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'ovh', 'agnes', 'reka', 'siliconflow',
   'routeway', 'bazaarlink', 'ainative', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
-  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'custom',
-  'nous', 'typhoon', 'plugsky', 'tokenharbor', 'alibaba',
+  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'custom',
 ] as const;
 
 const ALLOWED_IMPORT_EXTENSIONS = new Set(['.env', '.json', '.jsonc', '.md', '.txt', '.csv']);
@@ -100,15 +96,16 @@ const updateKeySchema = z.object({
   modelScope: z.array(z.string().trim().min(1).max(200)).max(100).nullable().optional(),
   // #590: '' clears the per-key proxy; absent leaves it unchanged.
   proxyUrl: proxyUrlSchema.optional(),
-  // Monthly budget caps (#1158): 0 clears the cap (unlimited). The period
-  // names the UTC window the caps count against (provider reset cycle).
+  // Monthly budget caps (#1158): 0 clears the cap (unlimited).
   monthlyRequestCap: z.number().int().min(0).max(1_000_000_000).optional(),
   monthlyTokenCap: z.number().int().min(0).max(1_000_000_000_000).optional(),
-  budgetPeriod: z.enum(['auto', 'daily', 'weekly', 'monthly']).optional(),
+  // Custom-endpoint group label (#1176): '' clears it back to the single
+  // "Custom" group; absent leaves it unchanged. Applies to the whole endpoint.
+  groupLabel: z.string().trim().max(80).optional(),
   // An absent credential leaves the encrypted key untouched.
   key: z.string().trim().min(1).optional(),
-}).refine(data => data.enabled !== undefined || data.label !== undefined || data.modelScope !== undefined || data.proxyUrl !== undefined || data.key !== undefined || data.monthlyRequestCap !== undefined || data.monthlyTokenCap !== undefined || data.budgetPeriod !== undefined, {
-  message: 'At least one of enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap or budgetPeriod must be provided',
+}).refine(data => data.enabled !== undefined || data.label !== undefined || data.modelScope !== undefined || data.proxyUrl !== undefined || data.key !== undefined || data.monthlyRequestCap !== undefined || data.monthlyTokenCap !== undefined || data.groupLabel !== undefined, {
+  message: 'At least one of enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap or groupLabel must be provided',
 });
 
 const importKeySchema = z.object({
@@ -201,8 +198,8 @@ function insertImportedKey(platform: (typeof PLATFORMS)[number], keyName: string
 // Count enabled catalog models for a platform. Used to warn when a key is
 // added for a provider that has zero models in the operator's current catalog
 // tier — the Agnes case (#438): the provider is registered and selectable, but
-// its models ship in the catalog and only appear for installs
-// once they age into the monthly catalog, so a fresh install adds the
+// its models ship in the premium/live catalog and only appear for free-tier
+// installs once they age into the monthly catalog, so a fresh install adds the
 // key and silently sees nothing.
 /**
  * Whether a stored row belongs in an export file. Kept in one place because the
@@ -223,8 +220,7 @@ export function isExportableKey(row: { platform: string; baseUrl: string | null;
 // Every model a platform's key can serve: chat rows, plus embedding and
 // generative-media rows. Media-only providers (Speechify is TTS-only) never
 // have a chat row, so counting `models` alone reported "no models" — and fired
-// the no-catalog notice — for them even on a fully synced
-// install
+// the no-catalog notice — for them even on a fully synced Premium install
 // (#1327).
 function enabledModelCount(platform: string): number {
   const db = getDb();
@@ -248,11 +244,11 @@ function openAICompatBaseUrl(platform: string): string | null {
 // Non-null when the just-added key has no usable models yet, so the client can
 // explain the silence instead of leaving the user staring at an empty list.
 //
-// #1327: the old copy told users to "add a license key", and
+// #1327: the old copy told a Premium user to "add a Premium license key", and
 // told everyone to add the provider as a custom OpenAI-compatible endpoint
 // "with its base URL" without naming it — even for providers with no such
-// endpoint. The notice now names the base URL, and only offers the
-// custom-provider route where it works.
+// endpoint. The notice now matches the install's actual catalog tier, names
+// the base URL, and only offers the custom-provider route where it works.
 function noModelsNotice(platform: string): string | undefined {
   if (enabledModelCount(platform) > 0) return undefined;
   // #1348: a built-in provider the catalog does not carry fills its model list
@@ -268,10 +264,20 @@ function noModelsNotice(platform: string): string | undefined {
   const customRoute = baseUrl
     ? `add ${platform} as a custom OpenAI-compatible provider with base URL ${baseUrl}`
     : null;
+  const premium = getSyncState().appliedTier === 'live';
+  if (premium) {
+    return (
+      `Key saved, but your Premium catalog does not list any ${platform} models yet. ` +
+      `Try Check for updates on the Premium page to pull the latest catalog` +
+      (customRoute ? `, or ${customRoute}.` : '.')
+    );
+  }
   return (
-    `Key saved, but no ${platform} models could be discovered automatically. ` +
-    `The provider's /v1/models endpoint may be unavailable or returned no chat models. ` +
-    `Try refreshing later, or ${customRoute ?? 'check the provider\'s documentation'}.`
+    `Key saved, but no ${platform} models are in your current catalog yet. ` +
+    `Newer providers are published to the premium catalog first and appear ` +
+    `for free-tier installs once they age into the monthly catalog. ` +
+    `Add a Premium license key to use them now` +
+    (customRoute ? `, or ${customRoute}.` : '.')
   );
 }
 
@@ -399,24 +405,23 @@ keysRouter.get('/', (_req: Request, res: Response) => {
     const budgetCaps = getMonthlyBudgetCaps(Number(row.id));
     // Usage alongside the caps so the dashboard can show "342 of 1,000 this
     // month" instead of only the cap (OpenRouter's GET /api/v1/key returns
-    // limit_remaining for the same reason). The bucket and reset boundary
-    // follow the key's budget period (daily/weekly/monthly, UTC).
-    const monthlyUsage = getMonthlyUsage(Number(row.id), budgetCaps.period);
+    // limit_remaining for the same reason).
+    const monthlyUsage = getMonthlyUsage(Number(row.id));
     return {
       id: row.id,
       platform: row.platform,
       label: row.label,
       maskedKey,
       baseUrl: row.base_url ?? null,
+      // Optional custom-endpoint group label (#1176); null = legacy single
+      // "Custom" group.
+      groupLabel: row.group_label ?? null,
       monthlyRequestCap: budgetCaps.requestCap,
       monthlyTokenCap: budgetCaps.tokenCap,
-      budgetPeriod: budgetCaps.mode === 'auto' ? 'auto' : budgetCaps.period,
-      resolvedBudgetPeriod: budgetCaps.period,
-      budgetPeriodSource: budgetCaps.source,
       monthlyUsage: {
         requests: monthlyUsage.requests,
         tokens: monthlyUsage.tokens,
-        resetsAt: nextResetAt(budgetCaps.period),
+        resetsAt: nextMonthResetAt(),
       },
       status: row.status,
       enabled: row.enabled === 1,
@@ -490,7 +495,7 @@ function isLoopbackRemote(req: Request): boolean {
 // bind 0.0.0.0 through its LAN-access toggle, and a remote viewer on that LAN
 // still has to prove the password before it can lift a key.
 function skipsReauth(req: Request): boolean {
-  return process.env.SROUTER_DESKTOP === '1' && isLoopbackRemote(req);
+  return process.env.FREEAPI_DESKTOP === '1' && isLoopbackRemote(req);
 }
 
 // Export keys — returns plaintext keys in the requested format.
@@ -570,7 +575,7 @@ keysRouter.get('/export', (req: Request, res: Response) => {
     });
     const content = lines.join('\n\n') + '\n';
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="srouter-keys.env"');
+    res.setHeader('Content-Disposition', 'attachment; filename="freellmapi-keys.env"');
     res.send(content);
     return;
   }
@@ -595,7 +600,7 @@ keysRouter.get('/export', (req: Request, res: Response) => {
     );
     const content = [header, ...lines].join('\n') + '\n';
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="srouter-keys.csv"');
+    res.setHeader('Content-Disposition', 'attachment; filename="freellmapi-keys.csv"');
     res.send(content);
     return;
   }
@@ -604,11 +609,11 @@ keysRouter.get('/export', (req: Request, res: Response) => {
   const jsonExport = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    source: 'srouter',
+    source: 'freellmapi',
     keys: decryptedKeys,
   };
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="srouter-keys.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="freellmapi-keys.json"');
   res.json(jsonExport);
 });
 
@@ -649,8 +654,8 @@ keysRouter.post('/:id/reveal', (req: Request, res: Response) => {
   }
 });
 
-// Add a key — auto-discovers models when the catalog hasn't shipped them yet
-keysRouter.post('/', async (req: Request, res: Response) => {
+// Add a key
+keysRouter.post('/', (req: Request, res: Response) => {
   const parsed = addKeySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: parsed.error.errors.map(e => e.message).join(', ') } });
@@ -682,22 +687,16 @@ keysRouter.post('/', async (req: Request, res: Response) => {
       try { return decrypt(r.encrypted_key, r.iv, r.auth_tag); } catch { return null; }
     };
     const sentinel = rows.find(r => isAnonymousCredential(plaintext(r)));
-    const respond = async (id: number, maskedKey: string) => {
-      // Auto-discover models if the catalog hasn't shipped them for this provider
-      if (enabledModelCount(platform) === 0) {
-        try { await autoDiscoverModels(platform); } catch {}
-      }
-      return res.status(200).json({
-        id,
-        platform,
-        label: label ?? '',
-        maskedKey,
-        status: 'unknown',
-        enabled: true,
-        modelsAvailable: enabledModelCount(platform),
-        notice: noModelsNotice(platform),
-      });
-    };
+    const respond = (id: number, maskedKey: string) => res.status(200).json({
+      id,
+      platform,
+      label: label ?? '',
+      maskedKey,
+      status: 'unknown',
+      enabled: true,
+      modelsAvailable: enabledModelCount(platform),
+      notice: noModelsNotice(platform),
+    });
 
     if (!rawKey) {
       // Only one sentinel row is needed: re-enable an existing row instead of
@@ -705,7 +704,7 @@ keysRouter.post('/', async (req: Request, res: Response) => {
       const existing = sentinel ?? rows[0];
       if (existing) {
         db.prepare("UPDATE api_keys SET enabled = 1, status = 'unknown' WHERE id = ?").run(existing.id);
-        await respond(existing.id, maskKey(plaintext(existing) ?? keyToStore));
+        respond(existing.id, maskKey(plaintext(existing) ?? keyToStore));
         return;
       }
     } else if (sentinel) {
@@ -722,7 +721,7 @@ keysRouter.post('/', async (req: Request, res: Response) => {
       }
       db.prepare(`UPDATE api_keys SET ${updates.join(', ')} WHERE id = ?`).run(...values, sentinel.id);
       clearCooldownsForKey(sentinel.id);
-      await respond(sentinel.id, maskKey(rawKey));
+      respond(sentinel.id, maskKey(rawKey));
       return;
     }
   }
@@ -736,12 +735,6 @@ keysRouter.post('/', async (req: Request, res: Response) => {
     VALUES (?, ?, ?, ?, ?, 'unknown', 1, ?, ?, ?)
   `).run(platform, label ?? '', encrypted, iv, authTag, proxy.encrypted, proxy.iv, proxy.authTag);
 
-  // Auto-discover models if the catalog hasn't shipped them for this provider
-  let modelsAvailable = enabledModelCount(platform);
-  if (modelsAvailable === 0) {
-    try { await autoDiscoverModels(platform); } catch {}
-    modelsAvailable = enabledModelCount(platform);
-  }
   // #1348: fetch the provider's models in the background when the catalog
   // carries none for it. No-op for every other platform.
   triggerBuiltinModelDiscovery(db, platform, 'key_added');
@@ -750,12 +743,14 @@ keysRouter.post('/', async (req: Request, res: Response) => {
     id: result.lastInsertRowid,
     platform,
     label: label ?? '',
+    // Echoed back masked, never in the clear — the response body ends up in
+    // logs and dev tools.
     maskedProxyUrl: maskProxyUrl(proxyUrl),
     maskedKey: maskKey(keyToStore),
     status: 'unknown',
     enabled: true,
-    modelsAvailable,
-    notice: modelsAvailable > 0 ? undefined : noModelsNotice(platform),
+    modelsAvailable: enabledModelCount(platform),
+    notice: noModelsNotice(platform),
   });
 });
 
@@ -799,6 +794,9 @@ const customProviderSchema = z.object({
   // (object form) overrides them for that one model.
   supportsTools: z.boolean().optional(),
   supportsVision: z.boolean().optional(),
+  // Endpoint group (#1176). Absent keeps the endpoint's current group; '' moves
+  // it back to the single "Custom" group.
+  groupLabel: z.string().trim().max(80).optional(),
 }).refine(
   d => d.baseUrl !== undefined || d.keyId !== undefined,
   { message: 'baseUrl or keyId is required' },
@@ -946,7 +944,7 @@ async function registerImportedModels(
 
 // SSRF guard (#440): a base_url is the one user-controlled outbound target.
 // Cloud metadata / link-local addresses are rejected outright; private ranges
-// too when SROUTER_BLOCK_PRIVATE_PROVIDER_URLS is set. Re-checked at request
+// too when FREEAPI_BLOCK_PRIVATE_PROVIDER_URLS is set. Re-checked at request
 // time in proxyFetch for URLs already in the DB.
 async function rejectUnsafeBaseUrl(baseUrl: string, res: Response): Promise<boolean> {
   const verdict = await assessProviderUrl(baseUrl);
@@ -1313,6 +1311,7 @@ keysRouter.post('/custom', async (req: Request, res: Response) => {
       return;
     }
     const added = resolveCustomEndpointKey(db, baseUrl, providedKey, label, endpoint.keyId);
+    if (parsed.data.groupLabel !== undefined) setCustomEndpointGroup(db, added.keyId, normalizeGroupLabel(parsed.data.groupLabel));
     res.status(added.created ? 201 : 200).json({
       success: true,
       keyId: added.keyId,
@@ -1345,6 +1344,7 @@ keysRouter.post('/custom', async (req: Request, res: Response) => {
   const { keyId, storedKey, registered } = registerCustomModels(
     db, baseUrl, providedKey, label, endpoint.keyId ?? undefined, pureChatEntries,
   );
+  if (parsed.data.groupLabel !== undefined) setCustomEndpointGroup(db, keyId, normalizeGroupLabel(parsed.data.groupLabel));
 
   const mediaRegistered: Array<{ modelDbId: number; model: string; modality: string; created: boolean }> = [];
   const perModelErrors: Array<{ model: string; error: string }> = [];
@@ -1730,79 +1730,6 @@ keysRouter.delete('/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// Manually re-verify a platform's discovered model roster against its live
-// upstream (the same sweep the twice-daily timer runs). This is the "Sync
-// models" button: rosters move, and a model that flipped behind a paid gate
-// upstream would otherwise stay in the routing chain until the next scheduled
-// sweep — the health check only probes keys, never the model list.
-keysRouter.post('/platform/:platform/refresh-models', async (req: Request, res: Response) => {
-  const platform = req.params.platform as string;
-  if (!(PLATFORMS as readonly string[]).includes(platform)) {
-    res.status(400).json({ error: { message: `Invalid platform '${platform}'` } });
-    return;
-  }
-  const db = getDb();
-  const key = db.prepare('SELECT 1 FROM api_keys WHERE platform = ? AND enabled = 1 LIMIT 1').get(platform);
-  if (!key) {
-    res.status(409).json({ error: { message: `Platform '${platform}' has no enabled API key` } });
-    return;
-  }
-  const modelsAvailableBefore = enabledModelCount(platform);
-  let result;
-  try {
-    // refresh re-runs the sweep even though models already exist — that is the
-    // entire point of a manual sync (adding, dropping and re-verifying rows).
-    result = await autoDiscoverModels(platform, { refresh: true });
-  } catch (err) {
-    res.status(502).json({ error: { message: `Model refresh failed: ${err instanceof Error ? err.message : String(err)}` } });
-    return;
-  }
-  res.json({ platform, registered: result.registered, refreshed: result.refreshed, retired: result.retired, modelsAvailable: enabledModelCount(platform), previousModelsAvailable: modelsAvailableBefore, newModels: result.newModels, updatedModels: result.updatedModels, retiredModels: result.retiredModels });
-});
-
-// Refresh model rosters for ALL platforms at once — the "Sync All" button.
-// Runs catalog sync first (pulls latest from central catalog), then
-// auto-discovers models from each platform's API (user-key models).
-// Per-platform error isolation ensures one failure doesn't block the rest.
-keysRouter.post('/refresh-all-models', async (_req: Request, res: Response) => {
-  const db = getDb();
-
-  // 1) Catalog sync — pull latest models from the central catalog
-  let catalogSyncResult: { inserted: number; removed: number; updated: number } | undefined;
-  try {
-    const cs = await syncCatalog(true);
-    catalogSyncResult = cs.counts;
-  } catch (err) {
-    console.warn(`[sync-all] catalog sync failed: ${err instanceof Error ? err.message : err}`);
-  }
-
-  // 2) Auto-discover — query each platform's API for user-key models
-  const platforms = db.prepare(`
-    SELECT DISTINCT platform FROM api_keys WHERE enabled = 1
-  `).all() as { platform: string }[];
-
-  const results: { platform: string; registered: number; refreshed: number; retired: number; modelsAvailable: number; previousModelsAvailable: number; newModels: string[]; updatedModels: string[]; retiredModels: string[]; error?: string }[] = [];
-  let totalRegistered = 0;
-  let totalRefreshed = 0;
-  let totalRetired = 0;
-
-  for (const { platform } of platforms) {
-    if (!(PLATFORMS as readonly string[]).includes(platform)) continue;
-    const modelsAvailableBefore = enabledModelCount(platform);
-    try {
-      const r = await autoDiscoverModels(platform, { refresh: true });
-      totalRegistered += r.registered;
-      totalRefreshed += r.refreshed;
-      totalRetired += r.retired;
-      results.push({ platform, registered: r.registered, refreshed: r.refreshed, retired: r.retired, modelsAvailable: enabledModelCount(platform), previousModelsAvailable: modelsAvailableBefore, newModels: r.newModels, updatedModels: r.updatedModels, retiredModels: r.retiredModels });
-    } catch (err) {
-      results.push({ platform, registered: 0, refreshed: 0, retired: 0, modelsAvailable: enabledModelCount(platform), previousModelsAvailable: modelsAvailableBefore, newModels: [], updatedModels: [], retiredModels: [], error: err instanceof Error ? err.message : String(err) });
-    }
-  }
-
-  res.json({ platforms: results.length, totalRegistered, totalRefreshed, totalRetired, catalogSync: catalogSyncResult, results });
-});
-
 // Toggle all keys for a platform
 keysRouter.patch('/platform/:platform', (req: Request, res: Response) => {
   const platform = req.params.platform as string;
@@ -1817,8 +1744,22 @@ keysRouter.patch('/platform/:platform', (req: Request, res: Response) => {
     return;
   }
 
+  // #1176: custom endpoints split into named groups, and a group's switch must
+  // reach only that group. `group` narrows the sweep: a label, or null for the
+  // ungrouped "Custom" endpoints. Absent keeps the whole-platform sweep.
+  const { group } = req.body;
+  if (group !== undefined && (platform !== 'custom' || (group !== null && typeof group !== 'string'))) {
+    res.status(400).json({ error: { message: 'group applies only to the custom platform and must be a string or null' } });
+    return;
+  }
+
   const db = getDb();
-  const result = db.prepare('UPDATE api_keys SET enabled = ? WHERE platform = ?').run(enabled ? 1 : 0, platform);
+  const groupLabel = group === undefined ? undefined : normalizeGroupLabel(group);
+  const result = groupLabel === undefined
+    ? db.prepare('UPDATE api_keys SET enabled = ? WHERE platform = ?').run(enabled ? 1 : 0, platform)
+    : groupLabel === null
+      ? db.prepare("UPDATE api_keys SET enabled = ? WHERE platform = 'custom' AND group_label IS NULL").run(enabled ? 1 : 0)
+      : db.prepare("UPDATE api_keys SET enabled = ? WHERE platform = 'custom' AND group_label = ?").run(enabled ? 1 : 0, groupLabel);
 
   res.json({ success: true, enabled, updatedKeys: result.changes });
 });
@@ -1837,7 +1778,7 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
     return;
   }
 
-  const { enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap, budgetPeriod } = parsed.data;
+  const { enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap, groupLabel } = parsed.data;
   const updates: string[] = [];
   const values: (string | number | null)[] = [];
   let changedKey: string | undefined;
@@ -1898,20 +1839,18 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
     updates.push('monthly_token_cap = ?');
     values.push(monthlyTokenCap);
   }
-  // Period switch starts the new counter at zero (buckets are namespaced).
-  if (budgetPeriod !== undefined) {
-    const platformRow = getDb().prepare('SELECT platform FROM api_keys WHERE id = ?').get(id) as { platform: string } | undefined;
-    if (!platformRow) {
+  // Custom-endpoint group label (#1176) is written below, across the
+  // endpoint's whole key pool rather than this one row.
+  const db = getDb();
+  if (groupLabel !== undefined) {
+    const row = db.prepare('SELECT platform FROM api_keys WHERE id = ?').get(id) as { platform: string } | undefined;
+    if (!row) {
       res.status(404).json({ error: { message: 'Key not found' } });
       return;
     }
-    if (budgetPeriod === 'auto') {
-      const resolved = resolveAutoPeriod(platformRow.platform);
-      updates.push('budget_period = ?', 'budget_period_mode = ?');
-      values.push(resolved.period, 'auto');
-    } else {
-      updates.push('budget_period = ?', 'budget_period_mode = ?');
-      values.push(budgetPeriod, 'manual');
+    if (row.platform !== 'custom') {
+      res.status(400).json({ error: { message: 'groupLabel applies only to custom endpoints' } });
+      return;
     }
   }
   // Deduped; an empty result stores NULL, which the router reads as "unscoped".
@@ -1923,14 +1862,15 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
 
   values.push(id);
 
-  const db = getDb();
   // Re-submitting the same key satisfies "something changed" but is a no-op;
   // it must not turn into an invalid UPDATE with an empty SET list.
-  const result = updates.length === 0
-    ? { changes: 1 }
-    : db.transaction(() =>
-      db.prepare(`UPDATE api_keys SET ${updates.join(', ')} WHERE id = ?`).run(...values),
-    )();
+  const result = db.transaction(() => {
+    const changes = updates.length === 0
+      ? 1
+      : db.prepare(`UPDATE api_keys SET ${updates.join(', ')} WHERE id = ?`).run(...values).changes;
+    if (changes > 0 && groupLabel !== undefined) setCustomEndpointGroup(db, id, normalizeGroupLabel(groupLabel));
+    return { changes };
+  })();
 
   if (result.changes === 0) {
     res.status(404).json({ error: { message: 'Key not found' } });
@@ -1945,11 +1885,6 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
   if (proxyUrl !== undefined) response.maskedProxyUrl = maskProxyUrl(proxyUrl);
   if (key !== undefined) response.maskedKey = maskKey(key);
   if (modelScope !== undefined) response.modelScope = scopeIds.length > 0 ? scopeIds : null;
-  if (budgetPeriod !== undefined) {
-    response.budgetPeriod = budgetPeriod;
-    const after = syncAutoBudgetPeriod(id);
-    response.resolvedBudgetPeriod = after.period;
-    response.budgetPeriodSource = after.source;
-  }
+  if (groupLabel !== undefined) response.groupLabel = normalizeGroupLabel(groupLabel);
   res.json(response);
 });

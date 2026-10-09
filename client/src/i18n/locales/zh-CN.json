@@ -818,6 +818,14 @@
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "剩余 {remaining} / {limit} {metric}",
     "quotaBalanceLeft": "剩余 {remaining}"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
+    "groupHandleHint": "Add #{handle} after a model id to route only to this group, e.g. custom:<model>#{handle}",
+    "copyGroupHandle": "Copy group handle",
+    "groupHandleCopied": "Copied {handle}",
+    "groupHandleCopyFailed": "Couldn't copy to the clipboard"
   },
   "backups": {
     "title": "备份",

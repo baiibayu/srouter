@@ -107,3 +107,19 @@ export function endpointRefMatches(requested: string, endpointScope: string): bo
   // the same token.
   return endpointHandle(ref) === endpointHandle(endpointScope);
 }
+
+/**
+ * The typable handle for an endpoint GROUP (#1176) — the operator's label run
+ * through the same slug as endpoint handles, so `My Relays` is `my-relays`.
+ * Used after the separator: `custom:deepseek-v3.1#my-relays`.
+ */
+export function groupHandle(label: string): string {
+  return endpointHandle(label);
+}
+
+/** Whether `requested` (after the separator) names the group `groupLabel`. */
+export function groupRefMatches(requested: string, groupLabel: string | null | undefined): boolean {
+  const ref = requested.trim();
+  if (!ref || !groupLabel) return false;
+  return endpointHandle(ref) === endpointHandle(groupLabel);
+}

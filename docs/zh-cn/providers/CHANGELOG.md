@@ -6,6 +6,7 @@
 
 | Commit | Date | Summary |
 | --- | --- | --- |
+| Unreleased | 2026-10-09 | 自定义端点分组：按端点的分组标签、分组开关、`custom:<model>#<group>` 路由（#1176）。 |
 | `df1000a` | 2026-08-20 | Qianfan/Volcengine Ark/LongCat/iFlytek Spark (#936) — four Chinese domestic OpenAI-compat platforms. |
 | `00268be` | 2026-08-18 | B.AI gateway (#918). |
 | `fba4b3d` | 2026-08-15 | OrcaRouter (#896). |

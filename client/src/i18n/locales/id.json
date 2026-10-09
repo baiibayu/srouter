@@ -818,6 +818,14 @@
     "webSearchHelp": "Backend untuk POST /v1/web-search. DuckDuckGo dan SearXNG tanpa kunci; Tavily, Brave, Exa free tier (tanpa kartu); TinyFish gratis (12k pencarian/hari). Jika sebuah backend gagal, permintaan menelusuri rantai jatuh balik (DuckDuckGo lebih dulu).",
     "quotaBalanceHint": "Tersisa {remaining} dari {limit} {metric}",
     "quotaBalanceLeft": "Tersisa {remaining}"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
+    "groupHandleHint": "Add #{handle} after a model id to route only to this group, e.g. custom:<model>#{handle}",
+    "copyGroupHandle": "Copy group handle",
+    "groupHandleCopied": "Copied {handle}",
+    "groupHandleCopyFailed": "Couldn't copy to the clipboard"
   },
   "backups": {
     "title": "Backups",

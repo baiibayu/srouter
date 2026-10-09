@@ -30,7 +30,9 @@
     "logs": "Günlükler",
     "analyticsMenu": "Analitik sayfaları",
     "notifications": "Notifications",
-    "noNotifications": "No notifications yet"
+    "noNotifications": "No notifications yet",
+    "premium": "Premium",
+    "upgrade": "Yükselt"
   },
   "auth": {
     "createYourAccount": "Hesabınızı oluşturun",
@@ -74,7 +76,7 @@
     "emailChanged": "E-posta değiştirildi.",
     "passwordReset": "Şifre sıfırlandı. Lütfen giriş yapın.",
     "resetCodeDockerHint": "Docker içinde mi çalışıyor? Kod konteyner günlüğündedir: docker logs <container>.",
-    "desktopSessionFailed": "Kontrol paneli yerel sunucuya giriş yapamadı. SRouter uygulamasını kapatıp yeniden açın."
+    "desktopSessionFailed": "Kontrol paneli yerel sunucuya giriş yapamadı. FreeLLMAPI uygulamasını kapatıp yeniden açın."
   },
   "common": {
     "save": "Kaydet",
@@ -176,7 +178,7 @@
     "autoUpdateCheck": "Otomatik güncelleme denetimi",
     "autoUpdateCheckHelp": "Yeni bir sürüm için günde bir kez GitHub'ı denetler ve bir hatırlatma gösterir. Varsayılan olarak kapalıdır.",
     "openReleases": "GitHub sürümlerini aç",
-    "restartAfterUpdate": "Derleme tamamlandıktan sonra SRouter'yi yeniden başlatın.",
+    "restartAfterUpdate": "Derleme tamamlandıktan sonra FreeLLMAPI'yi yeniden başlatın.",
     "syncSchedule": "Model Sync",
     "syncScheduleHint": "How often the model catalog is refreshed from the server",
     "syncIntervalOff": "Off",
@@ -218,12 +220,12 @@
     "downloadUpdate": "Güncellemeyi indir",
     "downloadingUpdate": "İndiriliyor… %{percent}",
     "restartToUpdate": "Güncellemek için yeniden başlat",
-    "updateReadyHint": "İndirildi. SRouter verilerinizi yedekler, yeniden başlar ve yeni sürümü açar.",
+    "updateReadyHint": "İndirildi. FreeLLMAPI verilerinizi yedekler, yeniden başlar ve yeni sürümü açar.",
     "updateInstallFailed": "Güncelleme yüklenemedi.",
     "updateNow": "Şimdi güncelle",
-    "updatingContainer": "Yeni imaj çekiliyor ve yeniden başlatılıyor. SRouter geri geldiğinde bu sayfa yenilenecek.",
+    "updatingContainer": "Yeni imaj çekiliyor ve yeniden başlatılıyor. FreeLLMAPI geri geldiğinde bu sayfa yenilenecek.",
     "updateNowFailed": "Güncelleyici isteği kabul etmedi. watchtower konteynerinin çalıştığından emin olun.",
-    "updateNowTimeout": "SRouter 5 dakika sonra hâlâ yeniden başlamadı. watchtower konteynerinin günlüklerine bakın."
+    "updateNowTimeout": "FreeLLMAPI 5 dakika sonra hâlâ yeniden başlamadı. watchtower konteynerinin günlüklerine bakın."
   },
   "models": {
     "title": "Modeller",
@@ -246,7 +248,7 @@
     "monthlyTokenBudget": "Aylık token bütçesi",
     "remaining": "kalan",
     "used": "kullanılan",
-    "usedScopeHint": "Yalnızca bu takvim ayının başından bu yana yapılan sohbet istekleri; etkin zincirdeki tüm modeller (özel uç noktalar dâhil) toplanır. SRouter dışından sağlayıcıya gönderdiğiniz trafik sayılmaz.",
+    "usedScopeHint": "Yalnızca bu takvim ayının başından bu yana yapılan sohbet istekleri; etkin zincirdeki tüm modeller (özel uç noktalar dâhil) toplanır. FreeLLMAPI dışından sağlayıcıya gönderdiğiniz trafik sayılmaz.",
     "legendRemainingTitle": "{name} ({platform}) için kalan / aylık bütçe",
     "noPublishedQuota": "+{count} yayımlanmış kotası olmayan",
     "noPublishedQuotaTitle": "Bu modellerin belgelenmiş aylık token bütçesi yok; bu nedenle gösterilecek bir kalan miktar bulunmuyor.",
@@ -282,7 +284,7 @@
     "catalogModel": "katalog",
     "customModel": "özel",
     "discoveredModel": "keşfedildi",
-    "localOverride": "yerel geçersiz kılma",
+    "localOverride": "yerel özelleştirme",
     "displayName": "Görünen ad",
     "sizeLabel": "Yetenek kademesi",
     "sizeLabelHint": "Frontier/Large/Medium/Small, zekâ eksenini belirler: üst kademe her zaman alt kademeden öndedir ve aynı kademe içinde zekâ sıralaması puanı etkilemeye devam eder. Tanınan bir kademesi olmayan model bu eksende en düşük puanı alır; ancak zekâ üç eksenden yalnızca biridir. Güvenilirliği ve hızı yüksekse yine de yönlendirmede öne çıkabilir.",
@@ -803,7 +805,7 @@
     "autoResolvedMonthly": "Detected provider cycle: monthly",
     "autoResolvedFallback": "Provider cycle unknown, defaulting to monthly",
     "capUnlimitedPlaceholder": "Sınırsız",
-    "capEditHint": "Caps reset at the next period boundary, 00:00 UTC. Leave blank for unlimited.",
+    "capEditHint": "Sınırlar her ayın 1'inde 00:00 UTC'de sıfırlanır. Sınırsız için boş bırakın.",
     "monthlyUsageLine": "Bu ay {requests} istek, {tokens} token",
     "monthlyUsageRequests": "{requests} requests",
     "monthlyUsageTokens": "{tokens} tokens",
@@ -817,7 +819,16 @@
     "webSearchGetKey": "Get a free key",
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "{limit} {metric} içinden {remaining} kaldı",
-    "quotaBalanceLeft": "{remaining} kaldı"
+    "quotaBalanceLeft": "{remaining} kaldı",
+    "monthlyRequestCapLabel": "Aylık istek sınırı",
+    "monthlyTokenCapLabel": "Aylık token sınırı",
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
+    "groupHandleHint": "Add #{handle} after a model id to route only to this group, e.g. custom:<model>#{handle}",
+    "copyGroupHandle": "Copy group handle",
+    "groupHandleCopied": "Copied {handle}",
+    "groupHandleCopyFailed": "Couldn't copy to the clipboard"
   },
   "backups": {
     "title": "Yedekler",
@@ -1236,13 +1247,13 @@
       "generic": "OpenAI API'sini konuşan diğer her araç; temel URL ve anahtarla elle kurulur.",
       "openclaw": "Kendi makinenizden WhatsApp, Telegram, Discord ve daha fazlasında yanıt veren, her zaman açık bir kişisel asistan.",
       "hermes": "Nous Research'ün kendini geliştiren ajanı; kalıcı bellek ve becerilerle, terminalde ya da sohbet uygulamalarında.",
-"pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
+      "pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
       "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
       "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
       "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
       "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
-      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways.",
+      "atomcode": "AtomGit'in terminal ajanı; Rust ile yazılmış, OpenAI uyumlu her uç noktayı kabul eder.",
       "reasonix": "DeepSeek için geliştirilmiş bir terminal kodlama ajanı; uzun oturumlar ucuz kalsın diye önek önbelleği etrafında kurulmuştur."
     },
     "modelNoteFull": "Kurulum tüm modelleri ekler (auto, auto:*, fusion)",
@@ -1251,7 +1262,7 @@
   "update": {
     "available": "Yeni sürüm mevcut",
     "dismiss": "Yoksay",
-    "newBuild": "SRouter'nin daha yeni bir sürümü yüklü.",
+    "newBuild": "FreeLLMAPI'nin daha yeni bir sürümü yüklü.",
     "reload": "Yeniden yükle"
   },
   "freeTier": {
@@ -1343,6 +1354,43 @@
     "releaseNotes": "Sürüm notları",
     "tryAgain": "Tekrar dene",
     "offline": "İnternet bağlantınızı kontrol edip tekrar deneyin."
+  },
+  "premium": {
+    "title": "Premium",
+    "description": "Her cihazda canlı model kataloğu.",
+    "loading": "Yükleniyor…",
+    "checkForUpdates": "Güncellemeleri kontrol edin",
+    "syncing": "Senkronize ediliyor…",
+    "catalogFeed": "Katalog akışı",
+    "liveFeed": "Canlı katalog",
+    "monthlySnapshot": "Aylık anlık görüntü",
+    "lastChecked": "Son kontrol: {when}",
+    "liveDescription": "Yeni ücretsiz modeller, kota değişiklikleri ve uyumluluk düzeltmeleri yayımlandıktan birkaç saat sonra buraya gelir. Uygulama günde iki kez otomatik kontrol eder; sizin bir şey yapmanız gerekmez.",
+    "snapshotDescription": "Ücretsiz katmanda katalog, günde iki kez otomatik kontrol edilen aylık bir anlık görüntüden yenilenir. Premium, bunu 2-3 günde bir güncellenen canlı kataloğa geçirir.",
+    "lastSyncProblem": "Son senkronizasyon sorunu: {error}",
+    "license": "Lisans",
+    "planAnnual": "Premium Yıllık",
+    "planLifetime": "Premium Ömür Boyu",
+    "expired": "Süresi dolmuş",
+    "inactive": "Etkin değil",
+    "lifetimeNote": "Ömür boyu lisans: hiçbir zaman sona ermez.",
+    "renewsOn": "{date} tarihinde yenilenir.",
+    "willNotRenew": "Yenilenmeyecek. {date} tarihine kadar Premium kullanılabilir; ardından bu kurulum ücretsiz aylık kataloğa geri döner.",
+    "keyInactive": "Bu anahtar artık etkin değil. Uygulama ücretsiz aylık katalog üzerinde çalışmaya devam ediyor.",
+    "manageSubscription": "Aboneliği yönet",
+    "openingPortal": "Açılıyor…",
+    "removeKey": "Anahtarı bu cihazdan kaldır",
+    "manageHint": "Aboneliği yönet seçeneği Stripe faturalandırma portalını açar. Buradan iptal edebilir, kartınızı güncelleyebilir veya faturaları indirebilirsiniz. Anahtarı kaldırmak yalnızca bu cihazı devre dışı bırakır; satın alma işleminizi etkilemez.",
+    "licenseKey": "Lisans anahtarı",
+    "licenseKeyPlaceholder": "fla_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "activate": "Etkinleştir",
+    "activating": "Etkinleştiriliyor…",
+    "keyHint": "Anahtarınız satın alma e-postanızda ve ödeme sonrası sayfasındadır. Kaybettiniz mi?",
+    "recoverKey": "Web sitesinde kurtarın",
+    "upsellTitle": "Yılda 19 $ ile canlı kataloğa geçin",
+    "upsellDescription": "Yeni ücretsiz modeller, 30 gün sonra değil, ortaya çıktıkları anda. Her cihazda tek anahtar. İstediğiniz zaman iptal edin; yönlendirici sonsuza kadar ücretsiz kalır.",
+    "goPremium": "Premium'a Geçin",
+    "bundled": "paketle birlikte",
+    "planGeneric": "Premium"
   }
 }
-

@@ -59,6 +59,14 @@
 | `aihorde` | AI Horde | 免密钥（匿名哨兵 `0000000000`；注册密钥可提升队列优先级） | 原生（`AIHordeProvider`） | 社区志愿算力经队列代理接入：max_tokens >= 16、stop 必须是数组、不支持工具、用量以 kudos 计、120s 超时、无上游流式（#345）。 |
 | `custom` | 自定义（OpenAI 兼容） | 用户提供的 base URL 存于各 `api_keys` 行 | 经 `resolveProvider()` 按密钥构建的 OpenAI 兼容适配器 | 注册占位让 `getProvider('custom')`/`hasProvider('custom')` 行为良好；为缓慢的本地运行时（llama.cpp、vLLM、LM Studio）设 120s 超时（#145）。 |
 
+## 自定义端点分组
+
+自定义端点可以归入你命名的**分组**（#1176）：添加端点时填写 **Group** 字段，或之后在**编辑密钥**中修改。分组属于端点本身，因此该端点密钥池中的所有密钥会一起移动，之后新增的密钥也会自动加入同一分组。留空即使用默认的 **Custom (OpenAI-compatible)** 分组。
+
+- **Keys 页面**：每个分组单独成段，并显示 `#handle` 标记（标签的 slug 形式：`Work relays` → `#work-relays`）。分组开关只启用或停用该分组内的端点。
+- **请求**：在模型 ID 后加上分组 handle，即可让请求只在该分组内路由：`custom:deepseek-v3.1#work-relays`（或 `deepseek-v3.1#work-relays`）只会在提供该模型的分组端点之间路由与故障转移。端点自己的 handle（`custom:deepseek-v3.1#relay-a.example.com-v1`）仍只指向单个端点，且与同名分组冲突时优先。
+- **API**：`GET /api/keys` 返回 `groupLabel`；`PATCH /api/keys/:id` 与 `POST /api/keys/custom` 接受 `groupLabel`（`""` 表示清除）；`PATCH /api/keys/platform/custom` 接受 `group`（分组名，或 `null` 表示未分组端点），只切换该范围内的端点。
+
 ## 相关历史
 
 - Moonshot 直连集成与 MiniMax 直连在 `migrateModelsV4` 中移除（仅付费 / 被 OpenRouter 路线取代）。
