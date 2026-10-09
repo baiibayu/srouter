@@ -86,6 +86,9 @@ export type Platform =
   | 'typhoon'
   // Permanent free chat aliases, shared fair-use quota; signed catalog only.
   | 'plugsky'
+  // Catalog-only free chat gateways; shared monthly/daily account allowances.
+  | 'inferbase'
+  | 'simplellm'
   // Selected zero-priced routes have daily/rolling quotas without a top-up;
   // signed catalog only. The public roster also includes paid/promotional IDs.
   | 'llmtr'
@@ -139,6 +142,8 @@ export type Platform =
   // 2026-10-07, hub-docs PR #2865, but grandfathered accounts still receive
   // the monthly credit — RETAINED.)
   | 'huggingface'
+  // GitHub Models — requires a fine-grained PAT with `models:read` scope.
+  | 'github'
   // OpenCode Zen — OpenAI-compatible gateway. Free promotional models require a
   // free (no-card) account key from opencode.ai/auth; see migrateModelsV18.
   | 'opencode'
