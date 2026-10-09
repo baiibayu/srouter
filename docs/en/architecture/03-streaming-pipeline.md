@@ -231,7 +231,6 @@ Thin adapter over shared fallback loop:
 | `rememberReasoning(sessionKey, modelKey, reasoning)` | Store per-session trace |
 | `rescueInlineToolCalls(text, tools)` | Convert inline dialect → structured `tool_calls` |
 | `repairToolArguments(args, schemas)` | Fix double-encoded JSON against request schemas |
-| `truncateMessagesForGithub(messages)` | Trim history to GitHub Models input ceiling |
 | `normalizeOutboundContent(chunk)` | Provider-specific response normalization |
 | `sanitizeResponse(chunk)` | Redact secrets from streamed frames |
 

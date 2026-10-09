@@ -57,7 +57,7 @@ it('loads forecasts only when the existing Quota signals tab opens and retains e
 })
 it('shows the reset-first, soon-to-run-out and unknown states without inventing forecasts',async()=>{
   response.pools=[pool({platform:'openrouter',pool:'openrouter::free',remaining:75,remainingPct:30,warning:'exhausting_soon'}),
-    pool({platform:'cerebras',pool:'cerebras::shared',status:'resets_first',warning:null,estimatedExhaustionAt:null}),
+    pool({platform:'bai',pool:'bai::shared',status:'resets_first',warning:null,estimatedExhaustionAt:null}),
     pool({platform:'aihorde',pool:'aihorde::anonymous',status:'unknown',unavailableReason:'quota_not_reported',warning:null,remaining:null,remainingPct:null,limit:null,ratePerMin:0,estimatedExhaustionAt:null,resetAt:null})]
   await mount();await openQuota()
   expect(container.textContent).toContain('Running low soon')
@@ -69,7 +69,7 @@ it('shows the reset-first, soon-to-run-out and unknown states without inventing 
 })
 it('labels stale balances as last reported and exhausted windows explicitly',async()=>{
   response.pools=[pool({status:'stale',unavailableReason:'stale_observation',warning:null,ratePerMin:0,estimatedExhaustionAt:null}),
-    pool({platform:'cerebras',pool:'cerebras::shared',remaining:0,remainingPct:0,status:'exhausted',estimatedExhaustionAt:null})]
+    pool({platform:'bai',pool:'bai::shared',remaining:0,remainingPct:0,status:'exhausted',estimatedExhaustionAt:null})]
   await mount();await openQuota()
   expect(container.textContent).toContain('Needs fresh data')
   expect(container.textContent).toContain('requests last reported')
@@ -113,12 +113,12 @@ it('shows coverage and local usage even when all provider quotas are unavailable
   expect([...container.querySelectorAll('details')].find(el=>el.querySelector('summary')?.textContent==='Raw quota observations')?.textContent).toContain('Saved key 25')
 })
 it('explains missing resets independently of low traffic and shows usable pools before unavailable ones',async()=>{
-  response.pools=[pool({platform:'cerebras',pool:'cerebras::shared',status:'unavailable',unavailableReason:'reset_not_reported',
+  response.pools=[pool({platform:'bai',pool:'bai::shared',status:'unavailable',unavailableReason:'reset_not_reported',
     warning:null,resetAt:null,estimatedExhaustionAt:null,recentRequestCount:10,ratePerMin:1}),pool()]
   await mount();await openQuota()
   expect(container.querySelector('article')?.getAttribute('aria-label')).toBe('Groq')
   expect(container.textContent).toContain('Forecasts available for 1 of 2 pools')
-  const cerebras=container.querySelector('article[aria-label="Cerebras"]')!
-  expect(cerebras.textContent).toContain('did not report a valid reset time')
-  expect(cerebras.textContent).not.toContain('at least 3')
+  const bai=container.querySelector('article[aria-label="B.AI (promotional free model)"]')!
+  expect(bai.textContent).toContain('did not report a valid reset time')
+  expect(bai.textContent).not.toContain('at least 3')
 })

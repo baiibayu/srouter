@@ -76,7 +76,7 @@ describe('priority-mode routing penalty under spaced priorities', () => {
   it('demotes a penalized model even when priorities are spaced 10/20/30', () => {
     const a = addModel({ platform: 'google', modelId: 'a', priority: 10 });
     addModel({ platform: 'groq', modelId: 'b', priority: 20 });
-    addModel({ platform: 'cerebras', modelId: 'c', priority: 30 });
+    addModel({ platform: 'bai', modelId: 'c', priority: 30 });
     refreshStatsCache(getDb(), true);
 
     expect(routeRequest(100).modelId).toBe('a');
@@ -101,7 +101,7 @@ describe('priority-mode routing penalty under spaced priorities', () => {
   it('leaves an unpenalized chain in exactly the order the user arranged', () => {
     addModel({ platform: 'google', modelId: 'a', priority: 30 });
     addModel({ platform: 'groq', modelId: 'b', priority: 10 });
-    addModel({ platform: 'cerebras', modelId: 'c', priority: 20 });
+    addModel({ platform: 'bai', modelId: 'c', priority: 20 });
     refreshStatsCache(getDb(), true);
 
     expect(routeRequest(100).modelId).toBe('b');
@@ -120,7 +120,7 @@ describe('priority-mode routing penalty under spaced priorities', () => {
   it('does not demote past a model penalized even harder', () => {
     const a = addModel({ platform: 'google', modelId: 'a', priority: 10 });
     const b = addModel({ platform: 'groq', modelId: 'b', priority: 20 });
-    addModel({ platform: 'cerebras', modelId: 'c', priority: 30 });
+    addModel({ platform: 'bai', modelId: 'c', priority: 30 });
     refreshStatsCache(getDb(), true);
 
     penalize(a, 1);  // rank 1 + 3 = 4

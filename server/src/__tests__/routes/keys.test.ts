@@ -217,7 +217,7 @@ describe('Keys API', () => {
     expect(status).toBe(400);
   });
 
-  it.each(['aclide', 'speka', 'electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'])('accepts a %s key without seeding gated model rows', async platform => {
+  it.each(['aclide', 'speka', 'electronhub', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'])('accepts a %s key without seeding gated model rows', async platform => {
     const { status, body } = await request(app, 'POST', '/api/keys', {
       platform, key: 'not-a-real-test-key-12345', label: 'Gateway test',
     });
@@ -547,7 +547,7 @@ describe('Keys API', () => {
     it('PATCH /api/keys/platform/:platform still writes every key of that platform', async () => {
       const first = await addKey('groq', 'gsk_first_key_123');
       const second = await addKey('groq', 'gsk_second_key_456');
-      const other = await addKey('cerebras', 'csk_other_key_789');
+      const other = await addKey('bai', 'bai_other_key_789');
 
       const { body } = await request(app, 'PATCH', '/api/keys/platform/groq', { enabled: false });
 

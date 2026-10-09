@@ -137,12 +137,18 @@ describe('built-in model discovery (#1348)', () => {
     });
 
     it('is off limits while the bundled baseline still holds catalog rows for the platform', () => {
-      // A fresh DB seeds github rows until the first catalog sync prunes them.
-      const github = rows('github');
-      expect(github.length).toBeGreaterThan(0);
-      expect(builtinDiscoveryEligibility(getDb(), 'github')).toMatchObject({ eligible: false, reason: 'catalog_managed' });
-      getDb().exec("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = 'github'); DELETE FROM models WHERE platform = 'github'; DELETE FROM embedding_models WHERE platform = 'github';");
-      expect(builtinDiscoveryEligibility(getDb(), 'github').eligible).toBe(true);
+      // A fresh DB carries catalog-owned rows for a platform until the first
+      // catalog sync prunes them; while they exist, discovery must not take over.
+      getDb().prepare(
+        "INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, source) VALUES ('siliconflow', 'seeded-model', 'Seeded (catalog)', 50, 50, 'catalog')",
+      ).run();
+      const seeded = rows('siliconflow');
+      expect(seeded.length).toBeGreaterThan(0);
+      expect(builtinDiscoveryEligibility(getDb(), 'siliconflow')).toMatchObject({ eligible: false, reason: 'catalog_managed' });
+      getDb().exec("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = 'siliconflow'); DELETE FROM models WHERE platform = 'siliconflow'; DELETE FROM embedding_models WHERE platform = 'siliconflow';");
+      expect(builtinDiscoveryEligibility(getDb(), 'siliconflow').eligible).toBe(true);
+      // restore the baseline state for the following tests
+      getDb().prepare("DELETE FROM settings WHERE key = 'catalog_applied_json'").run();
     });
 
     it('can be switched off', () => {

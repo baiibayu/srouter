@@ -16,16 +16,6 @@ import type { Db } from './types.js';
 type PricingRow = [string, string, number | null, number | null];
 
 export const MODEL_PRICING: PricingRow[] = [
-  // Cerebras
-  ['cerebras', 'gpt-oss-120b', 0.039, 0.18],
-  ['cerebras', 'llama3.1-8b', 0.02, 0.03],
-  ['cerebras', 'qwen-3-235b-a22b-instruct-2507', 0.071, 0.10],
-  ['cerebras', 'zai-glm-4.7', 0.40, 1.75],
-  // legacy ids (older DBs)
-  ['cerebras', 'qwen-3-coder-480b', 0.22, 1.80],
-  ['cerebras', 'llama-4-maverick-17b-128e-instruct', 0.15, 0.60],
-  ['cerebras', 'qwen3-235b', 0.455, 1.82],
-
   // Cloudflare Workers AI
   ['cloudflare', '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', 0.29, 0.29],
   ['cloudflare', '@cf/google/gemma-4-26b-a4b-it', 0.06, 0.33],
@@ -44,11 +34,6 @@ export const MODEL_PRICING: PricingRow[] = [
   ['cohere', 'command-a-reasoning-08-2025', 2.50, 10.00],
   ['cohere', 'command-r-08-2024', 0.15, 0.60],
   ['cohere', 'command-r-plus-08-2024', 2.50, 10.00],
-
-  // GitHub Models (OpenAI official prices)
-  ['github', 'gpt-4o', 2.50, 10.00],
-  ['github', 'openai/gpt-4.1', 2.00, 8.00],
-  ['github', 'openai/gpt-5', 1.25, 10.00], // legacy
 
   // Google AI Studio (official prices)
   ['google', 'gemini-2.5-flash', 0.30, 2.50],

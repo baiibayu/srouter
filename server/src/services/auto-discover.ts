@@ -34,7 +34,6 @@ const SKIP_AUTO_DISCOVER = new Set([
   'custom',       // custom endpoints use their own flow
   'aihorde',      // uses its own API format
   'bai',          // 100% paid — "Deposit required to unlock premium models"
-  'cerebras',     // paid/exhausted — returns 402
 ]);
 
 /** How many models to register per platform before giving up */
@@ -86,8 +85,6 @@ const PLATFORM_DEFAULTS: Record<string, PlatformRateDefaults> = {
   nvidia:      { rpm: 40,   rpd: null,  tpm: null,     tpd: null },     // generous free tier
   google:      { rpm: 15,   rpd: null,  tpm: 1000000, tpd: 50000000 }, // generous but bounded
   anyapi:      { rpm: null, rpd: null,  tpm: null,     tpd: 100000 },   // 100K tokens/day documented
-  xai:         { rpm: null, rpd: null,  tpm: null,     tpd: null },
-  github:      { rpm: null, rpd: null,  tpm: null,     tpd: null },
   zhipu:       { rpm: null, rpd: null,  tpm: null,     tpd: null },
   huggingface: { rpm: null, rpd: null,  tpm: null,     tpd: null },
   siliconflow: { rpm: null, rpd: null,  tpm: null,     tpd: null },

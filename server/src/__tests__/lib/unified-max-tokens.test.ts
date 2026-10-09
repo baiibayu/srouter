@@ -17,7 +17,6 @@ import {
   resolveMaxTokens,
   defaultMaxTokensFor,
   maxTokensCapFor,
-  GITHUB_MAX_OUTPUT_TOKENS,
   UNIFIED_MAX_TOKENS_SETTING,
   UNIFIED_MAX_TOKENS_AUTO,
 } from '../../lib/sampling-params.js';
@@ -100,32 +99,32 @@ describe('resolveMaxTokens under the cap', () => {
 
 describe('per-platform max_tokens ceiling', () => {
   it('is declared only for platforms whose API rejects large values', () => {
-    expect(maxTokensCapFor('github')).toBe(GITHUB_MAX_OUTPUT_TOKENS);
+    expect(maxTokensCapFor('moondream')).toBe(4096);
     expect(maxTokensCapFor('groq')).toBeUndefined();
     expect(maxTokensCapFor('nonsense-platform')).toBeUndefined();
   });
 
   it('clamps an oversized request even with the operator cap off', () => {
     expect(unifiedMaxTokensCap()).toBeNull();
-    expect(resolveMaxTokens('github', 65536)).toBe(GITHUB_MAX_OUTPUT_TOKENS);
+    expect(resolveMaxTokens('moondream', 65536)).toBe(4096);
     // Other platforms keep the historical pass-through behaviour.
     expect(resolveMaxTokens('groq', 65536)).toBe(65536);
   });
 
   it('leaves a request at or below the platform ceiling alone', () => {
-    expect(resolveMaxTokens('github', 128)).toBe(128);
-    expect(resolveMaxTokens('github', GITHUB_MAX_OUTPUT_TOKENS)).toBe(GITHUB_MAX_OUTPUT_TOKENS);
+    expect(resolveMaxTokens('moondream', 128)).toBe(128);
+    expect(resolveMaxTokens('moondream', 4096)).toBe(4096);
   });
 
   it('sends nothing when the client sent nothing and the platform has no floor', () => {
-    expect(resolveMaxTokens('github', undefined)).toBeUndefined();
+    expect(resolveMaxTokens('moondream', undefined)).toBeUndefined();
   });
 
   it('takes the tighter of the platform ceiling and the operator cap', () => {
     settingStore.set(UNIFIED_MAX_TOKENS_SETTING, 'auto'); // 32768 — looser
-    expect(resolveMaxTokens('github', 65536)).toBe(GITHUB_MAX_OUTPUT_TOKENS);
+    expect(resolveMaxTokens('moondream', 65536)).toBe(4096);
     settingStore.set(UNIFIED_MAX_TOKENS_SETTING, '128'); // tighter than the platform
-    expect(resolveMaxTokens('github', 65536)).toBe(128);
+    expect(resolveMaxTokens('moondream', 65536)).toBe(128);
   });
 });
 
@@ -153,6 +152,6 @@ describe('contextBudget clamping', () => {
 
   it('takes the tightest of context budget, platform cap, and operator cap', () => {
     settingStore.set(UNIFIED_MAX_TOKENS_SETTING, '16000');
-    expect(resolveMaxTokens('github', 64000, 48000)).toBe(Math.min(GITHUB_MAX_OUTPUT_TOKENS, 16000, 48000));
+    expect(resolveMaxTokens('moondream', 64000, 48000)).toBe(Math.min(4096, 16000, 48000));
   });
 });

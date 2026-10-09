@@ -2,13 +2,13 @@
 
 # 支持的平台
 
-[`shared/types.ts`（第 59 行）](../../../shared/types.ts) 中的 `Platform` 联合类型是平台身份的唯一事实来源；[`server/src/providers/index.ts`](../../../server/src/providers/index.ts) 中的运行时注册表必须与它保持一致。联合类型目前声明了 **41 个成员**：
+[`shared/types.ts`（第 74 行）](../../../shared/types.ts) 中的 `Platform` 联合类型是平台身份的唯一事实来源；[`server/src/providers/index.ts`](../../../server/src/providers/index.ts) 中的运行时注册表必须与它保持一致。联合类型目前声明了 **65 个成员**：
 
-- **39 个内置平台**，启动时注册为适配器；
-- 加上 **`custom`** 占位（一个按 API 密钥逐个构建的真实 OpenAI 兼容适配器，因为它的 base URL 由用户提供），注册表共 **40 个条目**；
+- **63 个内置平台**，启动时注册为适配器；
+- 加上 **`custom`** 占位（一个按 API 密钥逐个构建的真实 OpenAI 兼容适配器，因为它的 base URL 由用户提供），注册表共 **64 个条目**；
 - 再加 **`sambanova`**——保留在类型联合中但不再注册：它在 V23（2026 年 6 月）被移除，当时它的免费额度被永久收回（一次性 $5 试用额度用完后，每次聊天调用都返回 402「需要绑定支付方式」）。
 
-39 个内置平台中，**7 个使用专属原生适配器**，**32 个搭载 `OpenAICompatProvider`** 对着各自提供方专属的 base URL。三个平台以免密钥方式注册（`kilo`、`ovh`，以及 `aihorde`——它用文档记载的匿名哨兵密钥自动配置）。README 里的公开目录招牌数字约为 29 家免费提供方 / 251 个模型系列 / 358 个免费端点——比联合类型少，因为若干已注册的网关把免费名册放在托管目录里维护，而不是随每个二进制一起发布。
+63 个内置平台中，**27 个使用专属原生适配器**，**36 个搭载 `OpenAICompatProvider`** 对着各自提供方专属的 base URL。三个平台以免密钥方式注册（`kilo`、`ovh`，以及 `aihorde`——它用文档记载的匿名哨兵密钥自动配置）。README 里的公开目录招牌数字约为 29 家免费提供方 / 251 个模型系列 / 358 个免费端点——比联合类型少，因为若干已注册的网关把免费名册放在托管目录里维护，而不是随每个二进制一起发布。
 
 ## 目录
 
@@ -16,14 +16,17 @@
 | --- | --- | --- | --- | --- |
 | `google` | Google Gemini | 带密钥 | 原生（`GoogleProvider`） | Gemini 线上格式；默认超时 60s，因为 Gemma 推理变体冷启动要花 20–60 秒。 |
 | `groq` | Groq | 带密钥 | OpenAI 兼容 | `api.groq.com/openai/v1` 的标准兼容端点。 |
-| `cerebras` | Cerebras | 带密钥 | OpenAI 兼容 | `api.cerebras.ai/v1`。 |
 | `bai` | B.AI | 带密钥 | OpenAI 兼容 | #918 加入的网关；目录里唯一的一行是限时 0 额度促销，保留在托管目录中。 |
 | `anyapi` | AnyAPI | 带密钥 | OpenAI 兼容 | 免费档 $0 / 无需信用卡 / 不循环扣费，上限为「免费和基础」模型每日 10 万词元；未公布 RPM/RPD（#772）。模型 id 经由目录同步送达，绝不盲目播种。 |
 | `nvidia` | NVIDIA NIM | 带密钥 | OpenAI 兼容 | `parallel_tool_calls` 固定为 false（#255）；180s 超时兼任流式首字节宽限（#584）。 |
 | `mistral` | Mistral | 带密钥 | OpenAI 兼容 | `api.mistral.ai/v1`。 |
+| `nous` | Nous Portal (Nous Research) | 带密钥 | OpenAI 兼容 | `inference-api.nousresearch.com/v1` 上的 $0 免费计划；`:free` 后缀路由，需 Portal 密钥（无密钥返回 402）；除非开启隐私模式，提示词可能用于 Nous 训练。 |
+| `typhoon` | OpenTyphoon (SCB 10X) | 带密钥 | OpenAI 兼容 | `api.opentyphoon.ai/v1` 无需信用卡的免费档；除非在门户设置中关闭，回复可能用于该实验室的研究。 |
+| `plugsky` | Plugsky | 带密钥 | OpenAI 兼容 | `plugsky.com/v1` 无需信用卡的免费网关；2026-10-08 已通过 `/v1/models` 冒烟测试。 |
+| `tokenharbor` | Token Harbor | 带密钥 | OpenAI 兼容 | `:free` 模型 id 走滚动 7 天价值额度（全账号 60 RPM）并轮换，因此目录行由自动发现管理；免费路由默认关闭，需在仪表盘启用。 |
+| `alibaba` | Alibaba Model Studio | 带密钥 | OpenAI 兼容 | 国际版 DashScope 端点 `dashscope-intl.aliyuncs.com/compatible-mode/v1`；每个模型一次性 100 万词元免费额度（90 天），控制台「仅免费额度」开关须保持开启（默认关闭，否则按量计费）。 |
 | `sambanova` | SambaNova | 已退役（V23） | 未注册 | 免费额度永久消失；因历史密钥行而保留在类型联合中。 |
 | `openrouter` | OpenRouter | 带密钥 | OpenAI 兼容 | 发送 `HTTP-Referer`/`X-Title` 头；`:free` 模型后缀标记零成本路由。 |
-| `github` | GitHub Models | 带密钥 | OpenAI 兼容 | 路由到 `models.github.ai/inference`；目录使用 `<publisher>/<model>` 形式的 id。 |
 | `cohere` | Cohere | 带密钥 | 原生（`CohereProvider`） | 使用 Cohere 的 OpenAI 兼容端点。 |
 | `cloudflare` | Cloudflare Workers AI | 带密钥（`account_id:token`） | 原生（`CloudflareProvider`） | 复合凭据格式由适配器解析。 |
 | `zhipu` | Zhipu (Z.ai / bigmodel.cn) | 带密钥 | 原生（`ZhipuProvider`） | 控制台自动探测：国内密钥被拒后会改向全球 `api.z.ai` 主机重新探测；60s 超时覆盖 glm-4.7-flash 的隐藏推理。 |
@@ -61,3 +64,4 @@
 - Moonshot 直连集成与 MiniMax 直连在 `migrateModelsV4` 中移除（仅付费 / 被 OpenRouter 路线取代）。
 - Hugging Face 在 V4 中移除（「工具调用格式问题」），并在 V13 经 Inference Providers 元路由器重新加入。
 - Chutes 曾为 V11 评估过然后放弃：所有模型都返回 402 要求非零余额，与项目「无需信用卡」的标准冲突。
+- GitHub Models、Cerebras、xAI 与 Experiential Labs 于 2026-10-09 移除：四者都无法维持无需信用卡的循环免费档（GitHub Models 已于 2026-07-30 下线；Cerebras 仅提供 30 天试用额度；xAI 从未提供免费档；Experiential 要求绑定支付方式）。

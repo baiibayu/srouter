@@ -166,13 +166,7 @@ describe('Migration idempotency', () => {
     `).all();
     expect(additions).toHaveLength(15);
 
-    // Spot-check critical limit/context updates.
-    const cerebrasLimits = db.prepare(`
-      SELECT rpm_limit, rpd_limit, tpm_limit, tpd_limit FROM models
-       WHERE platform = 'cerebras' AND model_id = 'qwen-3-235b-a22b-instruct-2507'
-    `).get() as { rpm_limit: number; rpd_limit: number; tpm_limit: number; tpd_limit: number };
-    expect(cerebrasLimits).toEqual({ rpm_limit: 5, rpd_limit: 2400, tpm_limit: 30000, tpd_limit: 1000000 });
-
+    // Spot-check critical context updates.
     const cfFp8Ctx = (db.prepare(`
       SELECT context_window FROM models WHERE platform = 'cloudflare' AND model_id = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
     `).get() as { context_window: number }).context_window;
@@ -192,34 +186,24 @@ describe('Migration idempotency', () => {
     ]);
   });
 
-  it('caps GitHub GPT-4.1 at the routable free-tier context window (#426)', () => {
+  it('2026-10 provider drop: github, cerebras, xai, experiential are fully purged', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     const db = initDb(':memory:');
 
-    const row = db.prepare(`
-      SELECT context_window FROM models
-       WHERE platform = 'github' AND model_id = 'openai/gpt-4.1'
-    `).get() as { context_window: number };
-
-    expect(row.context_window).toBe(8000);
-  });
-
-  it('V14: cerebras deprecation disables qwen-3-235b and llama3.1-8b but keeps gpt-oss-120b enabled', () => {
-    process.env.ENCRYPTION_KEY = '0'.repeat(64);
-    const db = initDb(':memory:');
-
-    const rows = db.prepare(`
-      SELECT model_id, enabled FROM models
-       WHERE platform = 'cerebras'
-         AND model_id IN ('qwen-3-235b-a22b-instruct-2507', 'llama3.1-8b', 'gpt-oss-120b')
-       ORDER BY model_id
-    `).all() as { model_id: string; enabled: number }[];
-
-    expect(rows).toEqual([
-      { model_id: 'gpt-oss-120b',                    enabled: 1 },
-      { model_id: 'llama3.1-8b',                     enabled: 0 },
-      { model_id: 'qwen-3-235b-a22b-instruct-2507',  enabled: 0 },
-    ]);
+    const dead = "('github', 'cerebras', 'xai', 'experiential')";
+    const models = db.prepare(`SELECT COUNT(*) AS n FROM models WHERE platform IN ${dead}`).get() as { n: number };
+    expect(models.n).toBe(0);
+    const keys = db.prepare(`SELECT COUNT(*) AS n FROM api_keys WHERE platform IN ${dead}`).get() as { n: number };
+    expect(keys.n).toBe(0);
+    const embeddings = db.prepare(`SELECT COUNT(*) AS n FROM embedding_models WHERE platform IN ${dead}`).get() as { n: number };
+    expect(embeddings.n).toBe(0);
+    // The fallback chain has no orphaned entries pointing at deleted models.
+    const orphans = db.prepare(`
+      SELECT COUNT(*) AS n FROM fallback_config fb
+       LEFT JOIN models m ON m.id = fb.model_db_id
+      WHERE m.id IS NULL
+    `).get() as { n: number };
+    expect(orphans.n).toBe(0);
   });
 
   it('V23: sambanova/chutes are gone; live-verified free additions are present with the right flags', () => {

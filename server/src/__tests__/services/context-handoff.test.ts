@@ -133,11 +133,11 @@ describe('maybeInjectContextHandoff — on_model_switch', () => {
       mode,
       sessionKey: 'sess1',
       messages,
-      selectedModelKey: 'cerebras:qwen-3',
+      selectedModelKey: 'bai:qwen-3',
     });
     expect(result.injected).toBe(true);
     expect(result.messages[0].content).toContain('google:gemini-flash');
-    expect(result.messages[0].content).toContain('cerebras:qwen-3');
+    expect(result.messages[0].content).toContain('bai:qwen-3');
   });
 
   it('does not duplicate if handoff system message already present as plain string', () => {

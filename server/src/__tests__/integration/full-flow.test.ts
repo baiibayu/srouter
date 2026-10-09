@@ -128,7 +128,10 @@ describe('Full Integration Flow', () => {
     expect(status).toBe(200);
 
     const { body } = await req(app, 'GET', '/api/fallback');
-    expect(body[0].speedRank).toBe(1);
+    // The 2026-10 purge removed the seed's only speed_rank=1 rows (cerebras),
+    // so assert the sort put the fastest remaining model first, not a fixed rank.
+    const speeds = (body as { speedRank: number }[]).map(m => m.speedRank);
+    expect(body[0].speedRank).toBe(Math.min(...speeds));
   });
 
   it('Step 8: Health endpoint works', async () => {

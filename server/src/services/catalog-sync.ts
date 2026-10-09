@@ -9,7 +9,6 @@ import type { Scheduler } from '../lib/scheduler.js';
 import {
   applyAllModelOverrides,
   refreshModelOverrideBaselines,
-  routableContextWindow,
   applyModelOverrides,
   deleteTombstonedCatalogModels,
   isCatalogModelTombstoned,
@@ -638,7 +637,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
         tpm: m.limits.tpm,
         tpd: m.limits.tpd,
         monthlyTokenBudget: m.monthlyTokenBudget,
-        contextWindow: routableContextWindow(m.platform, m.modelId, m.contextWindow),
+        contextWindow: m.contextWindow,
         supportsVision: m.supportsVision ? 1 : 0,
         supportsTools: m.supportsTools ? 1 : 0,
       };

@@ -10,17 +10,9 @@
 // provider, all derived from the live error corpus.
 //
 // Returns null for anything it can't pin to a real REQUESTED size (not a LIMIT
-// ceiling — see the github case below). Callers feed the result into the
-// routing estimate so the existing size gates skip low-TPM / small-context
-// models on the next attempt instead of letting them re-fail.
-//
-// Why github is intentionally NOT parsed: the body is
-// `Request body too large for gpt-4.1 model. Max size: 8000 tokens.` The 8000
-// is the LIMIT, not the rejected request's size. Returning it would cause
-// every subsequent model with TPM < 8000 to be skipped for the rest of the
-// request — wildly wrong, since most free models have TPM ~6000. The parser
-// returns null and `learnLimitFromError` keeps doing what it already does
-// (lowering `models.tpm_limit` to 8000 for github/gpt-4.1).
+// ceiling). Callers feed the result into the routing estimate so the existing
+// size gates skip low-TPM / small-context models on the next attempt instead of
+// letting them re-fail.
 
 // Pull the first integer out of a comma-thousands-separator-aware capture.
 // Anchored on the literal label the provider uses so a stray digit elsewhere

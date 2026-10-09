@@ -233,3 +233,22 @@ keyScore       = 0.75·keyReliability + 0.25·keySpeed
 | `headroomFactor(used, budget)` | 额度护栏乘数 |
 | `rateLimitFactor(penalty)` | 惩罚护栏乘数 |
 | `combineScore(inputs, weights)` | 凸基础 × 护栏 |
+
+---
+
+## 15. 缓存键 v4 (#901)
+
+精确匹配响应缓存键现为 **version 4**。默认值采样参数（`top_p: 1`、`n: 1`、`presence_penalty: 0`、`frequency_penalty: 0`）会被归一化为 `undefined`，使总是序列化完整参数集的客户端与省略默认值的客户端共享同一缓存条目；`reasoning_effort` 与 `compression` 也已加入键。键结构变更时需升版本 —— 规范化 JSON 中内嵌 `v: 4`。
+
+---
+
+## 16. 复杂度门控 (Jev-B)
+
+按请求分类复杂度（`trivial` / `normal` / `hard`），在打分前给链排序加偏置：轻量提示词把权重移向**速度**，难题移向**智能** —— 与任务类型偏置（#1127）同一根轴，默认份额 25%（`COMPLEXITY_WEIGHT_SHARE`）。
+
+- **默认关闭的 opt-in，且 fail-open。** 分类报错、超时或后端不可达时回退到无偏置权重；路由绝不因分类器而阻塞。
+- 两种后端，经 `GET/PUT /api/settings/complexity-gate` 切换：
+  - `heuristic`（默认）—— 内置的体积/结构规则：≤300 字符且无代码围栏/图片/工具 → `trivial`；≥4000 字符或 ≥4 个代码围栏 → `hard`；其余（含空输入）→ `normal`。
+  - `jev` —— 远端 TypeSafe SystemOne（`POST {base}/v1/systemone`，得分 0–10 → 等级：≤3 为 `trivial`、≥7 为 `hard`），默认超时 400 ms，API key 只写存储（仪表盘只能看到 `hasJevApiKey`）。
+- 豁免策略（`fastest`、`reliable`、自定义预设）跳过偏置 —— 已经固定排序的策略不再二次改写。
+- 接线：`proxy.ts` 每个请求调用一次 `classifyComplexity` → `routeRequest` → `orderChain` 在任务类型偏置之后紧接着应用；权重来自 `scoring.ts:complexityAdjustedWeights`。

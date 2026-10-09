@@ -32,11 +32,11 @@ describe('in-flight leases', () => {
     acquireLease('groq', 'llama-3.3-70b', 1, 100);
     acquireLease('groq', 'llama-3.1-8b', 1, 100);
     acquireLease('groq', 'llama-3.3-70b', 2, 100);
-    acquireLease('cerebras', 'qwen-3-coder', 1, 100);
+    acquireLease('bai', 'qwen-3-coder', 1, 100);
 
     expect(inFlightForKey('groq', 1)).toBe(2);
     expect(inFlightForKey('groq', 2)).toBe(1);
-    expect(inFlightForKey('cerebras', 1)).toBe(1);
+    expect(inFlightForKey('bai', 1)).toBe(1);
     expect(inFlightForKey('groq', 99)).toBe(0);
   });
 
@@ -85,7 +85,7 @@ describe('per-key concurrency cap', () => {
     process.env.MAX_CONCURRENT_REQUESTS_PER_KEY = '5';
     process.env.MAX_CONCURRENT_REQUESTS_PER_KEY_GROQ = '2';
     expect(getKeyConcurrencyLimit('groq')).toBe(2);
-    expect(getKeyConcurrencyLimit('cerebras')).toBe(5);
+    expect(getKeyConcurrencyLimit('bai')).toBe(5);
   });
 
   it('ignores a malformed cap rather than blocking everything', () => {

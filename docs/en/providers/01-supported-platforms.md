@@ -2,13 +2,13 @@
 
 # Supported platforms
 
-The `Platform` union in [`shared/types.ts` (line 59)](../../../shared/types.ts) is the single source of truth for platform identity; the runtime registry in [`server/src/providers/index.ts`](../../../server/src/providers/index.ts) must match it. The union currently declares **45 members**:
+The `Platform` union in [`shared/types.ts` (line 74)](../../../shared/types.ts) is the single source of truth for platform identity; the runtime registry in [`server/src/providers/index.ts`](../../../server/src/providers/index.ts) must match it. The union currently declares **65 members**:
 
-- **43 built-in platforms** registered as adapters at startup,
-- plus the **`custom`** placeholder (a real OpenAI-compatible adapter built per API key, since its base URL is user-supplied), giving **44 entries** in the registry map,
+- **63 built-in platforms** registered as adapters at startup,
+- plus the **`custom`** placeholder (a real OpenAI-compatible adapter built per API key, since its base URL is user-supplied), giving **64 entries** in the registry map,
 - plus **`sambanova`**, retained in the type union but no longer registered — it was dropped in V23 (June 2026) when its free tier was permanently retired (every chat call returns 402 "payment method required" once the one-time $5 trial credit lapses).
 
-Of the 43 built-in platforms, **10 use dedicated adapters** and **33 ride `OpenAICompatProvider`** directly against a provider-specific base URL. Three platforms are registered keyless (`kilo`, `ovh`, and `aihorde`, which auto-configures with its documented anonymous sentinel key). The public catalog headline is smaller than the union because several registered gateways keep their free rosters in the hosted catalog rather than shipping them to every binary.
+Of the 63 built-in platforms, **27 use dedicated adapters** and **36 ride `OpenAICompatProvider`** directly against a provider-specific base URL. Three platforms are registered keyless (`kilo`, `ovh`, and `aihorde`, which auto-configures with its documented anonymous sentinel key). The public catalog headline is smaller than the union because several registered gateways keep their free rosters in the hosted catalog rather than shipping them to every binary.
 
 ## Catalog
 
@@ -16,18 +16,20 @@ Of the 43 built-in platforms, **10 use dedicated adapters** and **33 ride `OpenA
 | --- | --- | --- | --- | --- |
 | `google` | Google Gemini | Keyed | Native (`GoogleProvider`) | Gemini wire format; 60s default timeout because Gemma reasoning variants take 20–60s on cold start. |
 | `groq` | Groq | Keyed | OpenAI-compat | Standard compatible endpoint at `api.groq.com/openai/v1`. |
-| `cerebras` | Cerebras | Keyed | OpenAI-compat | `api.cerebras.ai/v1`. |
 | `electronhub` | ElectronHub | Keyed | OpenAI-compat subclass | Shared weekly credit pool; validates against `/v1/user/me`, rejects HTTP-200 proxy-error banners. [Funding and integration notes](04-recurring-credit-gateways.md). |
-| `experiential` | Experiential Labs | Keyed | OpenAI-compat subclass | Shared monthly credit pool; authenticated `/v1/models`, model-specific Claude sampling compatibility. [Funding and account-verification notes](04-recurring-credit-gateways.md). |
 | `sail` | Sail Research | Keyed (payment method required for recurring credit) | Native (`SailProvider`) | Stable `/v1/responses` integration submits background jobs and polls them to completion; flex-only models use the `flex` completion window. Sail grants $5 in monthly credits while a payment method is attached, then charges usage beyond that credit. |
 | `bai` | B.AI | Keyed | OpenAI-compat | Gateway added in #918; only catalog row is a limited-time 0-credit promo, kept in the hosted catalog. |
 | `anyapi` | AnyAPI | Keyed | OpenAI-compat | Free tier $0/no card/recurring, capped at 100K tokens/day over "free and basic" models; no RPM/RPD published (#772). Model ids arrive via catalog-sync, never seeded blind. |
 | `radeon` | AMD Radeon Cloud TokenFactory | Keyed | OpenAI-compat | Shared Model API at `developer.amd.com.cn/radeon/api/v1`; public models are free without consuming instance credits and use a rotating experimental roster. Current per-account limits are read from response headers rather than hard-coded. Parallel tool calls are disabled and the adapter allows the documented ten-minute generation window. |
 | `nvidia` | NVIDIA NIM | Keyed | OpenAI-compat | `parallel_tool_calls` pinned false (#255); 180s timeout doubles as streaming first-byte grace (#584). |
 | `mistral` | Mistral | Keyed | OpenAI-compat | `api.mistral.ai/v1`. |
+| `nous` | Nous Portal (Nous Research) | Keyed | OpenAI-compat | `$0` free plan at `inference-api.nousresearch.com/v1`; `:free`-suffixed routes, portal key required (keyless calls answer 402); prompts may train Nous unless Privacy Mode is on. |
+| `typhoon` | OpenTyphoon (SCB 10X) | Keyed | OpenAI-compat | No-card free tier at `api.opentyphoon.ai/v1`; responses may be used for the lab's research unless disabled in the portal settings. |
+| `plugsky` | Plugsky | Keyed | OpenAI-compat | No-card free gateway at `plugsky.com/v1`; smoke-tested `/v1/models` 2026-10-08. |
+| `tokenharbor` | Token Harbor | Keyed | OpenAI-compat | `:free` ids ride a rolling 7-day value allowance (60 RPM account-wide) and rotate, so rows stay auto-discovery-managed; free routes are OFF by default until enabled in the dashboard. |
+| `alibaba` | Alibaba Model Studio | Keyed | OpenAI-compat | International DashScope endpoint `dashscope-intl.aliyuncs.com/compatible-mode/v1`; one-time 1M-token free quota per model (90 days) with the console's "Free Quota Only" toggle ON (default OFF, otherwise pay-as-you-go). |
 | `sambanova` | SambaNova | Retired (V23) | Not registered | Free tier permanently gone; kept in the type union for historical key rows. |
 | `openrouter` | OpenRouter | Keyed | OpenAI-compat | Sends `HTTP-Referer`/`X-Title` headers; `:free` model suffix marks zero-cost routes. |
-| `github` | GitHub Models | Keyed | OpenAI-compat | Routes to `models.github.ai/inference`; catalog uses `<publisher>/<model>` ids. |
 | `cohere` | Cohere | Keyed | Native (`CohereProvider`) | Uses Cohere's OpenAI-compatible endpoint. |
 | `cloudflare` | Cloudflare Workers AI | Keyed (`account_id:token`) | Native (`CloudflareProvider`) | Compound credential format parsed by the adapter. |
 | `zhipu` | Zhipu (Z.ai / bigmodel.cn) | Keyed | Native (`ZhipuProvider`) | Console autodetect: a rejected domestic key is re-probed against the global `api.z.ai` host; 60s timeout covers glm-4.7-flash hidden reasoning. |
@@ -65,3 +67,4 @@ Of the 43 built-in platforms, **10 use dedicated adapters** and **33 ride `OpenA
 - Moonshot direct integration and MiniMax direct were dropped in `migrateModelsV4` (paid-only / superseded by the OpenRouter route).
 - Hugging Face was dropped in V4 ("tool-call format issues") and re-added in V13 through the Inference Providers meta-router.
 - Chutes was evaluated for V11 and dropped: every model returned 402 requiring a non-zero balance, conflicting with the project's no-card criterion.
+- GitHub Models, Cerebras, xAI and Experiential Labs were dropped on 2026-10-09: none sustains a recurring no-card free tier (GitHub Models retired 2026-07-30; Cerebras grants only a 30-day trial credit; xAI never ran a free tier; Experiential requires a payment method on file).

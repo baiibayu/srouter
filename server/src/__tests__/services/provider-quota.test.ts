@@ -43,8 +43,6 @@ describe('provider-quota: pool inference', () => {
     expect(inferQuotaPoolKey('electronhub', 'qwen3.8-flash')).toBe('electronhub::weekly-credit');
     expect(inferQuotaPoolKey('electronhub', 'gpt-oss-120b')).toBe('electronhub::weekly-credit');
     expect(inferQuotaPoolKey('electronhub', 'some-model:free')).toBe('electronhub::daily-free');
-    expect(inferQuotaPoolKey('experiential', 'glm-5.3')).toBe('experiential::monthly-credit');
-    expect(inferQuotaPoolKey('experiential', 'gpt-5.6-sol')).toBe('experiential::monthly-credit');
     expect(inferQuotaPoolKey('router9', 'minimax/minimax-m3')).toBe('router9::monthly-credit');
     expect(inferQuotaPoolKey('router9', 'another-model')).toBe('router9::monthly-credit');
     expect(inferQuotaPoolKey('septor', 'qwen3-coder-free')).toBe('septor::daily-free');

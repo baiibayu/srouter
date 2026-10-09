@@ -42,6 +42,7 @@ export const keysRouter = Router();
 // Moonshot and MiniMax direct integrations were dropped in V4. HuggingFace
 // was dropped in V4 and re-added in V13 via the router.huggingface.co route.
 // SambaNova was dropped in V23 (free tier permanently retired).
+// xAI, Cerebras, GitHub Models, NavyAI and Experiential were dropped in 2026-10.
 const PLATFORMS = [
   'aclide',
   'speka',
@@ -49,11 +50,12 @@ const PLATFORMS = [
   'gizmo',
   'blockrun',
   'moondream',
-  'google', 'groq', 'xai', 'cerebras', 'sail', 'electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'bai', 'radeon', 'nvidia', 'mistral',
-  'openrouter', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama',
+  'google', 'groq', 'sail', 'electronhub', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'bai', 'radeon', 'nvidia', 'mistral',
+  'openrouter', 'cohere', 'cloudflare', 'zhipu', 'ollama',
   'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'reka', 'siliconflow',
   'routeway', 'bazaarlink', 'ainative', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
   'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'custom',
+  'nous', 'typhoon', 'plugsky', 'tokenharbor', 'alibaba',
 ] as const;
 
 const ALLOWED_IMPORT_EXTENSIONS = new Set(['.env', '.json', '.jsonc', '.md', '.txt', '.csv']);

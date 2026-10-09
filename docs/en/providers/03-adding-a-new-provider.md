@@ -10,7 +10,7 @@ Add the id to the `Platform` union in [`shared/types.ts`](../../../shared/types.
 
 ## 2. Choose an adapter
 
-- **OpenAI-compatible endpoint** → no new class. Register `OpenAICompatProvider` with the platform's base URL, as groq, cerebras, openrouter, and ~27 others do.
+- **OpenAI-compatible endpoint** → no new class. Register `OpenAICompatProvider` with the platform's base URL, as groq, mistral, openrouter, and ~34 others do.
 - **Wire-format divergence** → subclass `BaseProvider` in its own file and register it. Existing precedents:
   - `GoogleProvider` — native Gemini wire format;
   - `CohereProvider` / `CloudflareProvider` / `ZhipuProvider` — compatible chat routing plus key-shape or console-detection behavior;

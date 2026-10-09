@@ -114,13 +114,10 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'openrouter') return normalizedModelId.endsWith(':free') ? 'openrouter::free' : 'openrouter::account';
   if (platform === 'google') return 'google::project';
   if (platform === 'groq') return 'groq::account';
-  if (platform === 'xai') return 'xai::account';
-  if (platform === 'cerebras') return 'cerebras::shared';
   if (platform === 'sail') return 'sail::monthly-credit';
   if (platform === 'aclide') return 'aclide::monthly-credit';
   if (platform === 'speka') return 'speka::monthly-credit';
   if (platform === 'electronhub') return normalizedModelId.endsWith(':free') ? 'electronhub::daily-free' : 'electronhub::weekly-credit';
-  if (platform === 'experiential') return 'experiential::monthly-credit';
   if (platform === 'router9') return 'router9::monthly-credit';
   if (platform === 'septor') return 'septor::daily-free';
   if (platform === 'clod') return 'clod::daily-free';
@@ -136,7 +133,6 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'sambanova') return 'sambanova::shared';
   if (platform === 'nvidia') return 'nvidia::credit-pool';
   if (platform === 'mistral') return 'mistral::experiment-pool';
-  if (platform === 'github') return 'github::account';
   if (platform === 'cohere') return 'cohere::trial-pool';
   if (platform === 'cloudflare') return 'cloudflare::account';
   if (platform === 'zhipu') return 'zhipu::account';
@@ -158,7 +154,6 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'ainative') return 'ainative::account';
   if (platform === 'aion') return 'aion::free';
   if (platform === 'requesty') return 'requesty::free';
-  if (platform === 'navy') return 'navy::free';
   if (platform === 'nara') return 'nara::free';
   if (platform === 'sealion') return 'sealion::free';
   // OrcaRouter: one rate-limited free allowance across all `*-free` aliases
@@ -183,8 +178,8 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
 function isSharedPool(platform: Platform): boolean {
   if (platform === 'aclide') return true;
   if (platform === 'speka') return true;
-  if (['electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
-  return ['openrouter', 'google', 'groq', 'cerebras', 'sail', 'bai', 'radeon', 'sambanova', 'nvidia', 'mistral', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama', 'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'opencode-go', 'routeway', 'bazaarlink', 'ainative', 'aion', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'anyapi', 'modelscope', 'aihorde'].includes(platform);
+  if (['electronhub', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
+  return ['openrouter', 'google', 'groq', 'sail', 'bai', 'radeon', 'sambanova', 'nvidia', 'mistral', 'cohere', 'cloudflare', 'zhipu', 'ollama', 'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'opencode-go', 'routeway', 'bazaarlink', 'ainative', 'aion', 'requesty', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'anyapi', 'modelscope', 'aihorde'].includes(platform);
 }
 
 type HeaderSpec = { metric: QuotaMetric; limit: string; remaining?: string; reset?: string; strategy?: QuotaResetStrategy };
@@ -215,10 +210,6 @@ const HEADER_SPECS: Partial<Record<Platform, HeaderSpec[]>> = {
   groq: [
     { metric: 'requests', limit: 'x-ratelimit-limit-requests', remaining: 'x-ratelimit-remaining-requests', reset: 'x-ratelimit-reset-requests', strategy: 'provider_reported' },
     { metric: 'tokens', limit: 'x-ratelimit-limit-tokens', remaining: 'x-ratelimit-remaining-tokens', reset: 'x-ratelimit-reset-tokens', strategy: 'provider_reported' },
-  ],
-  cerebras: [
-    { metric: 'requests', limit: 'x-ratelimit-limit-requests-day', remaining: 'x-ratelimit-remaining-requests-day', reset: 'x-ratelimit-reset-requests-day', strategy: 'provider_reported' },
-    { metric: 'tokens', limit: 'x-ratelimit-limit-tokens-minute', remaining: 'x-ratelimit-remaining-tokens-minute', reset: 'x-ratelimit-reset-tokens-minute', strategy: 'token_bucket' },
   ],
   openrouter: [
     { metric: 'requests', limit: 'x-ratelimit-limit-requests', remaining: 'x-ratelimit-remaining-requests', reset: 'x-ratelimit-reset-requests', strategy: 'provider_reported' },

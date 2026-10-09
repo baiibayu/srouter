@@ -200,7 +200,7 @@ describe('server log viewer', () => {
   it('persists warn and error only, and preloads them on a cold start', () => {
     recordLogEntry({ level: 'info', message: 'routine' });
     recordLogEntry({ level: 'warn', message: '[Health] key benched', provider: 'groq' });
-    recordLogEntry({ level: 'error', message: '[Router] no key available', provider: 'cerebras' });
+    recordLogEntry({ level: 'error', message: '[Router] no key available', provider: 'bai' });
     recordLogEntry({ level: 'debug', message: 'cache probe' });
 
     const rows = getDb()
@@ -250,7 +250,7 @@ describe('server log viewer', () => {
   describe('GET /api/logs', () => {
     beforeEach(() => {
       recordLogEntry({ level: 'debug', message: 'cache probe', provider: 'groq' });
-      recordLogEntry({ level: 'info', message: '[Router] routed to cerebras', provider: 'cerebras' });
+      recordLogEntry({ level: 'info', message: '[Router] routed to bai', provider: 'bai' });
       recordLogEntry({ level: 'warn', message: '[Health] key benched', provider: 'groq', event: 'key_invalid' });
       recordLogEntry({ level: 'error', message: '[Router] all keys exhausted', provider: 'groq' });
     });
@@ -260,7 +260,7 @@ describe('server log viewer', () => {
       expect(status).toBe(200);
       expect(body.entries.map(e => e.message)).toEqual([
         'cache probe',
-        '[Router] routed to cerebras',
+        '[Router] routed to bai',
         '[Health] key benched',
         '[Router] all keys exhausted',
       ]);
@@ -287,7 +287,7 @@ describe('server log viewer', () => {
     it('searches message, provider, source and event case-insensitively', async () => {
       expect((await fetchLogs('?q=EXHAUSTED')).body.entries).toHaveLength(1);
       // matched via provider…
-      expect((await fetchLogs('?q=cerebras')).body.entries).toHaveLength(1);
+      expect((await fetchLogs('?q=bai')).body.entries).toHaveLength(1);
       // …via source…
       expect((await fetchLogs('?q=health')).body.entries).toHaveLength(1);
       // …and via event.

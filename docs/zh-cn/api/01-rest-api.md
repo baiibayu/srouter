@@ -141,7 +141,7 @@ final = client.chat.completions.create(
 print(final.choices[0].message.content)
 ```
 
-配合 `stream=True` 也可以，你会先收到一串 `delta.tool_calls` 分块，然后是一个 `finish_reason: "tool_calls"` 收尾。底层实现上，兼容 OpenAI 的提供方（Groq、Cerebras、Mistral、OpenRouter、GitHub Models、HuggingFace、Cloudflare、Cohere 兼容模式）会直接透传请求；发往 Gemini 的请求会被翻译成 Google 的 `functionDeclarations` / `functionResponse` 结构，响应再翻译回来。
+配合 `stream=True` 也可以，你会先收到一串 `delta.tool_calls` 分块，然后是一个 `finish_reason: "tool_calls"` 收尾。底层实现上，兼容 OpenAI 的提供方（Groq、Mistral、OpenRouter、HuggingFace、Cloudflare、Cohere 兼容模式）会直接透传请求；发往 Gemini 的请求会被翻译成 Google 的 `functionDeclarations` / `functionResponse` 结构，响应再翻译回来。
 
 ## Gemini 的 Google 搜索接地
 
@@ -251,8 +251,6 @@ curl http://localhost:20268/v1/embeddings \
 | 系列（`model`） | 维度 | 提供方（故障转移顺序） |
 | --- | --- | --- |
 | `gemini-embedding-001` *（默认）* | 3072 | Google |
-| `text-embedding-3-large` | 3072 | GitHub Models |
-| `text-embedding-3-small` | 1536 | GitHub Models |
 | `embed-v4.0` | 1536 | Cohere |
 | `bge-m3` | 1024 | Cloudflare → Hugging Face |
 | `qwen3-embedding-0.6b` | 1024 | Cloudflare |
@@ -262,6 +260,58 @@ curl http://localhost:20268/v1/embeddings \
 | `embeddinggemma-300m` | 768 | Cloudflare |
 
 默认系列、各提供方的开关和优先级都在仪表盘的 **模型 → 嵌入** 页。为某个向量库选定一个系列之后就别再换了，这正是「系列」这个设计存在的意义。
+
+## 网页搜索与页面抓取
+
+当上游供应商不提供 `web_search` 或 URL 抓取工具时，智能体任务会卡在"搜一下"或"读一下"。SRouter 自己回答这两个问题 —— 与其它 `/v1` 端点共用同一把统一 API key，受共享的 `/v1` 代理限流器约束。
+
+### `POST /v1/web-search`
+
+```bash
+curl http://localhost:20268/v1/web-search \
+  -H "Authorization: Bearer srouter-your-unified-key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "best free LLM API 2026", "max_results": 5}'
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `query` | string，必填 | 去除首尾空白后 1–500 字符 |
+| `max_results` | int，可选 | 1–10，默认 5 |
+
+```json
+{
+  "provider": "duckduckgo",
+  "query": "best free LLM API 2026",
+  "results": [
+    { "title": "...", "url": "https://...", "snippet": "..." }
+  ]
+}
+```
+
+后端是 DuckDuckGo 免密钥的 HTML 端点。验证码/限流页面（HTTP 200 但解析出零条结果）会以 `502 Web search failed: ... (rate limited?)` 上报 —— 绝不会伪装成空结果集，避免智能体把限流误判为"网上没有答案"。
+
+### `POST /v1/fetch`
+
+```bash
+curl http://localhost:20268/v1/fetch \
+  -H "Authorization: Bearer srouter-your-unified-key" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/docs", "max_bytes": 65536}'
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `url` | string，必填 | 仅 http(s)，≤2048 字符 |
+| `max_bytes` | int，可选 | 1 KiB–2 MiB，默认 512 KiB |
+
+```json
+{ "url": "https://example.com/docs", "via": "direct", "title": "...", "text": "...", "truncated": false }
+```
+
+- HTML 返回可读文本（剔除脚本/样式、解码实体）；非 HTML 原样返回并附 `content_type`。`via` 为 `"direct"` 或 `"jina"` —— 后者是面向反爬墙/重 JS 页面的免密钥阅读器回退。
+- **防 SSRF**：只允许公网 `http(s)` 目标。私有网段、回环/链路本地/元数据地址、`localhost` 类主机名，以及 DNS 解析落向私有地址的域名，都会在*打开任何 socket 之前*被 `400` 拒绝。响应体按 `max_bytes` 硬截断。
+- 两个端点只接受统一推理 key（拒绝仪表盘会话 token），并共享 `/v1` 限流器。
 
 ## Anthropic 与 Claude 客户端
 

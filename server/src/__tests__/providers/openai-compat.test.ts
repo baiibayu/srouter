@@ -529,38 +529,6 @@ describe('OpenAICompatProvider', () => {
     expect(body.messages[0]).toEqual({ role: 'assistant', content: 'replayed turn' });
   });
 
-  it('strips assistant reasoning_content before sending messages to Cerebras (#1070)', async () => {
-    let body: any = null;
-    vi.spyOn(global, 'fetch').mockImplementation(async (_url, init) => {
-      body = JSON.parse((init as any).body);
-      return {
-        ok: true,
-        json: () => Promise.resolve({
-          id: 'id', object: 'chat.completion', created: 1, model: 'm',
-          choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
-          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
-        }),
-      } as any;
-    });
-
-    const cerebras = new OpenAICompatProvider({ platform: 'cerebras', name: 'Cerebras', baseUrl: 'https://api.cerebras.ai/v1' });
-    await cerebras.chatCompletion(
-      'k',
-      [{
-        role: 'assistant',
-        content: 'replayed turn',
-        reasoning_content: 'private chain from a prior thinking turn',
-      }],
-      'zai-glm-4.7',
-    );
-
-    // Cerebras is strict about unknown fields: reasoning_content must NOT reach
-    // the wire (verified: 400 wrong_api_format 'property ... reasoning_content
-    // is unsupported', see vercel/ai#15042 / opencode#26762).
-    expect(body.messages[0]).not.toHaveProperty('reasoning_content');
-    expect(body.messages[0]).toEqual({ role: 'assistant', content: 'replayed turn' });
-  });
-
   it('folds reasoning into content when content is empty (Ollama style — bare `reasoning` field)', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: true,
@@ -645,14 +613,17 @@ describe('OpenAICompatProvider - platform instances', () => {
   // Update both when adding/removing a platform.
   const platforms = [
     { platform: 'groq',       name: 'Groq',          baseUrl: 'https://api.groq.com/openai/v1' },
-    { platform: 'cerebras',   name: 'Cerebras',      baseUrl: 'https://api.cerebras.ai/v1' },
     { platform: 'bai',        name: 'B.AI',          baseUrl: 'https://api.b.ai/v1' },
+    { platform: 'nous',       name: 'Nous Portal',   baseUrl: 'https://inference-api.nousresearch.com/v1' },
+    { platform: 'typhoon',    name: 'OpenTyphoon',   baseUrl: 'https://api.opentyphoon.ai/v1' },
+    { platform: 'plugsky',    name: 'Plugsky',       baseUrl: 'https://plugsky.com/v1' },
+    { platform: 'tokenharbor', name: 'Token Harbor', baseUrl: 'https://tokenharbor.ai/v1' },
+    { platform: 'alibaba',    name: 'Alibaba Model Studio', baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' },
     { platform: 'anyapi',     name: 'AnyAPI',        baseUrl: 'https://api.anyapi.ai/v1' },
     { platform: 'radeon',     name: 'AMD Radeon Cloud', baseUrl: 'https://developer.amd.com.cn/radeon/api/v1' },
     { platform: 'nvidia',     name: 'NVIDIA NIM',    baseUrl: 'https://integrate.api.nvidia.com/v1' },
     { platform: 'mistral',    name: 'Mistral',       baseUrl: 'https://api.mistral.ai/v1' },
     { platform: 'openrouter', name: 'OpenRouter',    baseUrl: 'https://openrouter.ai/api/v1' },
-    { platform: 'github',     name: 'GitHub Models', baseUrl: 'https://models.github.ai/inference' },
     // pollinations registers a PollinationsProvider subclass (custom
     // validateKey, see providers/pollinations.test.ts) but chat routing is
     // stock openai-compat.
@@ -853,7 +824,7 @@ describe('extended sampling param passthrough', () => {
       body = JSON.parse((init as any).body);
       return mockOk();
     });
-    const p = new OpenAICompatProvider({ platform: 'cerebras', name: 'T', baseUrl: 'https://x/v1' });
+    const p = new OpenAICompatProvider({ platform: 'bai', name: 'T', baseUrl: 'https://x/v1' });
     await p.chatCompletion('k', [{ role: 'user', content: 'q' }], 'm', extended);
 
     expect(body.seed).toBe(42);

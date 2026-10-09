@@ -233,11 +233,6 @@ export interface PlatformParamPolicy {
   maxTokensCap?: number;
 }
 
-/** GitHub Models' own output-token ceiling: asking for more 400s ("max_tokens
- *  is too large"), so the request never reaches the model. Wired into the
- *  github policy below as maxTokensCap. */
-export const GITHUB_MAX_OUTPUT_TOKENS = 400;
-
 // Keyed by Platform (not string) so a typo'd platform id fails tsc instead of
 // silently no-op'ing the policy; the string-typed accessors below cast at the
 // boundary since routes carry platform ids as plain strings.
@@ -272,17 +267,6 @@ export const PLATFORM_PARAM_POLICIES: Partial<Record<Platform, PlatformParamPoli
   // Groq documents logprobs / top_logprobs / logit_bias as unsupported and
   // rejects requests that include them.
   groq: { drop: ['logprobs', 'top_logprobs', 'logit_bias'] },
-  // GitHub Models sits on Azure OpenAI, which 400s "Unrecognized request
-  // argument" for knobs outside the OpenAI set. Its reasoning_effort enum is
-  // the older low/medium/high one, so 'none'/'minimal' are clamped rather
-  // than sent. Its free tier also refuses any max_tokens above
-  // GITHUB_MAX_OUTPUT_TOKENS, so the cap is clamped here instead of being
-  // spent as a wasted fallback hop.
-  github: {
-    drop: ['top_k', 'min_p', 'repetition_penalty'],
-    reasoningEfforts: ['low', 'medium', 'high'],
-    maxTokensCap: GITHUB_MAX_OUTPUT_TOKENS,
-  },
   // Gemini's generationConfig has no equivalents for these; the adapter
   // translates the rest natively (topK, seed, penalties, responseSchema, and
   // reasoning_effort → thinkingConfig — see toGeminiExtendedConfig).

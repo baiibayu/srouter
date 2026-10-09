@@ -135,18 +135,6 @@ describe('FallbackState.observedTotalTokens (#507)', () => {
     expect(state.observedTotalTokens).toBe(24092);
   });
 
-  it('does NOT latch github limit-only bodies (parser refuses — see provider-size-parser)', () => {
-    const state = newFallbackState();
-    const msg = 'GitHub Models API error 413: Request body too large for gpt-4.1 model. Max size: 8000 tokens.';
-    const err = Object.assign(new Error(msg), { status: 413 });
-    const ghRoute: RouteResult = {
-      ...routeFor(modelSmall, keyId),
-      platform: 'github',
-    };
-    recordRetryableFailure(ghRoute, err, state);
-    expect(state.observedTotalTokens).toBeUndefined();
-  });
-
   it('never decreases — max of current and incoming wins', () => {
     const state = newFallbackState();
     state.observedTotalTokens = 50000;

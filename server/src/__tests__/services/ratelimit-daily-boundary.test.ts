@@ -82,11 +82,18 @@ describe('provider daily caps use a midnight-UTC boundary', () => {
   });
 
   it('applies the same boundary to token accounting', () => {
-    const now = utcMidnight(Date.now()) + 3 * HOUR;
-    seedUsage('navy', 'm1', keyId, 'tokens', 5_000, utcMidnight(now) - HOUR);
-    seedUsage('navy', 'm1', keyId, 'tokens', 1_200, utcMidnight(now) + HOUR);
+    // The persisted token sum is only consulted while a provider cap is
+    // configured (PROVIDER_DAILY_TOKEN_CAP_<PLATFORM>).
+    process.env.PROVIDER_DAILY_TOKEN_CAP_GROQ = '100000';
+    try {
+      const now = utcMidnight(Date.now()) + 3 * HOUR;
+      seedUsage('groq', 'm1', keyId, 'tokens', 5_000, utcMidnight(now) - HOUR);
+      seedUsage('groq', 'm1', keyId, 'tokens', 1_200, utcMidnight(now) + HOUR);
 
-    expect(providerDailyTokenCount('navy', keyId, now)).toBe(1_200);
+      expect(providerDailyTokenCount('groq', keyId, now)).toBe(1_200);
+    } finally {
+      delete process.env.PROVIDER_DAILY_TOKEN_CAP_GROQ;
+    }
   });
 
   it('counts nothing at exactly midnight UTC', () => {
@@ -104,7 +111,7 @@ describe('cooldown visibility and manual clear', () => {
   it('reports active cooldowns grouped by key with remaining time', () => {
     setCooldown('groq', 'llama-3.3-70b', 11, 60_000);
     setCooldown('groq', 'llama-3.1-8b', 11, 120_000);
-    setCooldown('cerebras', 'qwen-3-coder', 12, 90_000);
+    setCooldown('bai', 'qwen-3-coder', 12, 90_000);
 
     const grouped = getActiveCooldownsForKeys([11, 12]);
 

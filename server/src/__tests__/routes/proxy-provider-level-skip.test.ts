@@ -68,8 +68,8 @@ const err401 = () => Object.assign(new Error('Groq API error 401: Invalid API Ke
 const keysUsed = (): string[] => chatCompletion.mock.calls.map(call => String(call[0]));
 const platformsUsed = (): string[] => keysUsed().map(k => k.split('-')[0]);
 
-// Two groq models on two groq keys, ranked ahead of one cerebras model: the
-// pre-#788 chain would spend FOUR hops inside groq before reaching cerebras.
+// Two groq models on two groq keys, ranked ahead of one nvidia model: the
+// pre-#788 chain would spend FOUR hops inside groq before reaching nvidia.
 function setup(): void {
   const db = getDb();
   setRoutingStrategy('priority');
@@ -82,14 +82,14 @@ function setup(): void {
   const pick = (platform: string, limit: number) => db.prepare(
     'SELECT id FROM models WHERE platform = ? ORDER BY id LIMIT ?',
   ).all(platform, limit) as { id: number }[];
-  const chain = [...pick('groq', 2), ...pick('cerebras', 1)];
+  const chain = [...pick('groq', 2), ...pick('nvidia', 1)];
   const enable = db.prepare(
     'UPDATE models SET enabled = 1, rpm_limit = NULL, rpd_limit = NULL, tpm_limit = NULL, tpd_limit = NULL WHERE id = ?',
   );
   const prioritize = db.prepare('UPDATE fallback_config SET priority = ?, enabled = 1 WHERE model_db_id = ?');
   chain.forEach((m, i) => { enable.run(m.id); prioritize.run(i + 1, m.id); });
 
-  for (const [platform, label] of [['groq', 'a'], ['groq', 'b'], ['cerebras', 'c']] as const) {
+  for (const [platform, label] of [['groq', 'a'], ['groq', 'b'], ['nvidia', 'c']] as const) {
     const { encrypted, iv, authTag } = encrypt(`${platform}-${label}`);
     db.prepare(`
       INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled)
@@ -117,7 +117,7 @@ describe('provider-level failures skip the whole platform (#788)', () => {
     setup();
   });
 
-  it('a 503 on the first groq key fails over to cerebras, not to groq key b', async () => {
+  it('a 503 on the first groq key fails over to nvidia, not to groq key b', async () => {
     chatCompletion
       .mockRejectedValueOnce(err503())
       .mockResolvedValueOnce(GOOD_RESULT);
@@ -126,7 +126,7 @@ describe('provider-level failures skip the whole platform (#788)', () => {
 
     expect(status).toBe(200);
     expect(chatCompletion).toHaveBeenCalledTimes(2);
-    expect(platformsUsed()).toEqual(['groq', 'cerebras']);
+    expect(platformsUsed()).toEqual(['groq', 'nvidia']);
   });
 
   it('a groq-wide outage burns two hops, not four', async () => {
@@ -136,7 +136,7 @@ describe('provider-level failures skip the whole platform (#788)', () => {
     const { status } = await post(app, { messages: [{ role: 'user', content: 'hi' }] }, key);
 
     expect(status).toBe(502); // upstream failures, not a rate-limit exhaustion
-    expect(platformsUsed()).toEqual(['groq', 'cerebras']);
+    expect(platformsUsed()).toEqual(['groq', 'nvidia']);
   });
 
   it('a 401 still rotates to the sibling groq key (key-scoped, unchanged)', async () => {

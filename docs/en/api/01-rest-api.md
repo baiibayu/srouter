@@ -162,7 +162,7 @@ final = client.chat.completions.create(
 print(final.choices[0].message.content)
 ```
 
-Works with `stream=True` as well — you'll get `delta.tool_calls` chunks followed by a `finish_reason: "tool_calls"` close. Under the hood, OpenAI-compatible providers (Groq, Cerebras, Mistral, OpenRouter, GitHub Models, HuggingFace, Cloudflare, Cohere compat) get the request passed through; Gemini requests get translated into Google's `functionDeclarations` / `functionResponse` shape and the response is translated back.
+Works with `stream=True` as well — you'll get `delta.tool_calls` chunks followed by a `finish_reason: "tool_calls"` close. Under the hood, OpenAI-compatible providers (Groq, Mistral, OpenRouter, HuggingFace, Cloudflare, Cohere compat) get the request passed through; Gemini requests get translated into Google's `functionDeclarations` / `functionResponse` shape and the response is translated back.
 
 ## Gemini Google Search grounding
 
@@ -334,8 +334,6 @@ curl http://localhost:20268/v1/embeddings \
 | Family (`model`) | Dims | Providers (failover order) |
 | --- | --- | --- |
 | `gemini-embedding-001` *(default)* | 3072 | Google |
-| `text-embedding-3-large` | 3072 | GitHub Models |
-| `text-embedding-3-small` | 1536 | GitHub Models |
 | `embed-v4.0` | 1536 | Cohere |
 | `bge-m3` | 1024 | Cloudflare → Hugging Face |
 | `qwen3-embedding-0.6b` | 1024 | Cloudflare |
@@ -345,6 +343,58 @@ curl http://localhost:20268/v1/embeddings \
 | `embeddinggemma-300m` | 768 | Cloudflare |
 
 The default family, per-provider toggles, and priorities live on the dashboard's **Models → Embeddings** page. Pick your family once and stick with it for a given vector store — that's the whole point of the family model.
+
+## Web search & page fetch
+
+Agents die on "search this" or "read that" when their provider ships no `web_search` or URL-fetch tool. SRouter answers both itself — same unified API key as every other `/v1` endpoint, rate-limited by the shared `/v1` proxy limiter.
+
+### `POST /v1/web-search`
+
+```bash
+curl http://localhost:20268/v1/web-search \
+  -H "Authorization: Bearer srouter-your-unified-key" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "best free LLM API 2026", "max_results": 5}'
+```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `query` | string, required | 1–500 chars after trim |
+| `max_results` | int, optional | 1–10, default 5 |
+
+```json
+{
+  "provider": "duckduckgo",
+  "query": "best free LLM API 2026",
+  "results": [
+    { "title": "...", "url": "https://...", "snippet": "..." }
+  ]
+}
+```
+
+The backend is DuckDuckGo's keyless HTML endpoint. A captcha/rate page (HTTP 200, zero parsed results) surfaces as `502 Web search failed: ... (rate limited?)` — never an empty result set, so an agent can't mistake throttling for "the web has no answer".
+
+### `POST /v1/fetch`
+
+```bash
+curl http://localhost:20268/v1/fetch \
+  -H "Authorization: Bearer srouter-your-unified-key" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/docs", "max_bytes": 65536}'
+```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `url` | string, required | http(s) only, ≤2048 chars |
+| `max_bytes` | int, optional | 1 KiB–2 MiB, default 512 KiB |
+
+```json
+{ "url": "https://example.com/docs", "via": "direct", "title": "...", "text": "...", "truncated": false }
+```
+
+- HTML arrives as readable text (scripts/styles stripped, entities decoded); non-HTML comes back as-is with `content_type`. `via` is `"direct"` or `"jina"` — the keyless reader fallback for bot-walled or JS-heavy pages.
+- **SSRF-guarded**: only public `http(s)` targets. Private ranges, loopback/link-local/metadata addresses, `localhost`-style names, and hostnames whose DNS resolution lands private are rejected with `400` *before* any socket is opened. Response bodies are hard-capped at `max_bytes`.
+- Both endpoints accept only the unified inference key (dashboard session tokens are rejected) and share the `/v1` rate limiter.
 
 ## Anthropic / Claude clients
 

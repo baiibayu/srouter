@@ -113,8 +113,8 @@ describe('proxy config accessors', () => {
   });
 
   it('parses the comma-separated bypass list', () => {
-    applyProxyBypass('groq, Google ,, cerebras');
-    expect(getProxyBypassPlatforms().sort()).toEqual(['cerebras', 'google', 'groq']);
+    applyProxyBypass('groq, Google ,, bai');
+    expect(getProxyBypassPlatforms().sort()).toEqual(['bai', 'google', 'groq']);
   });
 
   it('isProxyActive is false when no proxy URL is configured', () => {

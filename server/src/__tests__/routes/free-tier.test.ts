@@ -51,8 +51,8 @@ function observe(row: {
 describe('free-tier pool overview (#905)', () => {
   let app: Express;
   let groqKey = 0;
-  let cerebrasA = 0;
-  let cerebrasB = 0;
+  let nvidiaA = 0;
+  let nvidiaB = 0;
 
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
@@ -64,10 +64,10 @@ describe('free-tier pool overview (#905)', () => {
     // Narrow the catalog down to a handful of rows across three platforms.
     db.prepare('UPDATE models SET enabled = 0').run();
     const groq = db.prepare("SELECT id, model_id FROM models WHERE platform = 'groq' ORDER BY id LIMIT 3").all() as { id: number; model_id: string }[];
-    const cerebras = db.prepare("SELECT id FROM models WHERE platform = 'cerebras' ORDER BY id LIMIT 2").all() as { id: number }[];
+    const nvidia = db.prepare("SELECT id FROM models WHERE platform = 'nvidia' ORDER BY id LIMIT 2").all() as { id: number }[];
     const google = db.prepare("SELECT id FROM models WHERE platform = 'google' ORDER BY id LIMIT 1").all() as { id: number }[];
     const on = db.prepare('UPDATE models SET enabled = 1 WHERE id = ?');
-    for (const m of [...groq, ...cerebras, ...google]) on.run(m.id);
+    for (const m of [...groq, ...nvidia, ...google]) on.run(m.id);
 
     // Three groq models in ONE pool with different labels: the pool takes the
     // largest documented budget once, never the sum of the three.
@@ -75,8 +75,8 @@ describe('free-tier pool overview (#905)', () => {
     budget.run('~6M', groq[0].id);
     budget.run('~15M', groq[1].id);
     budget.run('~6M', groq[2].id);
-    budget.run('~30M', cerebras[0].id);
-    budget.run('credits-based', cerebras[1].id);
+    budget.run('~30M', nvidia[0].id);
+    budget.run('credits-based', nvidia[1].id);
     budget.run('~3M', google[0].id);
 
     // One groq row is switched off in the chain: it still shares the provider
@@ -89,17 +89,17 @@ describe('free-tier pool overview (#905)', () => {
     db.prepare('UPDATE profile_models SET enabled = 0 WHERE model_db_id = ?').run(groq[2].id);
 
     groqKey = insertKey('groq', 'groq-main');
-    cerebrasA = insertKey('cerebras', 'cerebras-a');
-    cerebrasB = insertKey('cerebras', 'cerebras-b');
+    nvidiaA = insertKey('nvidia', 'nvidia-a');
+    nvidiaB = insertKey('nvidia', 'nvidia-b');
     // google is deliberately left keyless.
 
     // groq: an older `tokens` reading and a newer `requests` one (a 429 writes
     // exactly this). Latest-wins would report 5,000 requests as the headroom.
     observe({ platform: 'groq', keyId: groqKey, pool: 'groq::account', metric: 'tokens', limit: 15_000_000, remaining: 12_400_000, resetAt: future(600), observedAt: '2026-01-01 00:00:00' });
     observe({ platform: 'groq', keyId: groqKey, pool: 'groq::account', metric: 'requests', limit: 14_400, remaining: 5_000, resetAt: future(120), observedAt: '2026-01-02 00:00:00' });
-    // cerebras: the same pool seen through two keys — two accounts, two allowances.
-    observe({ platform: 'cerebras', keyId: cerebrasA, pool: 'cerebras::shared', metric: 'tokens', limit: 30_000_000, remaining: 20_000_000, resetAt: future(300), observedAt: '2026-01-01 00:00:00' });
-    observe({ platform: 'cerebras', keyId: cerebrasB, pool: 'cerebras::shared', metric: 'tokens', limit: 30_000_000, remaining: 8_000_000, resetAt: future(180), observedAt: '2026-01-03 00:00:00' });
+    // nvidia: the same pool seen through two keys — two accounts, two allowances.
+    observe({ platform: 'nvidia', keyId: nvidiaA, pool: 'nvidia::credit-pool', metric: 'tokens', limit: 30_000_000, remaining: 20_000_000, resetAt: future(300), observedAt: '2026-01-01 00:00:00' });
+    observe({ platform: 'nvidia', keyId: nvidiaB, pool: 'nvidia::credit-pool', metric: 'tokens', limit: 30_000_000, remaining: 8_000_000, resetAt: future(180), observedAt: '2026-01-03 00:00:00' });
   });
 
   it('reports one row per pool with a single deduped budget', async () => {
@@ -117,10 +117,10 @@ describe('free-tier pool overview (#905)', () => {
 
   it('scales a pool by the usable key count, like the stacked bar does', async () => {
     const { body } = await get(app, '/api/free-tier');
-    const cerebras = body.pools.find((p: any) => p.poolKey === 'cerebras::shared');
+    const nvidia = body.pools.find((p: any) => p.poolKey === 'nvidia::credit-pool');
     // Two healthy keys = two accounts = twice the documented ~30M allowance.
-    expect(cerebras.keyCount).toBe(2);
-    expect(cerebras.documentedBudget).toBe(60_000_000);
+    expect(nvidia.keyCount).toBe(2);
+    expect(nvidia.documentedBudget).toBe(60_000_000);
     expect(body.summary.documentedMonthlyTokens).toBe(60_000_000 + 15_000_000);
   });
 
@@ -138,12 +138,12 @@ describe('free-tier pool overview (#905)', () => {
 
   it('sums remaining across the keys sharing a pool instead of taking the latest', async () => {
     const { body } = await get(app, '/api/free-tier');
-    const cerebras = body.pools.find((p: any) => p.poolKey === 'cerebras::shared');
-    expect(cerebras.quota.metric).toBe('tokens');
+    const nvidia = body.pools.find((p: any) => p.poolKey === 'nvidia::credit-pool');
+    expect(nvidia.quota.metric).toBe('tokens');
     // 20M on one account + 8M on the other; latest-wins reported only 8M.
-    expect(cerebras.quota.remaining).toBe(28_000_000);
-    expect(cerebras.quota.limit).toBe(60_000_000);
-    expect(cerebras.quota.keyCount).toBe(2);
+    expect(nvidia.quota.remaining).toBe(28_000_000);
+    expect(nvidia.quota.limit).toBe(60_000_000);
+    expect(nvidia.quota.keyCount).toBe(2);
   });
 
   it('keeps chain-disabled rows in the pool but marks them', async () => {
@@ -186,9 +186,9 @@ describe('free-tier pool overview (#905)', () => {
   it('classifies a credits-only pool and skips platforms with no key', async () => {
     const { body } = await get(app, '/api/free-tier');
     expect(body.pools.some((p: any) => p.platform === 'google')).toBe(false);
-    const cerebras = body.pools.find((p: any) => p.poolKey === 'cerebras::shared');
+    const nvidia = body.pools.find((p: any) => p.poolKey === 'nvidia::credit-pool');
     // The pool holds one documented and one credits-based model: documented wins.
-    expect(cerebras.kind).toBe('documented');
+    expect(nvidia.kind).toBe('documented');
     expect(body.summary.creditsBasedPools + body.summary.unpublishedPools).toBe(
       body.pools.filter((p: any) => p.kind !== 'documented').length,
     );

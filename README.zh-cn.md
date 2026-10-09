@@ -2,14 +2,14 @@
 
 # SRouter
 
-**每月 74 亿词元。34 家免费 LLM 提供方。635 个免费模型端点。一个 OpenAI 兼容端点。**
+**每月 74 亿词元。63 家免费 LLM 提供方。941 个免费模型端点。一个 OpenAI 兼容端点。**
 
 把几十家提供方的免费额度，连同任意自建的 OpenAI 兼容聊天、嵌入、图像和音频端点，一起聚合到单个 `/v1` API 之后。密钥加密存储。路由器为每个请求挑选当前可用的最佳模型，某家提供方触发限流时自动转移到下一家，并按密钥跟踪用量，让你始终待在各家的免费额度之内。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#参与贡献)
 
-**474 个模型系列 · 635 个免费端点** —— 完整列表在你的仪表盘「模型」页里浏览
+**728 个模型系列 · 941 个免费端点** —— 完整列表在你的仪表盘「模型」页里浏览
 
 [English](README.md) · **简体中文**
 
@@ -50,13 +50,13 @@
 
 ## 为什么会有这个项目
 
-如今每家正经的 AI 实验室都提供免费额度：每月几百万词元，每天几千次请求。单独看，每一份都只是个玩具。叠加起来，它们合计约 **每月 74 亿词元** 的可用推理能力，覆盖 **474 个模型系列 / 635 个提供方端点**，从小而快的到相当能打的都有。
+如今每家正经的 AI 实验室都提供免费额度：每月几百万词元，每天几千次请求。单独看，每一份都只是个玩具。叠加起来，它们合计约 **每月 74 亿词元** 的可用推理能力，覆盖 **728 个模型系列 / 941 个提供方端点**，从小而快的到相当能打的都有。
 
-问题在于手工叠加太痛苦：三十四套不同的 SDK，三十四种不同的限流规则，三十四个请求可能失败的地方。SRouter 把这些收拢成一个 OpenAI 兼容端点。把任意 OpenAI 客户端库指向你的本地服务，它就会在你添加过密钥的提供方之间透明路由。
+问题在于手工叠加太痛苦：六十三套不同的 SDK，六十三种不同的限流规则，六十三个请求可能失败的地方。SRouter 把这些收拢成一个 OpenAI 兼容端点。把任意 OpenAI 客户端库指向你的本地服务，它就会在你添加过密钥的提供方之间透明路由。
 
 而且免费额度的格局每周都在变：提供方会上线新模型、下线旧模型，并且不打招呼就调整额度。这些 SRouter 都替你盯着。路由器会自行拉取经过签名的模型目录，所以你的部署不用 `git pull` 也能跟上。保持最新的方式见 [实时目录](#实时目录)。
 
-![叠加后的免费额度 —— 34 家提供方合计每月约 74 亿词元的免费推理](repo-assets/free-tier.png)
+![叠加后的免费额度 —— 63 家提供方合计每月约 74 亿词元的免费推理](repo-assets/free-tier.png)
 
 ## 支持的提供方
 
@@ -65,7 +65,6 @@
 <tr>
 <td align="center" width="150"><img src="repo-assets/providers/google.png" width="44" alt="Google"><br/><b>Google</b></td>
 <td align="center" width="150"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/groq-dark.png"><img src="repo-assets/providers/groq.png" width="44" alt="Groq"></picture><br/><b>Groq</b></td>
-<td align="center" width="150"><img src="repo-assets/providers/cerebras.png" width="44" alt="Cerebras"><br/><b>Cerebras</b></td>
 <td align="center" width="150"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/opencode-dark.png"><img src="repo-assets/providers/opencode.png" width="44" alt="OpenCode Zen"></picture><br/><b>OpenCode Zen</b></td>
 </tr>
 <tr>
@@ -84,7 +83,7 @@
 </tr>
 </table>
 
-<i>…… 以及另外 22 家免费提供方</i>
+<i>…… 以及另外 52 家免费提供方</i>
 
 </div>
 
@@ -231,7 +230,7 @@ SRouter 在设计上是本地优先、单用户的。你的提供方密钥留在
 
 路由器会自行保持模型目录的新鲜：它每天两次拉取经过签名的目录，把新模型、额度变更和提供方的怪癖修复应用到你的本地数据库。你自己的启用/停用选择和自定义提供方永远不会被动到，而且每次下载在应用之前都会用固定的 Ed25519 公钥验签。
 
-目录目前收录 **34 家提供方**、**474 个模型系列**、**635 个免费提供方/模型端点**（584 个聊天、41 个嵌入、7 个转录、3 个视频），以及大约 **每月 74 亿词元** 的免费额度容量。完整内容可在仪表盘的 **模型** 页浏览。
+目录目前收录 **63 家提供方**、**728 个模型系列**、**941 个免费提供方/模型端点**（841 个聊天、50 个嵌入、16 个图像、11 个音频、21 个转录、2 个视频），以及大约 **每月 74 亿词元** 的免费额度容量。完整内容可在仪表盘的 **模型** 页浏览。
 
 这份签名目录以每月快照的形式发布：一个模型要在进入实时源约 30 天后才加入快照，所以你本地的列表会稍稍滞后。什么都不会过期，什么功能都不会被砍——只是到得晚一些。
 

@@ -21,7 +21,7 @@ function row(model_db_id: number, platform: string, model_id: string, display_na
 // with the mixed naming the real migrations use.
 function catalog(): GroupableRow[] {
   return [
-    row(1, 'cerebras', 'gpt-oss-120b', 'GPT-OSS 120B', 3),
+    row(1, 'bai', 'gpt-oss-120b', 'GPT-OSS 120B', 3),
     row(2, 'groq', 'openai/gpt-oss-120b', 'GPT-OSS 120B (Groq)', 6),
     row(3, 'cloudflare', '@cf/openai/gpt-oss-120b', 'GPT-OSS 120B (CF)', 6),
     row(4, 'sambanova', 'gpt-oss-120b', 'GPT-OSS 120B (SambaNova)', 6),
@@ -35,7 +35,7 @@ function catalog(): GroupableRow[] {
 
 describe('stripProviderSuffix', () => {
   it('strips known provider/variant parentheticals', () => {
-    for (const tag of ['Groq', 'CF', 'HF', 'NV', 'SambaNova', 'Ollama', 'Cerebras', 'GitHub', 'free']) {
+    for (const tag of ['Groq', 'CF', 'HF', 'NV', 'SambaNova', 'Ollama', 'Bai', 'Nous', 'free']) {
       expect(stripProviderSuffix(`Llama 3.3 70B (${tag})`)).toBe('Llama 3.3 70B');
     }
   });

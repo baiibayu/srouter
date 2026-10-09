@@ -308,3 +308,16 @@ Independent of the routing strategy on purpose — model ranking and key selecti
 ## 15. Cache Key v4 (#901)
 
 The exact-match response cache key is now at **version 4**. Default-valued sampling params (`top_p: 1`, `n: 1`, `presence_penalty: 0`, `frequency_penalty: 0`) are normalized down to `undefined` so a client that always serializes the full param set shares a cache entry with one that omits the defaults. `reasoning_effort` and `compression` were also added to the key. Bump version when changing the key shape — `v: 4` is embedded in the canonical JSON.
+
+---
+
+## 16. Complexity Gate (Jev-B)
+
+Per-request complexity classification (`trivial` / `normal` / `hard`) that biases chain ordering before scoring: light prompts shift weight toward **speed**, hard prompts toward **intelligence** — the same axis as the task-type bias (#1127), at a default share of 25% (`COMPLEXITY_WEIGHT_SHARE`).
+
+- **Opt-in, off by default, fail-open.** Classification errors, timeouts, or an unreachable backend fall back to unbiased weights; routing never blocks on the classifier.
+- Two backends via `GET/PUT /api/settings/complexity-gate`:
+  - `heuristic` (default) — built-in size/structure rules: ≤300 chars with no code fence/image/tools → `trivial`; ≥4000 chars or ≥4 code fences → `hard`; everything else (including empty) → `normal`.
+  - `jev` — remote TypeSafe SystemOne (`POST {base}/v1/systemone`, score 0–10 → level: ≤3 `trivial`, ≥7 `hard`), default 400 ms timeout, API key stored write-only (dashboard sees `hasJevApiKey` only).
+- Exempt strategies (`fastest`, `reliable`, custom presets) skip the bias — a strategy that already pinned its ordering is not second-guessed.
+- Wiring: `proxy.ts` calls `classifyComplexity` once per request (including web-search/fetch-free chat paths) → `routeRequest` → `orderChain` applies the bias right after the task-type bias; weights come from `scoring.ts:complexityAdjustedWeights`.

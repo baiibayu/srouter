@@ -61,7 +61,7 @@ function completion(model: string, content: string) {
   }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
 
-// "Test Unify Model" served by both Groq and Cerebras — distinct model_ids that
+// "Test Unify Model" served by both Groq and Bai — distinct model_ids that
 // normalize to the same group key. (Groq priority 1, so it's tried first under
 // the 'priority' strategy, which lets us exercise cross-provider failover.)
 describe('Model unification (group the same model across providers)', () => {
@@ -77,8 +77,8 @@ describe('Model unification (group the same model across providers)', () => {
   beforeEach(() => {
     const db = getDb();
     // fallback_config FK-references models(id), so clear it before the rows.
-    db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE model_id IN ('tum-groq', 'tum-cerebras'))").run();
-    db.prepare("DELETE FROM models WHERE model_id IN ('tum-groq', 'tum-cerebras')").run();
+    db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE model_id IN ('tum-groq', 'tum-bai'))").run();
+    db.prepare("DELETE FROM models WHERE model_id IN ('tum-groq', 'tum-bai')").run();
     db.prepare('DELETE FROM api_keys').run();
     db.prepare('DELETE FROM rate_limit_cooldowns').run();
     db.prepare('DELETE FROM rate_limit_usage').run();
@@ -86,9 +86,9 @@ describe('Model unification (group the same model across providers)', () => {
     setUnifyOverrides({ merges: [], splits: [] });
     setRoutingStrategy('priority');
     addModel('groq', 'tum-groq', 'Test Unify Model', 1);
-    addModel('cerebras', 'tum-cerebras', 'Test Unify Model', 2);
+    addModel('bai', 'tum-bai', 'Test Unify Model', 2);
     addKey('groq');
-    addKey('cerebras');
+    addKey('bai');
   });
 
   afterEach(() => {
@@ -103,15 +103,15 @@ describe('Model unification (group the same model across providers)', () => {
     expect(ours[0].id).toBe('test-unify-model');     // canonical slug
     expect(ours[0].owned_by).toBe('srouter');
     // The raw per-provider ids are NOT advertised when unify is on.
-    expect(body.data.some((m: any) => m.id === 'tum-groq' || m.id === 'tum-cerebras')).toBe(false);
+    expect(body.data.some((m: any) => m.id === 'tum-groq' || m.id === 'tum-bai')).toBe(false);
   });
 
-  it('pinning the canonical id fails over across providers (Groq 429 → Cerebras)', async () => {
+  it('pinning the canonical id fails over across providers (Groq 429 → Bai)', async () => {
     const orig = global.fetch;
     vi.spyOn(global, 'fetch').mockImplementation(async (url: any, init?: any) => {
       const u = String(url);
       if (u.includes('api.groq.com')) return new Response(JSON.stringify({ error: { message: 'rate limited' } }), { status: 429 });
-      if (u.includes('api.cerebras.ai')) return completion('tum-cerebras', 'answer from cerebras');
+      if (u.includes('api.b.ai')) return completion('tum-bai', 'answer from bai');
       return orig(url, init);
     });
 
@@ -121,8 +121,8 @@ describe('Model unification (group the same model across providers)', () => {
     }, authHeaders());
 
     expect(status).toBe(200);
-    expect(body.choices[0].message.content).toContain('cerebras');
-    expect(headers.get('x-routed-via')).toContain('cerebras');
+    expect(body.choices[0].message.content).toContain('bai');
+    expect(headers.get('x-routed-via')).toContain('bai');
   });
 
   it('a group-pinned non-streaming session sticks to the last successful provider next turn (#341 sticky-key)', async () => {
@@ -130,7 +130,7 @@ describe('Model unification (group the same model across providers)', () => {
     const realFetch = global.fetch;
     const sess = { ...authHeaders(), 'x-session-id': 'sticky-test-1' };
     const groqId = db.prepare("SELECT id FROM models WHERE model_id = 'tum-groq'").get() as { id: number };
-    const cerebrasId = db.prepare("SELECT id FROM models WHERE model_id = 'tum-cerebras'").get() as { id: number };
+    const baiId = db.prepare("SELECT id FROM models WHERE model_id = 'tum-bai'").get() as { id: number };
     const setPriority = (modelDbId: number, p: number) =>
       db.prepare('UPDATE fallback_config SET priority = ? WHERE model_db_id = ?').run(p, modelDbId);
     // Both providers stay healthy throughout, so the only thing that can move the
@@ -138,27 +138,27 @@ describe('Model unification (group the same model across providers)', () => {
     vi.spyOn(global, 'fetch').mockImplementation(async (url: any, init?: any) => {
       const u = String(url);
       if (u.includes('api.groq.com')) return completion('tum-groq', 'from groq');
-      if (u.includes('api.cerebras.ai')) return completion('tum-cerebras', 'from cerebras');
+      if (u.includes('api.b.ai')) return completion('tum-bai', 'from bai');
       return realFetch(url, init);
     });
 
-    // Turn 1: make Cerebras priority 1 so it wins outright (no failover), recording
+    // Turn 1: make Bai priority 1 so it wins outright (no failover), recording
     // it as the sticky provider for this pinned-model session.
-    setPriority(cerebrasId.id, 1);
+    setPriority(baiId.id, 1);
     setPriority(groqId.id, 2);
     const turn1 = await request(app, 'POST', '/v1/chat/completions', {
       model: 'test-unify-model', messages: [{ role: 'user', content: 'first' }],
     }, sess);
     expect(turn1.status).toBe(200);
-    expect(turn1.headers.get('x-routed-via')).toContain('cerebras');
+    expect(turn1.headers.get('x-routed-via')).toContain('bai');
 
     // Flip priority so plain routing would now prefer Groq — sticky must override.
     setPriority(groqId.id, 1);
-    setPriority(cerebrasId.id, 2);
+    setPriority(baiId.id, 2);
 
     // Turn 2: same session, now a multi-turn conversation (getStickyModel only
     // engages once the session has an assistant turn). Pure priority would pick
-    // Groq, but the sticky entry from turn 1 keeps it on Cerebras. This passes
+    // Groq, but the sticky entry from turn 1 keeps it on Bai. This passes
     // only when turn 1 wrote the sticky model under the pinned-id key
     // (stickyStrategyKey); the non-streaming bug wrote it under the (undefined)
     // global strategyKey, so this read missed and Groq won.
@@ -166,12 +166,12 @@ describe('Model unification (group the same model across providers)', () => {
       model: 'test-unify-model',
       messages: [
         { role: 'user', content: 'first' },
-        { role: 'assistant', content: 'from cerebras' },
+        { role: 'assistant', content: 'from bai' },
         { role: 'user', content: 'second' },
       ],
     }, sess);
     expect(turn2.status).toBe(200);
-    expect(turn2.headers.get('x-routed-via')).toContain('cerebras');
+    expect(turn2.headers.get('x-routed-via')).toContain('bai');
   });
 
   it('an old per-provider model_id still routes and now fails over within the group', async () => {
@@ -179,7 +179,7 @@ describe('Model unification (group the same model across providers)', () => {
     vi.spyOn(global, 'fetch').mockImplementation(async (url: any, init?: any) => {
       const u = String(url);
       if (u.includes('api.groq.com')) return new Response('{}', { status: 429 });
-      if (u.includes('api.cerebras.ai')) return completion('tum-cerebras', 'answer from cerebras');
+      if (u.includes('api.b.ai')) return completion('tum-bai', 'answer from bai');
       return orig(url, init);
     });
 
@@ -190,14 +190,14 @@ describe('Model unification (group the same model across providers)', () => {
     }, authHeaders());
 
     expect(status).toBe(200);
-    expect(headers.get('x-routed-via')).toContain('cerebras');
+    expect(headers.get('x-routed-via')).toContain('bai');
   });
 
   it('returns 429 (never a different model) when all of the group\'s providers are down', async () => {
     const orig = global.fetch;
     vi.spyOn(global, 'fetch').mockImplementation(async (url: any, init?: any) => {
       const u = String(url);
-      if (u.includes('api.groq.com') || u.includes('api.cerebras.ai')) {
+      if (u.includes('api.groq.com') || u.includes('api.b.ai')) {
         return new Response(JSON.stringify({ error: { message: 'rate limited' } }), { status: 429 });
       }
       return orig(url, init);
@@ -217,18 +217,18 @@ describe('Model unification (group the same model across providers)', () => {
     vi.spyOn(global, 'fetch').mockImplementation(async (url: any, init?: any) => {
       const u = String(url);
       if (u.includes('api.groq.com')) return new Response(JSON.stringify({ error: { message: 'rate limited' } }), { status: 429 });
-      if (u.includes('api.cerebras.ai')) return completion('tum-cerebras', 'from cerebras');
+      if (u.includes('api.b.ai')) return completion('tum-bai', 'from bai');
       return orig(url, init);
     });
 
     // The fully-qualified id routes to exactly that provider (priority 2 —
     // priority 1 Groq must NOT be used even though it would sort first).
     const pinned = await request(app, 'POST', '/v1/chat/completions', {
-      model: 'cerebras:tum-cerebras',
+      model: 'bai:tum-bai',
       messages: [{ role: 'user', content: 'hi' }],
     }, authHeaders());
     expect(pinned.status).toBe(200);
-    expect(pinned.headers.get('x-routed-via')).toContain('cerebras');
+    expect(pinned.headers.get('x-routed-via')).toContain('bai');
 
     // And when the pinned provider is down, the request FAILS instead of
     // silently serving from a sibling provider.
@@ -237,7 +237,7 @@ describe('Model unification (group the same model across providers)', () => {
       messages: [{ role: 'user', content: 'hi' }],
     }, authHeaders());
     expect(down.status).toBe(429);
-    expect(down.headers.get('x-routed-via') ?? '').not.toContain('cerebras');
+    expect(down.headers.get('x-routed-via') ?? '').not.toContain('bai');
 
     // An unknown platform:model_id keeps the not-found behavior.
     const unknown = await request(app, 'POST', '/v1/chat/completions', {
@@ -277,6 +277,6 @@ describe('Model unification (group the same model across providers)', () => {
     expect(ours[0].id).toBe('test-unify-model');
     expect(ours[0].owned_by).toBe('srouter');
     // The raw per-provider ids are never advertised anymore.
-    expect(body.data.some((m: any) => m.id === 'tum-groq' || m.id === 'tum-cerebras')).toBe(false);
+    expect(body.data.some((m: any) => m.id === 'tum-groq' || m.id === 'tum-bai')).toBe(false);
   });
 });

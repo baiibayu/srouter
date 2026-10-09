@@ -45,6 +45,7 @@ const QUOTA_SNAPSHOT_FRESHNESS_FILENAME = '20260915_000001_quota_snapshot_freshn
 const UNIFIED_KEY_SR_PREFIX_FILENAME = '20261004_000001_unified_key_sr_prefix.ts';
 const KEY_BUDGET_PERIOD_FILENAME = '20261005_000001_key_budget_period.ts';
 const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_period_auto.ts';
+const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts';
 
 interface SchemaRow {
   type: string;
@@ -136,6 +137,7 @@ describe('migration round trip', () => {
         UNIFIED_KEY_SR_PREFIX_FILENAME,
         KEY_BUDGET_PERIOD_FILENAME,
         KEY_BUDGET_PERIOD_AUTO_FILENAME,
+        REMOVE_DEAD_PLATFORMS_FILENAME,
       ]);
     } finally {
       db.close();
@@ -191,14 +193,34 @@ describe('migration round trip', () => {
 });
 
 async function runDownToBaseline(db: Database.Database): Promise<void> {
+  let purgeDeletedRows = false;
   while (getAppliedMigrationNames(db).length > 1) {
     const migrationName = getLatestAppliedMigrationName(db);
     const before = snapshotAppState(db);
 
-    await runMigrations(db, 'down');
+    let reverted = true;
+    try {
+      await runMigrations(db, 'down');
+    } catch (error) {
+      // An irreversible down() (e.g. the 2026-10 dead-platform purge) cannot
+      // restore what it deleted. Un-apply its record so the walk continues —
+      // the re-run of up() at the end still lands on the same snapshot.
+      if (!(error instanceof Error) || !error.message.includes('irreversible')) throw error;
+      reverted = false;
+      purgeDeletedRows = true;
+      db.prepare('DELETE FROM migrations WHERE filename = ?').run(migrationName);
+    }
 
-    expect(snapshotAppState(db), `${migrationName} down() must alter app DB state or throw irreversible`)
-      .not.toEqual(before);
+    if (reverted) {
+      // The purge deleted the github rows that 20260630_000001 rewrote, so its
+      // down() has nothing left to restore — that specific no-op is expected
+      // after an irreversible purge. Any other silent no-op is a bug.
+      const expectedNoop = purgeDeletedRows && migrationName === GITHUB_GPT41_CONTEXT_FILENAME;
+      if (!expectedNoop) {
+        expect(snapshotAppState(db), `${migrationName} down() must alter app DB state or throw irreversible`)
+          .not.toEqual(before);
+      }
+    }
   }
 }
 

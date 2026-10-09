@@ -83,7 +83,7 @@ describe('per-attempt routing traces', () => {
     const routes = [
       fakeRoute({ platform: 'groq', modelId: 'llama-x' }),
       fakeRoute({ platform: 'google', modelId: 'gemini-y' }),
-      fakeRoute({ platform: 'cerebras', modelId: 'qwen-z' }),
+      fakeRoute({ platform: 'bai', modelId: 'qwen-z' }),
     ];
 
     await runFallbackLoop(hooksSkeleton({
@@ -105,7 +105,7 @@ describe('per-attempt routing traces', () => {
     expect(rows).toHaveLength(3);
     expect(rows.map(r => r.ordinal)).toEqual([0, 1, 2]);
     expect(rows.map(r => r.outcome)).toEqual(['rate_limited', 'timeout', 'ok']);
-    expect(rows.map(r => r.platform)).toEqual(['groq', 'google', 'cerebras']);
+    expect(rows.map(r => r.platform)).toEqual(['groq', 'google', 'bai']);
     expect(rows.map(r => r.model_id)).toEqual(['llama-x', 'gemini-y', 'qwen-z']);
     // Per-request key ordinals, never raw key ids.
     expect(rows.map(r => r.key_ordinal)).toEqual([1, 2, 3]);
@@ -132,7 +132,7 @@ describe('per-attempt routing traces', () => {
     const routes = [
       fakeRoute({ platform: 'groq', modelId: 'llama-x', keyLabel: 'work laptop' }),
       fakeRoute({ platform: 'groq', modelId: 'llama-x', keyLabel: null }),
-      fakeRoute({ platform: 'cerebras', modelId: 'qwen-z', keyLabel: 'billing account' }),
+      fakeRoute({ platform: 'bai', modelId: 'qwen-z', keyLabel: 'billing account' }),
     ];
 
     await runFallbackLoop(hooksSkeleton({

@@ -188,7 +188,16 @@
     "autoUpdateCheck": "Pemeriksaan pembaruan otomatis",
     "autoUpdateCheckHelp": "Memeriksa GitHub sekali sehari untuk rilis baru dan menampilkan pengingat. Nonaktif secara bawaan.",
     "openReleases": "Buka Rilis GitHub",
-    "restartAfterUpdate": "Mulai ulang SRouter setelah proses build selesai."
+    "restartAfterUpdate": "Mulai ulang SRouter setelah proses build selesai.",
+    "complexityGate": "Gerbang kompleksitas",
+    "complexityGateHelp": "Klasifikasikan tiap request (trivial/normal/hard) dan bias routing — prompt ringan ke model cepat, prompt sulit ke model pintar. Fail-open; nonaktif secara bawaan.",
+    "complexityGateBackend": "Backend klasifier",
+    "complexityGateHeuristic": "Heuristik lokal",
+    "complexityGateJev": "Jev (TypeSafe)",
+    "complexityGateJevKey": "API key Jev",
+    "complexityGateJevKeyHelp": "Disimpan di server dan tidak pernah ditampilkan lagi. Dapatkan di console.typesafe.ai.",
+    "complexityGateJevKeyPlaceholder": "kunci typesafe",
+    "complexityGateSaved": "Tersimpan"
   },
   "models": {
     "title": "Model",

@@ -75,6 +75,9 @@ describe('custom model endpoint identity migration', () => {
       const fallbackBefore = chainOf();
       const profileBefore = profileOf();
       const totalBefore = (db.prepare('SELECT COUNT(*) AS n FROM models').get() as { n: number }).n;
+      const deadBefore = (db.prepare(
+        "SELECT COUNT(*) AS n FROM models WHERE platform IN ('github', 'cerebras', 'xai', 'experiential')",
+      ).get() as { n: number }).n;
 
       await runMigrations(db, 'up');
 
@@ -87,9 +90,10 @@ describe('custom model endpoint identity migration', () => {
       expect(chainOf()).toEqual(fallbackBefore);
       expect(profileOf()).toEqual(profileBefore);
       expect(db.pragma('foreign_key_check')).toEqual([]);
-      // Nothing was dropped on the way through (later migrations only add rows).
+      // Later migrations only add rows; the 2026-10 dead-platform purge removes
+      // exactly the dead-platform rows and nothing else.
       expect((db.prepare('SELECT COUNT(*) AS n FROM models').get() as { n: number }).n)
-        .toBeGreaterThanOrEqual(totalBefore);
+        .toBeGreaterThanOrEqual(totalBefore - deadBefore);
     } finally {
       db.close();
     }

@@ -573,13 +573,7 @@ const DEFAULT_PROVIDER_DAILY_REQUEST_CAPS: Record<string, number> = {
   requesty: 180,
 };
 
-const DEFAULT_PROVIDER_DAILY_TOKEN_CAPS: Record<string, number> = {
-  // NavyAI's free plan is one shared 150K-token/day pool per key. Individual
-  // models carry token_multiplier values, so the provider-visible drain can be
-  // higher than the OpenAI usage.total_tokens returned by /chat/completions.
-  navy: 150_000,
-};
-
+// ── Per-minute caps ──
 // Per-minute caps that apply to the whole provider account rather than one model.
 // The per-model rpm_limit cannot express these: NVIDIA NIM meters ~40 requests a
 // minute across the entire account, so glm-4.7, minimax-m3 and deepseek all draw
@@ -610,13 +604,16 @@ export function getProviderMinuteRequestCap(platform: string): number | null {
   return DEFAULT_PROVIDER_MINUTE_REQUEST_CAPS[platform] ?? null;
 }
 
+/** Account-wide daily TOKEN cap, or null when the provider has none. No
+ *  provider currently declares a default — the knob exists for operators via
+ *  `PROVIDER_DAILY_TOKEN_CAP_<PLATFORM>` (0 disables). */
 export function getProviderDailyTokenCap(platform: string): number | null {
   const raw = process.env[`PROVIDER_DAILY_TOKEN_CAP_${platform.toUpperCase()}`];
   if (raw !== undefined && raw.trim() !== '') {
     const n = Number(raw);
     if (Number.isFinite(n) && n >= 0) return n === 0 ? null : n;
   }
-  return DEFAULT_PROVIDER_DAILY_TOKEN_CAPS[platform] ?? null;
+  return null;
 }
 
 function countPersistedProviderRequests(
@@ -691,43 +688,6 @@ export function canUseProviderMinute(platform: string, keyId: number, now = Date
   return used < cap;
 }
 
-type ModelQuotaRow = { tpd_limit: number | null; monthly_token_budget: string | null };
-
-function multiplierFromQuotaRow(row: ModelQuotaRow | undefined, dailyCap: number): number {
-  if (!row) return 1;
-
-  const fromLabel = row.monthly_token_budget?.match(/(?:^|[\u00b7(\s])(\d+(?:\.\d+)?)x\b/i);
-  if (fromLabel) {
-    const n = Number(fromLabel[1]);
-    if (Number.isFinite(n) && n > 0) return n;
-  }
-
-  const tpd = row.tpd_limit;
-  if (tpd != null && tpd > 0 && tpd < dailyCap) return dailyCap / tpd;
-  return 1;
-}
-
-function getProviderTokenMultiplier(platform: string, modelId: string, dailyCap: number): number {
-  if (platform !== 'navy') return 1;
-  return withDb(db => {
-    const row = db.prepare(`
-      SELECT tpd_limit, monthly_token_budget
-        FROM models
-       WHERE platform = ? AND model_id = ?
-       LIMIT 1
-    `).get(platform, modelId) as ModelQuotaRow | undefined;
-    return multiplierFromQuotaRow(row, dailyCap);
-  }) ?? 1;
-}
-
-function providerBilledTokens(platform: string, modelId: string, rawTokens: number): number {
-  if (rawTokens <= 0) return 0;
-  const dailyCap = getProviderDailyTokenCap(platform);
-  if (dailyCap === null) return rawTokens;
-  const multiplier = getProviderTokenMultiplier(platform, modelId, dailyCap);
-  return Math.ceil(rawTokens * multiplier);
-}
-
 function sumPersistedProviderTokens(
   platform: string,
   keyId: number,
@@ -738,22 +698,15 @@ function sumPersistedProviderTokens(
   if (dailyCap === null) return 0;
 
   return withDb(db => {
-    const rows = db.prepare(`
-      SELECT rlu.model_id, COALESCE(SUM(rlu.tokens), 0) AS used,
-             m.tpd_limit, m.monthly_token_budget
-        FROM rate_limit_usage rlu
-        LEFT JOIN models m ON m.platform = rlu.platform AND m.model_id = rlu.model_id
-       WHERE rlu.platform = ?
-         AND rlu.key_id = ?
-         AND rlu.kind = 'tokens'
-         AND rlu.created_at_ms > ?
-       GROUP BY rlu.model_id
-    `).all(platform, keyId, now - windowMs) as (ModelQuotaRow & { model_id: string; used: number })[];
-
-    return rows.reduce((sum, row) => {
-      const multiplier = platform === 'navy' ? multiplierFromQuotaRow(row, dailyCap) : 1;
-      return sum + Math.ceil(row.used * multiplier);
-    }, 0);
+    const row = db.prepare(`
+      SELECT COALESCE(SUM(tokens), 0) AS used
+        FROM rate_limit_usage
+       WHERE platform = ?
+         AND key_id = ?
+         AND kind = 'tokens'
+         AND created_at_ms > ?
+    `).get(platform, keyId, now - windowMs) as { used: number };
+    return row.used;
   });
 }
 
@@ -773,7 +726,7 @@ export function providerDailyTokenCount(platform: string, keyId: number, now = D
     const raw = w.tokenTimestamps
       .filter(t => t.ts > now - windowMs)
       .reduce((sum, t) => sum + t.tokens, 0);
-    total += providerBilledTokens(platform, modelId, raw);
+    total += raw;
   }
   return total;
 }
@@ -788,8 +741,8 @@ export function canUseProviderTokens(
   const cap = getProviderDailyTokenCap(platform);
   if (cap === null) return true;
   const used = providerDailyTokenCount(platform, keyId, now)
-    + providerBilledTokens(platform, modelId, provisionalProviderTokens(platform, keyId, now));
-  return used + providerBilledTokens(platform, modelId, estimatedTokens) <= cap;
+    + provisionalProviderTokens(platform, keyId, now);
+  return used + estimatedTokens <= cap;
 }
 
 // ── Degraded-mode memory windows ─────────────────────────────────────────────

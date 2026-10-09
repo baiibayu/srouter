@@ -24,7 +24,7 @@ describe('isUpstreamClassificationOutput (#809)', () => {
 
   it('leaves the same answer alone on every other platform', () => {
     // A moderation/guard workload legitimately answering one word must survive.
-    for (const platform of ['groq', 'cerebras', 'openrouter', 'custom', 'gemini']) {
+    for (const platform of ['groq', 'bai', 'openrouter', 'custom', 'gemini']) {
       expect(isUpstreamClassificationOutput('safe', platform)).toBe(false);
       expect(isUpstreamClassificationOutput('unsafe', platform)).toBe(false);
     }

@@ -4,6 +4,10 @@
 
 `docs/architecture/` 的文档修订历史，从触及架构相关代码的提交播种而来。最近的在前。
 
+## 2026-10-09
+
+- **docs(architecture): 记录复杂度门控 (Jev-B)** —— `01-routing-and-bandit-scoring.md` 新增第 16 节：默认关闭的 opt-in、fail-open，按请求分类 `trivial/normal/hard` 并把权重偏向速度（trivial）或智能（hard），份额 25%（`COMPLEXITY_WEIGHT_SHARE`）；后端 `heuristic`（体积/结构规则）与 `jev`（TypeSafe SystemOne `POST /v1/systemone`，0–10 → 等级，超时 400 ms，key 只写），经 `GET/PUT /api/settings/complexity-gate` 切换；豁免策略跳过偏置；接线 `proxy.ts:classifyComplexity` → `routeRequest` → `orderChain` → `scoring.ts:complexityAdjustedWeights`。来源：`server/src/services/complexity-gate.ts`。
+
 ## 2026-08-23 —— 领域扩展
 
 - **提交（本 PR）**：`docs(architecture): expand into deep-dive domain`

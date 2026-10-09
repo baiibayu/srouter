@@ -22,11 +22,13 @@ import {
   speedScore, intelligenceScore, intelligenceComposite, headroomFactor, rateWindowHeadroomFactor,
   rateLimitFactor, combineScore,
   peakAdjustedWeights, taskAdjustedWeights, TASK_WEIGHT_SHARE, isValidPeakHour, isValidTimezone,
+  complexityAdjustedWeights,
   DEFAULT_PEAK_HOURS, type PeakHoursConfig,
   observedSpeedRank, TIMEOUT_LATENCY_CAP_MS,
   type HeadroomThresholds,
 } from './scoring.js';
 import { TIMEOUT_ERROR_MARKERS } from '../lib/error-classify.js';
+import type { ComplexityLevel } from './complexity-gate.js';
 import { checkMonthlyBudget, reserveMonthlyBudget } from './key-budget.js';
 import { applyModelWeightOverride, getModelWeightOverrides } from './model-weight-overrides.js';
 import { modelsWithOverriddenField } from './model-state.js';
@@ -1071,7 +1073,7 @@ function scoreChainEntry(
  * faithful reflection of the user's picked strategy, not a re-sampled draw each
  * request. Priority mode is deterministic either way.
  */
-function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true, task?: 'code' | 'chat'): ChainRow[] {
+function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true, task?: 'code' | 'chat', complexity?: ComplexityLevel): ChainRow[] {
   // Tier first, always: it is the one ordering input that score must not be able
   // to override (see ChainRow.match_tier). Zero for every chain built anywhere
   // else, so this is a no-op outside slug-fallback resolution.
@@ -1121,6 +1123,14 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
   // and the share is operator-tunable via settings (0 disables the bias).
   if (task) {
     const adjusted = taskAdjustedWeights(weights, task, strategy, getTaskWeightShare());
+    weights = adjusted.adjusted ? adjusted.weights : weights;
+  }
+
+  // Complexity-gate bias (Jev-B): layered AFTER the task bias, same rules —
+  // soft preference only, exempt strategies untouched, undefined/normal leaves
+  // the preset exactly as it was (opt-in master switch lives in the gate).
+  if (complexity) {
+    const adjusted = complexityAdjustedWeights(weights, complexity, strategy);
     weights = adjusted.adjusted ? adjusted.weights : weights;
   }
 
@@ -1690,13 +1700,6 @@ function getModelChainRow(db: Db, modelDbId: number): ChainRow | undefined {
  */
 export const CONTEXT_WINDOW_SAFETY_FACTOR = 1.25;
 
-// Platforms whose pre-dispatch trim guard already caps the dispatched input
-// below the live context ceiling (lib/content.ts truncateMessagesForGithub):
-// the guard — not the routing estimate — is what guarantees the fit there, so
-// applying the factor too would only make that guard unreachable. The margin
-// checks below treat these platforms as strict comparisons.
-const TRIM_GUARDED_PLATFORMS = new Set(['github']);
-
 /** True when `estimatedTokens` fits the RAW advertised window (null window =
  * unknown, never filtered — same convention as the auto-router). This is the
  * comparison /v1/models publishes and the soft-preference fallback tier. */
@@ -1707,13 +1710,11 @@ export function fitsContextWindowStrict(contextWindow: number | null | undefined
 /** True when `estimatedTokens` plausibly fits `contextWindow` WITH the safety
  * margin. The chars/4 heuristic portion is scaled by the factor; an explicit
  * output reserve derived from the client's max_tokens (`routingReserveTokens`)
- * is already an exact count and is added UNSCALED (#956 review). Trim-guarded
- * platforms compare strictly — their guard guarantees the fit. */
-export function fitsContextWindow(platform: string, contextWindow: number | null | undefined, estimatedTokens: number, exactOutputReserve = 0): boolean {
+ * is already an exact count and is added UNSCALED (#956 review). */
+export function fitsContextWindow(contextWindow: number | null | undefined, estimatedTokens: number, exactOutputReserve = 0): boolean {
   if (contextWindow == null) return true;
   // Raw advertised comparison first — the margin can only shrink eligibility.
   if (estimatedTokens > contextWindow) return false;
-  if (TRIM_GUARDED_PLATFORMS.has(platform)) return true;
   const reserve = Math.max(0, exactOutputReserve);
   const heuristic = Math.max(0, estimatedTokens - reserve);
   return heuristic * CONTEXT_WINDOW_SAFETY_FACTOR + reserve <= contextWindow;
@@ -1865,7 +1866,7 @@ export function getOrderedFusionChain(estimatedTokens: number, exactOutputReserv
   const passesContextGate = (e: ChainRow, allowMarginViolators: boolean) => {
     // A null context_window means "unknown", not "zero": same convention the
     // auto-router uses, so an unspecified window is never itself a reason to skip.
-    if (fitsContextWindow(e.platform, e.context_window, estimatedTokens, exactOutputReserve)) return true;
+    if (fitsContextWindow(e.context_window, estimatedTokens, exactOutputReserve)) return true;
     return allowMarginViolators && fitsContextWindowStrict(e.context_window, estimatedTokens);
   };
   const servableFilter = (allowMarginViolators: boolean) => chain.filter(e => {
@@ -1968,7 +1969,7 @@ export function resolveFusionCandidate(modelId: string): FusionCandidate | null 
   return null;
 }
 
-export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, preferredModelDbId?: number, requireVision = false, requireTools = false, skipModels?: Set<number>, prefetchedChain?: ChainRow[], requireStructured = false, skipPlatforms?: Set<string>, exactOutputReserve = 0, task?: 'code' | 'chat'): RouteResult {
+export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, preferredModelDbId?: number, requireVision = false, requireTools = false, skipModels?: Set<number>, prefetchedChain?: ChainRow[], requireStructured = false, skipPlatforms?: Set<string>, exactOutputReserve = 0, task?: 'code' | 'chat', complexity?: ComplexityLevel): RouteResult {
   const db = getDb();
 
   const strategy = getRoutingStrategy();
@@ -1976,7 +1977,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
 
   const chain = (prefetchedChain ?? getActiveChain(db)).filter(e => e.enabled);
 
-  const sortedChain = orderChain(chain, strategy, true, task);
+  const sortedChain = orderChain(chain, strategy, true, task, complexity);
   const keyCounts = usableKeyCountsByPlatform(db);
 
   // Exploration toggle (#685/#707 follow-up): when enabled, give a model with
@@ -2015,7 +2016,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
       // requests (#1230); it stays reachable at the back of the main walk.
       if (requireTools && isToolBenched(e.platform, e.model_id, e.endpoint_scope)) return false;
       if (requireStructured && platformDropsResponseFormat(e.platform)) return false;
-      if (!fitsContextWindow(e.platform, e.context_window, estimatedTokens, exactOutputReserve)) return false;
+      if (!fitsContextWindow(e.context_window, estimatedTokens, exactOutputReserve)) return false;
       if (e.tpm_limit != null && estimatedTokens > e.tpm_limit) return false;
       return true;
     });
@@ -2106,7 +2107,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
       toolDeferred.push(e);
       continue;
     }
-    (fitsContextWindow(e.platform, e.context_window, estimatedTokens, exactOutputReserve) ? servingChain : marginDeferred).push(e);
+    (fitsContextWindow(e.context_window, estimatedTokens, exactOutputReserve) ? servingChain : marginDeferred).push(e);
   }
   servingChain.push(...marginDeferred, ...toolDeferred);
 
@@ -2161,9 +2162,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
       // false (#956 review): e.g. `context 131072 < estimated 106000 x1.25 = 132500`.
       const reserve = Math.max(0, exactOutputReserve);
       const requiredWithMargin = Math.ceil(Math.max(0, estimatedTokens - reserve) * CONTEXT_WINDOW_SAFETY_FACTOR + reserve);
-      diag.push(TRIM_GUARDED_PLATFORMS.has(entry.platform)
-        ? `${label}: context ${entry.context_window} < estimated ${estimatedTokens}`
-        : `${label}: context ${entry.context_window} < estimated ${estimatedTokens} x${CONTEXT_WINDOW_SAFETY_FACTOR} = ${requiredWithMargin}`);
+      diag.push(`${label}: context ${entry.context_window} < estimated ${estimatedTokens} x${CONTEXT_WINDOW_SAFETY_FACTOR} = ${requiredWithMargin}`);
       continue;
     }
 

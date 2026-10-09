@@ -69,11 +69,11 @@ export interface ImportSelectedResponse {
 // in V13 via the router.huggingface.co Inference Providers meta-router.
 // SambaNova was dropped in V23 (free tier permanently retired — 402
 // "payment method required" once the one-time $5 trial credit lapses).
+// xAI, Cerebras, GitHub Models, NavyAI and Experiential were dropped in
+// 2026-10 (paid/exhausted or retracted free tiers — see providers/index.ts).
 export type Platform =
   | 'google'
   | 'groq'
-  | 'xai'
-  | 'cerebras'
   // Sail Research — native Responses API provider. $5 in free credits refreshes
   // monthly when a payment method is attached; usage beyond the grant is
   // pay-as-you-go. Background polling is required for its flex-only models.
@@ -92,9 +92,8 @@ export type Platform =
   // across models. Signed catalog only; no bundled model seeds.
   | 'moondream'
   // Hosted gateways; model rows are delivered by the signed catalog only.
-  // ElectronHub renews weekly credits; Experiential renews monthly credits.
+  // ElectronHub renews weekly credits.
   | 'electronhub'
-  | 'experiential'
   // Catalog-managed gateways: monthly shared credits vs daily free-model quota.
   | 'router9'
   | 'septor'
@@ -124,7 +123,6 @@ export type Platform =
   | 'mistral'
   | 'sambanova'
   | 'openrouter'
-  | 'github'
   | 'cohere'
   | 'cloudflare'
   | 'zhipu'
@@ -255,6 +253,27 @@ export type Platform =
   // aihorde.net key raises queue priority. Has a dedicated AIHordeProvider that
   // normalizes the proxy's OpenAI divergences. See issue #345.
   | 'aihorde'
+  // Nous Portal (Nous Research) — OpenAI-compatible
+  // (https://inference-api.nousresearch.com/v1). $0 Free plan, no card; free
+  // routes carry a `:free` suffix. Portal API key required (keyless 402).
+  | 'nous'
+  // OpenTyphoon (SCB 10X, Thailand) — OpenAI-compatible (https://api.opentyphoon.ai/v1).
+  // No-card free tier; responses may be used for research unless disabled in
+  // the portal settings.
+  | 'typhoon'
+  // Plugsky — OpenAI-compatible (https://plugsky.com/v1). No-card free tier;
+  // smoke-tested against /v1/models 2026-10-08.
+  | 'plugsky'
+  // Token Harbor — OpenAI-compatible gateway (https://tokenharbor.ai/v1).
+  // No-card free tier; `:free` model ids ride a rolling 7-day value-based
+  // allowance (60 RPM) and rotate, so rows stay catalog/auto-discovery-managed
+  // rather than seeded here. Free routes must be enabled in the dashboard.
+  | 'tokenharbor'
+  // Alibaba Cloud Model Studio (阿里云百炼, international site) — OpenAI-compatible
+  // (https://dashscope-intl.aliyuncs.com/compatible-mode/v1). No card; each
+  // model grants a one-time 1M-token free quota valid 90 days. The console's
+  // "Free Quota Only" toggle must stay ON, otherwise calls bill pay-as-you-go.
+  | 'alibaba'
   // User-configured OpenAI-compatible endpoint (llama.cpp, LM Studio, vLLM,
   // Ollama, any base_url). The endpoint URL lives on the api_keys row; see #117.
   | 'custom';

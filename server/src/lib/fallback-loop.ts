@@ -479,8 +479,8 @@ export function recordRetryableFailure(route: RouteResult, err: any, state: Fall
   // context_window gates in router.ts skip low-ceiling models on retry
   // instead of letting them fire and 413 again. Only fires on a size-class
   // error — the parser is conservative and returns null for opaque bodies
-  // (every non-supported platform, the bare "Request Entity Too Large"
-  // Groq shape, and the github limit-only case), so behavior is unchanged
+  // (every non-supported platform and the bare "Request Entity Too Large"
+  // Groq shape), so behavior is unchanged
   // when there's nothing to latch. Max wins so a smaller later reading of
   // the same request can't drop the estimate.
   if (isContextTooLargeError(err) || isProviderBadRequestError(err)) {

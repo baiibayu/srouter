@@ -68,7 +68,7 @@ describe('Fallback API', () => {
     const db = getDb();
     const target = db.prepare(`
       SELECT id, platform, model_id FROM models
-       WHERE platform = 'github' AND model_id = 'openai/gpt-4.1'
+       WHERE platform = 'mistral' AND model_id = 'mistral-large-latest'
     `).get() as { id: number; platform: string; model_id: string };
     const other = db.prepare(`
       SELECT platform, model_id FROM models

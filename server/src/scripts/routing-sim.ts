@@ -32,7 +32,7 @@ const PROFILES: Profile[] = [
   // Middling intel/speed but rock-solid reliability → wins RELIABLE.
   { platform: 'openrouter', modelId: 'rock', name: 'Rock-Solid', intelligenceRank: 5, sizeLabel: 'Medium', budget: '~50M', successes: 40, failures: 1, outTokens: 250, latencyMs: 2000, ttfbMs: 1500 },
   // Large/smart but flaky — high intelligence dragged down by failures.
-  { platform: 'cerebras', modelId: 'smart-flaky', name: 'Smart-Flaky', intelligenceRank: 3, sizeLabel: 'Large', budget: '~50M', successes: 18, failures: 14, outTokens: 500, latencyMs: 1500, ttfbMs: 600 },
+  { platform: 'bai', modelId: 'smart-flaky', name: 'Smart-Flaky', intelligenceRank: 3, sizeLabel: 'Large', budget: '~50M', successes: 18, failures: 14, outTokens: 500, latencyMs: 1500, ttfbMs: 600 },
 ];
 
 function seed() {

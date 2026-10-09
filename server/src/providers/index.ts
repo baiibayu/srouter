@@ -16,7 +16,6 @@ import { GizmoProvider } from './gizmo.js';
 import { BlockRunProvider } from './blockrun.js';
 import { MoondreamProvider } from './moondream.js';
 import { ElectronHubProvider } from './electronhub.js';
-import { ExperientialProvider } from './experiential.js';
 import { Router9Provider } from './router9.js';
 import { SeptorProvider } from './septor.js';
 import { ClodProvider } from './clod.js';
@@ -48,19 +47,12 @@ register(new OpenAICompatProvider({
   baseUrl: 'https://api.groq.com/openai/v1',
 }));
 
-// xAI (Grok) - OpenAI-compatible
-register(new OpenAICompatProvider({
-  platform: 'xai',
-  name: 'xAI (Grok)',
-  baseUrl: 'https://api.x.ai/v1',
-}));
-
-// Cerebras - OpenAI-compatible
-register(new OpenAICompatProvider({
-  platform: 'cerebras',
-  name: 'Cerebras',
-  baseUrl: 'https://api.cerebras.ai/v1',
-}));
+// xAI, Cerebras, GitHub Models, NavyAI and Experiential were dropped in
+// 2026-10: xAI's free tier never existed for API keys (paid only), Cerebras
+// returns 402 on its exhausted free tier, GitHub Models is being wound down
+// behind Microsoft's OAuth harness, NavyAI's free plan collapsed, and
+// Experiential Labs shut the gateway down. Model rows and keys for these
+// platforms are purged by migration 20261009_000001_remove_dead_platforms.
 
 // Sail Research — its stable API is /v1/responses and all calls are submitted
 // as background jobs, then polled. The dedicated adapter translates terminal
@@ -79,7 +71,6 @@ register(new MoondreamProvider());
 // Free-plan grants are shared wallets, not free credits per model. Eligibility
 // and tested model rows belong in Oracle, never in bundled DB migrations.
 register(new ElectronHubProvider());
-register(new ExperientialProvider());
 // Router9 has shared monthly credits; Septor's zero-price models share daily
 // quota (its signup credit is one-time). Model rows live only in Oracle so
 // the existing catalog age-in gate remains authoritative.
@@ -175,15 +166,6 @@ register(new OpenAICompatProvider({
     'HTTP-Referer': 'http://localhost:20268',
     'X-Title': 'srouter',
   },
-}));
-
-// GitHub Models — OpenAI-compatible. Catalog uses `<publisher>/<model>` ids
-// (e.g. `openai/gpt-4.1`); the old Azure endpoint rejects that prefix with
-// "Unknown model", so route to the current models.github.ai endpoint.
-register(new OpenAICompatProvider({
-  platform: 'github',
-  name: 'GitHub Models',
-  baseUrl: 'https://models.github.ai/inference',
 }));
 
 // Cohere - OpenAI-compatible via Cohere compatibility endpoint
@@ -571,6 +553,56 @@ register(new OpenAICompatProvider({
 // auto-configures and works anonymously (key 0000000000, lowest queue
 // priority); a registered aihorde.net key raises priority. See issue #345.
 register(new AIHordeProvider());
+
+// ── No-card free tiers added 2026-10 ────────────────────────────────────────
+// All five are plain OpenAI-compatible Bearer endpoints verified against the
+// no-card criterion; model rows arrive via auto-discovery/catalog, never here.
+
+// Nous Portal (Nous Research) — $0 Free plan, no card. Free routes carry a
+// `:free` suffix; a portal API key is required (keyless calls answer 402).
+// Prompts/outputs may be used for Nous training unless Privacy Mode is on.
+register(new OpenAICompatProvider({
+  platform: 'nous',
+  name: 'Nous Portal',
+  baseUrl: 'https://inference-api.nousresearch.com/v1',
+}));
+
+// OpenTyphoon (SCB 10X, Thailand) — no-card free tier on
+// api.opentyphoon.ai/v1. Responses may be used for the lab's research unless
+// the option is disabled in the portal settings.
+register(new OpenAICompatProvider({
+  platform: 'typhoon',
+  name: 'OpenTyphoon',
+  baseUrl: 'https://api.opentyphoon.ai/v1',
+}));
+
+// Plugsky — no-card free gateway (plugsky.com/v1); smoke-tested against
+// /v1/models 2026-10-08.
+register(new OpenAICompatProvider({
+  platform: 'plugsky',
+  name: 'Plugsky',
+  baseUrl: 'https://plugsky.com/v1',
+}));
+
+// Token Harbor — no-card gateway (tokenharbor.ai/v1). `:free` model ids ride
+// a rolling 7-day value-based allowance (60 RPM account-wide) and rotate as
+// models are added or retired, so rows stay auto-discovery-managed. Free
+// routes are OFF by default until enabled in the dashboard; opted-in prompts
+// may be retained for service improvement.
+register(new OpenAICompatProvider({
+  platform: 'tokenharbor',
+  name: 'Token Harbor',
+  baseUrl: 'https://tokenharbor.ai/v1',
+}));
+
+// Alibaba Cloud Model Studio (international dashscope) — no card; each model
+// grants a one-time 1M-token free quota valid 90 days. The console's "Free
+// Quota Only" toggle must stay ON (default OFF) or calls bill pay-as-you-go.
+register(new OpenAICompatProvider({
+  platform: 'alibaba',
+  name: 'Alibaba Model Studio',
+  baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+}));
 
 // Placeholder so getProvider('custom')/hasProvider('custom')/getAllProviders()
 // behave — but the real instance is built per-key by resolveProvider(), since

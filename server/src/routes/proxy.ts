@@ -5,13 +5,14 @@ import { z } from 'zod';
 import type { ChatMessage, ChatToolCall, TokenUsage } from '@srouter/shared/types.js';
 import { type RouteResult, type ResolvedChain, type ChainRow, routeRequest, resolveRoutingChain, resolveModelGroupCandidates, resolveStickyPreference, hasEnabledVisionModel, hasEnabledToolsModel, routingReserveTokens } from '../services/router.js';
 import { secondsUntilNextMonth } from '../services/key-budget.js';
+import { classifyComplexity } from '../services/complexity-gate.js';
 import { runEmbeddings, EmbeddingsError } from '../services/embeddings.js';
 import { retryAfterSeconds } from '../lib/retry-hint.js';
 import { runImageGeneration, runVideoGeneration, runSpeech, runTranscription, MediaError, MAX_TRANSCRIPTION_BYTES } from '../services/media.js';
 import multer from 'multer';
 import { getDb } from '../db/index.js';
 import { resolveAuth, prependSystemPrompt, type ResolvedAuth } from '../lib/system-prompt.js';
-import { contentToString, estimateInputTokens, messageHasImage, normalizeOutboundContent, sanitizeResponse, truncateMessagesForGithub } from '../lib/content.js';
+import { contentToString, estimateInputTokens, messageHasImage, normalizeOutboundContent, sanitizeResponse } from '../lib/content.js';
 import { routeOutputBudget } from '../lib/output-cap.js';
 import { resolveTaskType } from '../lib/task-type.js';
 import { normalizeMessageImages } from '../lib/image-normalize.js';
@@ -63,7 +64,8 @@ export { timingSafeStringEqual } from '../lib/system-prompt.js';
 // (which may carry a server-enforced system prompt). Profile keys are ONLY
 // valid here — never on the /api dashboard surface. Writes the 401 itself so
 // call sites can simply bail on null.
-function requireInferenceAuth(req: Request, res: Response): ResolvedAuth | null {
+// Exported for the /v1 tools routes (web-search/fetch) — same key gate.
+export function requireInferenceAuth(req: Request, res: Response): ResolvedAuth | null {
   const auth = resolveAuth(extractApiToken(req));
   if (!auth) {
     res.status(401).json({ error: { message: 'Invalid API key', type: 'authentication_error' } });
@@ -1208,11 +1210,7 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
         requestedModel: attempt === 0 ? requestedModelLabel : undefined,
       });
 
-      // Same GitHub input ceiling as /chat/completions below: trim the
-      // dispatched copy so a long legacy prompt doesn't 413 the github hop.
-      const dispatchMessages = route.platform === 'github'
-        ? truncateMessagesForGithub(messages)
-        : messages;
+      const dispatchMessages = messages;
 
       if (stream) {
         let totalOutputTokens = 0;
@@ -2109,6 +2107,12 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
   // in-flight upstream instead of waiting for a stalled attempt to time out.
   const hedgeAbort = new AbortController();
 
+  // Complexity gate (Jev-B): classify ONCE per request, before the loop —
+  // level is a soft weight bias inside routeRequest (trivial → fast/cheap,
+  // hard → smart). classifyComplexity is opt-in and fail-open internally, so
+  // an off gate or a Jev outage yields undefined and the preset stands.
+  const complexity = await classifyComplexity(messages, tools);
+
   await runFallbackLoop({
     maxRetries: MAX_RETRIES,
     state,
@@ -2128,7 +2132,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
       // header; otherwise a bounded rule derives it (tools present / code
       // markers). undefined keeps the preset weights untouched.
       const taskType = resolveTaskType(req, tools, messages);
-      return routeRequest(routingEstimate, state.skipKeys.size > 0 ? state.skipKeys : undefined, preferredModel, hasImage, wantsTools, state.skipModels.size > 0 ? state.skipModels : undefined, groupChain ?? resolvedChain?.chain, samplingParams.response_format !== undefined, state.skipPlatforms.size > 0 ? state.skipPlatforms : undefined, outputReserve, taskType);
+      return routeRequest(routingEstimate, state.skipKeys.size > 0 ? state.skipKeys : undefined, preferredModel, hasImage, wantsTools, state.skipModels.size > 0 ? state.skipModels : undefined, groupChain ?? resolvedChain?.chain, samplingParams.response_format !== undefined, state.skipPlatforms.size > 0 ? state.skipPlatforms : undefined, outputReserve, taskType, complexity);
     },
     dispatch: async (route, attempt, ctx) => {
     const contextBudget = routeOutputBudget(route, estimatedInputTokens);
@@ -2165,16 +2169,6 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
     const rememberedReasoning = rememberedReasoningFor(reasoningSessionKey, modelKey);
     if (rememberedReasoning) {
       outboundMessages = restoreSessionReasoning(outboundMessages, rememberedReasoning, route.platform);
-    }
-
-    // GitHub Models 413s a history above its input ceiling instead of
-    // truncating it, so a long conversation burns the github hop of every
-    // chain it appears in. Trim the outbound copy to what the platform will
-    // accept — scoped to this attempt, so the next candidate still sees the
-    // client's full history. A no-op returning the same array when the
-    // request already fits.
-    if (route.platform === 'github') {
-      outboundMessages = truncateMessagesForGithub(outboundMessages);
     }
 
       if (stream) {

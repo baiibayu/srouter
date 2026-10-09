@@ -60,19 +60,9 @@ describe('parseProviderReportedSize', () => {
     });
   });
 
-  describe('github', () => {
-    it('returns null even though the body is parseable (limit only, not request size)', () => {
-      // "Max size: 8000 tokens" is the LIMIT ceiling. Returning 8000 would
-      // cause every subsequent model with TPM < 8000 to be skipped for the
-      // rest of the request — wildly wrong. The parser must refuse.
-      const msg = 'GitHub Models API error 413: Request body too large for gpt-4.1 model. Max size: 8000 tokens.';
-      expect(parseProviderReportedSize('github', msg)).toBeNull();
-    });
-  });
-
   describe('providers without a parser', () => {
-    it('returns null for ollama, nvidia, anthropic, google, opencode, llm7, cerebras, custom', () => {
-      for (const p of ['ollama', 'nvidia', 'anthropic', 'google', 'opencode', 'llm7', 'cerebras', 'custom']) {
+    it('returns null for ollama, nvidia, anthropic, google, opencode, llm7, bai, custom', () => {
+      for (const p of ['ollama', 'nvidia', 'anthropic', 'google', 'opencode', 'llm7', 'bai', 'custom']) {
         expect(parseProviderReportedSize(p, 'Any 413 body Requested 12345 tokens here')).toBeNull();
       }
     });

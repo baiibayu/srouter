@@ -573,12 +573,12 @@ describe('Anthropic-compatible /v1/messages', () => {
         // The SAME model_id served by two platforms. Groq is tried first
         // (priority 10 < 20) and is the one that fails.
         addModel('groq', SHARED, 'Shared Fallback Model', 10),
-        addModel('cerebras', SHARED, 'Shared Fallback Model', 20),
+        addModel('bai', SHARED, 'Shared Fallback Model', 20),
         // A different model on the healthy platform, with the BEST priority in
         // the catalog — before the fix this is what answered the request.
-        addModel('cerebras', UNRELATED, 'Unrelated Test Model', 1),
+        addModel('bai', UNRELATED, 'Unrelated Test Model', 1),
       ];
-      addKey('cerebras'); // the groq key is created by the outer beforeEach
+      addKey('bai'); // the groq key is created by the outer beforeEach
     });
 
     afterEach(() => {
@@ -604,11 +604,11 @@ describe('Anthropic-compatible /v1/messages', () => {
           seen.push(`groq/${sent.model}`);
           return new Response(JSON.stringify({ error: { message: 'rate limited' } }), { status: 429 });
         }
-        if (u.includes('api.cerebras.ai')) {
-          seen.push(`cerebras/${sent.model}`);
+        if (u.includes('api.b.ai')) {
+          seen.push(`bai/${sent.model}`);
           return new Response(JSON.stringify({
             id: 'chatcmpl-c', object: 'chat.completion', created: 1, model: sent.model,
-            choices: [{ index: 0, message: { role: 'assistant', content: `answer from cerebras ${sent.model}` }, finish_reason: 'stop' }],
+            choices: [{ index: 0, message: { role: 'assistant', content: `answer from bai ${sent.model}` }, finish_reason: 'stop' }],
             usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 },
           }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
@@ -626,9 +626,9 @@ describe('Anthropic-compatible /v1/messages', () => {
 
       expect(status).toBe(200);
       // Same model, second provider — not the better-priority unrelated model.
-      expect(headers.get('x-routed-via')).toBe(`cerebras/${SHARED}`);
-      expect(body.content[0].text).toBe(`answer from cerebras ${SHARED}`);
-      expect(seen).toEqual([`groq/${SHARED}`, `cerebras/${SHARED}`]);
+      expect(headers.get('x-routed-via')).toBe(`bai/${SHARED}`);
+      expect(body.content[0].text).toBe(`answer from bai ${SHARED}`);
+      expect(seen).toEqual([`groq/${SHARED}`, `bai/${SHARED}`]);
       expect(seen.some(s => s.includes(UNRELATED))).toBe(false);
     });
 
@@ -638,8 +638,8 @@ describe('Anthropic-compatible /v1/messages', () => {
       vi.spyOn(global, 'fetch').mockImplementation(async (url: any, init?: any) => {
         const u = String(url);
         const sent = init?.body ? JSON.parse(String(init.body)) : {};
-        if (u.includes('api.groq.com') || u.includes('api.cerebras.ai')) {
-          seen.push(`${u.includes('api.groq.com') ? 'groq' : 'cerebras'}/${sent.model}`);
+        if (u.includes('api.groq.com') || u.includes('api.b.ai')) {
+          seen.push(`${u.includes('api.groq.com') ? 'groq' : 'bai'}/${sent.model}`);
           return new Response(JSON.stringify({ error: { message: 'rate limited' } }), { status: 429 });
         }
         return orig(url, init);
@@ -666,7 +666,7 @@ describe('Anthropic-compatible /v1/messages', () => {
       }, anthropicHeaders());
 
       expect(status).toBe(200);
-      expect(headers.get('x-routed-via')).toBe(`cerebras/${UNRELATED}`);
+      expect(headers.get('x-routed-via')).toBe(`bai/${UNRELATED}`);
     });
   });
 

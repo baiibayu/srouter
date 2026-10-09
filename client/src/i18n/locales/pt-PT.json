@@ -188,7 +188,16 @@
     "syncIntervalOff": "Off",
     "syncInterval6h": "Every 6h",
     "syncInterval12h": "Every 12h",
-    "syncInterval24h": "Every 24h"
+    "syncInterval24h": "Every 24h",
+    "complexityGate": "Complexity gate",
+    "complexityGateHelp": "Classify every request (trivial/normal/hard) and bias routing — light prompts go to fast models, hard prompts to smart ones. Fails open; off by default.",
+    "complexityGateBackend": "Classifier backend",
+    "complexityGateHeuristic": "Local heuristic",
+    "complexityGateJev": "Jev (TypeSafe)",
+    "complexityGateJevKey": "Jev API key",
+    "complexityGateJevKeyHelp": "Stored server-side and never shown again. Get one at console.typesafe.ai.",
+    "complexityGateJevKeyPlaceholder": "typesafe key",
+    "complexityGateSaved": "Saved"
   },
   "models": {
     "title": "Modelos",

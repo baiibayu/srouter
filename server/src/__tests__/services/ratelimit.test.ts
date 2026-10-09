@@ -72,8 +72,8 @@ describe('Rate Limiter', () => {
     });
 
     it('should deny tokens when TPM limit would be exceeded', () => {
-      recordTokens('cerebras', 'qwen3', testId, 50000);
-      expect(canUseTokens('cerebras', 'qwen3', testId, 20000, {
+      recordTokens('bai', 'qwen3', testId, 50000);
+      expect(canUseTokens('bai', 'qwen3', testId, 20000, {
         tpm: 60000, tpd: null,
       })).toBe(false);
     });
@@ -103,7 +103,7 @@ describe('Rate Limiter', () => {
   describe('escalating cooldown', () => {
     it('escalates the 2nd/3rd/4th hit within 24h to 10m / 1h / 24h', () => {
       const id = Math.floor(Math.random() * 1_000_000);
-      const args = ['cerebras', `escalating-model-${id}`, id] as const;
+      const args = ['bai', `escalating-model-${id}`, id] as const;
       // 1st: 2 minutes
       expect(getNextCooldownDuration(...args)).toBe(2 * 60 * 1000);
       // 2nd: 10 minutes
@@ -319,8 +319,8 @@ describe('Rate Limiter', () => {
     });
   });
 
-  describe('provider-wide daily token cap (NavyAI)', () => {
-    const ENV = 'PROVIDER_DAILY_TOKEN_CAP_NAVY';
+  describe('provider-wide daily token cap (env-configured)', () => {
+    const ENV = 'PROVIDER_DAILY_TOKEN_CAP_GROQ';
     let original: string | undefined;
     let dbReady = false;
 
@@ -331,28 +331,10 @@ describe('Rate Limiter', () => {
       dbReady = true;
     }
 
-    function seedNavyModel(modelId: string, tpdLimit: number, monthlyTokenBudget: string) {
-      getDb().prepare(`
-        INSERT INTO models (
-          platform, model_id, display_name, intelligence_rank, speed_rank,
-          size_label, rpm_limit, rpd_limit, tpm_limit, tpd_limit,
-          monthly_token_budget, context_window, enabled, supports_vision,
-          supports_tools
-        ) VALUES (
-          'navy', ?, ?, 1, 1, 'Large', 20, NULL, NULL, ?,
-          ?, NULL, 1, 0, 1
-        )
-        ON CONFLICT(platform, model_id, endpoint_scope) DO UPDATE SET
-          tpd_limit = excluded.tpd_limit,
-          monthly_token_budget = excluded.monthly_token_budget
-      `).run(modelId, `${modelId} (NavyAI)`, tpdLimit, monthlyTokenBudget);
-    }
-
     beforeEach(() => {
       ensureDb();
       original = process.env[ENV];
       getDb().prepare('DELETE FROM rate_limit_usage').run();
-      getDb().prepare("DELETE FROM models WHERE platform = 'navy'").run();
       delete process.env[ENV];
     });
 
@@ -361,33 +343,38 @@ describe('Rate Limiter', () => {
       else process.env[ENV] = original;
     });
 
-    it('defaults to NavyAI 150K tokens/day and allows env override / disable', () => {
-      expect(getProviderDailyTokenCap('navy')).toBe(150_000);
+    it('has no default and reads the provider-scoped env knob (0 / garbage disable)', () => {
       expect(getProviderDailyTokenCap('groq')).toBeNull();
+      expect(getProviderDailyTokenCap('nous')).toBeNull();
       process.env[ENV] = '5000';
-      expect(getProviderDailyTokenCap('navy')).toBe(5000);
+      expect(getProviderDailyTokenCap('groq')).toBe(5000);
+      expect(getProviderDailyTokenCap('nous')).toBeNull(); // scoped per platform
       process.env[ENV] = '0';
-      expect(getProviderDailyTokenCap('navy')).toBeNull();
+      expect(getProviderDailyTokenCap('groq')).toBeNull();
+      process.env[ENV] = 'not-a-number';
+      expect(getProviderDailyTokenCap('groq')).toBeNull();
     });
 
-    it('counts NavyAI tokens across all models using catalog multiplier hints', () => {
-      seedNavyModel('gpt-5.4', 33_333, '150K/day shared \u00b7 4.5x');
-      seedNavyModel('llama-3.3-70b-instruct', 150_000, '150K/day shared \u00b7 1x');
-
-      recordTokens('navy', 'gpt-5.4', testId, 1000);
-      recordTokens('navy', 'llama-3.3-70b-instruct', testId, 1000);
-
-      expect(providerDailyTokenCount('navy', testId)).toBe(5500);
+    it('counts raw tokens across all models of the key, since midnight UTC', () => {
+      process.env[ENV] = '100000';
+      recordTokens('groq', 'gpt-5.4', testId, 1000);
+      recordTokens('groq', 'llama-3.3-70b-instruct', testId, 1000);
+      expect(providerDailyTokenCount('groq', testId)).toBe(2000);
+      // With the cap off, no provider-level counting happens at all.
+      delete process.env[ENV];
+      expect(providerDailyTokenCount('groq', testId)).toBe(0);
     });
 
-    it('blocks the provider key when multiplier-adjusted tokens would exceed the shared cap', () => {
-      process.env[ENV] = '5000';
-      seedNavyModel('gemini-2.5-flash', 75_000, '150K/day shared \u00b7 2x');
+    it('blocks the provider key when tokens would exceed the cap', () => {
+      process.env[ENV] = '2400';
+      recordTokens('groq', 'llama-70b', testId, 2000);
 
-      recordTokens('navy', 'gemini-2.5-flash', testId, 2000);
+      expect(canUseProviderTokens('groq', testId, 'llama-70b', 400)).toBe(true);  // 2000 + 400 <= 2400
+      expect(canUseProviderTokens('groq', testId, 'llama-70b', 401)).toBe(false); // would exceed
 
-      expect(canUseProviderTokens('navy', testId, 'gemini-2.5-flash', 400)).toBe(true);
-      expect(canUseProviderTokens('navy', testId, 'gemini-2.5-flash', 600)).toBe(false);
+      // Cap disabled -> every estimate passes.
+      delete process.env[ENV];
+      expect(canUseProviderTokens('groq', testId, 'llama-70b', 1_000_000)).toBe(true);
     });
   });
 });

@@ -10,7 +10,7 @@
 
 ## 2. 选择适配器
 
-- **OpenAI 兼容端点** → 无需新类。带着平台 base URL 注册 `OpenAICompatProvider`，groq、cerebras、openrouter 以及另外约 27 家都是这么做的。
+- **OpenAI 兼容端点** → 无需新类。带着平台 base URL 注册 `OpenAICompatProvider`，groq、mistral、openrouter 以及另外约 34 家都是这么做的。
 - **线上格式有分歧** → 在独立文件里子类化 `BaseProvider` 并注册。现有先例：
   - `GoogleProvider` —— 原生 Gemini 线上格式；
   - `CohereProvider` / `CloudflareProvider` / `ZhipuProvider` —— 兼容聊天路由外加密钥形状或控制台探测行为；

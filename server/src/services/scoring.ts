@@ -253,6 +253,50 @@ export function taskAdjustedWeights(
   };
 }
 
+// ── Complexity-gate bias (Jev-B) ──────────────────────────────────────────
+// The complexity level derived per request (trivial | normal | hard) is a SOFT
+// preference layered on top of the task-type bias: trivial prompts move part
+// of the intelligence axis onto speed (cheap/fast models win, "halo" prompts
+// stop burning the 70B quota), hard prompts move speed onto intelligence
+// (weak models stop getting hard work). `normal` and everything exempt leave
+// the preset alone — same exemption set as the task bias: the operator picked
+// `fastest`/`reliable` on purpose, `custom` is hand-tuned, and `priority`
+// never reaches this code.
+export const COMPLEXITY_WEIGHT_SHARE = 0.25;
+
+export function complexityAdjustedWeights(
+  base: RoutingWeights,
+  level: 'trivial' | 'normal' | 'hard',
+  strategy: RoutingStrategy,
+  share = COMPLEXITY_WEIGHT_SHARE,
+): { weights: RoutingWeights; adjusted: boolean } {
+  if (level === 'normal') return { weights: base, adjusted: false };
+  if (isTaskExemptStrategy(strategy)) return { weights: base, adjusted: false };
+  if (share <= 0) return { weights: base, adjusted: false };
+  if (level === 'hard') {
+    const shift = base.speed * share;
+    if (shift <= 0) return { weights: base, adjusted: false };
+    return {
+      weights: {
+        reliability: base.reliability,
+        speed: base.speed - shift,
+        intelligence: base.intelligence + shift,
+      },
+      adjusted: true,
+    };
+  }
+  const shift = base.intelligence * share;
+  if (shift <= 0) return { weights: base, adjusted: false };
+  return {
+    weights: {
+      reliability: base.reliability,
+      speed: base.speed + shift,
+      intelligence: base.intelligence - shift,
+    },
+    adjusted: true,
+  };
+}
+
 // ── Reliability ───────────────────────────────────────────────────────────
 // Beta(1,1) prior = uniform: an unseen model is genuinely uncertain, not assumed
 // good or bad. With decay-weighted pseudo-counts the alpha/beta are continuous.

@@ -606,6 +606,126 @@ function SyncScheduleRow() {
   )
 }
 
+// The Jev-B complexity gate: opt-in classifier that biases provider ordering
+// per request (trivial → fast, hard → smart). Mirrors the server's
+// GET/PUT /api/settings/complexity-gate contract; jevApiKey is write-only
+// (server reports hasJevApiKey, never the stored value).
+interface ComplexityGateConfig {
+  enabled: boolean
+  backend: 'heuristic' | 'jev'
+  jevBaseUrl: string
+  jevTimeoutMs: number
+  hasJevApiKey: boolean
+}
+
+function ComplexityGateRow({ active }: { active: boolean }) {
+  const { t } = useI18n()
+  const [cfg, setCfg] = useState<ComplexityGateConfig | null>(null)
+  const [keyDraft, setKeyDraft] = useState('')
+  const [keySaved, setKeySaved] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!active) return
+    let cancelled = false
+    apiFetch<ComplexityGateConfig>('/api/settings/complexity-gate')
+      .then(result => { if (!cancelled) setCfg(result) })
+      .catch(() => { /* row stays hidden rather than claim a state */ })
+    return () => { cancelled = true }
+  }, [active])
+
+  async function patch(body: Record<string, unknown>) {
+    if (!cfg) return
+    const previous = cfg
+    setBusy(true)
+    try {
+      const result = await apiFetch<ComplexityGateConfig>('/api/settings/complexity-gate', {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      })
+      setCfg(result)
+      return true
+    } catch {
+      setCfg(previous)
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function saveKey() {
+    const trimmed = keyDraft.trim()
+    const saved = await patch({ jevApiKey: trimmed === '' ? null : trimmed })
+    if (saved) {
+      setKeyDraft('')
+      setKeySaved(true)
+      setTimeout(() => setKeySaved(false), 1500)
+    }
+  }
+
+  if (!cfg) return null
+
+  return (
+    <>
+      <Row
+        label={t('settings.complexityGate')}
+        hint={t('settings.complexityGateHelp')}
+        control={(
+          <Switch
+            aria-label={t('settings.complexityGate')}
+            checked={cfg.enabled}
+            disabled={busy}
+            onCheckedChange={checked => void patch({ enabled: checked })}
+          />
+        )}
+      />
+      {cfg.enabled && (
+        <Row
+          label={t('settings.complexityGateBackend')}
+          control={(
+            <OptionBar
+              value={cfg.backend}
+              onValueChange={backend => void patch({ backend })}
+              options={([
+                { value: 'heuristic', label: t('settings.complexityGateHeuristic') },
+                { value: 'jev', label: t('settings.complexityGateJev') },
+              ] satisfies Array<{ value: ComplexityGateConfig['backend']; label: string }>)}
+              ariaLabel={t('settings.complexityGateBackend')}
+              className="w-full grid-cols-2 sm:w-72"
+            />
+          )}
+        />
+      )}
+      {cfg.enabled && cfg.backend === 'jev' && (
+        <Row
+          label={t('settings.complexityGateJevKey')}
+          hint={t('settings.complexityGateJevKeyHelp')}
+          control={(
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={keyDraft}
+                onChange={event => setKeyDraft(event.target.value)}
+                placeholder={cfg.hasJevApiKey ? '••••••••' : t('settings.complexityGateJevKeyPlaceholder')}
+                aria-label={t('settings.complexityGateJevKey')}
+                className="h-9 w-52 rounded-lg border border-input bg-transparent px-3 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              />
+              <button
+                type="button"
+                onClick={() => void saveKey()}
+                disabled={busy || (keyDraft.trim() === '' && !cfg.hasJevApiKey)}
+                className="h-9 shrink-0 rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {keySaved ? t('settings.complexityGateSaved') : t('common.save')}
+              </button>
+            </div>
+          )}
+        />
+      )}
+    </>
+  )
+}
+
 function GeneralSection({ active }: { active: boolean }) {
   const { t } = useI18n()
   const { theme, setTheme } = useTheme()
@@ -634,6 +754,7 @@ function GeneralSection({ active }: { active: boolean }) {
         )}
       />
       <SyncScheduleRow />
+      <ComplexityGateRow active={active} />
       <UpdateChecker active={active} />
     </>
   )

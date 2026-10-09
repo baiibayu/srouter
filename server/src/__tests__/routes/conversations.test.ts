@@ -41,7 +41,7 @@ const ASSISTANT_TURN = {
     latency: 812,
     fallbackAttempts: 1,
     fusionPanel: [{ platform: 'groq', model: 'a', status: 'ok', content: 'A' }],
-    fusionJudge: { platform: 'cerebras', model: 'j' },
+    fusionJudge: { platform: 'bai', model: 'j' },
   },
 };
 

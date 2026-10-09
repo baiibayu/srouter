@@ -66,7 +66,7 @@ export function inBandCreditsError(text: string | null | undefined): string | nu
 
 /**
  * Generic provider for platforms that use an OpenAI-compatible API.
- * Covers: Groq, Cerebras, NVIDIA NIM, Mistral, OpenRouter,
+ * Covers: Groq, NVIDIA NIM, Mistral, OpenRouter,
  * GitHub Models, Fireworks AI.
  */
 export class OpenAICompatProvider extends BaseProvider {
@@ -198,16 +198,13 @@ export class OpenAICompatProvider extends BaseProvider {
 
   /**
    * OpenAI-compatible endpoints that are strict about unknown nested fields:
-   * Mistral returns 422 for provider-private replay fields, Groq rejects
-   * assistant `reasoning_content` with 400 (verified in production, #1070),
-   * and Cerebras rejects it too — `property 'messages.N.assistant.
-   * reasoning_content' is unsupported` (confirmed via vercel/ai#15042 and
-   * opencode#26762, and by Cerebras' own docs, which use a `reasoning` field
-   * instead). Other gateways ignore the fields, so keep the OpenAI wire
+   * Mistral returns 422 for provider-private replay fields, and Groq rejects
+   * assistant `reasoning_content` with 400 (verified in production, #1070).
+   * Other gateways ignore the fields, so keep the OpenAI wire
    * shape but strip our internal reasoning / thought-signature extensions
    * before sending to these platforms.
    */
-  private static readonly STRICT_PLATFORMS = new Set(['mistral', 'groq', 'cerebras']);
+  private static readonly STRICT_PLATFORMS = new Set(['mistral', 'groq']);
   private messagesForPlatform(messages: ChatMessage[], modelId: string): ChatMessage[] {
     if (OpenAICompatProvider.STRICT_PLATFORMS.has(this.platform)) {
       // Rebuild every message from a whitelist of keys, so `partial` and the

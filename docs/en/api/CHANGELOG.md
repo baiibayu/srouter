@@ -4,6 +4,10 @@
 
 Doc revision history for `docs/api/`, seeded from API-relevant commits.
 
+## 2026-10-09
+
+- **docs(api): document web search + URL fetch utilities** — added `POST /v1/web-search` (keyless DuckDuckGo HTML backend, `max_results` 1–10, rate/captcha pages surface as `502` rather than an empty result set) and `POST /v1/fetch` (public `http(s)` only, SSRF guard incl. DNS-resolution check before connect, `max_bytes` 1 KiB–2 MiB with a hard body cap, Jina reader fallback, `via: direct|jina`) to `01-rest-api.md`. Both endpoints require the unified inference key (dashboard session tokens rejected) and share the `/v1` proxy limiter. Sources: `server/src/routes/tools.ts`.
+
 ## 2026-09-03
 
 - **docs(api): document the task-type routing header** — added `X-FreeLLM-Task-Type: code|chat|auto` (#1127) to the per-request headers section, with the weight shift it applies and the strategies that ignore it.

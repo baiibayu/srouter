@@ -302,7 +302,7 @@ describe('Model management API', () => {
   it('clears a rate limit back to unlimited with an explicit null (#551)', async () => {
     const target = getDb().prepare(`
       SELECT m.id, m.platform, m.model_id FROM models m
-       WHERE m.platform = 'cerebras' AND m.key_id IS NULL AND m.source != 'user'
+       WHERE m.platform = 'mistral' AND m.key_id IS NULL AND m.source != 'user'
        ORDER BY m.id LIMIT 1
     `).get() as { id: number; platform: string; model_id: string };
 

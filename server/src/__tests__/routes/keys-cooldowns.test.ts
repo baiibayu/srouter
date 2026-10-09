@@ -85,14 +85,14 @@ describe('Key cooldown visibility and clearing', () => {
 
   it('does not disturb cooldowns belonging to another key', async () => {
     const a = await createKey(app, 'groq', 'gsk_testkeyvalueAAAAAA');
-    const b = await createKey(app, 'cerebras', 'csk-testkeyvalueBBBBBB');
+    const b = await createKey(app, 'bai', 'csk-testkeyvalueBBBBBB');
     setCooldown('groq', 'llama-3.3-70b', a, 60 * 60_000);
-    setCooldown('cerebras', 'qwen-3-coder', b, 60 * 60_000);
+    setCooldown('bai', 'qwen-3-coder', b, 60 * 60_000);
 
     await request(app, 'DELETE', `/api/keys/${a}/cooldowns`);
 
     expect(isOnCooldown('groq', 'llama-3.3-70b', a)).toBe(false);
-    expect(isOnCooldown('cerebras', 'qwen-3-coder', b)).toBe(true);
+    expect(isOnCooldown('bai', 'qwen-3-coder', b)).toBe(true);
   });
 
   it('returns 404 for an unknown key and 400 for a non-numeric id', async () => {

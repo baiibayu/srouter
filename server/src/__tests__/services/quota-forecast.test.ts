@@ -89,7 +89,7 @@ describe('quota-forecast: daily balance aggregation (#1104)', () => {
   it('does not apply the absolute floor to a small window', () => {
     // A 30/day tier with 25 left has five sixths of its window: the absolute
     // floor of 20 would call that low, which is the bug this guards.
-    insertState({ platform: 'cerebras', keyId: 1, pool: 'cerebras::account', metric: 'requests', limit: 30, remaining: 25, resetAt: future() });
+    insertState({ platform: 'bai', keyId: 1, pool: 'bai::account', metric: 'requests', limit: 30, remaining: 25, resetAt: future() });
 
     const e = getQuotaForecast()[0];
     expect(e.remaining_pct).toBe(83);
@@ -97,7 +97,7 @@ describe('quota-forecast: daily balance aggregation (#1104)', () => {
   });
 
   it('still warns on a small window once the percentage rule bites', () => {
-    insertState({ platform: 'cerebras', keyId: 1, pool: 'cerebras::account', metric: 'requests', limit: 30, remaining: 2, resetAt: future() });
+    insertState({ platform: 'bai', keyId: 1, pool: 'bai::account', metric: 'requests', limit: 30, remaining: 2, resetAt: future() });
 
     expect(getQuotaForecast()[0].low_balance).toBe(true);
   });

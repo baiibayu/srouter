@@ -24,6 +24,7 @@ import {
   setCompressionConfig,
 } from '../services/compression/config.js';
 import { getHeadroomThresholds, setHeadroomThresholds, getTaskWeightShare, setTaskWeightShare } from '../services/router.js';
+import { getComplexityGate, setComplexityGate } from '../services/complexity-gate.js';
 import { MCP_ENABLED_SETTING, isMcpServerEnabled } from './mcp.js';
 import { z } from 'zod';
 import { getAppVersion } from '../lib/app-version.js';
@@ -371,6 +372,37 @@ settingsRouter.put('/task-weight-share', (req: Request, res: Response) => {
     res.json({ share: getTaskWeightShare() });
   } catch (err: any) {
     res.status(400).json({ error: { message: `Invalid task-weight-share: ${err.message}`, type: 'invalid_request_error' } });
+  }
+});
+
+// Complexity gate (Jev-B): opt-in per-request complexity classification
+// (trivial | normal | hard) feeding a soft bandit weight bias. The Jev API key
+// is write-only over the wire — GET reports only whether one is stored.
+settingsRouter.get('/complexity-gate', (_req: Request, res: Response) => {
+  res.json(getComplexityGate());
+});
+
+const complexityGatePutSchema = z.object({
+  enabled: z.boolean().optional(),
+  backend: z.enum(['heuristic', 'jev']).optional(),
+  jevBaseUrl: z.string().url().nullable().optional(),
+  jevApiKey: z.string().min(1).nullable().optional(),
+  jevTimeoutMs: z.number().int().min(50).max(5000).optional(),
+});
+
+// Partial update: send only the fields to change. jevApiKey null clears the
+// stored key. Takes effect on the next request — no restart needed.
+settingsRouter.put('/complexity-gate', (req: Request, res: Response) => {
+  const parsed = complexityGatePutSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid complexity-gate config: send {enabled?, backend?, jevBaseUrl?, jevApiKey?, jevTimeoutMs?}', type: 'invalid_request_error' } });
+    return;
+  }
+  try {
+    setComplexityGate(parsed.data);
+    res.json(getComplexityGate());
+  } catch (err: any) {
+    res.status(400).json({ error: { message: `Invalid complexity-gate config: ${err.message}`, type: 'invalid_request_error' } });
   }
 });
 

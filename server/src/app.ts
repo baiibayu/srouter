@@ -12,6 +12,7 @@ import { logsRouter } from './routes/logs.js';
 import { modelsRouter } from './routes/models.js';
 import { proxyRouter } from './routes/proxy.js';
 import { responsesRouter } from './routes/responses.js';
+import { toolsRouter } from './routes/tools.js';
 import { anthropicRouter } from './routes/anthropic.js';
 import { fallbackRouter } from './routes/fallback.js';
 import { profilesRouter } from './routes/profiles.js';
@@ -325,6 +326,8 @@ export function createApp(config?: Config) {
   app.use('/v1', proxyRouter);
   // OpenAI Responses API shim (Codex CLI requires wire_api="responses"; see #96)
   app.use('/v1', responsesRouter);
+  // Utility tools: web-search + URL fetch (same /v1 key + shared proxy limiter).
+  app.use('/v1', toolsRouter);
 
   // Native Gemini wire surface for Gemini CLI and Gemini-lineage agents.
   app.use('/v1beta', createProxyRateLimiter(cfg.proxyRateLimitRpm));

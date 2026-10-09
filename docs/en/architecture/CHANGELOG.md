@@ -4,6 +4,10 @@
 
 Doc revision history for `docs/architecture/`, seeded from commits touching architecture-relevant code.
 
+## 2026-10-09
+
+- **docs(architecture): document the complexity gate (Jev-B)** — new section 16 in `01-routing-and-bandit-scoring.md`: opt-in, default-off, fail-open per-request `trivial/normal/hard` classification that biases weights toward speed (trivial) or intelligence (hard) at a 25% share (`COMPLEXITY_WEIGHT_SHARE`); backends `heuristic` (size/structure rules) vs `jev` (TypeSafe SystemOne `POST /v1/systemone`, 0–10 → level, 400 ms timeout, write-only key) via `GET/PUT /api/settings/complexity-gate`; exempt strategies skip the bias; wiring `proxy.ts:classifyComplexity` → `routeRequest` → `orderChain` → `scoring.ts:complexityAdjustedWeights`. Sources: `server/src/services/complexity-gate.ts`.
+
 ## 2026-09-02
 
 - **docs(architecture): cross-ref Idempotency-Key replay in degraded-mode doc** — `04-degraded-mode-and-failover.md:10` now maps the pre-routing idempotency lookup (`server/src/services/idempotency.ts`, `proxy.ts:1793-1838`) and post-success persist (`proxy.ts:2640-2656`) to the fallback loop, notes `X-Routed-Via: idempotency` zero-cost replay, `stream:true` + `finish_reason:length` exclusion, in-flight NOT deduplicated (`95bc46f`), `IDEMPOTENCY_TTL_MS` 24 h lazy sweep, and that `409` + replay bypass `isDegraded()` / retry budget / hedging. Client contract lives in `docs/en/api/02-idempotency.md` (`36b877d`).

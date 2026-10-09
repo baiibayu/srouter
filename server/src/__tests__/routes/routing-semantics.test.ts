@@ -235,21 +235,21 @@ describe('routing semantics', () => {
 // how much of their observed quota is left and tries the roomiest first, so the
 // key nearest its cap is held in reserve instead of being the next to 429.
 describe('key selection by remaining quota (#919)', () => {
-  // cerebras meters each key against its own budget ('cerebras::shared'), which
+  // bai meters each key against its own budget ('bai::promo'), which
   // is what makes "which key has more left" a question with an answer.
-  const CEREBRAS_POOL = 'cerebras::shared';
+  const BAI_POOL = 'bai::promo';
 
-  /** Two cerebras keys — the drained one FIRST, so rowid order (and the
+  /** Two bai keys — the drained one FIRST, so rowid order (and the
    *  round-robin cursor that starts on it) would pick exactly the wrong key.
    *  The model id is per-test because the rotation cursor is keyed on it and
    *  outlives the in-memory DB. */
   function seedTwoKeys(modelId: string): { drained: number; roomy: number } {
     clearChain();
-    const drained = addKey('cerebras', 'drained');
-    const roomy = addKey('cerebras', 'roomy');
-    observeQuota('cerebras', drained, CEREBRAS_POOL, 20);
-    observeQuota('cerebras', roomy, CEREBRAS_POOL, 950);
-    addSyntheticModel(modelId, 1, true, 'cerebras');
+    const drained = addKey('bai', 'drained');
+    const roomy = addKey('bai', 'roomy');
+    observeQuota('bai', drained, BAI_POOL, 20);
+    observeQuota('bai', roomy, BAI_POOL, 950);
+    addSyntheticModel(modelId, 1, true, 'bai');
     return { drained, roomy };
   }
 
@@ -259,7 +259,7 @@ describe('key selection by remaining quota (#919)', () => {
 
     const routed = routeRequest(100);
     routed.release?.();
-    expect(routed.platform).toBe('cerebras');
+    expect(routed.platform).toBe('bai');
     expect(routed.keyId).toBe(roomy);
     expect(routed.keyId).not.toBe(drained);
   });
@@ -275,9 +275,9 @@ describe('key selection by remaining quota (#919)', () => {
 
   it('keeps the round-robin rotation when no key has a quota observation', () => {
     clearChain();
-    const first = addKey('cerebras', 'first');
-    const second = addKey('cerebras', 'second');
-    addSyntheticModel('unobserved-model', 1, true, 'cerebras');
+    const first = addKey('bai', 'first');
+    const second = addKey('bai', 'second');
+    addSyntheticModel('unobserved-model', 1, true, 'bai');
     setKeySelectionStrategy('least-remaining');
 
     const picks: number[] = [];

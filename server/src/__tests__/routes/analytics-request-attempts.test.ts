@@ -28,7 +28,7 @@ async function request(app: Express, path: string) {
 function insertRequest(status: string, createdAt: string): number {
   const insert = getDb().prepare(`
     INSERT INTO requests (platform, model_id, status, input_tokens, output_tokens, latency_ms, error, created_at)
-    VALUES ('cerebras', 'qwen-z', ?, 10, 5, 1234, NULL, ?)
+    VALUES ('bai', 'qwen-z', ?, 10, 5, 1234, NULL, ?)
   `).run(status, createdAt);
   return Number(insert.lastInsertRowid);
 }
@@ -64,7 +64,7 @@ describe('per-attempt traces in the analytics requests API', () => {
     const laddered = insertRequest('success', recentSql(10));
     insertAttempt(laddered, 0, 'groq', 'llama-x', 1, 'rate_limited', 0, 210);
     insertAttempt(laddered, 1, 'google', 'gemini-y', 2, 'timeout', 215, 10000);
-    insertAttempt(laddered, 2, 'cerebras', 'qwen-z', 3, 'ok', 10220, 900);
+    insertAttempt(laddered, 2, 'bai', 'qwen-z', 3, 'ok', 10220, 900);
     insertRequest('error', recentSql(11)); // mid-ladder row: no children
 
     const { status, body } = await request(app, '/api/analytics/requests?range=7d');
@@ -77,13 +77,13 @@ describe('per-attempt traces in the analytics requests API', () => {
     const id = insertRequest('success', recentSql(12));
     insertAttempt(id, 0, 'groq', 'llama-x', 1, 'rate_limited', 0, 210, '429 rate limit reached, retry in 7m12s');
     insertAttempt(id, 1, 'google', 'gemini-y', 2, 'timeout', 215, 10000, 'upstream timeout after 10000ms');
-    insertAttempt(id, 2, 'cerebras', 'qwen-z', 3, 'ok', 10220, 900);
+    insertAttempt(id, 2, 'bai', 'qwen-z', 3, 'ok', 10220, 900);
 
     const { status, body } = await request(app, `/api/analytics/requests/${id}`);
     expect(status).toBe(200);
     expect(body).toMatchObject({
       id,
-      platform: 'cerebras',
+      platform: 'bai',
       modelId: 'qwen-z',
       status: 'success',
       latencyMs: 1234,
@@ -91,7 +91,7 @@ describe('per-attempt traces in the analytics requests API', () => {
     expect(body.attempts).toEqual([
       { ordinal: 0, platform: 'groq', modelId: 'llama-x', keyOrdinal: 1, keyLabel: null, outcome: 'rate_limited', startOffsetMs: 0, durationMs: 210, errorSummary: '429 rate limit reached, retry in 7m12s' },
       { ordinal: 1, platform: 'google', modelId: 'gemini-y', keyOrdinal: 2, keyLabel: null, outcome: 'timeout', startOffsetMs: 215, durationMs: 10000, errorSummary: 'upstream timeout after 10000ms' },
-      { ordinal: 2, platform: 'cerebras', modelId: 'qwen-z', keyOrdinal: 3, keyLabel: null, outcome: 'ok', startOffsetMs: 10220, durationMs: 900, errorSummary: null },
+      { ordinal: 2, platform: 'bai', modelId: 'qwen-z', keyOrdinal: 3, keyLabel: null, outcome: 'ok', startOffsetMs: 10220, durationMs: 900, errorSummary: null },
     ]);
   });
 

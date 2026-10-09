@@ -22,9 +22,9 @@ it('repairs probe-refreshed balances from the last real measurement, preserving 
 
 it('does not retain borrowed confidence or guess the age of a pruned balance', () => {
   recordQuotaObservation({platform:'groq',keyId:1,remaining:0,source:'error_body',confidence:1});
-  recordQuotaObservation({platform:'cerebras',keyId:2,remaining:50,limit:100,source:'header'});
-  getDb().prepare("DELETE FROM provider_quota_observations WHERE platform='cerebras'").run();
+  recordQuotaObservation({platform:'bai',keyId:2,remaining:50,limit:100,source:'header'});
+  getDb().prepare("DELETE FROM provider_quota_observations WHERE platform='bai'").run();
   up(getDb());
   expect(getDb().prepare("SELECT confidence FROM provider_quota_state WHERE platform='groq'").get()).toEqual({confidence:0.55});
-  expect(getDb().prepare("SELECT remaining_value,confidence FROM provider_quota_state WHERE platform='cerebras'").get()).toEqual({remaining_value:50,confidence:0});
+  expect(getDb().prepare("SELECT remaining_value,confidence FROM provider_quota_state WHERE platform='bai'").get()).toEqual({remaining_value:50,confidence:0});
 });
