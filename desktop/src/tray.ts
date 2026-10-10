@@ -5,7 +5,7 @@ import { togglePopover } from './popover.js';
 import { openDashboard } from './window.js';
 import { openLogsFolder, openBackupsFolder } from './logger.js';
 import { dt, type NativeLocale } from './i18n.js';
-import { trayPlatform } from './tray-platform.js';
+import { trayMenuOffersPopover, trayPlatform } from './tray-platform.js';
 import type { UpdateState } from './update-support.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,6 +51,12 @@ export function buildTray(
     tray!.popUpContextMenu(Menu.buildFromTemplate([
       { label: dt(locale, 'runningOn', { addr: `${lanOn ? '0.0.0.0' : '127.0.0.1'}:${port}` }), enabled: false },
       { label: dt(locale, 'openDashboard'), click: () => openDashboard(port, token) },
+      // #1412: on Windows left-click deliberately opens the dashboard instead of
+      // the popover (#1353), which used to leave the compact panel with no entry
+      // point at all. Only offer it where the click does not already toggle it.
+      ...(trayMenuOffersPopover(process.platform)
+        ? [{ label: dt(locale, 'showCompactPanel'), click: () => togglePopover(tray!) }]
+        : []),
       { type: 'separator' },
       // Toggling relaunches the app (the bind host is fixed at server start).
       { label: dt(locale, 'lanAccess'), type: 'checkbox', checked: lanOn, click: () => onToggleLanAccess() },
