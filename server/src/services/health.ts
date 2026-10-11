@@ -186,6 +186,16 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
   const provider = resolveProvider(row.platform as Platform, row.base_url);
   if (!provider) return 'error';
 
+  // #1459: a provider that forbids automated key checks gets no probe. Its
+  // status is left to real traffic (markKeyHealthyFromRequest), and any reason
+  // an older probe stored is cleared so the dashboard stops showing it.
+  if (provider.supportsKeyValidation === false) {
+    if (row.last_health_error != null) {
+      db.prepare('UPDATE api_keys SET last_health_error = NULL WHERE id = ?').run(keyId);
+    }
+    return row.status as KeyStatus;
+  }
+
   try {
     const apiKey = decrypt(row.encrypted_key, row.iv, row.auth_tag);
     // #590: probe the key from the same exit its traffic uses. A key that is
@@ -289,6 +299,9 @@ export async function probeKeyValidity(keyId: number): Promise<KeyProbeOutcome> 
 
     const provider = resolveProvider(row.platform as Platform, row.base_url);
     if (!provider) return 'error';
+    // #1459: no probe for a provider that forbids them; the cooldown simply
+    // runs out, as it would after an inconclusive probe.
+    if (provider.supportsKeyValidation === false) return 'error';
 
     const apiKey = decrypt(row.encrypted_key, row.iv, row.auth_tag);
     // Same reasoning as checkKeyHealth: probe through the key's own proxy (#590).
@@ -309,17 +322,20 @@ export async function probeKeyValidity(keyId: number): Promise<KeyProbeOutcome> 
 }
 
 /**
- * Promote a key out of 'error' after it successfully served a live request.
+ * Promote a key out of 'error' or 'unknown' after it successfully served a live
+ * request.
  *
  * Serving traffic is stronger evidence than any probe, so a key stuck at 'error'
  * from an earlier transport blip should not have to wait for the next health pass
- * to become routable again. Deliberately narrow: 'invalid' means a provider
- * confirmed the credential is bad, and only a real validateKey pass clears that.
+ * to become routable again, and a key never probed yet (or one whose provider
+ * forbids probes, #1459) has just proved itself. Deliberately narrow: 'invalid'
+ * means a provider confirmed the credential is bad, and only a real validateKey
+ * pass clears that.
  */
 export function markKeyHealthyFromRequest(keyId: number): void {
   try {
     getDb()
-      .prepare("UPDATE api_keys SET status = 'healthy', last_health_error = NULL WHERE id = ? AND status = 'error'")
+      .prepare("UPDATE api_keys SET status = 'healthy', last_health_error = NULL WHERE id = ? AND status IN ('error', 'unknown')")
       .run(keyId);
     failureCount.delete(keyId);
   } catch {

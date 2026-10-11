@@ -268,6 +268,17 @@ export abstract class BaseProvider {
     return false;
   }
 
+  /** Whether the health checker may probe this provider's keys at all (#1459).
+   * A provider that forbids automated key checks (LLMTR answers any probe with
+   * 403 "automated API key validation tools are not supported", and its
+   * security system suspends accounts that keep sending them) returns false:
+   * the health pass and the cooldown probe then never call validateKey for its
+   * keys, and a key is promoted to healthy by the first request it serves
+   * (markKeyHealthyFromRequest) instead of by a probe. */
+  get supportsKeyValidation(): boolean {
+    return true;
+  }
+
   /**
    * Turn a conventional 401/403 validation response into a diagnostic result.
    * Providers still return a simple boolean when no useful error body exists,

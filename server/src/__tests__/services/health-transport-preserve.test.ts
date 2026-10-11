@@ -117,6 +117,12 @@ describe('markKeyHealthyFromRequest', () => {
     expect(row(id)).toEqual({ status: 'healthy', last_health_error: null });
   });
 
+  it("promotes a never-probed 'unknown' key to healthy (#1459)", () => {
+    const id = seedKey('unknown');
+    markKeyHealthyFromRequest(id);
+    expect(row(id)).toEqual({ status: 'healthy', last_health_error: null });
+  });
+
   it("never resurrects an 'invalid' key — only a real probe clears that", () => {
     const id = seedKey('invalid');
     markKeyHealthyFromRequest(id);

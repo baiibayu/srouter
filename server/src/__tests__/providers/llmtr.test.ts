@@ -81,6 +81,11 @@ describe('LLMTR provider', () => {
     await expect(unpaced().validateKey('test-key')).rejects.toMatchObject({ status, retryAfterMs: 17_000 });
   });
 
+  it('#1459: opts out of automated key validation; other providers keep it', () => {
+    expect(getProvider('llmtr')!.supportsKeyValidation).toBe(false);
+    expect(getProvider('groq')!.supportsKeyValidation).toBe(true);
+  });
+
   it('#1390: a 403 refusing automated validation probes is inconclusive, never invalid', async () => {
     // Live LLMTR response to our probe on 2026-10-03, reported on a working key.
     vi.spyOn(global, 'fetch').mockResolvedValue(json({ error: { type: 'forbidden', message: 'Automated API key validation tools are not supported.' } }, 403));
