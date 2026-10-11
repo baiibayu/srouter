@@ -25,7 +25,6 @@ type UpdateBody = {
   key?: string
   monthlyRequestCap?: number
   monthlyTokenCap?: number
-<<<<<<< HEAD
   budgetPeriod?: BudgetPeriod
   groupLabel?: string
 }
@@ -61,7 +60,6 @@ export function EditKeyDialog({
   const [apiKeyValue, setApiKeyValue] = useState('')
   const [accountId, setAccountId] = useState('')
   const [attempted, setAttempted] = useState(false)
-<<<<<<< HEAD
   // Budget caps (#1158): editable here so the cap is settable from the
   // dashboard at all; it shipped API-only. Empty = unlimited. The period
   // picks the UTC window (daily/weekly/monthly) the caps count against.
@@ -69,7 +67,8 @@ export function EditKeyDialog({
   const [groupLabel, setGroupLabel] = useState(apiKey.groupLabel ?? '')
   const isCustom = apiKey.platform === 'custom'
   // Monthly budget caps (#1158): editable here so the cap is settable from
-  // the dashboard at all; it shipped API-only. Empty = unlimited.  const [requestCap, setRequestCap] = useState(capToInput(apiKey.monthlyRequestCap))
+  // the dashboard at all; it shipped API-only. Empty = unlimited.
+  const [requestCap, setRequestCap] = useState(capToInput(apiKey.monthlyRequestCap))
   const [tokenCap, setTokenCap] = useState(capToInput(apiKey.monthlyTokenCap))
   const [period, setPeriod] = useState<BudgetPeriod>(apiKey.budgetPeriod ?? 'auto')
 
@@ -91,15 +90,12 @@ export function EditKeyDialog({
   const requestCapValue = parseCap(requestCap)
   const tokenCapValue = parseCap(tokenCap)
   const capError = requestCapValue === null || tokenCapValue === null
+
+  const periodChanged = period !== (apiKey.budgetPeriod ?? 'auto')
+  const groupLabelChanged = isCustom && groupLabel.trim() !== (apiKey.groupLabel ?? '')
   const requestCapChanged = requestCapValue !== (apiKey.monthlyRequestCap || 0)
   const tokenCapChanged = tokenCapValue !== (apiKey.monthlyTokenCap || 0)
-<<<<<<< HEAD
-  const periodChanged = period !== (apiKey.budgetPeriod ?? 'auto')
-  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged
-=======
-  const groupLabelChanged = isCustom && groupLabel.trim() !== (apiKey.groupLabel ?? '')
-  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || groupLabelChanged
->>>>>>> fbfb5e63 (feat(keys): custom endpoint groups with #group routing (#1176) (#1371))
+  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged || groupLabelChanged
 
   const updateKey = useMutation({
     mutationFn: (body: UpdateBody) =>
@@ -122,11 +118,8 @@ export function EditKeyDialog({
     if (credential) body.key = credential
     if (requestCapChanged && requestCapValue !== null) body.monthlyRequestCap = requestCapValue
     if (tokenCapChanged && tokenCapValue !== null) body.monthlyTokenCap = tokenCapValue
-<<<<<<< HEAD
     if (periodChanged) body.budgetPeriod = period
-=======
     if (groupLabelChanged) body.groupLabel = groupLabel.trim()
->>>>>>> fbfb5e63 (feat(keys): custom endpoint groups with #group routing (#1176) (#1371))
     if (Object.keys(body).length > 0) updateKey.mutate(body)
     else onOpenChange(false)
   }

@@ -11,7 +11,7 @@ describe('CLI arguments and launchers', () => {
     const previous = process.env.FREELLMAPI_URL;
     delete process.env.FREELLMAPI_URL;
     try {
-      expect(parseArgs(['setup-generic']).options.url).toBe('http://localhost:3001');
+      expect(parseArgs(['setup-generic']).options.url).toBe('http://localhost:20268');
     } finally {
       if (previous === undefined) delete process.env.FREELLMAPI_URL;
       else process.env.FREELLMAPI_URL = previous;

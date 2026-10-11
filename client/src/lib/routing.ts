@@ -449,8 +449,6 @@ export const platformColors: Record<string, string> = {
   unorouter:   '#ec4899',
   xkiro:       '#a855f7',
   nous:        '#d97706',
-  typhoon:     '#059669',
-  plugsky:     '#eab308',
   tokenharbor: '#134e4a',
   alibaba:     '#ff6a00',
   anyapi:      '#0891b2',
