@@ -20,10 +20,11 @@ import { isOnCooldown, setCooldown } from './ratelimit.js';
 import { SPEECHIFY_BASE_URL, SPEECHIFY_VERSION } from '../providers/speechify.js';
 import { TYPHOON_BASE_URL } from '../providers/typhoon.js';
 import { ELECTRONHUB_BASE_URL } from '../providers/electronhub.js';
+import { FREEAI_BASE_URL, freeAiAudioUrl } from '../providers/freeai.js';
 
 /** Platforms with a media adapter below. catalog-sync gates media rows on this
  *  (decoupled from the chat provider registry — e.g. SiliconFlow is media-only). */
-export const MEDIA_PLATFORMS = new Set(['nvidia', 'pollinations', 'cloudflare', 'siliconflow', 'google', 'speechify', 'electronhub']);
+export const MEDIA_PLATFORMS = new Set(['nvidia', 'pollinations', 'cloudflare', 'siliconflow', 'google', 'speechify', 'electronhub', 'freeai']);
 
 /** Video uses a dedicated optional catalog registry so binaries that predate
  *  this modality ignore the rows instead of accidentally ingesting them as
@@ -595,6 +596,54 @@ async function callSpeechProvider(
 ): Promise<{ audio: Buffer; contentType: string }> {
   const key = credential.key;
   switch (row.platform) {
+    case 'freeai': {
+      if (!key) throw new MediaError('Free.ai API key required', 401);
+      if (row.model_id !== 'kokoro') throw new MediaError('Free.ai currently supports only the tested Kokoro speech route', 400);
+      if (p.format && p.format !== 'wav') throw new MediaError('Free.ai Kokoro supports wav output through this adapter', 400);
+      const standardVoices = new Set(['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse', 'marin', 'cedar']);
+      const voice = !p.voice || standardVoices.has(p.voice.toLowerCase()) ? 'af_heart' : p.voice;
+      const r = await mediaFetch(`${FREEAI_BASE_URL}/v1/tts/`, 'freeai', 'audio', {
+        method: 'POST', redirect: 'error',
+        headers: { 'Content-Type': 'application/json', ...bearerAuthHeader(key) },
+        body: JSON.stringify({ model: row.model_id, text: p.input, voice }),
+      });
+      const body: unknown = await r.json();
+      if (body && typeof body === 'object' && 'queued' in body && body.queued === true) {
+        // The website uses session-based polling for queued jobs; its
+        // API status endpoint did not expose our tested job. Never follow an
+        // arbitrary poll_url or submit the same generation again automatically.
+        throw new MediaError('Free.ai queued this speech job; audio is not yet available. Check the Free.ai account history before retrying.', 502, 'upstream_queued');
+      }
+      const url = freeAiAudioUrl(body);
+      if (!url) throw new MediaError('Free.ai returned a missing or unsafe audio URL', 502);
+      // Output is public on the same fixed host. Never forward the credential,
+      // follow redirects or download arbitrary URLs supplied by an upstream.
+      const output = await mediaFetch(url, 'freeai', 'audio', { method: 'GET', redirect: 'error' });
+      const maxBytes = 20 * 1024 * 1024;
+      if (Number(output.headers.get('content-length')) > maxBytes || !output.body) {
+        await output.body?.cancel();
+        throw new MediaError('Free.ai speech output is missing or too large', 502);
+      }
+      const reader = output.body.getReader(), chunks: Buffer[] = [];
+      let size = 0;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.length;
+          if (size > maxBytes) {
+            await reader.cancel();
+            throw new MediaError('Free.ai speech output is too large', 502);
+          }
+          chunks.push(Buffer.from(value));
+        }
+      } finally { reader.releaseLock(); }
+      const audio = Buffer.concat(chunks);
+      if (audio.length <= 44 || audio.toString('ascii', 0, 4) !== 'RIFF' || audio.toString('ascii', 8, 12) !== 'WAVE') {
+        throw new MediaError('Free.ai returned no recognized WAV audio', 502);
+      }
+      return { audio, contentType: 'audio/wav' };
+    }
     case 'speechify': {
       const fmt = p.format ?? 'mp3';
       // Speechify exposes ogg, not OpenAI's opus name. Do not silently return

@@ -417,6 +417,7 @@ export const platformColors: Record<string, string> = {
   septor:       '#0891b2',
   clod:         '#16a34a',
   speechify:    '#7c3aed',
+  freeai:       '#16a34a',
   blaze:        '#f97316',
   lucidity:     '#6366f1',
   airforce:     '#0ea5e9',

@@ -240,6 +240,15 @@ describe('applyCatalog', () => {
     expect(getDb().prepare("SELECT model_id, modality, enabled FROM media_models WHERE platform = 'speechify'").get()).toEqual({ model_id: 'test-simba', modality: 'audio', enabled: 1 });
   });
 
+  it('imports Free.ai speech only from the catalog, never as a chat model or bundled seed', () => {
+    expect(getDb().prepare("SELECT id FROM media_models WHERE platform='freeai'").get()).toBeUndefined();
+    const catalog = catalogOf([...existingAsCatalogModels(), baseModel({ platform: 'freeai', modelId: 'kokoro', modality: 'audio' })]);
+    applyCatalog(getDb(), catalog);
+    applyCatalog(getDb(), catalog);
+    expect(getDb().prepare("SELECT id FROM models WHERE platform='freeai'").get()).toBeUndefined();
+    expect(getDb().prepare("SELECT model_id, modality, enabled FROM media_models WHERE platform='freeai'").all()).toEqual([{ model_id: 'kokoro', modality: 'audio', enabled: 1 }]);
+  });
+
   it('adds Speka chat and embedding rows only when the signed catalog supplies them', () => {
     expect(getDb().prepare("SELECT id FROM models WHERE platform = 'speka'").get()).toBeUndefined();
     expect(getDb().prepare("SELECT id FROM embedding_models WHERE platform = 'speka'").get()).toBeUndefined();

@@ -380,6 +380,81 @@ describe('media service', () => {
   });
 
   describe('text-to-speech', () => {
+    const freeAiUrl = 'https://api.free.ai/static/outputs/1bcc722e-4ddf-4e15-995a-b274000f99e5.wav';
+    const freeAiWav = () => { const b = Buffer.alloc(48); b.write('RIFF'); b.write('WAVE', 8); return b; };
+
+    it('Free.ai maps OpenAI fields to Kokoro and downloads verified WAV without credentials', async () => {
+      addMedia('freeai', 'kokoro', 'audio'); addKey('freeai');
+      const wav = freeAiWav();
+      const fetchMock = vi.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(jsonResponse({ audio_url: freeAiUrl }))
+        .mockResolvedValueOnce(new Response(wav, { headers: { 'Content-Type': 'audio/wav' } }));
+      const result = await runSpeech('kokoro', { input: 'Hello', voice: 'alloy' });
+      expect(result.audio).toEqual(wav);
+      expect(result.contentType).toBe('audio/wav');
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe('https://api.free.ai/v1/tts/');
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer freeai-test-key');
+      expect(JSON.parse(String(init?.body))).toEqual({ model: 'kokoro', text: 'Hello', voice: 'af_heart' });
+      expect(fetchMock.mock.calls[1][0]).toBe(freeAiUrl);
+      expect(new Headers(fetchMock.mock.calls[1][1]?.headers).has('Authorization')).toBe(false);
+      for (const [, request] of fetchMock.mock.calls) expect(request?.redirect).toBe('error');
+    });
+
+    it('Free.ai preserves native voices and explicit WAV requests', async () => {
+      addMedia('freeai', 'kokoro', 'audio'); addKey('freeai');
+      const fetchMock = vi.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(jsonResponse({ audio_url: freeAiUrl }))
+        .mockResolvedValueOnce(new Response(freeAiWav()));
+      await runSpeech('kokoro', { input: 'Hello', voice: 'af_heart', format: 'wav' });
+      expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).voice).toBe('af_heart');
+    });
+
+    it.each(['mp3', 'pcm', 'flac', 'opus'])('Free.ai rejects unsupported %s before generating', async format => {
+      addMedia('freeai', 'kokoro', 'audio'); addKey('freeai');
+      const fetchMock = vi.spyOn(globalThis, 'fetch');
+      await expect(runSpeech('kokoro', { input: 'Hello', format })).rejects.toThrow('supports wav');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('Free.ai never sends untested or premium model IDs', async () => {
+      addMedia('freeai', 'premium/voice', 'audio'); addKey('freeai');
+      const fetchMock = vi.spyOn(globalThis, 'fetch');
+      await expect(runSpeech('premium/voice', { input: 'Hello' })).rejects.toThrow('only the tested Kokoro');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it.each([{}, { audio_url: 'http://169.254.169.254/latest/meta-data/' }, { audio_url: 'https://example.com/test.wav' }])('Free.ai never downloads unsafe output', async body => {
+      addMedia('freeai', 'kokoro', 'audio'); addKey('freeai');
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse(body));
+      await expect(runSpeech('kokoro', { input: 'Hello' })).rejects.toThrow('unsafe audio URL');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('Free.ai rejects JSON and oversized output instead of labelling them audio', async () => {
+      addMedia('freeai', 'kokoro', 'audio'); addKey('freeai');
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(jsonResponse({ audio_url: freeAiUrl }))
+        .mockResolvedValueOnce(jsonResponse({ error: 'not audio' }))
+        .mockResolvedValueOnce(jsonResponse({ audio_url: freeAiUrl }))
+        .mockResolvedValueOnce(new Response(freeAiWav(), { headers: { 'Content-Length': String(21 * 1024 * 1024) } }));
+      await expect(runSpeech('kokoro', { input: 'Hello' })).rejects.toThrow('recognized WAV');
+      await expect(runSpeech('kokoro', { input: 'Hello' })).rejects.toThrow('too large');
+    });
+
+    it('Free.ai preserves quota backoff without retrying a paid model', async () => {
+      addMedia('freeai', 'kokoro', 'audio'); addKey('freeai');
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('quota', { status: 429, headers: { 'Retry-After': '30' } }));
+      await expect(runSpeech('kokoro', { input: 'Hello' })).rejects.toMatchObject({ status: 429, retryAfterMs: 30000 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('Free.ai reports queued work without following a poll URL or resubmitting generation', async () => {
+      addMedia('freeai', 'kokoro', 'audio'); addKey('freeai');
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ queued: true, job_id: 'test', poll_url: 'https://example.com/private' }));
+      await expect(runSpeech('kokoro', { input: 'Hello' })).rejects.toMatchObject({ status: 502, code: 'upstream_queued' });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     it.each(['simba-3.0', 'simba-3.2'])('Speechify %s sends native fields and decodes JSON audio', async model => {
       addMedia('speechify', model, 'audio');
       addKey('speechify');
