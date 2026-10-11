@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse } from '@baiibayu/srouter-shared/types.js';
 import { BaseProvider, type KeyValidationResult } from './base.js';
 
 export const FREEAI_BASE_URL = 'https://api.free.ai';
