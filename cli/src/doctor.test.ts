@@ -17,7 +17,7 @@ import {
 
 const temporary: string[] = [];
 function tempHome(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-doctor-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-doctor-'));
   temporary.push(dir);
   return dir;
 }
@@ -50,6 +50,12 @@ function writeCodexConfig(home: string, toml: string): void {
 }
 
 describe('managed settings locations', () => {
+  // The reported paths are built with the TARGET platform's separator, but the
+  // test's own `path.join` uses the HOST's — on Windows the two disagree, so
+  // compare separator-normalized forms (#1392).
+  function asPosix(p: string): string {
+    return p.replaceAll('\\', '/');
+  }
   it('uses the documented system directory for each platform', () => {
     expect(managedSettingsDir('darwin')).toBe('/Library/Application Support/ClaudeCode');
     expect(managedSettingsDir('linux')).toBe('/etc/claude-code');
@@ -60,9 +66,7 @@ describe('managed settings locations', () => {
     // The usual case: an unreadable or absent managed-settings.d contributes
     // nothing rather than failing the whole report.
     const dir = tempHome();
-    // managedSettingsPaths('linux', …) joins with '/', not the host separator:
-    // the expected value must be built the same way or Windows assertions fail.
-    expect(managedSettingsPaths('linux', dir)).toEqual([`${dir}/managed-settings.json`]);
+    expect(managedSettingsPaths('linux', dir).map(asPosix)).toEqual([path.join(dir, 'managed-settings.json')].map(asPosix));
   });
 
   it('ranks managed-settings.d drop-ins above the base file, last one first', () => {
@@ -77,11 +81,11 @@ describe('managed settings locations', () => {
       fs.writeFileSync(path.join(dir, 'managed-settings.d', name), '{}');
     }
 
-    expect(managedSettingsPaths('linux', dir)).toEqual([
-      `${dir}/managed-settings.d/20-b.json`,
-      `${dir}/managed-settings.d/10-a.json`,
-      `${dir}/managed-settings.json`,
-    ]);
+    expect(managedSettingsPaths('linux', dir).map(asPosix)).toEqual([
+      path.join(dir, 'managed-settings.d', '20-b.json'),
+      path.join(dir, 'managed-settings.d', '10-a.json'),
+      path.join(dir, 'managed-settings.json'),
+    ].map(asPosix));
   });
 });
 
@@ -179,12 +183,12 @@ describe('codex precedence', () => {
     // base_url would report a provider the user is not selecting.
     const home = tempHome();
     writeCodexConfig(home, [
-      'model_provider = "srouter"',
+      'model_provider = "freellmapi"',
       '',
       '[model_providers.other]',
       'base_url = "http://not-this-one:9999/v1"',
       '',
-      '[model_providers.srouter]',
+      '[model_providers.freellmapi]',
       'base_url = "http://localhost:3000/v1"',
     ].join('\n'));
 
@@ -197,8 +201,8 @@ describe('codex precedence', () => {
   it('reads the dotted-key spelling too', () => {
     const home = tempHome();
     writeCodexConfig(home, [
-      'model_provider = "srouter"',
-      'model_providers.srouter.base_url = "http://localhost:3000/v1"',
+      'model_provider = "freellmapi"',
+      'model_providers.freellmapi.base_url = "http://localhost:3000/v1"',
     ].join('\n'));
     expect(codexLayers({}, home)[0]?.value).toBe('http://localhost:3000/v1');
   });
@@ -215,7 +219,7 @@ describe('codex precedence', () => {
 
   it('records a selected provider that names no base_url instead of skipping it', () => {
     const home = tempHome();
-    writeCodexConfig(home, 'model_provider = "srouter"\n');
+    writeCodexConfig(home, 'model_provider = "freellmapi"\n');
     const layer = codexLayers({}, home)[0];
     expect(layer.effective).toBe(true);
     expect(layer.value).toBeUndefined();
