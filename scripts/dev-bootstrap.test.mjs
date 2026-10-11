@@ -11,6 +11,16 @@ const execFile = promisify(execFileCallback);
 const projectRoot = resolve(import.meta.dirname, '..');
 const powershell = process.platform === 'win32' ? 'powershell.exe' : null;
 
+// Windows PowerShell 5.1 launched from a PowerShell 7 shell inherits PS7's
+// PSModulePath and then cannot load its own built-in modules (#1392). Drop the
+// variable so powershell.exe rebuilds its default, as it does from cmd.exe.
+function runPowerShell(args) {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => name.toLowerCase() !== 'psmodulepath'),
+  );
+  return execFile(powershell, args, { env });
+}
+
 async function makeFixture(t) {
   const fixture = await mkdtemp(join(tmpdir(), 'srouter-bootstrap-'));
   const lockfile = join(fixture, 'package-lock.json');
@@ -53,7 +63,7 @@ async function assertMissingStampInstalls(runBootstrap, t) {
 
 test('PowerShell bootstrap creates and preserves .env', { skip: powershell === null }, async (t) => {
   await assertEnvIsCreatedAndPreserved(
-    (fixture) => execFile(powershell, [
+    (fixture) => runPowerShell([
       '-NoProfile',
       '-ExecutionPolicy', 'Bypass',
       '-File', join(projectRoot, 'scripts', 'dev-bootstrap.ps1'),
@@ -72,7 +82,7 @@ test('Bash bootstrap creates and preserves .env', { skip: process.platform === '
 
 test('PowerShell bootstrap installs when the lockfile stamp is missing', { skip: powershell === null }, async (t) => {
   await assertMissingStampInstalls(
-    (fixture) => execFile(powershell, [
+    (fixture) => runPowerShell([
       '-NoProfile',
       '-ExecutionPolicy', 'Bypass',
       '-File', join(projectRoot, 'scripts', 'dev-bootstrap.ps1'),

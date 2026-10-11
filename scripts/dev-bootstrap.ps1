@@ -22,7 +22,16 @@ function Get-CommandVersion {
 function Get-LockHash {
     param([string]$Path)
 
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    # .NET directly rather than Get-FileHash: Windows PowerShell 5.1 started
+    # from a PowerShell 7 shell inherits PS7's PSModulePath and cannot load its
+    # own Microsoft.PowerShell.Utility, so Get-FileHash is "not recognized" (#1392).
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = $sha256.ComputeHash([System.IO.File]::ReadAllBytes($Path))
+    } finally {
+        $sha256.Dispose()
+    }
+    return ([System.BitConverter]::ToString($bytes) -replace '-', '').ToLowerInvariant()
 }
 
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
