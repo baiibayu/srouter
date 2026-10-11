@@ -1998,6 +1998,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
         max_tokens,
         tools,
         tool_choice,
+        generationOptions: { stop, parallel_tool_calls, ...samplingParams },
       })
     : null;
   if (idemKey && idemFingerprint) {
