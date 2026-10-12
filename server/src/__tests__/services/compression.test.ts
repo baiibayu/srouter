@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { initDb } from '../../db/index.js';
 import {
   DEFAULT_COMPRESSION_CONFIG,

@@ -18,7 +18,7 @@ import {
   isCacheEnabled,
   CACHE_ENABLED_SETTING,
 } from '../../services/cache.js';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 
 const CACHE_ENV = [
   'RESPONSE_CACHE',

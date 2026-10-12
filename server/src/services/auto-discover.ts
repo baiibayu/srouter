@@ -24,7 +24,7 @@ import { parseModelCatalog, type DiscoveredModelKind } from './model-discovery.j
 import { ensureModelInProfiles } from './profile-models.js';
 import { addNotifications, getSyncIntervalHours, type SyncNotification } from './catalog-sync.js';
 import type { Scheduler } from '../lib/scheduler.js';
-import type { Platform } from '@srouter/shared/types.js';
+import type { Platform } from '@baiibayu/srouter-shared/types.js';
 
 // Large provider list — skip auto-discover for these well-known providers
 // that either don't have /v1/models, are handled by the catalog already,

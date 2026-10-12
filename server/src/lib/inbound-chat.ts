@@ -4,7 +4,7 @@ import type {
   ChatToolCall,
   ChatToolChoice,
   ChatToolDefinition,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 import { getDb } from '../db/index.js';
 import {
   routeRequest,

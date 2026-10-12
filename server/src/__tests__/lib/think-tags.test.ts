@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { ChatCompletionChunk } from '@srouter/shared/types.js';
+import type { ChatCompletionChunk } from '@baiibayu/srouter-shared/types.js';
 import {
   splitThinkTag,
   extractThinkFromMessage,

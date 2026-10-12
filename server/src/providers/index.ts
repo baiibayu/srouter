@@ -1,4 +1,4 @@
-import type { Platform } from '@srouter/shared/types.js';
+import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import type { BaseProvider } from './base.js';
 import { GoogleProvider } from './google.js';
 import { OpenAICompatProvider } from './openai-compat.js';

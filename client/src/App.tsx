@@ -23,6 +23,7 @@ import { ErrorBoundary } from '@/components/error-boundary'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { Toaster } from '@/components/toaster'
 import { UpdateReminder } from '@/components/update-reminder'
+import { DonateButton } from '@/components/donate-button'
 import { I18nProvider, useI18n } from '@/i18n'
 import { apiFetch, logout } from '@/lib/api'
 import { platformLabel } from '@/lib/platform-label'
@@ -581,6 +582,7 @@ function App() {
                 <Toaster />
                 <CommandPalette />
                 <UpdateReminder />
+                <DonateButton />
               </AppShell>
             </AuthGate>
           </BrowserRouter>

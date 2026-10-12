@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage, Platform } from '@srouter/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage, Platform } from '@baiibayu/srouter-shared/types.js';
 import { BaseProvider, providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import { resolveMaxTokens } from '../lib/sampling-params.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';

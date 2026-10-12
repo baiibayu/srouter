@@ -4,7 +4,7 @@ import { getDb, getSetting, setSetting } from '../db/index.js';
 import { hasProvider } from '../providers/index.js';
 import { MEDIA_PLATFORMS, TRANSCRIPTION_PLATFORMS, VIDEO_PLATFORMS } from './media.js';
 import { EMBEDDING_PLATFORMS } from './embeddings.js';
-import type { Platform } from '@srouter/shared/types.js';
+import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import type { Scheduler } from '../lib/scheduler.js';
 import {
   applyAllModelOverrides,

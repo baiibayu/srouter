@@ -5,7 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { getSetting } from '../db/index.js';
 import { decrypt, encrypt } from './crypto.js';
 import { assertProviderUrlAllowed, isLoopbackOrPrivateHostname } from './url-guard.js';
-import type { ProxyMode } from '@srouter/shared/types.js';
+import type { ProxyMode } from '@baiibayu/srouter-shared/types.js';
 
 // #590 (per-key proxy): the SAME provider may be reached through different
 // exit IPs per key (geo-ban / risk-control avoidance). Providers are process

@@ -10,7 +10,7 @@ import type {
   QuotaResetStrategy,
   ProviderQuotaObservation,
   ProviderQuotaState,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 
 export interface QuotaObservationContext {
   platform: Platform;

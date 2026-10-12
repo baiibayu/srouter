@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import './engines/index.js';
 import {
   compressionConfigFingerprint,

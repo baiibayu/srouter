@@ -4,7 +4,7 @@ import type {
   ChatCompletionChunk,
   ChatToolCall,
   Platform,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 import { BaseProvider, providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import { extendedBodyParams, resolveMaxTokens } from '../lib/sampling-params.js';
 import { rescueInlineToolCalls } from '../lib/tool-call-rescue.js';

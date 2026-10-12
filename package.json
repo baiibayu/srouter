@@ -1,5 +1,5 @@
 {
-  "name": "@srouter/monorepo",
+  "name": "@baiibayu/srouter-monorepo",
   "private": true,
   "workspaces": [
     "shared",

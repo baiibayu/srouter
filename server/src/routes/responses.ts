@@ -8,7 +8,7 @@ import type {
   ChatToolDefinition,
   ChatToolChoice,
   Platform,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 import { routeRequest, hasEnabledVisionModel, hasEnabledToolsModel, resolveStickyPreference, routingReserveTokens, resolveModelGroupCandidates, resolveRoutingChain, type RouteResult, type ResolvedChain, type ChainRow } from '../services/router.js';
 import { getDb } from '../db/index.js';
 import { resolveAuth, prependSystemPrompt } from '../lib/system-prompt.js';

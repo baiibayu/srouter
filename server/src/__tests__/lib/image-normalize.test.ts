@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import sharp from 'sharp';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { normalizeMessageImages } from '../../lib/image-normalize.js';
 
 async function solidPng(width: number, height: number, alpha: false | number = false): Promise<string> {
