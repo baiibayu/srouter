@@ -115,7 +115,7 @@ function AuthForm({ mode, onAuthed }: { mode: 'setup' | 'login'; onAuthed: () =>
   }
 
   if (showForgot && !isSetup) {
-    return <ForgotPasswordForm onBack={() => setShowForgot(false)} />
+    return <ForgotPasswordForm onBack={() => setShowForgot(false)} onAuthed={onAuthed} />
   }
 
   return (
@@ -206,7 +206,7 @@ function AuthForm({ mode, onAuthed }: { mode: 'setup' | 'login'; onAuthed: () =>
 
 type ForgotStep = 'request' | 'reset' | 'done'
 
-function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
+function ForgotPasswordForm({ onBack, onAuthed }: { onBack: () => void; onAuthed: () => void }) {
   const { t } = useI18n()
   const [step, setStep] = useState<ForgotStep>('request')
   const [resetCode, setResetCode] = useState('')
@@ -244,10 +244,17 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
     setBusy(true)
     setError('')
     try {
-      await apiFetch('/api/auth/reset-password', {
+      const res = await apiFetch<{ token?: string }>('/api/auth/reset-password', {
         method: 'POST',
         body: JSON.stringify({ resetCode: resetCode.trim(), newPassword }),
       })
+      // The server signs the operator in after a reset, so nobody has to
+      // remember which email the account uses (#1477).
+      if (res.token) {
+        setToken(res.token)
+        onAuthed()
+        return
+      }
       setStep('done')
     } catch (err) {
       setError((err as Error).message)

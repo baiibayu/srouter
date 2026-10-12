@@ -11,6 +11,7 @@ import {
   updateEmail,
   updatePassword,
   resetUserPassword,
+  accountEmail,
   normalizeEmail,
 } from '../services/auth.js';
 import { setupCodeMatches, clearSetupCode } from '../lib/setup-code.js';
@@ -311,7 +312,7 @@ authRouter.post('/forgot-password', (_req: Request, res: Response) => {
     return;
   }
   lastResetCodeAt = now;
-  generateResetCode();
+  generateResetCode(accountEmail());
   res.json({ success: true });
 });
 
@@ -331,11 +332,15 @@ authRouter.post('/reset-password', (req: Request, res: Response) => {
     res.status(403).json({ error: { message: 'Invalid or expired reset code', type: 'authentication_error' } });
     return;
   }
-  const ok = resetUserPassword(parsed.data.newPassword);
-  if (!ok) {
+  const user = resetUserPassword(parsed.data.newPassword);
+  if (!user) {
     res.status(404).json({ error: { message: 'No account found', type: 'not_found' } });
     return;
   }
   clearResetCode();
-  res.json({ success: true });
+  // Sign the operator straight in: the code already proved they control the
+  // install, and sending them back to a login form that needs an email they
+  // may not remember left them locked out after a successful reset (#1477).
+  const token = createSession(user.userId);
+  res.json({ success: true, token, email: user.email });
 });

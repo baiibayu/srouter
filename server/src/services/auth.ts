@@ -117,16 +117,22 @@ export function updatePassword(userId: number, currentPassword: string, newPassw
   return true;
 }
 
+/** The single account's email, or null before first-run setup. */
+export function accountEmail(): string | null {
+  const row = getDb().prepare('SELECT email FROM users LIMIT 1').get() as { email: string } | undefined;
+  return row?.email ?? null;
+}
+
 /**
  * Reset the password for the single existing user and invalidate all
  * sessions.
- * Returns false if no user exists.
+ * Returns the user, or null if no user exists.
  */
-export function resetUserPassword(newPassword: string): boolean {
+export function resetUserPassword(newPassword: string): SessionUser | null {
   const db = getDb();
-  const row = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number } | undefined;
-  if (!row) return false;
+  const row = db.prepare('SELECT id, email FROM users LIMIT 1').get() as { id: number; email: string } | undefined;
+  if (!row) return null;
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPassword), row.id);
   db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id);
-  return true;
+  return { userId: row.id, email: row.email };
 }

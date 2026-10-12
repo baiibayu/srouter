@@ -11,12 +11,16 @@ const _code = createOneTimeCode();
 const RESET_CODE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 let mintedAtMs = 0;
 
-// Mint a fresh reset code and log it prominently. Returns the code.
-export function generateResetCode(): string {
+// Mint a fresh reset code and log it prominently, with the account email: the
+// operator who forgot the password may have forgotten which email signs in
+// too (#1477), and whoever can read this log can already reset the account.
+// Returns the code.
+export function generateResetCode(accountEmail?: string | null): string {
   const code = _code.generate();
   mintedAtMs = Date.now();
   console.log('');
   console.log('  Password-reset code: ' + code);
+  if (accountEmail) console.log('  Account email: ' + accountEmail);
   console.log('  Enter this code on the reset form to set a new password.');
   console.log('');
   return code;
