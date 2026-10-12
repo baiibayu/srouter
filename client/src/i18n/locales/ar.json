@@ -1314,6 +1314,12 @@
     "activeCount": "{n} active"
   },
   "donate": {
-    "support": "ادعم SRouter"
+    "support": "ادعم SRouter",
+    "trakteer": "لدعماء إندونيسيا",
+    "kofi": "دولي (بطاقة، PayPal)",
+    "paypal": "مباشر إلى PayPal",
+    "open": "فتح",
+    "title": "ادعم SRouter",
+    "message": "إذا كان SRouter يساعدك في عملك، فكر في دعم التطوير. كل مساهمة تُبقي المشروع حيًا ونمائيًا. شكرًا!"
   }
 }

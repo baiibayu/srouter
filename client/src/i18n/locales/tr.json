@@ -1314,6 +1314,12 @@
     "activeCount": "{n} active"
   },
   "donate": {
-    "support": "SRouter’i destekle"
+    "support": "SRouter’i destekle",
+    "trakteer": "Endonezya destekçileri için",
+    "kofi": "Uluslararası (kart, PayPal)",
+    "paypal": "Doğrudan PayPal",
+    "open": "Aç",
+    "title": "SRouter’i destekle",
+    "message": "SRouter işine yardımcı oluyorsa, geliştirmeyi desteklemeyi düşün. Her katkı projeyi canlı ve büyüyen tutar. Teşekkürler!"
   }
 }
