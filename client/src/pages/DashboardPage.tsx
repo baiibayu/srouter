@@ -284,51 +284,6 @@ export default function DashboardPage() {
         {/* First-run checklist: hides itself once keys + a request exist */}
         <GettingStarted />
 
-        {/* Endpoint & key lead the page. The two copy rows share a line now
-            that the card no longer splits the hero with the budget bar. */}
-        <Panel
-          icon={Link2}
-          title={t('dashboard.connect')}
-          actions={
-            <Link to="/keys">
-              <Button variant="ghost" size="sm">
-                {t('nav.keys')}
-              </Button>
-            </Link>
-          }
-        >
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {t('dashboard.endpoint')}
-                  </p>
-                  <code className="block truncate font-mono text-xs">{apiBaseUrl()}</code>
-                </div>
-                <CopyButton text={apiBaseUrl()} className="size-7 shrink-0" label={t('common.copy')} />
-              </div>
-
-              <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {t('dashboard.apiKey')}
-                  </p>
-                  <code className="block truncate font-mono text-xs">{maskKey(keyData?.apiKey)}</code>
-                </div>
-                <CopyButton
-                  text={keyData?.apiKey ?? ''}
-                  className="size-7 shrink-0"
-                  label={t('common.copy')}
-                />
-              </div>
-            </div>
-
-            <ApiUsageBlock snippet={snippet} title={t('dashboard.snippet')} />
-          </div>
-        </Panel>
-
-
         {/* Headline stats for the selected window; four of them carry the
             percent change against the twin window fetched above. */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -507,6 +462,51 @@ export default function DashboardPage() {
             )}
           </Panel>
         </div>
+
+        {/* Endpoint & key sit at the very bottom: the top of the page is for
+            glancing (stats, routing, top lists) — this card is reference
+            material you copy once, and the same material lives under Keys. */}
+        <Panel
+          icon={Link2}
+          title={t('dashboard.connect')}
+          actions={
+            <Link to="/keys">
+              <Button variant="ghost" size="sm">
+                {t('nav.keys')}
+              </Button>
+            </Link>
+          }
+        >
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {t('dashboard.endpoint')}
+                  </p>
+                  <code className="block truncate font-mono text-xs">{apiBaseUrl()}</code>
+                </div>
+                <CopyButton text={apiBaseUrl()} className="size-7 shrink-0" label={t('common.copy')} />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {t('dashboard.apiKey')}
+                  </p>
+                  <code className="block truncate font-mono text-xs">{maskKey(keyData?.apiKey)}</code>
+                </div>
+                <CopyButton
+                  text={keyData?.apiKey ?? ''}
+                  className="size-7 shrink-0"
+                  label={t('common.copy')}
+                />
+              </div>
+            </div>
+
+            <ApiUsageBlock snippet={snippet} title={t('dashboard.snippet')} />
+          </div>
+        </Panel>
       </div>
     </div>
   )

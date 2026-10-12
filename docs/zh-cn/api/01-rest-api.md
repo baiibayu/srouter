@@ -289,7 +289,7 @@ curl http://localhost:20268/v1/web-search \
 }
 ```
 
-后端是 DuckDuckGo 免密钥的 HTML 端点。验证码/限流页面（HTTP 200 但解析出零条结果）会以 `502 Web search failed: ... (rate limited?)` 上报 —— 绝不会伪装成空结果集，避免智能体把限流误判为"网上没有答案"。
+后端在 **Keys 页 → Providers → Web search backend** 中选择（实时状态与尝试计数见 **模型 → Web**）：DuckDuckGo（默认、免密钥）、你自己的 SearXNG 实例（需启用 JSON 格式），或用服务端保存的免费额度密钥走 Tavily/Brave/Exa/TinyFish（TinyFish Search 任意余额均免费 —— 每天 1.2 万次请求）。所选后端先执行；若无法作答，请求会沿固定回退链继续尝试 —— DuckDuckGo → SearXNG → TinyFish → Exa → Brave → Tavily（没有密钥或实例 URL 的候选会被跳过）—— 全部约束在同一个约 25 秒的预算内，`provider` 始终如实报告真正作答的后端。经过不止一次尝试的响应会带上 `attempts` 数组（`{backend, ok, error?}`），可看清谁失败、为什么失败；只有全部候选都失败时才以 `502` 上报，并把每个后端的错误拼接在一起。每次尝试都会按后端计数（今日 / 本月，由 `GET /api/settings/web-search` 的 `usage` 字段提供），方便观察免费额度的消耗。作答后端返回验证码/限流页面（HTTP 200 但解析出零条结果）会计为一次失败并继续走链 —— 绝不会伪装成空结果集，避免智能体把限流误判为"网上没有答案"。
 
 ### `POST /v1/fetch`
 
@@ -309,7 +309,7 @@ curl http://localhost:20268/v1/fetch \
 { "url": "https://example.com/docs", "via": "direct", "title": "...", "text": "...", "truncated": false }
 ```
 
-- HTML 返回可读文本（剔除脚本/样式、解码实体）；非 HTML 原样返回并附 `content_type`。`via` 为 `"direct"` 或 `"jina"` —— 后者是面向反爬墙/重 JS 页面的免密钥阅读器回退。
+- HTML 返回可读文本（剔除脚本/样式、解码实体）；非 HTML 原样返回并附 `content_type`。`via` 为 `"direct"`、`"tinyfish"` 或 `"jina"` —— 面向反爬墙/重 JS 页面的阅读器链：先走 TinyFish Fetch（免费额度，需已存其密钥），再走免密钥的 Jina Reader。
 - **防 SSRF**：只允许公网 `http(s)` 目标。私有网段、回环/链路本地/元数据地址、`localhost` 类主机名，以及 DNS 解析落向私有地址的域名，都会在*打开任何 socket 之前*被 `400` 拒绝。响应体按 `max_bytes` 硬截断。
 - 两个端点只接受统一推理 key（拒绝仪表盘会话 token），并共享 `/v1` 限流器。
 

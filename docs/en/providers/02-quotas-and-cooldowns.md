@@ -17,7 +17,7 @@ Every catalog model row carries `rpm_limit` / `rpd_limit` columns. Before dispat
 
 ## Platform-wide pools
 
-Per-model windows cannot see account-level ceilings: OpenRouter meters `:free` routes as one pool, Google meters per project, NVIDIA NIM meters a credit pool (~40 req/min across all models regardless of per-model rows). UnoRouter's `:free` models share a per-minute account-wide cap (a burst of parallel requests trips a 429 on every `:free` model for several minutes). xKiro's free plan enforces a 5M token/day account-wide budget across all free models (Mistral, MiniMax, DeepSeek families). `inferPoolForPlatform` maps platforms to shared pools (`openrouter::free`, `google::project`, `groq::account`, `nvidia::credit-pool`, `unorouter::free`, `xkiro::free`, ...) and each pool gets its own aggregate gate, so `(models × rpd)` fan-out earns surprise 429s no more.
+Per-model windows cannot see account-level ceilings: OpenRouter meters `:free` routes as one pool, Google meters per project, NVIDIA NIM meters a credit pool (~40 req/min across all models regardless of per-model rows). UnoRouter's `:free` models share a per-minute account-wide cap (a burst of parallel requests trips a 429 on every `:free` model for several minutes). xKiro's free plan enforces a 500K token/day account-wide budget across all free models (1M with Telegram verification; Mistral, MiniMax, DeepSeek families). `inferPoolForPlatform` maps platforms to shared pools (`openrouter::free`, `google::project`, `groq::account`, `nvidia::credit-pool`, `unorouter::free`, `xkiro::free`, ...) and each pool gets its own aggregate gate, so `(models × rpd)` fan-out earns surprise 429s no more.
 
 ## Concurrency leases
 

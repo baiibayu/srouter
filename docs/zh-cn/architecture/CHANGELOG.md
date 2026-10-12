@@ -6,6 +6,7 @@
 
 ## 2026-10-09
 
+- **docs(architecture): 复杂度门控的 base URL 是设置项** —— `01-routing-and-bandit-scoring.md#16` 的 `jev` 后端条目现写明 `complexity_gate_jev_base_url`（默认 `https://api.typesafe.ai`，仪表盘里 key 旁可编辑）：任何 System One 兼容主机 —— v1m、system-one.dev —— 改个字段即可切换。来源：`server/src/services/complexity-gate.ts`、`server/src/routes/settings.ts`。
 - **docs(architecture): 记录复杂度门控 (Jev-B)** —— `01-routing-and-bandit-scoring.md` 新增第 16 节：默认关闭的 opt-in、fail-open，按请求分类 `trivial/normal/hard` 并把权重偏向速度（trivial）或智能（hard），份额 25%（`COMPLEXITY_WEIGHT_SHARE`）；后端 `heuristic`（体积/结构规则）与 `jev`（TypeSafe SystemOne `POST /v1/systemone`，0–10 → 等级，超时 400 ms，key 只写），经 `GET/PUT /api/settings/complexity-gate` 切换；豁免策略跳过偏置；接线 `proxy.ts:classifyComplexity` → `routeRequest` → `orderChain` → `scoring.ts:complexityAdjustedWeights`。来源：`server/src/services/complexity-gate.ts`。
 
 ## 2026-08-23 —— 领域扩展

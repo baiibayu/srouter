@@ -130,6 +130,10 @@ export type Platform =
   | 'kilo'
   | 'pollinations'
   | 'llm7'
+  // Hugging Face Inference Providers router — recurring $0.10/mo router credit
+  // on the free tier, no card required. (Docs removed the free-credit line
+  // 2026-10-07, hub-docs PR #2865, but grandfathered accounts still receive
+  // the monthly credit — RETAINED.)
   | 'huggingface'
   // OpenCode Zen — OpenAI-compatible gateway. Free promotional models require a
   // free (no-card) account key from opencode.ai/auth; see migrateModelsV18.

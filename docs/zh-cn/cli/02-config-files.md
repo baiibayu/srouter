@@ -11,7 +11,7 @@
 `cli/src/tools.ts` 中的每个 `Xxx()` 生成器都会返回一个 `Generation { files: { path, format, sensitive, value }[], notes }`。`config-files.ts` 按以下方式应用每个文件：
 
 - **JSON**（`settings.json`、`config.json`）—— 深度合并，保留无关键；写入时设 `0600`（`0o600`）。
-- **TOML**（Codex、AtomCode 的 `config.toml`）—— 结构化合并，保留其他 `[providers.*]` 表；Codex 的单文件 `~/.codex/config.toml` 使用 `[profiles.NAME]` 表，而不是按配置档分文件。
+- **TOML**（Codex 的 `config.toml`）—— 结构化合并，保留其他表；Codex 的单文件 `~/.codex/config.toml` 使用 `[profiles.NAME]` 表，而不是按配置档分文件。
 - **YAML**（Goose 的 `config.yaml`）—— 类似合并。
 
 ### 备份

@@ -1,5 +1,5 @@
 {
-  "name": "srouter",
+  "name": "@baiibayu/srouter",
   "version": "0.1.0",
   "description": "SRouter — free open-source LLM router: run the gateway, set up coding agents, manage provider keys",
   "license": "MIT",
@@ -64,7 +64,7 @@
     "node": ">=20.18.0 <25.0.0"
   },
   "dependencies": {
-    "@srouterhq/server": "^0.9.0",
+    "@srouterhq/server": "^0.1.0",
     "jsonc-parser": "^3.3.1",
     "yaml": "^2.9.0"
   },

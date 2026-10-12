@@ -6,7 +6,7 @@
 
 This domain documents SRouter's provider layer: the platforms the gateway aggregates, how each is authenticated and adapted, and how per-key quota accounting, cooldowns, and health checks keep free tiers usable behind one OpenAI-compatible API.
 
-The authoritative sources are [`shared/types.ts`](../../../shared/types.ts) (the `Platform` union), [`server/src/providers/index.ts`](../../../server/src/providers/index.ts) (the runtime registry), and [`server/src/providers/base.ts`](../../../server/src/providers/base.ts) (the adapter contract). The public catalog headline — roughly 63 free providers, 876 models (~15 billion tokens/month of listed capacity, naive SUM) — comes from the [provider table in the README](../../../README.md); the catalog itself tracks fewer platforms than the type union declares because some union members are retired or user-defined rather than catalog-managed.
+The authoritative sources are [`shared/types.ts`](../../../shared/types.ts) (the `Platform` union), [`server/src/providers/index.ts`](../../../server/src/providers/index.ts) (the runtime registry), and [`server/src/providers/base.ts`](../../../server/src/providers/base.ts) (the adapter contract). The public catalog headline — roughly 60 free providers, ~1,200+ endpoints (~15 billion tokens/month of listed capacity, naive SUM) — comes from the [provider table in the README](../../../README.md); the catalog itself tracks fewer platforms than the type union declares because some union members are retired or user-defined rather than catalog-managed.
 
 ## File index
 

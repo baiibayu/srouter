@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
-import { initDb, getSetting } from '../../db/index.js';
+import { initDb, getSetting, getDb } from '../../db/index.js';
+import { encrypt } from '../../lib/crypto.js';
 import { mintDashboardToken } from '../helpers/auth.js';
 import {
   getComplexityGate, setComplexityGate,
-  COMPLEXITY_GATE_ENABLED_KEY, COMPLEXITY_GATE_JEV_KEY_KEY,
+  COMPLEXITY_GATE_ENABLED_KEY, COMPLEXITY_GATE_JEV_KEY_KEY, COMPLEXITY_GATE_JEV_MODEL_KEY,
   DEFAULT_JEV_BASE_URL, DEFAULT_JEV_TIMEOUT_MS,
 } from '../../services/complexity-gate.js';
 import { complexityAdjustedWeights, COMPLEXITY_WEIGHT_SHARE } from '../../services/scoring.js';
@@ -39,16 +40,33 @@ describe('/api/settings/complexity-gate', () => {
     token = mintDashboardToken();
   });
 
-  it('reports the defaults (disabled, heuristic, no key)', async () => {
+  it('reports the defaults (disabled, heuristic, keyless zen, no key)', async () => {
     const { status, body } = await request(app, 'GET', '/api/settings/complexity-gate', undefined, token);
     expect(status).toBe(200);
     expect(body).toEqual({
       enabled: false,
       backend: 'heuristic',
       jevBaseUrl: DEFAULT_JEV_BASE_URL,
+      jevModel: 'jev-1.13-free',
+      jevHostPreset: 'zen',
+      jevKeyless: true,
       jevTimeoutMs: DEFAULT_JEV_TIMEOUT_MS,
       hasJevApiKey: false,
+      jevKeyStored: false,
+      detectedHosts: [],
     });
+  });
+
+  it('jevModel is an override: set shows it, null falls back to the preset model', async () => {
+    const set = await request(app, 'PUT', '/api/settings/complexity-gate', { jevModel: 'jev-1.13' }, token);
+    expect(set.status).toBe(200);
+    expect(set.body.jevModel).toBe('jev-1.13');
+    expect(getSetting(COMPLEXITY_GATE_JEV_MODEL_KEY)).toBe('jev-1.13');
+
+    const clear = await request(app, 'PUT', '/api/settings/complexity-gate', { jevModel: null }, token);
+    expect(clear.status).toBe(200);
+    expect(clear.body.jevModel).toBe('jev-1.13-free');
+    expect(getSetting(COMPLEXITY_GATE_JEV_MODEL_KEY)).toBeUndefined();
   });
 
   it('stores and returns a partial update', async () => {
@@ -77,6 +95,31 @@ describe('/api/settings/complexity-gate', () => {
     expect(clear.status).toBe(200);
     expect(clear.body.hasJevApiKey).toBe(false);
     expect(getSetting(COMPLEXITY_GATE_JEV_KEY_KEY)).toBeUndefined();
+  });
+
+  it('detects hosts from linked provider keys and borrows them without copying', async () => {
+    const enc = encrypt('sk-or-v1-live-test-key');
+    getDb()
+      .prepare('INSERT INTO api_keys (platform, encrypted_key, iv, auth_tag) VALUES (?, ?, ?, ?)')
+      .run('openrouter', enc.encrypted, enc.iv, enc.authTag);
+
+    const detected = await request(app, 'GET', '/api/settings/complexity-gate', undefined, token);
+    expect(detected.status).toBe(200);
+    expect(detected.body.detectedHosts).toEqual(['openrouter']);
+
+    // Borrowing follows the CURRENT host: point the gate at OpenRouter.
+    setComplexityGate({ jevBaseUrl: 'https://openrouter.ai' });
+    const get = await request(app, 'GET', '/api/settings/complexity-gate', undefined, token);
+    expect(get.status).toBe(200);
+    // Usable (borrowed at call time) but nothing was stored — no manual copy,
+    // and the value never appears in the response.
+    expect(get.body.hasJevApiKey).toBe(true);
+    expect(get.body.jevKeyStored).toBe(false);
+    expect(get.body.jevApiKey).toBeUndefined();
+    expect(getSetting(COMPLEXITY_GATE_JEV_KEY_KEY)).toBeUndefined();
+
+    setComplexityGate({ jevBaseUrl: null });
+    getDb().prepare('DELETE FROM api_keys').run();
   });
 
   it('rejects invalid configs', async () => {

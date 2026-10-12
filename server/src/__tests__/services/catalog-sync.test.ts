@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { initDb, getDb, setSetting, getSetting } from '../../db/index.js';
 import { applyCatalog, reapplyCachedCatalog, MIN_CATALOG_VERSION } from '../../services/catalog-sync.js';
 import { runMigrationsSync } from '../../db/migrate/runner.js';
@@ -318,8 +318,15 @@ describe('applyCatalog', () => {
 // sync 304s on an unchanged version. The cached re-apply closes that gap.
 describe('reapplyCachedCatalog', () => {
   beforeAll(() => {
+    // These tests exercise the remote-catalog cached-JSON re-apply path,
+    // which only runs when CATALOG_BASE_URL is set (standalone bundled mode
+    // applies the in-binary catalog and never reads the cache).
+    process.env.CATALOG_BASE_URL = 'https://catalog.test';
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
+  });
+  afterAll(() => {
+    delete process.env.CATALOG_BASE_URL;
   });
 
   function cacheCatalog(catalog: AnyCatalog) {
@@ -397,8 +404,14 @@ describe('applyCatalog: transcriptionModels', () => {
   type CatalogTranscription = NonNullable<AnyCatalog['transcriptionModels']>[number];
 
   beforeAll(() => {
+    // The malformed-payload rejection test below uses reapplyCachedCatalog,
+    // which reads the cached JSON only in remote mode.
+    process.env.CATALOG_BASE_URL = 'https://catalog.test';
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
+  });
+  afterAll(() => {
+    delete process.env.CATALOG_BASE_URL;
   });
 
   function sttRoster(): CatalogTranscription[] {
@@ -523,8 +536,14 @@ describe('applyCatalog: videoModels', () => {
   type CatalogVideo = NonNullable<AnyCatalog['videoModels']>[number];
 
   beforeAll(() => {
+    // The malformed-metadata rejection test below uses reapplyCachedCatalog,
+    // which reads the cached JSON only in remote mode.
+    process.env.CATALOG_BASE_URL = 'https://catalog.test';
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
+  });
+  afterAll(() => {
+    delete process.env.CATALOG_BASE_URL;
   });
 
   function videoRoster(): CatalogVideo[] {
@@ -538,13 +557,13 @@ describe('applyCatalog: videoModels', () => {
         quotaLabel: 'Recurring daily Pollen refill',
       },
       {
-        platform: 'huggingface',
-        modelId: 'Lightricks/LTX-Video-0.9.5',
-        displayName: 'LTX-Video 0.9.5',
+        platform: 'pollinations',
+        modelId: 'wan-fast',
+        displayName: 'Wan Fast',
         priority: 1,
         enabled: true,
-        quotaLabel: '$0.10 shared monthly credits',
-        providerModelId: 'fal-ai/ltx-video-v095',
+        quotaLabel: 'Recurring daily Pollen refill',
+        providerModelId: 'pollinations/wan-fast',
       },
     ];
   }
@@ -569,10 +588,10 @@ describe('applyCatalog: videoModels', () => {
     expect(counts.inserted).toBeGreaterThanOrEqual(2);
     expect(videoRows().map(r => `${r.platform}:${r.model_id}`)).toEqual([
       'pollinations:nova-reel',
-      'huggingface:Lightricks/LTX-Video-0.9.5',
+      'pollinations:wan-fast',
     ]);
     expect(videoRows()[0].meta_json).toBeNull();
-    expect(JSON.parse(videoRows()[1].meta_json!)).toEqual({ providerModelId: 'fal-ai/ltx-video-v095' });
+    expect(JSON.parse(videoRows()[1].meta_json!)).toEqual({ providerModelId: 'pollinations/wan-fast' });
   });
 
   it('retains video rows when an older catalog omits the optional registry', () => {
@@ -581,12 +600,14 @@ describe('applyCatalog: videoModels', () => {
   });
 
   it('prunes only video rows when the registry drops a model', () => {
+    // Drop wan-fast from the roster; nova-reel must survive and only the
+    // dropped row is pruned (full-snapshot semantics scoped to video).
     const counts = applyCatalog(
       getDb(),
-      videoCatalog(videoRoster().filter(m => m.platform !== 'pollinations')),
+      videoCatalog(videoRoster().filter(m => m.modelId !== 'wan-fast')),
     );
     expect(counts.removed).toBe(1);
-    expect(videoRows().map(r => r.model_id)).toEqual(['Lightricks/LTX-Video-0.9.5']);
+    expect(videoRows().map(r => r.model_id)).toEqual(['nova-reel']);
   });
 
   it('skips a video entry without a runtime adapter', () => {
@@ -623,8 +644,14 @@ describe('applyCatalog: videoModels', () => {
 // schema takes multipart only, so the flag has to survive the sync.
 describe('applyCatalog: generative media meta', () => {
   beforeAll(() => {
+    // The non-string requestStyle rejection test below uses
+    // reapplyCachedCatalog, which reads the cached JSON only in remote mode.
+    process.env.CATALOG_BASE_URL = 'https://catalog.test';
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
+  });
+  afterAll(() => {
+    delete process.env.CATALOG_BASE_URL;
   });
 
   function imageCatalog(requestStyle?: string): AnyCatalog {

@@ -117,7 +117,7 @@ export function isCacheableTemperature(temperature?: number | null): boolean {
 }
 
 // ── Per-request directive ──
-// `X-FreeLLM-Cache: off|on` (and the standard `Cache-Control: no-store`) let a
+// `x-srouter-Cache: off|on` (and the standard `Cache-Control: no-store`) let a
 // caller override the global switch for one request, e.g. force a fresh
 // generation, or opt a single call into caching on an otherwise cache-off
 // install.

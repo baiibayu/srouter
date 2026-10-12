@@ -42,10 +42,11 @@ const analyticsIds: Record<string, string> = {
   crush: 'crush',
   dsh: 'deepseek-harness',
   mimo: 'mimo-code',
-  atomcode: 'atomcode',
+  omp: 'omp',
   openclaw: 'openclaw',
   hermes: 'hermes-agent',
   pi: 'pi',
+  droid: 'droid',
   cursor: 'cursor',
 }
 

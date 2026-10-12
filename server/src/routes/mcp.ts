@@ -314,8 +314,8 @@ async function asksrouter(args: Record<string, unknown>, req: Request, res: Resp
       usage: payload?.usage && typeof payload.usage === 'object' ? payload.usage : null,
       routed_via: response.headers.get('x-routed-via'),
       fallback_trail: response.headers.get('x-fallback-trail'),
-      cache: response.headers.get('x-freellm-cache'),
-      compression: response.headers.get('x-freellm-compress'),
+      cache: response.headers.get('x-srouter-cache'),
+      compression: response.headers.get('x-srouter-compress'),
       execution_id: typeof payload?.execution_id === 'string'
         ? payload.execution_id
         : response.headers.get('x-request-id'),

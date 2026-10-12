@@ -931,34 +931,71 @@ function cursor(_ctx: GenerateContext): Generation {
   };
 }
 
-function atomcode(ctx: GenerateContext): Generation {
+function ohMyPi(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
-  const configDir = posixPath(ctx.homeDir, '.atomcode');
-  // AtomCode picks its provider by name: a root `default_provider` key names
-  // one `[providers.<id>]` table, and `type = "openai"` is what makes that
-  // table speak the OpenAI-compatible wire. Root key first, table second, so
-  // mergeToml can slot the key above any tables already in the file.
+  const dir = posixPath(ctx.homeDir, '.omp', 'agent');
+  const provider = ctx.profile === 'default'
+    ? 'srouter'
+    : `srouter-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+  const files: Generation['files'] = [{
+    path: posixPath(dir, 'models.yml'),
+    format: 'yaml',
+    sensitive: true,
+    value: {
+      providers: {
+        [provider]: {
+          baseUrl: v1Url(ctx.url),
+          apiKey: ctx.apiKey,
+          api: 'openai-completions',
+          // The gateway exposes GET /v1/models, so discovery fills the picker
+          // with the live catalog instead of a hand-written model list.
+          discovery: { type: 'openai-models-list' },
+        },
+      },
+    },
+  }];
+  if (ctx.profile === 'default') {
+    files.push({
+      path: posixPath(dir, 'config.yml'),
+      format: 'yaml',
+      value: { modelRoles: { default: `${provider}/${model.id}` } },
+    });
+  }
+  return {
+    files,
+    notes: [
+      'Install Oh My Pi: curl -fsSL https://omp.sh/install | sh (or bun install -g @oh-my-pi/pi-coding-agent).',
+      `~/.omp/agent/models.yml gains a ${provider} provider; other providers in it are kept.`,
+      ctx.profile === 'default'
+        ? `modelRoles.default points at ${provider}/${model.id}; run omp — discovery fills /model with every gateway model.`
+        : `Run omp and pick ${provider}/${model.id} in /model (the default model is unchanged).`,
+      'One-shot check: omp -p "Say hello".',
+    ],
+  };
+}
+
+function factoryDroid(ctx: GenerateContext): Generation {
+  const model = primaryModel(ctx.models, ctx.requestedModelId);
   return {
     files: [{
-      path: posixPath(configDir, 'config.toml'),
-      format: 'toml',
+      path: posixPath(ctx.homeDir, '.factory', 'settings.json'),
+      format: 'json',
       sensitive: true,
-      content: [
-        'default_provider = "srouter"',
-        '',
-        '[providers.srouter]',
-        'type = "openai"',
-        `base_url = ${JSON.stringify(v1Url(ctx.url))}`,
-        `api_key = ${JSON.stringify(ctx.apiKey)}`,
-        `model = ${JSON.stringify(model.id)}`,
-        `context_window = ${contextWindow(model)}`,
-      ].join('\n'),
+      value: {
+        customModels: [{
+          model: model.id,
+          displayName: model.name ?? model.id,
+          baseUrl: v1Url(ctx.url),
+          apiKey: ctx.apiKey,
+          provider: 'generic-chat-completion-api',
+        }],
+      },
     }],
     notes: [
-      'AtomCode reads ~/.atomcode/config.toml; other [providers.*] tables in it are kept.',
-      `default_provider now points at [providers.srouter] with ${model.id} as its model.`,
-      'Point base_url at the unified /v1 endpoint; api_key is the unified key shown on the Agents page.',
-      'One-shot check: atomcode -p "Say hello" (telemetry is on by default: atomcode telemetry disable).',
+      'Install Droid: curl -fsSL https://app.factory.ai/cli | sh (or npm install -g droid).',
+      'Other keys in ~/.factory/settings.json are kept, but its customModels array is replaced with this entry — re-add any other custom models you had.',
+      `Choose custom:${model.id} in /model to route the session through the gateway.`,
+      'settings.json is watched, so a running droid session picks the change up without a restart.',
     ],
   };
 }
@@ -990,10 +1027,11 @@ const metadata = [
   ['crush', 'Crush', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-crush', 'https://github.com/charmbracelet/crush', crush],
   ['dsh', 'DeepSeek Harness', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-dsh', 'https://github.com/deepseek-ai/deepseek-harness', dsh],
   ['mimo', 'MiMo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-mimo', 'https://mimo.xiaomi.com/mimocode', mimo],
-  ['atomcode', 'AtomCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atomcode.atomgit.com/docs/en/', atomcode],
+  ['omp', 'Oh My Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-omp', 'https://omp.sh/docs/providers', ohMyPi],
   ['openclaw', 'OpenClaw', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-openclaw', 'https://docs.openclaw.ai/gateway/config-tools/custom-providers', openclaw],
   ['hermes', 'Hermes Agent', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-hermes', 'https://hermes-agent.nousresearch.com/docs/', hermes],
   ['pi', 'Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-pi', 'https://pi.dev/docs/latest/models', pi],
+  ['droid', 'Factory Droid', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-droid', 'https://docs.factory.ai/droid-cli/quickstart', factoryDroid],
   ['cursor', 'Cursor', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-cursor', 'https://docs.cursor.com', cursor],
   ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://platform.openai.com/docs/api-reference/chat', generic],
 ] as const;

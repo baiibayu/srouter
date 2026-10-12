@@ -192,6 +192,8 @@ register(new ZhipuProvider({ timeoutMs: 60_000 }));
 // emitted tool calls as text; the new router.huggingface.co meta-router
 // uses each backend's native protocol then normalizes the response.
 // Recurring $0.10/mo router credit on the free tier, no card required.
+// (Docs removed the free-credit line 2026-10-07, hub-docs PR #2865, but
+// grandfathered accounts still receive the monthly credit — RETAINED.)
 register(new OpenAICompatProvider({
   platform: 'huggingface',
   name: 'HuggingFace Router',

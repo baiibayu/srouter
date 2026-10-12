@@ -18,12 +18,12 @@ runs the whole thing (dashboard on `http://localhost:20268`, data in
 `~/.srouter`):
 
 ```bash
-npm install -g srouter
+npm install -g @baiibayu/srouter
 srouter                                   # start + open the dashboard
 srouter serve --port 3000 --no-browser    # headless / custom port
 ```
 
-Upgrades are the usual `npm install -g srouter@latest`; your data directory
+Upgrades are the usual `npm install -g @baiibayu/srouter@latest`; your data directory
 survives updates. Then point agents at it with the `setup-*` commands below
 (`npx` still works for those without installing).
 
@@ -44,10 +44,11 @@ survives updates. Then point agents at it with the `setup-*` commands below
 | `setup-crush` | Crush |
 | `setup-dsh` | DeepSeek Harness (`dsh`) |
 | `setup-mimo` | MiMo Code (`mimo`) |
-| `setup-atomcode` | AtomCode (`atomcode`) |
+| `setup-omp` | Oh My Pi (`omp`) |
 | `setup-openclaw` | OpenClaw |
 | `setup-hermes` | Hermes Agent (`hermes`) |
 | `setup-pi` | Pi (`pi`) |
+| `setup-droid` | Factory Droid (`droid`) |
 | `setup-cursor` | Cursor |
 | `setup-generic` | Any OpenAI-compatible client |
 | `launch` | Run Claude Code with credentials injected into the child process |

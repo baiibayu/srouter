@@ -123,7 +123,7 @@ describe('compression routes and chat integration', () => {
     }, { Authorization: `Bearer ${getUnifiedApiKey()}` });
     expect(response.status).toBe(200);
     expect(forwarded[0].messages[0].content).toBe('hello\n\nworld');
-    expect(response.headers.get('x-freellm-compress')).toMatch(/^lossless; saved~=\d+$/);
+    expect(response.headers.get('x-srouter-compress')).toMatch(/^lossless; saved~=\d+$/);
 
     const anthropic = await request('POST', '/v1/messages', {
       model: 'auto',
@@ -135,7 +135,7 @@ describe('compression routes and chat integration', () => {
     });
     expect(anthropic.status).toBe(200);
     expect(forwarded[1].messages[0].content).toBe('anthropic\n\nmessage');
-    expect(anthropic.headers.get('x-freellm-compress')).toMatch(/^lossless; saved~=\d+$/);
+    expect(anthropic.headers.get('x-srouter-compress')).toMatch(/^lossless; saved~=\d+$/);
 
     const responses = await request('POST', '/v1/responses', {
       model: 'auto',
@@ -144,7 +144,7 @@ describe('compression routes and chat integration', () => {
     }, { Authorization: `Bearer ${getUnifiedApiKey()}` });
     expect(responses.status).toBe(200);
     expect(forwarded[2].messages[0].content).toBe('responses\n\nmessage');
-    expect(responses.headers.get('x-freellm-compress')).toMatch(/^lossless; saved~=\d+$/);
+    expect(responses.headers.get('x-srouter-compress')).toMatch(/^lossless; saved~=\d+$/);
 
     const stats = await request('GET', '/api/compression/stats');
     expect(stats.body.requests).toBe(3);

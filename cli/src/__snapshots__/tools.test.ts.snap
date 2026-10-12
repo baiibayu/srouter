@@ -21,32 +21,6 @@ model: "openai/fast-coder"
 }
 `;
 
-exports[`tool generators > setup-atomcode has stable golden output 1`] = `
-{
-  "files": [
-    {
-      "content": "default_provider = "srouter"
-
-[providers.srouter]
-type = "openai"
-base_url = "http://localhost:3000/v1"
-api_key = "srouter-test-key"
-model = "fast-coder"
-context_window = 131072",
-      "format": "toml",
-      "path": "/home/tester/.atomcode/config.toml",
-      "sensitive": true,
-    },
-  ],
-  "notes": [
-    "AtomCode reads ~/.atomcode/config.toml; other [providers.*] tables in it are kept.",
-    "default_provider now points at [providers.srouter] with fast-coder as its model.",
-    "Point base_url at the unified /v1 endpoint; api_key is the unified key shown on the Agents page.",
-    "One-shot check: atomcode -p "Say hello" (telemetry is on by default: atomcode telemetry disable).",
-  ],
-}
-`;
-
 exports[`tool generators > setup-claude has stable golden output 1`] = `
 {
   "files": [
@@ -281,6 +255,35 @@ exports[`tool generators > setup-cursor has stable golden output 1`] = `
     "Cursor only documents custom keys for standard chat models; custom base-URL overrides may not support Responses-based or built-in models.",
     "The override affects Cursor globally while enabled, so disable it before switching back to built-in providers.",
     "Use a separately revocable URL token if the client cannot set an Authorization header.",
+  ],
+}
+`;
+
+exports[`tool generators > setup-droid has stable golden output 1`] = `
+{
+  "files": [
+    {
+      "format": "json",
+      "path": "/home/tester/.factory/settings.json",
+      "sensitive": true,
+      "value": {
+        "customModels": [
+          {
+            "apiKey": "srouter-test-key",
+            "baseUrl": "http://localhost:3000/v1",
+            "displayName": "Fast Coder",
+            "model": "fast-coder",
+            "provider": "generic-chat-completion-api",
+          },
+        ],
+      },
+    },
+  ],
+  "notes": [
+    "Install Droid: curl -fsSL https://app.factory.ai/cli | sh (or npm install -g droid).",
+    "Other keys in ~/.factory/settings.json are kept, but its customModels array is replaced with this entry — re-add any other custom models you had.",
+    "Choose custom:fast-coder in /model to route the session through the gateway.",
+    "settings.json is watched, so a running droid session picks the change up without a restart.",
   ],
 }
 `;
@@ -523,6 +526,45 @@ exports[`tool generators > setup-mimo has stable golden output 1`] = `
     "Export SROUTER_API_KEY before starting MiMo Code.",
     "Start it with \`mimo\` — srouter/fast-coder is the default model.",
     "One-shot check: mimo run "Say hello"",
+  ],
+}
+`;
+
+exports[`tool generators > setup-omp has stable golden output 1`] = `
+{
+  "files": [
+    {
+      "format": "yaml",
+      "path": "/home/tester/.omp/agent/models.yml",
+      "sensitive": true,
+      "value": {
+        "providers": {
+          "srouter": {
+            "api": "openai-completions",
+            "apiKey": "srouter-test-key",
+            "baseUrl": "http://localhost:3000/v1",
+            "discovery": {
+              "type": "openai-models-list",
+            },
+          },
+        },
+      },
+    },
+    {
+      "format": "yaml",
+      "path": "/home/tester/.omp/agent/config.yml",
+      "value": {
+        "modelRoles": {
+          "default": "srouter/fast-coder",
+        },
+      },
+    },
+  ],
+  "notes": [
+    "Install Oh My Pi: curl -fsSL https://omp.sh/install | sh (or bun install -g @oh-my-pi/pi-coding-agent).",
+    "~/.omp/agent/models.yml gains a srouter provider; other providers in it are kept.",
+    "modelRoles.default points at srouter/fast-coder; run omp — discovery fills /model with every gateway model.",
+    "One-shot check: omp -p "Say hello".",
   ],
 }
 `;

@@ -38,11 +38,14 @@ import { KEY_PROXY_URL_ERROR, KEY_PROXY_URL_MAX, decryptProxyUrl, encryptProxyUr
 
 export const keysRouter = Router();
 
-// Active providers — must match providers/index.ts registrations + shared/types.ts Platform.
-// Moonshot and MiniMax direct integrations were dropped in V4. HuggingFace
-// was dropped in V4 and re-added in V13 via the router.huggingface.co route.
-// SambaNova was dropped in V23 (free tier permanently retired).
-// xAI, Cerebras, GitHub Models, NavyAI and Experiential were dropped in 2026-10.
+// Active providers — must match shared/providers/platforms.ts (the single
+// source of truth for the provider LIST; enforced by
+// __tests__/routes/keys-platform-sync.test.ts) + 'custom'. Kept as a literal
+// here only because z.enum() needs a const tuple. Moonshot and MiniMax direct
+// integrations were dropped in V4. SambaNova was dropped in V23 (free tier
+// permanently retired). xAI, Cerebras, GitHub Models, NavyAI and Experiential
+// were dropped in 2026-10. HuggingFace is RETAINED (grandfathered accounts
+// still receive the monthly credit). LLMTR restored 2026-10-11.
 const PLATFORMS = [
   'aclide',
   'speka',

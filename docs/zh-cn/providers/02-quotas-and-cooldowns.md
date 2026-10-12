@@ -17,7 +17,7 @@
 
 ## 平台级共享池
 
-按模型的窗口看不见账号层面的天花板：OpenRouter 把 `:free` 路由计量成一个池，Google 按项目计量，NVIDIA NIM 计量一个额度池（所有模型合计约每分钟 40 次请求，无视各模型行）。UnoRouter 的 `:free` 模型共享一个按分钟的账号级上限（一波并行请求会触发几分钟内所有 `:free` 模型的 429）。xKiro 的免费计划在所有免费模型（Mistral、MiniMax、DeepSeek 系列）间强制执行一个每日 500 万词元的账号级预算。`inferPoolForPlatform` 把平台映射到共享池（`openrouter::free`、`google::project`、`groq::account`、`nvidia::credit-pool`、`unorouter::free`、`xkiro::free` 等），每个池有自己的聚合闸门，`(models × rpd)` 式的扇出再也换不来意外 429。
+按模型的窗口看不见账号层面的天花板：OpenRouter 把 `:free` 路由计量成一个池，Google 按项目计量，NVIDIA NIM 计量一个额度池（所有模型合计约每分钟 40 次请求，无视各模型行）。UnoRouter 的 `:free` 模型共享一个按分钟的账号级上限（一波并行请求会触发几分钟内所有 `:free` 模型的 429）。xKiro 的免费计划在所有免费模型（Mistral、MiniMax、DeepSeek 系列）间强制执行一个每日 50 万词元（Telegram 验证后 100 万词元）的账号级预算。`inferPoolForPlatform` 把平台映射到共享池（`openrouter::free`、`google::project`、`groq::account`、`nvidia::credit-pool`、`unorouter::free`、`xkiro::free` 等），每个池有自己的聚合闸门，`(models × rpd)` 式的扇出再也换不来意外 429。
 
 ## 并发租约
 

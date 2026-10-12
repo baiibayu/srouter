@@ -54,10 +54,11 @@ context windows.
 | **Crush** | `setup-crush` | `http://localhost:20268/v1` | OpenAI Chat |
 | **DeepSeek Harness** | `setup-dsh` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
 | **MiMo Code** | `setup-mimo` | `http://localhost:20268/v1` | OpenAI Chat |
-| **AtomCode** | `setup-atomcode` | `http://localhost:20268/v1` | OpenAI Chat (`type = "openai"`) |
+| **Oh My Pi** | `setup-omp` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
 | **OpenClaw** | `setup-openclaw` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
 | **Hermes Agent** | `setup-hermes` | `http://localhost:20268/v1` | OpenAI Chat (`provider: custom`) |
 | **Pi** | `setup-pi` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
+| **Factory Droid** | `setup-droid` | `http://localhost:20268/v1` | OpenAI Chat (`provider: generic-chat-completion-api`) |
 | **QwenPaw** | Manual setup | `http://localhost:20268/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` prints the guide | public `https://…/v1` | OpenAI Chat |
 | **Anything else** | `setup-generic` prints a ready block | `http://localhost:20268/v1` | OpenAI Chat |
@@ -65,7 +66,7 @@ context windows.
 The root-vs-`/v1` distinction matters: Claude Code expects the server root
 because it appends the Anthropic Messages path. OpenAI-compatible clients in
 this table—including Cline, Aider, Goose, Codex, Continue, OpenCode, Qwen,
-Roo, Kilo, Crush, MiMo Code, AtomCode, OpenClaw, Hermes Agent, Pi, QwenPaw, and DeepSeek Harness—expect their configured
+Roo, Kilo, Crush, MiMo Code, Oh My Pi, OpenClaw, Hermes Agent, Pi, Factory Droid, QwenPaw, and DeepSeek Harness—expect their configured
 base URL to include `/v1`.
 
 ### DeepSeek Harness (`dsh`)
@@ -121,28 +122,26 @@ features, they are not a general fallback for config fields. Each model is
 declared with the `limit.context` and `limit.output` pair MiMo's schema
 requires, both taken from the live catalog.
 
-### AtomCode (`atomcode`)
+### Oh My Pi (`omp`)
 
-[AtomCode](https://atomcode.atomgit.com/docs/en/) is AtomGit's terminal
-coding agent, written in Rust. It reads `~/.atomcode/config.toml`, where a
-root `default_provider` key names one `[providers.<id>]` table and
-`type = "openai"` makes that table speak the OpenAI-compatible wire.
-`setup-atomcode` writes a `[providers.SRouter]` table — `base_url` on the
-gateway's `/v1`, the unified key as `api_key`, the chosen model and its
-`context_window` from the live catalog — and sets `default_provider` to it.
-The write is a structural merge: the root key is placed above any existing
-tables, only the `SRouter` table is replaced, and other `[providers.*]`
-tables and settings in the file are left as they were.
+[Oh My Pi](https://omp.sh/) is Stencil Labs' terminal coding agent, a fork of
+Pi wired into your IDE. It reads `~/.omp/agent/models.yml`, where every key
+under `providers` is an OpenAI-compatible endpoint: `api: openai-completions`
+speaks the wire, `baseUrl` points at the gateway's `/v1`, and
+`discovery: openai-models-list` fills the picker from `GET /v1/models`.
+`setup-omp` writes that as the `srouter` provider and names `srouter/<model>`
+the `modelRoles.default` in `~/.omp/agent/config.yml`. The write is a
+structural merge: other providers in `models.yml` are left as they were, and
+a named `--profile` only adds its own provider without changing the default
+model — run `omp` and pick it in `/model`.
 
 ```bash
-npx srouter setup-atomcode --url http://localhost:20268 --api-key <unified-key>
-atomcode
+npx srouter setup-omp --url http://localhost:20268 --api-key <unified-key>
+omp
 ```
 
-AtomCode has no environment-variable fallback for the key, so it is written
-into the config file; the file is created with mode 0600 and a timestamped
-backup is taken before an existing one is changed. `--model <id>` pins the
-default model.
+Install with `curl -fsSL https://omp.sh/install | sh` (or
+`bun install -g @oh-my-pi/pi-coding-agent`). `--model <id>` pins the default.
 
 ### OpenClaw
 
@@ -236,6 +235,27 @@ text-only with `reasoning: false`. To send images to a vision model, add
 so the provider carries `headers: { "User-Agent": "pi-coding-agent" }`, which
 is what the Agents page's "seen recently" badge keys on.
 `PI_CODING_AGENT_DIR` is honoured when set.
+
+### Factory Droid (`droid`)
+
+[Factory Droid](https://docs.factory.ai/droid-cli/quickstart) is Factory's
+terminal agent. Its BYOK custom models live in the `customModels` array of
+`~/.factory/settings.json`, and each entry speaks the OpenAI Chat wire with
+`provider: "generic-chat-completion-api"`: `baseUrl` on the gateway's `/v1`,
+the unified key as `apiKey`, and the chosen model. `setup-droid` writes that
+entry, and a running `droid` session notices the file change on its own —
+`settings.json` is watched, so there is no restart.
+
+```bash
+npx srouter setup-droid --url http://localhost:20268 --api-key <unified-key>
+droid
+```
+
+Pick `custom:<model>` in `/model` to route a session through the gateway.
+Other keys in `settings.json` are kept, but the `customModels` array is
+replaced as a whole — re-add any other custom models you had. Install with
+`curl -fsSL https://app.factory.ai/cli | sh` (or `npm install -g droid`);
+`--model <id>` pins the entry.
 
 ### QwenPaw
 

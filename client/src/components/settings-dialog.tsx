@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertTriangle,
   ArrowRight,
@@ -10,7 +10,6 @@ import {
   ExternalLink,
   FlaskConical,
   Gauge,
-  Info,
   Loader2,
   Monitor,
   Moon,
@@ -32,111 +31,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { UPDATE_CHECK_CHANGED_EVENT } from '@/components/update-reminder'
 import { Switch } from '@/components/ui/switch'
-import { Tooltip } from '@/components/tooltip'
 import { SUPPORTED_LOCALES, type Locale, useI18n } from '@/i18n'
 import { type Theme, useTheme } from '@/theme-context'
 import { apiFetch } from '@/lib/api'
-
-// Small info affordance used next to labels a first-time user can't be expected
-// to understand. It's a real <button> so it reaches the tooltip by keyboard
-// (the shared Tooltip opens on focus as well as hover); self-evident settings
-// like language and theme deliberately have none.
-function InfoHint({ text }: { text: string }) {
-  return (
-    <Tooltip text={text}>
-      <button
-        type="button"
-        aria-label={text}
-        onClick={event => event.preventDefault()}
-        className="inline-flex rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        <Info className="size-3.5" />
-      </button>
-    </Tooltip>
-  )
-}
-
-// One settings row: label (plus optional info hint) on the start edge, control
-// on the end edge, stacking on narrow widths. Every row in the dialog uses this
-// so labels, spacing and alignment stay identical across sections.
-function Row({
-  label,
-  hint,
-  control,
-  children,
-}: {
-  label: string
-  hint?: string
-  /** Inline control, aligned with the label. */
-  control?: ReactNode
-  /** Full-width control rendered under the label. */
-  children?: ReactNode
-}) {
-  return (
-    <div className="border-b border-border/60 py-4 last:border-b-0 last:pb-0">
-      <div className={control ? 'flex flex-wrap items-center justify-between gap-x-6 gap-y-2' : 'space-y-2.5'}>
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium">{label}</span>
-          {hint && <InfoHint text={hint} />}
-        </div>
-        {control ?? children}
-      </div>
-    </div>
-  )
-}
-
-function SectionHeader({ title, description, hint }: { title: string; description?: string; hint?: string }) {
-  return (
-    <div className="mb-5 space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <h2 className="font-heading text-base leading-snug font-medium">{title}</h2>
-        {hint && <InfoHint text={hint} />}
-      </div>
-      {description && <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>}
-    </div>
-  )
-}
-
-// Shared pill-bar idiom (same visual as SegmentedControl, with room for icons).
-function OptionBar<T extends string>({
-  value,
-  onValueChange,
-  options,
-  ariaLabel,
-  className,
-}: {
-  value: T
-  onValueChange: (value: T) => void
-  options: Array<{ value: T; label: string; icon?: typeof Monitor }>
-  ariaLabel: string
-  className?: string
-}) {
-  return (
-    <div role="radiogroup" aria-label={ariaLabel} className={`grid gap-1 rounded-xl border p-1 ${className ?? ''}`}>
-      {options.map(option => {
-        const Icon = option.icon
-        const selected = value === option.value
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onValueChange(option.value)}
-            className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs transition-colors ${
-              selected
-                ? 'bg-primary font-medium text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            {Icon && <Icon className="size-3.5 shrink-0" />}
-            <span className="truncate">{option.label}</span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
+import { InfoHint, OptionBar, Row, SectionHeader } from '@/components/config-rows'
+import { ComplexityGateRow } from '@/components/tools-config'
 
 function LanguageCombobox() {
   const { locale, setLocale, t } = useI18n()
@@ -606,126 +505,6 @@ function SyncScheduleRow() {
   )
 }
 
-// The Jev-B complexity gate: opt-in classifier that biases provider ordering
-// per request (trivial → fast, hard → smart). Mirrors the server's
-// GET/PUT /api/settings/complexity-gate contract; jevApiKey is write-only
-// (server reports hasJevApiKey, never the stored value).
-interface ComplexityGateConfig {
-  enabled: boolean
-  backend: 'heuristic' | 'jev'
-  jevBaseUrl: string
-  jevTimeoutMs: number
-  hasJevApiKey: boolean
-}
-
-function ComplexityGateRow({ active }: { active: boolean }) {
-  const { t } = useI18n()
-  const [cfg, setCfg] = useState<ComplexityGateConfig | null>(null)
-  const [keyDraft, setKeyDraft] = useState('')
-  const [keySaved, setKeySaved] = useState(false)
-  const [busy, setBusy] = useState(false)
-
-  useEffect(() => {
-    if (!active) return
-    let cancelled = false
-    apiFetch<ComplexityGateConfig>('/api/settings/complexity-gate')
-      .then(result => { if (!cancelled) setCfg(result) })
-      .catch(() => { /* row stays hidden rather than claim a state */ })
-    return () => { cancelled = true }
-  }, [active])
-
-  async function patch(body: Record<string, unknown>) {
-    if (!cfg) return
-    const previous = cfg
-    setBusy(true)
-    try {
-      const result = await apiFetch<ComplexityGateConfig>('/api/settings/complexity-gate', {
-        method: 'PUT',
-        body: JSON.stringify(body),
-      })
-      setCfg(result)
-      return true
-    } catch {
-      setCfg(previous)
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function saveKey() {
-    const trimmed = keyDraft.trim()
-    const saved = await patch({ jevApiKey: trimmed === '' ? null : trimmed })
-    if (saved) {
-      setKeyDraft('')
-      setKeySaved(true)
-      setTimeout(() => setKeySaved(false), 1500)
-    }
-  }
-
-  if (!cfg) return null
-
-  return (
-    <>
-      <Row
-        label={t('settings.complexityGate')}
-        hint={t('settings.complexityGateHelp')}
-        control={(
-          <Switch
-            aria-label={t('settings.complexityGate')}
-            checked={cfg.enabled}
-            disabled={busy}
-            onCheckedChange={checked => void patch({ enabled: checked })}
-          />
-        )}
-      />
-      {cfg.enabled && (
-        <Row
-          label={t('settings.complexityGateBackend')}
-          control={(
-            <OptionBar
-              value={cfg.backend}
-              onValueChange={backend => void patch({ backend })}
-              options={([
-                { value: 'heuristic', label: t('settings.complexityGateHeuristic') },
-                { value: 'jev', label: t('settings.complexityGateJev') },
-              ] satisfies Array<{ value: ComplexityGateConfig['backend']; label: string }>)}
-              ariaLabel={t('settings.complexityGateBackend')}
-              className="w-full grid-cols-2 sm:w-72"
-            />
-          )}
-        />
-      )}
-      {cfg.enabled && cfg.backend === 'jev' && (
-        <Row
-          label={t('settings.complexityGateJevKey')}
-          hint={t('settings.complexityGateJevKeyHelp')}
-          control={(
-            <div className="flex items-center gap-2">
-              <input
-                type="password"
-                value={keyDraft}
-                onChange={event => setKeyDraft(event.target.value)}
-                placeholder={cfg.hasJevApiKey ? '••••••••' : t('settings.complexityGateJevKeyPlaceholder')}
-                aria-label={t('settings.complexityGateJevKey')}
-                className="h-9 w-52 rounded-lg border border-input bg-transparent px-3 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-              />
-              <button
-                type="button"
-                onClick={() => void saveKey()}
-                disabled={busy || (keyDraft.trim() === '' && !cfg.hasJevApiKey)}
-                className="h-9 shrink-0 rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {keySaved ? t('settings.complexityGateSaved') : t('common.save')}
-              </button>
-            </div>
-          )}
-        />
-      )}
-    </>
-  )
-}
-
 function GeneralSection({ active }: { active: boolean }) {
   const { t } = useI18n()
   const { theme, setTheme } = useTheme()
@@ -754,8 +533,11 @@ function GeneralSection({ active }: { active: boolean }) {
         )}
       />
       <SyncScheduleRow />
-      <ComplexityGateRow active={active} />
       <UpdateChecker active={active} />
+      {/* System One (Jev-B complexity gate): the one agent-facing switch that
+          belongs in Settings — the rest of the tooling surface lives on the
+          Models tabs and the Keys page. */}
+      <ComplexityGateRow active={active} />
     </>
   )
 }
