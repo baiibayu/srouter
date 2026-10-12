@@ -6,7 +6,7 @@ import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 import { isFusionModel, fusionConfigSchema, familyKey, diversifyChain } from '../../services/fusion.js';
 import { getOrderedFusionChain, setRoutingStrategy, getRoutingStrategy, type FusionCandidate } from '../../services/router.js';
 import * as router from '../../services/router.js';
-import { setCooldown } from '../../services/ratelimit.js';
+import { setCooldown, isOnCooldown } from '../../services/ratelimit.js';
 
 let dashToken = '';
 
@@ -62,7 +62,11 @@ function mockUpstreams(answers: Record<string, MockAnswer>, rateLimited: Set<str
     calls.push({ url: u, body });
     for (const host of rateLimited) {
       if (u.includes(host)) {
-        return { ok: false, status: 429, headers: new Headers(), text: () => Promise.resolve('rate limited') } as any;
+        return {
+          ok: false, status: 429, headers: new Headers(),
+          text: () => Promise.resolve('rate limited'),
+          json: () => Promise.resolve({ error: { message: 'rate limited' } }),
+        } as any;
       }
     }
     // Streaming (judge) hosts return an SSE body consumed by streamChatCompletion.
@@ -99,6 +103,49 @@ function mockUpstreams(answers: Record<string, MockAnswer>, rateLimited: Set<str
   });
   return { calls };
 }
+
+// Stage upstream HTTP errors by host ({ status, message } in the OpenAI error
+// shape), with optional successful answers for other hosts. Records every call.
+function mockUpstreamErrors(errors: Record<string, { status: number; message: string }>, answers: Record<string, string> = {}) {
+  const origFetch = global.fetch;
+  const calls: string[] = [];
+  vi.spyOn(global, 'fetch').mockImplementation(async (url, init) => {
+    const u = typeof url === 'string' ? url : url.toString();
+    calls.push(u);
+    for (const [host, e] of Object.entries(errors)) {
+      if (u.includes(host)) {
+        const body = { error: { message: e.message } };
+        return {
+          ok: false, status: e.status, statusText: 'error', headers: new Headers(),
+          text: () => Promise.resolve(JSON.stringify(body)),
+          json: () => Promise.resolve(body),
+        } as any;
+      }
+    }
+    for (const [host, content] of Object.entries(answers)) {
+      if (u.includes(host)) {
+        return {
+          ok: true, status: 200, headers: new Headers(),
+          json: () => Promise.resolve({
+            id: 'chatcmpl-x', object: 'chat.completion', created: 1, model: 'm',
+            choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 5, completion_tokens: 7, total_tokens: 12 },
+          }),
+        } as any;
+      }
+    }
+    return origFetch(url as any, init as any);
+  });
+  return { calls };
+}
+
+// Real context-length rejection bodies. The OpenRouter one is the #1479 body
+// with the window scaled down so the test prompt can stay small.
+const OPENROUTER_TOO_LONG = "This endpoint's maximum context length is 2048 tokens. However, you requested about 4300 tokens (4044 of text input, 256 in the output). Please reduce the length of either one, or use the \"middle-out\" transform to compress your prompt automatically.";
+const GROQ_TOO_LONG = "This model's maximum context length is 3000 tokens. However, your messages resulted in 4044 tokens. Please reduce the length of the messages.";
+// ~4000 estimated tokens: larger than either learned window, far below the
+// catalog windows the tests stage.
+const BIG_PROMPT = 'x'.repeat(16_000);
 
 describe('isFusionModel', () => {
   it('matches the virtual fusion id and its suffix form, nothing else', () => {
@@ -235,6 +282,147 @@ describe('fusion route (/v1/chat/completions, model: "fusion")', () => {
     }, authHeaders());
     expect(status).toBe(429);
     expect(body.error.type).toBe('rate_limit_error');
+  });
+
+  describe('prompt too large for the panel (#1479)', () => {
+    // Stage roomy catalog windows and no TPM/TPD caps so the prompt passes the
+    // pre-dispatch size gates and only the provider's real (smaller) window
+    // rejects it, as in the issue. Restored after each test: the DB is shared.
+    let saved: Array<{ id: number; context_window: number | null; tpm_limit: number | null; tpd_limit: number | null }> = [];
+    beforeEach(() => {
+      const db = getDb();
+      saved = db.prepare(
+        "SELECT id, context_window, tpm_limit, tpd_limit FROM models WHERE platform IN ('groq', 'cerebras', 'openrouter')",
+      ).all() as typeof saved;
+      db.prepare(
+        "UPDATE models SET context_window = 1000000, tpm_limit = NULL, tpd_limit = NULL WHERE platform IN ('groq', 'cerebras', 'openrouter')",
+      ).run();
+    });
+    afterEach(() => {
+      const restore = getDb().prepare('UPDATE models SET context_window = ?, tpm_limit = ?, tpd_limit = ? WHERE id = ?');
+      for (const r of saved) restore.run(r.context_window, r.tpm_limit, r.tpd_limit, r.id);
+    });
+
+    const keyId = (platform: string) =>
+      (getDb().prepare('SELECT id FROM api_keys WHERE platform = ?').get(platform) as { id: number }).id;
+    const contextWindow = (platform: string, modelId: string) =>
+      (getDb().prepare('SELECT context_window FROM models WHERE platform = ? AND model_id = ?').get(platform, modelId) as { context_window: number | null }).context_window;
+
+    it('returns a non-retryable 413 when every panel model rejects the prompt as too long', async () => {
+      const { calls } = mockUpstreamErrors({
+        'openrouter.ai': { status: 400, message: OPENROUTER_TOO_LONG },
+        'api.groq.com': { status: 400, message: GROQ_TOO_LONG },
+      });
+      const body = {
+        model: 'fusion',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: BIG_PROMPT }],
+        fusion: { models: [openrouterModel, groqModel] },
+      };
+      const first = await request(app, 'POST', '/v1/chat/completions', body, authHeaders());
+
+      expect(first.status).toBe(413);
+      expect(first.body.error.type).toBe('invalid_request_error');
+      expect(first.body.error.code).toBe('context_length_exceeded');
+      expect(first.body.error.message).toContain('Retrying will not help');
+      expect(first.body.error.message).toContain('maximum context length is 2048');
+      // One dispatch per model: a sibling key would hit the same window.
+      expect(calls.filter(u => u.includes('openrouter.ai'))).toHaveLength(1);
+      expect(calls.filter(u => u.includes('api.groq.com'))).toHaveLength(1);
+      // Too big for the request is not a model-health problem: no cooldown.
+      expect(isOnCooldown('openrouter', openrouterModel, keyId('openrouter'))).toBe(false);
+      expect(isOnCooldown('groq', groqModel, keyId('groq'))).toBe(false);
+      // The real windows were learned over the catalog's 1M.
+      expect(contextWindow('openrouter', openrouterModel)).toBe(2048);
+      expect(contextWindow('groq', groqModel)).toBe(3000);
+
+      // The retry is sized out before dispatch and still answers 413, not 429.
+      calls.length = 0;
+      const second = await request(app, 'POST', '/v1/chat/completions', body, authHeaders());
+      expect(second.status).toBe(413);
+      expect(second.body.error.code).toBe('context_length_exceeded');
+      expect(calls.filter(u => u.includes('openrouter.ai') || u.includes('api.groq.com'))).toHaveLength(0);
+    });
+
+    it('keeps 429 when a panel model too small for the prompt sits beside a rate-limited one', async () => {
+      mockUpstreamErrors({
+        'openrouter.ai': { status: 400, message: OPENROUTER_TOO_LONG },
+        'api.groq.com': { status: 429, message: 'Rate limit reached for requests per minute' },
+      });
+      const { status, body } = await request(app, 'POST', '/v1/chat/completions', {
+        model: 'fusion',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: BIG_PROMPT }],
+        fusion: { models: [openrouterModel, groqModel] },
+      }, authHeaders());
+      // The rate-limited model may still answer once it recovers.
+      expect(status).toBe(429);
+      expect(body.error.type).toBe('rate_limit_error');
+    });
+
+    it('returns 502 when the panel fails upstream without a rate limit', async () => {
+      mockUpstreamErrors({
+        'openrouter.ai': { status: 400, message: OPENROUTER_TOO_LONG },
+        'api.groq.com': { status: 500, message: 'internal server error' },
+      });
+      const { status, body } = await request(app, 'POST', '/v1/chat/completions', {
+        model: 'fusion',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: BIG_PROMPT }],
+        fusion: { models: [openrouterModel, groqModel] },
+      }, authHeaders());
+      expect(status).toBe(502);
+      expect(body.error.type).toBe('server_error');
+      expect(body.error.message).toContain(groqModel);
+    });
+
+    it('still answers when one panel model is too small and another fits', async () => {
+      mockUpstreamErrors(
+        { 'openrouter.ai': { status: 400, message: OPENROUTER_TOO_LONG } },
+        { 'api.groq.com': 'groq fits' },
+      );
+      const { status, body } = await request(app, 'POST', '/v1/chat/completions', {
+        model: 'fusion',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: BIG_PROMPT }],
+        fusion: { models: [openrouterModel, groqModel] },
+      }, authHeaders());
+      expect(status).toBe(200);
+      expect(body.choices[0].message.content).toBe('groq fits');
+    });
+
+    it('returns 413 without dispatching when the auto-panel has no model large enough', async () => {
+      getDb().prepare("UPDATE models SET context_window = 1000 WHERE platform IN ('groq', 'cerebras', 'openrouter')").run();
+      const { calls } = mockUpstreamErrors({});
+      const { status, body } = await request(app, 'POST', '/v1/chat/completions', {
+        model: 'fusion',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: BIG_PROMPT }],
+      }, authHeaders());
+      expect(status).toBe(413);
+      expect(body.error.code).toBe('context_length_exceeded');
+      expect(calls.filter(u => !u.startsWith('http://127.0.0.1'))).toHaveLength(0);
+    });
+
+    it('carries the 413 code on the streaming error frame', async () => {
+      mockUpstreamErrors({
+        'openrouter.ai': { status: 400, message: OPENROUTER_TOO_LONG },
+        'api.groq.com': { status: 400, message: GROQ_TOO_LONG },
+      });
+      const { text } = await request(app, 'POST', '/v1/chat/completions', {
+        model: 'fusion',
+        stream: true,
+        max_tokens: 256,
+        messages: [{ role: 'user', content: BIG_PROMPT }],
+        fusion: { models: [openrouterModel, groqModel] },
+      }, authHeaders());
+      const errorFrame = text.split('\n')
+        .filter(l => l.startsWith('data: ') && l !== 'data: [DONE]')
+        .map(l => JSON.parse(l.slice(6)))
+        .find(f => f.error);
+      expect(errorFrame.error.code).toBe('context_length_exceeded');
+      expect(errorFrame.error.type).toBe('invalid_request_error');
+    });
   });
 
   it('drops unknown models from an explicit panel and reports them', async () => {

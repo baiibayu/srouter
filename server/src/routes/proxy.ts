@@ -1821,7 +1821,8 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
         const type = err instanceof FusionError
           ? (err.status === 429 ? 'rate_limit_error' : err.status >= 500 ? 'server_error' : 'invalid_request_error')
           : 'server_error';
-        writeFrame({ error: { message, type } });
+        const code = err instanceof FusionError ? err.code : undefined;
+        writeFrame({ error: { message, type, ...(code ? { code } : {}) } });
       }
       try { res.write('data: [DONE]\n\n'); res.end(); } catch { /* socket gone */ }
       return;
@@ -1861,6 +1862,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
           error: {
             message: err.message,
             type: err.status === 429 ? 'rate_limit_error' : err.status >= 500 ? 'server_error' : 'invalid_request_error',
+            ...(err.code ? { code: err.code } : {}),
           },
           execution_id: requestGroupId,
         });

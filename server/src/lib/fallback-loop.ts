@@ -29,6 +29,7 @@ import {
   getPaymentRequiredCooldownMs,
   getModelForbiddenCooldownMs,
   learnLimitFromError,
+  learnContextWindowFromError,
   type CooldownDecision,
   type CooldownSource,
 } from '../services/ratelimit.js';
@@ -509,6 +510,7 @@ export function recordRetryableFailure(route: RouteResult, err: any, state: Fall
   // model it touched, so later ordinary requests found the pool rate limited.
   if (isContextTooLargeError(err)) {
     learnLimitFromError(route.modelDbId, err);
+    learnContextWindowFromError(route.modelDbId, err);
     return false;
   }
   // A max_tokens above this model's output ceiling (Claude Code asks for
