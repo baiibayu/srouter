@@ -56,7 +56,7 @@ The problem is that stacking them by hand is painful: sixty-three different SDKs
 
 And the free-tier landscape shifts weekly: providers launch models, retire them, and change quotas without notice. SRouter tracks all of that for you. The router pulls a signed model catalog on its own, so your install keeps up without a `git pull`. See [Live catalog](#live-catalog) for how it stays current.
 
-![The free tier, stacked — ~7.4B tokens of free inference per month across 63 providers](repo-assets/free-tier.png)
+![The free tier, stacked — ~15B tokens of free inference per month across 63 providers](repo-assets/free-tier.png)
 
 ## Supported providers
 
@@ -120,10 +120,13 @@ The full, always-current list lives in your dashboard's **Models** page, with pe
 <td align="center"><img src="repo-assets/agents/deepseek-harness.png" width="44" alt="DeepSeek Harness"><br/><b>DeepSeek Harness</b></td>
 </tr>
 <tr>
-<td align="center"><img src="repo-assets/agents/atomcode.png" width="44" alt="AtomCode"><br/><b>AtomCode</b></td>
+<td align="center"><img src="repo-assets/agents/oh-my-pi.png" width="44" alt="Oh My Pi"><br/><b>Oh My Pi</b></td>
 <td align="center"><img src="repo-assets/agents/openclaw.png" width="44" alt="OpenClaw"><br/><b>OpenClaw</b></td>
 <td align="center"><img src="repo-assets/agents/hermes-agent.png" width="44" alt="Hermes Agent"><br/><b>Hermes Agent</b></td>
 <td align="center"><img src="repo-assets/agents/pi.png" width="44" alt="Pi"><br/><b>Pi</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/agents/factory-droid.png" width="44" alt="Factory Droid"><br/><b>Factory Droid</b></td>
 </tr>
 </table>
 
@@ -131,7 +134,7 @@ The full, always-current list lives in your dashboard's **Models** page, with pe
 
 </div>
 
-Most of these configure themselves with one command — `npx srouter setup-claude`, `setup-codex`, `setup-aider`, `setup-dsh` (DeepSeek Harness), and eleven more generators that fetch your live catalog, back up existing config, and never clobber what's already there. Claude Code and Codex also get zero-persistence launchers (`srouter launch`, `srouter launch-codex`) that inject credentials into the child process only. Zed and JetBrains AI connect through the opt-in [Ollama emulation](docs/en/clients/01-agent-clients.md#ollama-clients); Gemini CLI speaks its native wire on `/v1beta`.
+Most of these configure themselves with one command — `npx srouter setup-claude`, `setup-codex`, `setup-aider`, `setup-dsh` (DeepSeek Harness), and fourteen more generators that fetch your live catalog, back up existing config, and never clobber what's already there. Claude Code and Codex also get zero-persistence launchers (`srouter launch`, `srouter launch-codex`) that inject credentials into the child process only. Zed and JetBrains AI connect through the opt-in [Ollama emulation](docs/en/clients/01-agent-clients.md#ollama-clients); Gemini CLI speaks its native wire on `/v1beta`.
 
 Per-tool recipes, the setup CLI reference, revocable URL tokens for headerless clients, and the MCP server all live in **[Clients & coding agents →](docs/en/clients/01-agent-clients.md)**
 
@@ -151,6 +154,8 @@ Based on public documentation, July 2026 — corrections welcome.
 - **Fusion (multi-model synthesis)** — request the virtual `fusion` model and the router fans your prompt out to a panel of diverse free models in parallel, then a judge model synthesizes one answer from the drafts. [Details →](docs/en/api/01-rest-api.md#fusion-multi-model-synthesis)
 - **Image, video & speech generation** — `/v1/images/generations`, `/v1/videos/generations`, and `/v1/audio/speech` route across the providers that serve media models; images and speech also accept custom OpenAI-compatible media endpoints. Video jobs are normalized across synchronous and queued providers and return a completed MP4.
 - **Tool calling & structured outputs** — OpenAI-style `tools` round-trip across providers (plain-text tool calls are rescued into real `tool_calls`), plus `response_format`, `seed`, `logprobs`, penalties, and the rest of the sampling params passed through per provider.
+- **Web search & page fetch for agents** — `POST /v1/web-search` runs over DuckDuckGo (keyless default), your own SearXNG instance, or a free-tier Tavily/Brave/Exa/TinyFish key (TinyFish Search is free at any balance), and falls back to DuckDuckGo when a backend is down; `POST /v1/fetch` turns a public page into readable text (TinyFish Fetch when its key is stored, then the free Jina Reader tier). [API reference →](docs/en/api/01-rest-api.md)
+- **Complexity gate (System One)** — an opt-in pre-routing scorer classifies each request as simple or complex from metadata alone (keyless heuristic works out of the box; a System One-compatible endpoint like Jev or v1m is a one-field switch), so simple prompts take the fast path while complex ones reach stronger models. [Details →](docs/en/architecture/01-routing-and-bandit-scoring.md)
 - **Smart routing, six strategies** — live per-model speed/capability/reliability scores rank your chain; automatic fallover retries the next model on 429/5xx with cooldowns and key rotation; model exploration (a 10% chance to front an unmeasured model) is on by default and can be turned off in the dashboard. [Routing in detail →](docs/en/architecture/00-high-level-index.md#how-it-works)
 - **Unified models & profiles** — the same model on several providers collapses into one entry with strict in-group failover; named fallback-chain profiles (a coding chain, a vision chain) switch from the dashboard or per request via `auto:<profile>`, and custom chains can be renamed in place from the chain manager.
 - **Per-key rate tracking** — RPM/RPD/TPM/TPD counters per `(platform, model, key)` that learn providers' reported ceilings, so routing always stays under every cap.
@@ -226,10 +231,11 @@ Provider keys can be managed from the terminal too, with a dashboard session tok
 | Roo / Kilo / Crush | `setup-roo` / `setup-kilo` / `setup-crush` | `/v1` |
 | DeepSeek Harness | `setup-dsh` | `/v1` |
 | MiMo Code | `setup-mimo` | `/v1` |
-| AtomCode | `setup-atomcode` | `/v1` |
+| Oh My Pi | `setup-omp` | `/v1` |
 | OpenClaw | `setup-openclaw` | `/v1` |
 | Hermes Agent | `setup-hermes` | `/v1` |
 | Pi | `setup-pi` | `/v1` |
+| Factory Droid | `setup-droid` | `/v1` |
 | Cursor | `setup-cursor` guide | public `/v1` URL |
 
 SRouter is local-first and single-user by design. Your provider keys stay in your SQLite database, encrypted at rest, and requests go from your machine to the upstream providers you enabled.

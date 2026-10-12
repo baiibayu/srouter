@@ -9,13 +9,10 @@ import type { Platform, QuotaMetric } from '@srouter/shared/types.js';
 /**
  * Free-tier budget dashboard (#905).
  *
- * Pool-deduped monthly budget overview: the models table carries per-model
- * labels like '~120M' / '~3M (1k credits)' / 'credits-based'; many models on
- * one platform share the same free pool (see inferQuotaPoolKey), so summing
- * every model's label would double-count. We take ONE documented budget per
- * pool (the largest parseBudget value seen in it) and report the pools
- * alongside live quota observations (used/remaining/reset) when the provider
- * reports them.
+ * Naive SUM monthly budget overview: every model's documented budget label is
+ * parsed and summed, then scaled by the usable key count for the platform.
+ * The user chose naive SUM over pool-dedup for transparency: each model's
+ * label is visible and contributes its face value.
  *
  * The model set, the key-count scaling and the enabled semantics deliberately
  * match GET /api/fallback/token-usage (the stacked bar whose legend these pools
@@ -161,14 +158,13 @@ freeTierRouter.get('/', (_req: Request, res: Response) => {
     p.memberModelIds.push(row.model_id);
     p.modelCount += 1;
     if (row.chain_enabled === 0) p.disabledModelCount += 1;
-    // One budget per pool: keep the largest documented value.
-    if (budget > p.documentedBudget) {
-      p.documentedBudget = budget;
+    // Naive SUM: accumulate every model's budget into the pool total.
+    p.documentedBudget += budget;
+    if (budget > 0 && p.kind !== 'documented') {
+      p.kind = 'documented';
       p.bestLabel = label;
-    }
-    if (p.kind !== 'documented') {
-      if (budget > 0) p.kind = 'documented';
-      else if (/credit/i.test(label)) p.kind = 'credits';
+    } else if (p.kind === 'unpublished' && /credit/i.test(label)) {
+      p.kind = 'credits';
     }
   }
 
@@ -183,8 +179,8 @@ freeTierRouter.get('/', (_req: Request, res: Response) => {
 
   const poolList = [...pools.values()].map(p => ({
     ...p,
-    // Pooled capacity, scaled the same way the model rows and the stacked bar
-    // are (fallback.ts): one documented allowance per usable account.
+    // Naive SUM scaled by usable accounts: each model's budget label summed,
+    // then multiplied by the platform's usable key count.
     documentedBudget: p.documentedBudget * Math.max(1, p.keyCount),
   })).sort((a, b) => b.documentedBudget - a.documentedBudget || a.poolKey.localeCompare(b.poolKey));
 

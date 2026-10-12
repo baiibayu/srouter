@@ -102,16 +102,16 @@ describe('free-tier pool overview (#905)', () => {
     observe({ platform: 'nvidia', keyId: nvidiaB, pool: 'nvidia::credit-pool', metric: 'tokens', limit: 30_000_000, remaining: 8_000_000, resetAt: future(180), observedAt: '2026-01-03 00:00:00' });
   });
 
-  it('reports one row per pool with a single deduped budget', async () => {
+  it('reports one row per pool with a naive SUM budget', async () => {
     const { status, body } = await get(app, '/api/free-tier');
     expect(status).toBe(200);
 
     const groq = body.pools.find((p: any) => p.poolKey === 'groq::account');
     expect(groq).toBeDefined();
-    // Three models, ONE budget: the largest label in the pool (~15M), scaled by
-    // the single usable key — not 6M + 15M + 6M.
+    // Naive SUM: every model's budget label is summed (6M + 15M + 6M = 27M),
+    // scaled by the single usable key.
     expect(groq.modelCount).toBe(3);
-    expect(groq.documentedBudget).toBe(15_000_000);
+    expect(groq.documentedBudget).toBe(27_000_000);
     expect(body.summary.poolCount).toBe(body.pools.length);
   });
 
@@ -121,7 +121,8 @@ describe('free-tier pool overview (#905)', () => {
     // Two healthy keys = two accounts = twice the documented ~30M allowance.
     expect(nvidia.keyCount).toBe(2);
     expect(nvidia.documentedBudget).toBe(60_000_000);
-    expect(body.summary.documentedMonthlyTokens).toBe(60_000_000 + 15_000_000);
+    // Naive SUM: groq = 6M + 15M + 6M = 27M (not 15M).
+    expect(body.summary.documentedMonthlyTokens).toBe(60_000_000 + 27_000_000);
   });
 
   it('prefers the tokens observation over a newer requests one and always names the metric', async () => {
@@ -151,8 +152,8 @@ describe('free-tier pool overview (#905)', () => {
     const groq = body.pools.find((p: any) => p.poolKey === 'groq::account');
     expect(groq.modelCount).toBe(3);
     expect(groq.disabledModelCount).toBe(1);
-    // The disabled row does not reduce the pool's documented budget.
-    expect(groq.documentedBudget).toBe(15_000_000);
+    // Naive SUM: the disabled row still contributes its budget (6M + 15M + 6M = 27M).
+    expect(groq.documentedBudget).toBe(27_000_000);
   });
 
   it('names the models in each pool so the legend can group its rows', async () => {

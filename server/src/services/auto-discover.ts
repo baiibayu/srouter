@@ -59,8 +59,8 @@ interface PlatformRateDefaults {
 }
 const PLATFORM_DEFAULTS: Record<string, PlatformRateDefaults> = {
   // ── Aggregators with published/observed limits ──
-  openrouter:  { rpm: 5,    rpd: 200,   tpm: 200000,  tpd: null },     // docs 20 rpm/200 rpd; live observed 5 rpm
-  routeway:    { rpm: 5,    rpd: 200,   tpm: 200000,  tpd: null },     // same pool as OpenRouter backend
+  openrouter:  { rpm: 5,    rpd: 50,    tpm: null,     tpd: null },     // free tier: 50 req/day (1000 with $10 credits); ~5 rpm observed
+  routeway:    { rpm: 5,    rpd: 200,   tpm: null,     tpd: null },     // same pool as OpenRouter backend: 200 rpd
   kilo:        { rpm: 3,    rpd: 200,   tpm: null,     tpd: null },     // 200 req/hr keyless per IP
   llm7:        { rpm: 2,    rpd: 100,   tpm: null,     tpd: null },     // 100 req/hr
   unorouter:   { rpm: 1,    rpd: 60,    tpm: null,     tpd: null },     // 1 req/min per account per model
@@ -86,7 +86,6 @@ const PLATFORM_DEFAULTS: Record<string, PlatformRateDefaults> = {
   google:      { rpm: 15,   rpd: null,  tpm: 1000000, tpd: 50000000 }, // generous but bounded
   anyapi:      { rpm: null, rpd: null,  tpm: null,     tpd: 100000 },   // 100K tokens/day documented
   zhipu:       { rpm: null, rpd: null,  tpm: null,     tpd: null },
-  huggingface: { rpm: null, rpd: null,  tpm: null,     tpd: null },
   siliconflow: { rpm: null, rpd: null,  tpm: null,     tpd: null },
   ollama:      { rpm: null, rpd: null,  tpm: null,     tpd: null },
 };
@@ -431,6 +430,7 @@ function autoAssignQuirks(
 // ("Est. savings") and the headroom guardrail work right out of the box.
 function estimateMonthlyBudget(
   tpd: number | null, tpm: number | null, rpd: number | null,
+  rpm: number | null = null,
 ): string {
   // tpd (tokens per day) is the strongest signal
   if (tpd != null && tpd > 0) {
@@ -453,6 +453,14 @@ function estimateMonthlyBudget(
     const monthly = rpd * 30 * 1000;
     if (monthly >= 1_000_000) return `~${Math.round(monthly / 1_000_000)}M`;
     if (monthly >= 1_000)     return `~${Math.round(monthly / 1_000)}K`;
+    return `~${monthly}`;
+  }
+  // rpm (requests per minute) → extrapolate to 30-day month, ~1K tokens/request
+  if (rpm != null && rpm > 0) {
+    const monthly = rpm * 60 * 24 * 30 * 1000;
+    if (monthly >= 1_000_000_000) return `~${Math.round(monthly / 1_000_000_000)}B`;
+    if (monthly >= 1_000_000)     return `~${Math.round(monthly / 1_000_000)}M`;
+    if (monthly >= 1_000)         return `~${Math.round(monthly / 1_000)}K`;
     return `~${monthly}`;
   }
   return '';
@@ -580,6 +588,11 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     : [];
   const hasAccessTierField = rawModels.some((m: any) => typeof m?.access_tier === 'string');
   const hasTierField = rawModels.some((m: any) => typeof m?.tier === 'string');
+  // Some providers (e.g. Token Harbor) use `tier` for QUALITY levels
+  // (high/mid/frontier/low), not access levels (free/paid). Only treat
+  // `tier` as an access filter when at least one model actually says
+  // tier === 'free'; otherwise fall through to the `:free` suffix check.
+  const tierHasFreeValue = hasTierField && rawModels.some((m: any) => m?.tier === 'free');
   if (hasAccessTierField) {
     // Authoritative: the upstream tells us the tier per row. Match on the raw
     // list (which carries the field) and project onto the parsed models.
@@ -590,7 +603,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     const beforeCount = freeModels.length;
     freeModels = freeModels.filter(m => freeIds.has(m.id));
     console.log(`[auto-discover] ${platform}: access_tier filter (${beforeCount} → ${freeModels.length} models)`);
-  } else if (hasTierField) {
+  } else if (tierHasFreeValue) {
     // Build a set of free model ids from the raw response
     const freeIds = new Set<string>();
     for (const m of rawModels) {
@@ -599,14 +612,52 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     freeModels = models.filter(m => freeIds.has(m.id));
     console.log(`[auto-discover] ${platform}: ${freeIds.size}/${rawModels.length} models are free-tier (${models.length} parsed → ${freeModels.length} after filter)`);
   } else {
-    // No tier field — check if models use the `:free` suffix convention.
-    // If ANY model id ends with ':free', assume this provider uses the pattern
-    // and only keep those. Otherwise pass everything through.
+    // No tier field, or tier is quality-based (no 'free' value) — check if
+    // models use the `:free` suffix convention. If ANY model id ends with
+    // ':free', assume this provider uses the pattern and only keep those.
     const hasColonFree = rawModels.some((m: any) => typeof m?.id === 'string' && m.id.endsWith(':free'));
     if (hasColonFree) {
       const beforeCount = freeModels.length;
       freeModels = freeModels.filter(m => m.id.endsWith(':free'));
       console.log(`[auto-discover] ${platform}: :free suffix filter (${beforeCount} → ${freeModels.length} models)`);
+    } else {
+      // No tier/`:`free signal — check for explicit pricing fields. Some
+      // providers (llmtr: pricing.prompt/completion, requesty: input_price/
+      // output_price) expose per-model prices; a model is free only when BOTH
+      // input and output prices are zero. Only apply this filter when the
+      // response actually carries pricing info AND at least one model is free
+      // (otherwise the provider may use pricing for something else).
+      const hasPricing = rawModels.some((m: any) =>
+        (m?.pricing && typeof m.pricing.prompt !== 'undefined') ||
+        typeof m?.input_price !== 'undefined'
+      );
+      if (hasPricing) {
+        const isZeroPrice = (v: any): boolean => {
+          if (v === undefined || v === null || v === '') return false;
+          const n = Number(v);
+          return !Number.isNaN(n) && n === 0;
+        };
+        const isFreeRow = (m: any): boolean => {
+          // llmtr style: pricing.prompt + pricing.completion
+          if (m?.pricing && typeof m.pricing.prompt !== 'undefined') {
+            return isZeroPrice(m.pricing.prompt) && isZeroPrice(m.pricing.completion);
+          }
+          // requesty style: input_price + output_price
+          if (typeof m?.input_price !== 'undefined') {
+            return isZeroPrice(m.input_price) && isZeroPrice(m.output_price);
+          }
+          return false;
+        };
+        const freeIds = new Set<string>();
+        for (const m of rawModels) {
+          if (isFreeRow(m)) freeIds.add(m.id);
+        }
+        if (freeIds.size > 0 && freeIds.size < rawModels.length) {
+          const beforeCount = freeModels.length;
+          freeModels = freeModels.filter(m => freeIds.has(m.id));
+          console.log(`[auto-discover] ${platform}: pricing filter (${beforeCount} → ${freeIds.size} free of ${rawModels.length} total)`);
+        }
+      }
     }
   }
 
@@ -794,7 +845,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       const finalIntel = catalogMeta?.intelligence_rank ?? ranks.intelligence;
       const finalSpeed = catalogMeta?.speed_rank ?? ranks.speed;
       // P4: auto-estimate monthly_token_budget from rate limits
-      const estBudget = estimateMonthlyBudget(finalTpd, finalTpm, finalRpd);
+      const estBudget = estimateMonthlyBudget(finalTpd, finalTpm, finalRpd, finalRpm);
 
       const info = insertModel.run(
         platform, m.id, display,
