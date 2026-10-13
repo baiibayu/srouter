@@ -29,7 +29,7 @@ SROUTER_COMPRESSION=lossless
 
 ## 逐请求控制
 
-随 `X-FreeLLM-Compress` 发下列值之一：
+随 `X-SRouter-Compress` 发下列值之一：
 
 ```text
 off | on | lossless | standard | aggressive
@@ -38,7 +38,7 @@ off | on | lossless | standard | aggressive
 请求头可关闭压缩或降低操作者配置的模式，但不能提高它。`on` 用配置的模式。响应报告生效模式和估算节省：
 
 ```text
-X-FreeLLM-Compress: standard; saved~=1840
+X-SRouter-Compress: standard; saved~=1840
 ```
 
 节省用和路由相同的估算 `chars / 4` 核算，所以头部刻意用 `~=`。

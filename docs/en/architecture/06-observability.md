@@ -207,8 +207,8 @@ interface AttemptTraceRecord {
 | `X-Fallback-Trail` | `platform/model keyN=class; …` (max 10, 1KB) |
 | `X-Fallback-Detail` | **Opt-in**: `platform/model keyN=outcome t=start+dur msg=summary; …` (2KB) |
 | `Retry-After` | Seconds until soonest cooldown expiry (429 exhaustions) |
-| `X-FreeLLM-Cache` | `HIT` / `MISS` (response cache) |
-| `X-FreeLLM-Compress` | Compression pipeline metadata |
+| `X-SRouter-Cache` | `HIT` / `MISS` (response cache) |
+| `X-SRouter-Compress` | Compression pipeline metadata |
 
 ---
 

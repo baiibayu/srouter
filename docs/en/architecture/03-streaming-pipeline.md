@@ -19,7 +19,7 @@
 
 ```
 parse + validate (zod)
-  ├─ compression (optional, X-FreeLLM-Compress)
+  ├─ compression (optional, X-SRouter-Compress)
   ├─ system-prompt injection (profile-enforced)
   ├─ image downscale (normalizeMessageImages)
   ├─ token estimation (chars/4 heuristic)
@@ -106,7 +106,7 @@ headerSent = false
 
 ### Error Mapping (exhaustion)
 
-| FreeLLM kind | Anthropic type |
+| SRouter kind | Anthropic type |
 |--------------|----------------|
 | `auth` | `api_error` |
 | `bad_request` | `invalid_request_error` |
@@ -215,8 +215,8 @@ Thin adapter over shared fallback loop:
 | `X-Fallback-Trail` | `platform/model keyN=class; …` (max 10) |
 | `X-Fallback-Detail` | **Opt-in**: `platform/model keyN=outcome t=start+durationMs msg=summary; …` |
 | `Retry-After` | Seconds until soonest cooldown expiry (429 exhaustions) |
-| `X-FreeLLM-Cache` | `HIT` / `MISS` (response cache) |
-| `X-FreeLLM-Compress` | Compression pipeline metadata |
+| `X-SRouter-Cache` | `HIT` / `MISS` (response cache) |
+| `X-SRouter-Compress` | Compression pipeline metadata |
 
 ---
 
@@ -246,14 +246,14 @@ Thin adapter over shared fallback loop:
 
 ## 12. Compression Pipeline (Opt-In)
 
-`X-FreeLLM-Compress` header → `compressRequest(messages, {header, tools, cacheControlPrefixLength})` → returns compressed messages + cache key. Engines: `lite`, `jsoncompact`, `dedup`, `aging`, `relevance`, `hard-budget`, `filter-definitions`, `custom-filters`, `toolfilter`, `read-lifecycle`. Cache key includes `compression.cacheKey` so different compression levels never collide.
+`X-SRouter-Compress` header → `compressRequest(messages, {header, tools, cacheControlPrefixLength})` → returns compressed messages + cache key. Engines: `lite`, `jsoncompact`, `dedup`, `aging`, `relevance`, `hard-budget`, `filter-definitions`, `custom-filters`, `toolfilter`, `read-lifecycle`. Cache key includes `compression.cacheKey` so different compression levels never collide.
 
 ---
 
 ## 13. Response Cache (Opt-In)
 
-- **Scope**: streaming and non-streaming, cacheable temperature (`temperature ≤ 1` or unset), `X-FreeLLM-Cache: on` or `RESPONSE_CACHE=1`.
+- **Scope**: streaming and non-streaming, cacheable temperature (`temperature ≤ 1` or unset), `X-SRouter-Cache: on` or `RESPONSE_CACHE=1`.
 - **Key**: SHA-256 over canonical request (model, messages, all sampling params, tools, stop, response_format, n, seed, penalties, logit_bias, logprobs, top_logprobs, reasoning_effort, compression).
 - **Store**: in-memory LRU, TTL + temperature gates. Two stores — JSON bodies (persisted to SQLite) and streaming SSE (memory-only) — sharing one `RESPONSE_CACHE_MAX_ENTRIES` budget; `entries` in the stats counts both.
-- **Hit**: returns cached body, `X-Routed-Via: cache`, `X-FreeLLM-Cache: HIT`, **zero provider quota consumed**. A streaming hit replays the stored SSE byte for byte.
+- **Hit**: returns cached body, `X-Routed-Via: cache`, `X-SRouter-Cache: HIT`, **zero provider quota consumed**. A streaming hit replays the stored SSE byte for byte.
 - **Streaming store**: frames are buffered only when the request is cacheable (nothing is retained with the cache off) and dropped past a 2 MB replay ceiling. A truncated (`finish_reason: length`), errored, or aborted stream is never stored.

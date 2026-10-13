@@ -162,7 +162,7 @@ Tips:
 
 - Use a **UUID v4** or KSUID per logical operation; do not reuse keys across unrelated calls.
 - Timeouts are the expected use case — set the client timeout shorter than the gateway's provider budget so retries actually fire.
-- A replay can be distinguished by `X-Routed-Via: idempotency` (normal hits use `X-Routed-Via: <platform>/<model>`); cache hits use `X-FreeLLM-Cache: HIT`.
+- A replay can be distinguished by `X-Routed-Via: idempotency` (normal hits use `X-Routed-Via: <platform>/<model>`); cache hits use `X-SRouter-Cache: HIT`.
 
 ---
 
@@ -180,7 +180,7 @@ Tips:
 
 ## 10. Relationship to response cache & degraded mode
 
-- **Response cache** (`services/cache.ts`, `X-FreeLLM-Cache`) is orthogonal: global, temperature-gated, in-memory LRU covering streaming and non-streaming alike; idempotency is durable (SQLite), per-caller, fingerprint-bound, and non-streaming only. Both short-circuit provider calls.
+- **Response cache** (`services/cache.ts`, `X-SRouter-Cache`) is orthogonal: global, temperature-gated, in-memory LRU covering streaming and non-streaming alike; idempotency is durable (SQLite), per-caller, fingerprint-bound, and non-streaming only. Both short-circuit provider calls.
 - **Degraded mode** ([`docs/en/architecture/04-degraded-mode-and-failover.md`](../architecture/04-degraded-mode-and-failover.md)) disables bandit exploration but does not affect idempotency — replays still bypass routing entirely.
 - **Failover**: only the final successful body is stored. If a request exhausts the fallback loop, nothing is stored for that key.
 

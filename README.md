@@ -62,31 +62,66 @@ And the free-tier landscape shifts weekly: providers launch models, retire them,
 ## Supported providers
 
 <div align="center">
+
+<sub>~60 free providers behind one endpoint — bring your own keys, the router does the rest</sub>
+
 <table>
 <tr>
 <td align="center" width="150"><img src="repo-assets/providers/google.png" width="44" alt="Google"><br/><b>Google</b></td>
 <td align="center" width="150"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/groq-dark.png"><img src="repo-assets/providers/groq.png" width="44" alt="Groq"></picture><br/><b>Groq</b></td>
 <td align="center" width="150"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/opencode-dark.png"><img src="repo-assets/providers/opencode.png" width="44" alt="OpenCode Zen"></picture><br/><b>OpenCode Zen</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/mistral.png" width="44" alt="Mistral"><br/><b>Mistral</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/openrouter.png" width="44" alt="OpenRouter"><br/><b>OpenRouter</b></td>
 </tr>
 <tr>
-<td align="center"><img src="repo-assets/providers/mistral.png" width="44" alt="Mistral"><br/><b>Mistral</b></td>
-<td align="center"><img src="repo-assets/providers/openrouter.png" width="44" alt="OpenRouter"><br/><b>OpenRouter</b></td>
-<td align="center"><img src="repo-assets/providers/cloudflare.png" width="44" alt="Cloudflare"><br/><b>Cloudflare</b></td>
-<td align="center"><img src="repo-assets/providers/cohere.png" width="44" alt="Cohere"><br/><b>Cohere</b></td>
-</tr>
-<tr>
-<td align="center"><img src="repo-assets/providers/zhipu.png" width="44" alt="Z.ai (Zhipu)"><br/><b>Z.ai (Zhipu)</b></td>
-<td align="center"><img src="repo-assets/providers/nvidia.png" width="44" alt="NVIDIA"><br/><b>NVIDIA</b></td>
-<td align="center"><img src="repo-assets/providers/huggingface.png" width="44" alt="HuggingFace"><br/><b>HuggingFace</b></td>
-</tr>
-<tr>
-<td align="center"><a href="https://modelscope.cn"><b>ModelScope</b><br/>Qwen3 · DeepSeek V4 · GLM-5 (needs Aliyun cn binding)</a></td>
+<td align="center" width="150"><img src="repo-assets/providers/cloudflare.png" width="44" alt="Cloudflare"><br/><b>Cloudflare</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/cohere.png" width="44" alt="Cohere"><br/><b>Cohere</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/zhipu.png" width="44" alt="Z.ai (Zhipu)"><br/><b>Z.ai (Zhipu)</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/nvidia.png" width="44" alt="NVIDIA"><br/><b>NVIDIA</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/huggingface.png" width="44" alt="HuggingFace"><br/><b>HuggingFace</b></td>
 </tr>
 </table>
 
-<i>… and 52 more free providers</i>
-
 </div>
+
+### ⚡ No key needed
+
+| | | |
+|---|---|---|
+| [Kilo Gateway](https://app.kilo.ai) | [OVH AI Endpoints](https://endpoints.ai.cloud.ovh.net) | [LLM7](https://llm7.io) |
+| [OpenCode Free](https://opencode.ai) | [AI Horde](https://aihorde.net/register) (slow) | |
+
+### 🌏 Regional / special signup
+
+| | | |
+|---|---|---|
+| [ModelScope](https://modelscope.cn/my/myaccesstoken) — Qwen3 · DeepSeek V4 · GLM-5 (needs Aliyun cn binding) | [Baidu Qianfan](https://console.bce.baidu.com/qianfan/overview) (needs cn real-name) | [Volcengine Ark](https://console.volcengine.com/ark) (needs cn real-name) |
+| [LongCat](https://longcat.chat/platform) (email signup ok) | [iFlytek Spark](https://console.xfyun.cn) (needs cn real-name) | |
+
+### 🔌 Free gateways & routers
+
+<details>
+<summary>43 more — click to expand</summary>
+
+| | | |
+|---|---|---|
+| [ACLIDE](https://aclide.com/en/dashboard/api-keys) (shared monthly credits) | [Speka](https://speka.me/dashboard/keys) ($1 shared monthly credits) | [LLMTR](https://llmtr.com) (zero-priced routes) |
+| [Gizmo](https://gizmoplatforms.com/developers) (monthly free-model requests) | [BlockRun](https://user.blockrun.ai/dashboard/keys) (zero-priced models) | [Moondream](https://moondream.ai/c/cloud/api-keys) ($5 shared monthly credits) |
+| [Nous Portal](https://portal.nousresearch.com) (free models) | [OpenTyphoon](https://playground.opentyphoon.ai/api-key) (free research showcase) | [Plugsky](https://plugsky.com) (free key) |
+| [Token Harbor](https://tokenharbor.ai/dashboard/api-keys) (free routes need opt-in) | [Alibaba Model Studio](https://modelstudio.console.alibabacloud.com) (free quota, intl site) | [Sail Research](https://app.sailresearch.com) ($5 monthly with payment method) |
+| [ElectronHub](https://app.electronhub.ai) (shared weekly credits) | [Router9](https://www.router9.com) (shared monthly credits) | [Septor Labs](https://septorlabs.com/dashboard) (daily free-model quota) |
+| [CLōD](https://newapp.clod.io) (shared daily free requests) | [Speechify](https://platform.speechify.ai) (monthly free TTS) | [BlazeAPI](https://blazeapi.org/dashboard) (daily free tokens) |
+| [Lucidity](https://composite.lucidity.sh) (daily free-model requests) | [Api.Airforce](https://api.airforce) (daily free requests) | [DreamPrompting](https://dreamprompting.com) (rolling 24h free tokens) |
+| [Waterfall](https://getwaterfall.org) (community free models) | [Logfare](https://logfare.ai) (fair-use free models) | [B.AI](https://b.ai) (promotional free model) |
+| [AMD Radeon Cloud](https://developer.amd.com.cn/radeon/tokenfactory) (free shared models) | [Ollama Cloud](https://ollama.com/settings/keys) | [Pollinations](https://enter.pollinations.ai) |
+| [OpenCode Go](https://opencode.ai/auth) (separate tier) | [Agnes AI](https://platform.agnes-ai.com) (free key) | [Reka](https://platform.reka.ai) (prepaid credits) |
+| [SiliconFlow](https://siliconflow.com) (image + TTS) | [Routeway](https://routeway.ai) (free key) | [BazaarLink](https://bazaarlink.ai) (free key) |
+| [AINative](https://ainative.studio) (free key) | [Aion Labs](https://www.aionlabs.ai) (free key) | [Requesty](https://www.requesty.ai) (free key) |
+| [NavyAI](https://api.navy) (free key) | [NaraRouter](https://router.bynara.id) (free key) | [SEA-LION](https://sea-lion.ai) (free key) |
+| [OrcaRouter](https://www.orcarouter.ai) (free key) | [UnoRouter](https://unorouter.com) (free key) | [xKiro](https://xkiro.com) (free key) |
+| [AnyAPI](https://anyapi.ai) (free key) | | |
+
+</details>
 
 Plus a **custom** provider — point chat, embedding, image, or audio models at any OpenAI-compatible endpoint (llama.cpp, LM Studio, vLLM, a local Ollama, or a remote gateway) from the Keys page.
 
