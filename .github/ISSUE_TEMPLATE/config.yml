@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 SRouter Documentation
+    url: https://github.com/baiibayu/srouter/tree/main/docs
+    about: Read installation guides, API references, and architecture details.
+  - name: 🔒 Security Vulnerability Report
+    url: https://github.com/baiibayu/srouter/security/advisories/new
+    about: Please report security vulnerabilities privately.
