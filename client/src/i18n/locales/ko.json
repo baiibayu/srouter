@@ -1314,6 +1314,12 @@
     "activeCount": "{n} active"
   },
   "donate": {
-    "support": "SRouter 지원"
+    "support": "SRouter 지원",
+    "trakteer": "인도네시아 서포터용",
+    "kofi": "국제(카드, PayPal)",
+    "paypal": "PayPal로 직접",
+    "open": "열기",
+    "title": "SRouter 지원",
+    "message": "SRouter이 당신의 작업에 도움이 된다면, 개발을 지원해 주세요. 모든 기여가 프로젝트의 성장에 도움이 됩니다. 감사합니다!"
   }
 }

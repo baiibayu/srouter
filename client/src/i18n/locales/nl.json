@@ -1314,6 +1314,12 @@
     "activeCount": "{n} active"
   },
   "donate": {
-    "support": "Steun SRouter"
+    "support": "Steun SRouter",
+    "trakteer": "Voor supporters uit Indonesië",
+    "kofi": "Internationaal (kaart, PayPal)",
+    "paypal": "Rechtstreeks naar PayPal",
+    "open": "Openen",
+    "title": "Steun SRouter",
+    "message": "Als SRouter je bij je werk helpt, overweeg dan de ontwikkeling te steunen. Elke bijdrage houdt het project levend en groeiend. Bedankt!"
   }
 }
