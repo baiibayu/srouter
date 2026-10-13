@@ -89,7 +89,7 @@ AI コーディングツール（Claude Code、Cursor、Windsurf、Cline）で�
  │  第1階層: 高速 / サブスク│   │  第2階層: 大容量 / 格安  │   │ 第3階層: 100% 無料・免責 │
  │  • Google Gemini 2.5     │   │  • Mistral / Codestral   │   │  • Kilo Gateway (キー不要)│
  │  • Groq (Llama 3.3 70B)  │──►│  • Zhipu GLM-4 / 視覚    │──►│  • OpenCode Free(キー不要)│
- │  • Cerebras (超高速推論) │   │  • Cloudflare Workers AI │   │  • OVH Endpoints (キー不要)│
+ │  • Pollinations (無料) │   │  • Cloudflare Workers AI │   │  • OVH Endpoints (キー不要)│
  │  • OpenRouter / DeepSeek │   │  • Cohere / NVIDIA NIM   │   │  • LLM7 / AI Horde       │
  └──────────────────────────┘   └──────────────────────────┘   └──────────────────────────┘
 ```
@@ -237,16 +237,23 @@ SRouter は **約60社のプロバイダー** と **1,200 以上のエンドポ�
 <tr>
 <td align="center" width="140"><img src="repo-assets/providers/google.png" width="40" alt="Google"><br/><b>Google Gemini</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/groq.png" width="40" alt="Groq"><br/><b>Groq Llama</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/cerebras.png" width="40" alt="Cerebras"><br/><b>Cerebras</b></td>
+<td align="center" width="140"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/mistral.png" width="40" alt="Mistral"><br/><b>Mistral AI</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/openrouter.png" width="40" alt="OpenRouter"><br/><b>OpenRouter</b></td>
 </tr>
 <tr>
 <td align="center"><img src="repo-assets/providers/cloudflare.png" width="40" alt="Cloudflare"><br/><b>Cloudflare</b></td>
-<td align="center"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"><br/><b>Cohere</b></td>
-<td align="center"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"><br/><b>Zhipu GLM</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/cohere-dark.png"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"></picture><br/><b>Cohere</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/zhipu-dark.png"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"></picture><br/><b>Zhipu GLM</b></td>
 <td align="center"><img src="repo-assets/providers/nvidia.png" width="40" alt="NVIDIA"><br/><b>NVIDIA NIM</b></td>
 <td align="center"><img src="repo-assets/providers/huggingface.png" width="40" alt="HuggingFace"><br/><b>HuggingFace</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/providers/aihorde.png" width="40" alt="AI Horde"><br/><b>AI Horde</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/kilo-dark.png"><img src="repo-assets/providers/kilo.png" width="40" alt="Kilo"></picture><br/><b>Kilo Gateway</b></td>
+<td align="center"><img src="repo-assets/providers/llm7.png" width="40" alt="LLM7"><br/><b>LLM7</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ollama-dark.png"><img src="repo-assets/providers/ollama.png" width="40" alt="Ollama"></picture><br/><b>Ollama Cloud</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ovh-dark.png"><img src="repo-assets/providers/ovh.png" width="40" alt="OVH"></picture><br/><b>OVH AI Endpoints</b></td>
 </tr>
 </table>
 
@@ -264,7 +271,7 @@ SRouter は **約60社のプロバイダー** と **1,200 以上のエンドポ�
 ### 2. 🌐 充実した無料枠を持つ主要プロバイダー
 - **Google AI Studio:** Gemini 2.5 Flash / Pro（非常に寛大な日次無料枠）
 - **Groq:** Llama 3.3 70B & Mixtral（圧倒的な高速推論、30 RPM 無料枠）
-- **Cerebras Cloud:** 世界最速水準の推論スピード
+- **Pollinations:** 無料テキスト+画像 (キー不要)
 - **Mistral AI:** Codestral（高精度コーディングモデル）、Mistral Small
 - **Cloudflare Workers AI:** 1 日あたり 10,000 neurons の無料枠
 - **Cohere:** Command R / Command R+ トライアルクレジット
@@ -324,7 +331,7 @@ srouter/
   - 重複 JSON 構造を圧縮し、**トークン消費量を 20〜40% 削減**。
 - **6つのインテリジェントルーティング戦略：**
   - `auto`: 応答速度、モデル性能、残りクォータを総合判定した最適解。
-  - `auto:fast`: 超低遅延プロバイダー（Groq、Cerebras）を最優先。
+  - `auto:fast`: 超低遅延プロバイダー（Groq）を最優先。
   - `auto:smart`: 高性能な思考モデル（Gemini 2.5 Pro、Codestral）を優先。
   - `auto:cheap`: サブスク枠を温存し、軽量な無料モデルを活用。
   - `auto:<profile>`: ダッシュボードで自由に作成したカスタムチェーン。

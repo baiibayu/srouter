@@ -89,7 +89,7 @@ Penggunaan AI Coding Agent (seperti Claude Code, Cursor, Windsurf, Cline) kini m
  │  Tier 1: Cepat / Utama   │   │   Tier 2: Kuota Besar    │   │ Tier 3: 100% Free / Anon │
  │  • Google Gemini 2.5     │   │  • Mistral / Codestral   │   │  • Kilo Gateway (No Key) │
  │  • Groq (Llama 3.3 70B)  │──►│  • Zhipu GLM-4 / CogView │──►│  • OpenCode Free (No Key)│
- │  • Cerebras (Super Cepat)│   │  • Cloudflare Workers AI │   │  • OVH Endpoints (No Key)│
+ │  • Pollinations (Gratis) │   │  • Cloudflare Workers AI │   │  • OVH Endpoints (No Key)│
  │  • OpenRouter / DeepSeek │   │  • Cohere / NVIDIA NIM   │   │  • LLM7 / AI Horde       │
  └──────────────────────────┘   └──────────────────────────┘   └──────────────────────────┘
 ```
@@ -237,16 +237,23 @@ SRouter menyatukan **~60 provider** dan **~1.200+ endpoint model** di balik satu
 <tr>
 <td align="center" width="140"><img src="repo-assets/providers/google.png" width="40" alt="Google"><br/><b>Google Gemini</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/groq.png" width="40" alt="Groq"><br/><b>Groq Llama</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/cerebras.png" width="40" alt="Cerebras"><br/><b>Cerebras</b></td>
+<td align="center" width="140"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/mistral.png" width="40" alt="Mistral"><br/><b>Mistral AI</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/openrouter.png" width="40" alt="OpenRouter"><br/><b>OpenRouter</b></td>
 </tr>
 <tr>
 <td align="center"><img src="repo-assets/providers/cloudflare.png" width="40" alt="Cloudflare"><br/><b>Cloudflare</b></td>
-<td align="center"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"><br/><b>Cohere</b></td>
-<td align="center"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"><br/><b>Zhipu GLM</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/cohere-dark.png"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"></picture><br/><b>Cohere</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/zhipu-dark.png"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"></picture><br/><b>Zhipu GLM</b></td>
 <td align="center"><img src="repo-assets/providers/nvidia.png" width="40" alt="NVIDIA"><br/><b>NVIDIA NIM</b></td>
 <td align="center"><img src="repo-assets/providers/huggingface.png" width="40" alt="HuggingFace"><br/><b>HuggingFace</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/providers/aihorde.png" width="40" alt="AI Horde"><br/><b>AI Horde</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/kilo-dark.png"><img src="repo-assets/providers/kilo.png" width="40" alt="Kilo"></picture><br/><b>Kilo Gateway</b></td>
+<td align="center"><img src="repo-assets/providers/llm7.png" width="40" alt="LLM7"><br/><b>LLM7</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ollama-dark.png"><img src="repo-assets/providers/ollama.png" width="40" alt="Ollama"></picture><br/><b>Ollama Cloud</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ovh-dark.png"><img src="repo-assets/providers/ovh.png" width="40" alt="OVH"></picture><br/><b>OVH AI Endpoints</b></td>
 </tr>
 </table>
 
@@ -264,7 +271,7 @@ SRouter menyatukan **~60 provider** dan **~1.200+ endpoint model** di balik satu
 ### 2. 🌐 Free Tier Kuota Besar dengan API Key
 - **Google AI Studio:** Gemini 2.5 Flash / Pro (Jatah harian gratis yang sangat melimpah)
 - **Groq:** Llama 3.3 70B & Mixtral super cepat (Batas 30 RPM pada free tier)
-- **Cerebras Cloud:** Kecepatan inferensi tercepat di dunia
+- **Pollinations:** Teks + gambar gratis (tanpa kunci)
 - **Mistral AI:** Codestral (model koding unggulan), Mistral Small, Embeddings
 - **Cloudflare Workers AI:** 10.000 neuron/hari gratis
 - **Cohere:** Kredit uji coba Command R / Command R+
@@ -326,7 +333,7 @@ srouter/
   - Merapikan struktur JSON berulang dan memangkas konteks usang, menghemat **20–40% token**.
 - **Enam Strategi Routing Pintar:**
   - `auto`: Menyeimbangkan kecepatan, kecerdasan model, dan sisa kuota.
-  - `auto:fast`: Memprioritaskan provider berlatensi super rendah (Groq, Cerebras).
+  - `auto:fast`: Memprioritaskan provider berlatensi super rendah (Groq).
   - `auto:smart`: Mengarahkan ke model dengan kemampuan penalaran tertinggi (Gemini 2.5 Pro, Codestral).
   - `auto:cheap`: Menghemat kuota premium dengan memanfaatkan endpoint gratis ringan.
   - `auto:<profile>`: Rantai fallback khusus yang dikonfigurasi melalui dashboard.
