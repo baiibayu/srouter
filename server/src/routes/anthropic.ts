@@ -492,7 +492,7 @@ anthropicRouter.post('/messages', async (req: Request, res: Response) => {
     Array.isArray(message.content)
     && message.content.some(block => block && typeof block === 'object' && 'cache_control' in block));
   const compressionResult = compressRequest(messages, {
-    header: req.headers['x-freellm-compress'],
+    header: req.headers['x-srouter-compress'],
     tools,
     // Claude Code normally marks the system prefix. If a later native message
     // carries a breakpoint, conservatively cap the translated prefix at
@@ -500,7 +500,7 @@ anthropicRouter.post('/messages', async (req: Request, res: Response) => {
     cacheControlPrefixLength: messageHasCacheControl ? messages.length : (systemHasCacheControl ? 1 : 0),
   });
   messages = compressionResult.messages;
-  res.setHeader('X-FreeLLM-Compress', formatCompressionHeader(compressionResult));
+  res.setHeader('x-srouter-Compress', formatCompressionHeader(compressionResult));
 
   const estimatedInputTokens = estimateInputTokens(messages, tools);
   const imageCount = messages.reduce((n, m) =>
@@ -1101,11 +1101,11 @@ anthropicRouter.post('/messages/count_tokens', (req: Request, res: Response) => 
   }
   const { messages, tools } = converted;
   const compressionResult = compressRequest(messages, {
-    header: req.headers['x-freellm-compress'],
+    header: req.headers['x-srouter-compress'],
     tools,
     recordStats: false,
   });
-  res.setHeader('X-FreeLLM-Compress', formatCompressionHeader(compressionResult));
+  res.setHeader('x-srouter-Compress', formatCompressionHeader(compressionResult));
   res.json({ input_tokens: estimateInputTokens(compressionResult.messages, tools) });
 });
 

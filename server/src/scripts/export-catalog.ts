@@ -7,15 +7,28 @@
  * The output JSON is what the standalone catalog server (../../catalog) hands
  * to clients — a monthly snapshot to all users.
  *
+ * The catalog is ONE document covering every modality: chat models (models[],
+ * with modality 'image'/'audio' entries routed to media_models), embeddings
+ * (embeddings[]), speech-to-text (transcriptionModels[]) and text-to-video
+ * (videoModels[]). The separate top-level keys for transcription/video exist
+ * so binaries that predate those modalities ignore them instead of
+ * misclassifying the rows as chat models.
+ *
  * Usage:
  *   tsx src/scripts/export-catalog.ts [--db <path>] [--out <path>]
- *                                     [--version <YYYY.MM.DD>] [--tier live|monthly]
- *                                     [--stdout]
+ *                                     [--version <YYYY.MM.DD[.N]>] [--tier live|monthly]
+ *                                     [--stdout] [--bundled]
  *
  * Defaults: reads the server's data/srouter.db, writes the suite's
  * catalog/data/catalog.live.json. The catalog server signs it separately
  * (catalog/src/scripts/sign-catalog.ts) so the signature covers the exact
  * bytes served.
+ *
+ * --bundled writes server/src/catalog/bundled-catalog.ts instead — a
+ * generated TypeScript module exporting BUNDLED_CATALOG, compiled into the
+ * server binary. This is the standalone (no remote catalog server) path:
+ * trust equals the installed package, no Ed25519 signature is needed or
+ * checked, and boot applies it synchronously with zero network.
  */
 import fs from 'fs';
 import path from 'path';
@@ -23,8 +36,11 @@ import { fileURLToPath } from 'url';
 import { initDb, getDb } from '../db/index.js';
 import { getAllProviders } from '../providers/index.js';
 import { resolveQuirksByModel, quirkKey, listQuirkDefinitions } from '../services/quirks.js';
+import { MEDIA_PLATFORMS, TRANSCRIPTION_PLATFORMS, VIDEO_PLATFORMS } from '../services/media.js';
+import { EMBEDDING_PLATFORMS } from '../services/embeddings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_SRC_ROOT = path.resolve(__dirname, '..'); // server/src
 const SUITE_ROOT = path.resolve(__dirname, '../../../..'); // srouter/server/src/scripts -> suite root
 
 function arg(name: string): string | undefined {
@@ -60,6 +76,29 @@ interface ModelRow {
   supports_tools: number;
 }
 
+interface EmbeddingRow {
+  family: string;
+  platform: string;
+  model_id: string;
+  display_name: string;
+  dimensions: number;
+  max_input_tokens: number | null;
+  priority: number;
+  enabled: number;
+  quota_label: string;
+}
+
+interface MediaRow {
+  platform: string;
+  model_id: string;
+  display_name: string;
+  modality: string;
+  priority: number;
+  enabled: number;
+  quota_label: string;
+  meta_json: string | null;
+}
+
 function main() {
   const dbPath = arg('db');
   const tier = (arg('tier') as 'live' | 'monthly' | undefined) ?? 'live';
@@ -82,18 +121,42 @@ function main() {
     )
     .all() as ModelRow[];
 
+  const embeddings = db
+    .prepare(
+      `SELECT family, platform, model_id, display_name, dimensions, max_input_tokens,
+              priority, enabled, quota_label
+         FROM embedding_models
+        WHERE platform IN (${[...EMBEDDING_PLATFORMS].map(() => '?').join(',')})
+        ORDER BY family ASC, priority ASC, platform ASC, model_id ASC`,
+    )
+    .all(...EMBEDDING_PLATFORMS) as EmbeddingRow[];
+
+  const mediaAll = db
+    .prepare(
+      `SELECT platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json
+         FROM media_models
+        ORDER BY modality ASC, priority ASC, platform ASC, model_id ASC`,
+    )
+    .all() as MediaRow[];
+
   const quirksByModel = resolveQuirksByModel(db);
   const quirkDefs = listQuirkDefinitions(db);
 
   // Only platforms that actually have a registered provider AND a model in the
   // catalog — skip 'custom' (user-supplied endpoint, nothing to publish).
-  const livePlatforms = new Set(models.map((m) => m.platform));
+  const livePlatforms = new Set<string>();
+  for (const m of models) livePlatforms.add(m.platform);
+  for (const m of embeddings) livePlatforms.add(m.platform);
+  for (const m of mediaAll) livePlatforms.add(m.platform);
   const platforms = getAllProviders()
     .filter((p) => p.platform !== 'custom' && livePlatforms.has(p.platform))
     .map((p) => ({ id: p.platform, name: p.name }))
     .sort((a, b) => a.id.localeCompare(b.id));
 
-  const catalogModels = models.map((m) => ({
+  // Chat models (modality absent/'text') plus generative-media rows that ride
+  // in models[] with modality 'image'/'audio' (see services/catalog-sync.ts
+  // MEDIA_MODALITIES). Transcription and video have their own top-level keys.
+  const chatModels = models.map((m) => ({
     platform: m.platform,
     modelId: m.model_id,
     displayName: m.display_name,
@@ -114,6 +177,78 @@ function main() {
     quirks: quirksByModel.get(quirkKey(m.platform, m.model_id)) ?? [],
   }));
 
+  const imageAudioModels = mediaAll
+    .filter((m) => (m.modality === 'image' || m.modality === 'audio') && MEDIA_PLATFORMS.has(m.platform))
+    .map((m) => {
+      const meta = m.meta_json ? (JSON.parse(m.meta_json) as { requestStyle?: string }) : {};
+      return {
+        platform: m.platform,
+        modelId: m.model_id,
+        displayName: m.display_name,
+        modality: m.modality,
+        intelligenceRank: m.priority, // applyCatalog uses intelligenceRank as media priority
+        speedRank: m.priority,
+        sizeLabel: '',
+        limits: { rpm: null, rpd: null, tpm: null, tpd: null },
+        monthlyTokenBudget: null,
+        contextWindow: null,
+        enabled: m.enabled === 1,
+        supportsVision: false,
+        supportsTools: false,
+        mediaNote: m.quota_label || undefined,
+        requestStyle: meta.requestStyle ?? undefined,
+        quirks: [] as unknown[],
+      };
+    });
+
+  const catalogModels = [...chatModels, ...imageAudioModels];
+
+  const catalogEmbeddings = embeddings.map((m) => ({
+    family: m.family,
+    platform: m.platform,
+    modelId: m.model_id,
+    displayName: m.display_name,
+    dimensions: m.dimensions,
+    maxInputTokens: m.max_input_tokens,
+    priority: m.priority,
+    enabled: m.enabled === 1,
+    quotaLabel: m.quota_label,
+  }));
+
+  const transcriptionModels = mediaAll
+    .filter((m) => m.modality === 'transcription' && TRANSCRIPTION_PLATFORMS.has(m.platform))
+    .map((m) => {
+      const meta = m.meta_json
+        ? (JSON.parse(m.meta_json) as { subtitleFormats?: string[]; maxBytes?: number; requestStyle?: string })
+        : {};
+      return {
+        platform: m.platform,
+        modelId: m.model_id,
+        displayName: m.display_name,
+        priority: m.priority,
+        enabled: m.enabled === 1,
+        subtitleFormats: meta.subtitleFormats,
+        maxBytes: meta.maxBytes,
+        requestStyle: meta.requestStyle,
+        quotaLabel: m.quota_label || undefined,
+      };
+    });
+
+  const videoModels = mediaAll
+    .filter((m) => m.modality === 'video' && VIDEO_PLATFORMS.has(m.platform))
+    .map((m) => {
+      const meta = m.meta_json ? (JSON.parse(m.meta_json) as { providerModelId?: string }) : {};
+      return {
+        platform: m.platform,
+        modelId: m.model_id,
+        displayName: m.display_name,
+        priority: m.priority,
+        enabled: m.enabled === 1,
+        quotaLabel: m.quota_label || undefined,
+        providerModelId: meta.providerModelId,
+      };
+    });
+
   const catalog = {
     version,
     generatedAt: new Date().toISOString(),
@@ -122,10 +257,16 @@ function main() {
       platforms: platforms.length,
       models: catalogModels.length,
       enabledModels: catalogModels.filter((m) => m.enabled).length,
+      embeddings: catalogEmbeddings.length,
+      transcriptionModels: transcriptionModels.length,
+      videoModels: videoModels.length,
       quirks: quirkDefs.length,
     },
     platforms,
     models: catalogModels,
+    embeddings: catalogEmbeddings,
+    transcriptionModels,
+    videoModels,
     quirks: quirkDefs,
   };
 
@@ -136,13 +277,41 @@ function main() {
     return;
   }
 
+  if (flag('bundled')) {
+    // Generated TypeScript module compiled into the server binary — the
+    // standalone catalog path. Typed as `unknown` so tsc skips deep literal
+    // inference on a ~1000-row document; catalog-sync's isCatalog() is the
+    // runtime structural check (cheap, runs once at boot). The JSON is
+    // intentionally NOT pretty-printed: compact form keeps the committed
+    // source ~30% smaller (hundreds of KB on a full catalog).
+    const ts = `// AUTO-GENERATED by src/scripts/export-catalog.ts --bundled — DO NOT EDIT.
+// Regenerate: npx tsx src/scripts/export-catalog.ts --bundled --version <YYYY.MM.DD.N>
+// Bundled model catalog: applied at boot when CATALOG_BASE_URL is unset
+// (standalone mode — no remote catalog server, no signature, trust equals
+// the installed package).
+export const BUNDLED_CATALOG_VERSION = ${JSON.stringify(version)};
+export const BUNDLED_CATALOG: unknown = ${JSON.stringify(catalog)};
+`;
+    const outPath = path.join(SERVER_SRC_ROOT, 'catalog', 'bundled-catalog.ts');
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, ts);
+    console.log(
+      `Wrote bundled catalog ${version}: ${catalog.counts.models} models ` +
+        `(${catalog.counts.enabledModels} enabled), ${catalog.counts.embeddings} embeddings, ` +
+        `${catalog.counts.transcriptionModels} transcription, ${catalog.counts.videoModels} video, ` +
+        `${catalog.counts.platforms} platforms, ${catalog.counts.quirks} quirks -> ${outPath}`,
+    );
+    return;
+  }
+
   const outPath = arg('out') ?? path.join(SUITE_ROOT, 'catalog', 'data', `catalog.${tier}.json`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, json);
   console.log(
     `Wrote ${tier} catalog ${version}: ${catalog.counts.models} models ` +
-      `(${catalog.counts.enabledModels} enabled), ${catalog.counts.platforms} platforms, ` +
-      `${catalog.counts.quirks} quirks -> ${outPath}`,
+      `(${catalog.counts.enabledModels} enabled), ${catalog.counts.embeddings} embeddings, ` +
+      `${catalog.counts.transcriptionModels} transcription, ${catalog.counts.videoModels} video, ` +
+      `${catalog.counts.platforms} platforms, ${catalog.counts.quirks} quirks -> ${outPath}`,
   );
 }
 

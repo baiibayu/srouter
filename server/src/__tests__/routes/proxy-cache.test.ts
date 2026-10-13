@@ -132,13 +132,13 @@ describe('Response cache (proxy integration)', () => {
     const first = await chat();
     expect(first.status).toBe(200);
     expect(first.body.choices[0].message.content).toBe('the answer is four');
-    expect(first.headers.get('x-freellm-cache')).toBe('MISS');
+    expect(first.headers.get('x-srouter-cache')).toBe('MISS');
     expect(counter.calls).toBe(1);
 
     const second = await chat();
     expect(second.status).toBe(200);
     expect(second.body.choices[0].message.content).toBe('the answer is four');
-    expect(second.headers.get('x-freellm-cache')).toBe('HIT');
+    expect(second.headers.get('x-srouter-cache')).toBe('HIT');
     expect(second.headers.get('x-routed-via')).toBe('cache');
     // The provider was NOT hit again; the whole point.
     expect(counter.calls).toBe(1);
@@ -168,7 +168,7 @@ describe('Response cache (proxy integration)', () => {
     // Same prompt with response_format json_object must be a MISS, not a
     // replay of the cached plain-text answer.
     const jsonReq = await chat({ response_format: { type: 'json_object' } });
-    expect(jsonReq.headers.get('x-freellm-cache')).toBe('MISS');
+    expect(jsonReq.headers.get('x-srouter-cache')).toBe('MISS');
     expect(counter.calls).toBe(2);
     // Same prompt, different seed / stop → also fresh generations.
     await chat({ seed: 42 });
@@ -176,26 +176,26 @@ describe('Response cache (proxy integration)', () => {
     expect(counter.calls).toBe(4);
     // But an exact repeat (with a knob present) is still a HIT.
     const repeat = await chat({ seed: 42 });
-    expect(repeat.headers.get('x-freellm-cache')).toBe('HIT');
+    expect(repeat.headers.get('x-srouter-cache')).toBe('HIT');
     expect(counter.calls).toBe(4);
   });
 
-  it('X-FreeLLM-Cache: off bypasses the cache on both read and write', async () => {
+  it('x-srouter-Cache: off bypasses the cache on both read and write', async () => {
     const counter = mockGroq('bypassed');
-    await chat({}, { 'X-FreeLLM-Cache': 'off' });
-    await chat({}, { 'X-FreeLLM-Cache': 'off' });
+    await chat({}, { 'x-srouter-Cache': 'off' });
+    await chat({}, { 'x-srouter-Cache': 'off' });
     // Neither call read nor populated the cache → provider hit twice.
     expect(counter.calls).toBe(2);
   });
 
-  it('X-FreeLLM-Cache: on forces caching even when the cache is globally off', async () => {
+  it('x-srouter-Cache: on forces caching even when the cache is globally off', async () => {
     process.env.RESPONSE_CACHE = '';
     try {
       const counter = mockGroq('forced-on');
-      const first = await chat({}, { 'X-FreeLLM-Cache': 'on' });
-      expect(first.headers.get('x-freellm-cache')).toBe('MISS');
-      const second = await chat({}, { 'X-FreeLLM-Cache': 'on' });
-      expect(second.headers.get('x-freellm-cache')).toBe('HIT');
+      const first = await chat({}, { 'x-srouter-Cache': 'on' });
+      expect(first.headers.get('x-srouter-cache')).toBe('MISS');
+      const second = await chat({}, { 'x-srouter-Cache': 'on' });
+      expect(second.headers.get('x-srouter-cache')).toBe('HIT');
       expect(counter.calls).toBe(1);
     } finally {
       process.env.RESPONSE_CACHE = 'on';
@@ -219,14 +219,14 @@ describe('Response cache (proxy integration)', () => {
 
     const first = await chat({ stream: true });
     expect(first.status).toBe(200);
-    expect(first.headers.get('x-freellm-cache')).toBe('MISS');
+    expect(first.headers.get('x-srouter-cache')).toBe('MISS');
     expect(first.raw).toContain('streamed four');
     expect(first.raw.endsWith('data: [DONE]\n\n')).toBe(true);
     expect(counter.streamCalls).toBe(1);
 
     const second = await chat({ stream: true });
     expect(second.status).toBe(200);
-    expect(second.headers.get('x-freellm-cache')).toBe('HIT');
+    expect(second.headers.get('x-srouter-cache')).toBe('HIT');
     expect(second.headers.get('x-routed-via')).toBe('cache');
     expect(second.headers.get('content-type')).toContain('text/event-stream');
     // Identical SSE bytes, and no second provider stream.
@@ -239,11 +239,11 @@ describe('Response cache (proxy integration)', () => {
     await chat();                  // JSON MISS, populates the JSON store
     const streamed = await chat({ stream: true });
     // The JSON entry is never replayed as SSE: the stream is a MISS of its own.
-    expect(streamed.headers.get('x-freellm-cache')).toBe('MISS');
+    expect(streamed.headers.get('x-srouter-cache')).toBe('MISS');
     expect(counter.streamCalls).toBe(1);
     // ...and storing it did not disturb the JSON entry.
     const json = await chat();
-    expect(json.headers.get('x-freellm-cache')).toBe('HIT');
+    expect(json.headers.get('x-srouter-cache')).toBe('HIT');
     expect(json.body.choices[0].message.content).toBe('four');
     expect(counter.calls).toBe(1);
   });
@@ -255,7 +255,7 @@ describe('Response cache (proxy integration)', () => {
     expect(counter.streamCalls).toBe(1);
     // Nothing was stored, so the repeat goes back to the provider.
     const second = await chat({ stream: true });
-    expect(second.headers.get('x-freellm-cache')).toBe('MISS');
+    expect(second.headers.get('x-srouter-cache')).toBe('MISS');
     expect(counter.streamCalls).toBe(2);
   });
 
@@ -263,13 +263,13 @@ describe('Response cache (proxy integration)', () => {
     const counter = mockGroq('half an ans', { failMidStream: true });
     const first = await chat({ stream: true });
     // Headers were already flushed and content forwarded before the break.
-    expect(first.headers.get('x-freellm-cache')).toBe('MISS');
+    expect(first.headers.get('x-srouter-cache')).toBe('MISS');
     expect(first.raw).toContain('half an ans');
     expect(first.raw).toContain('stream_error'); // the break is surfaced to the client
     const before = counter.streamCalls;
     // Nothing was stored, so the repeat goes back to the provider.
     const second = await chat({ stream: true });
-    expect(second.headers.get('x-freellm-cache')).toBe('MISS');
+    expect(second.headers.get('x-srouter-cache')).toBe('MISS');
     expect(counter.streamCalls).toBeGreaterThan(before);
   });
 
@@ -278,9 +278,9 @@ describe('Response cache (proxy integration)', () => {
     try {
       const counter = mockGroq('uncached');
       const first = await chat({ stream: true });
-      expect(first.headers.get('x-freellm-cache')).toBe('OFF');
+      expect(first.headers.get('x-srouter-cache')).toBe('OFF');
       const second = await chat({ stream: true });
-      expect(second.headers.get('x-freellm-cache')).toBe('OFF');
+      expect(second.headers.get('x-srouter-cache')).toBe('OFF');
       expect(counter.streamCalls).toBe(2);
       const stats = await request(app, 'GET', '/api/cache/stats');
       expect(stats.body.entries).toBe(0);

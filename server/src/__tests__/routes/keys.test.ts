@@ -226,7 +226,7 @@ describe('Keys API', () => {
     // Auto-discover may populate models when the provider's /v1/models is
     // reachable; the important invariant is that the key is accepted.
     expect(body.modelsAvailable).toBeGreaterThanOrEqual(0);
-  });
+  }, 60_000);
 
   it('POST /api/keys rejects missing key', async () => {
     const { status } = await request(app, 'POST', '/api/keys', {

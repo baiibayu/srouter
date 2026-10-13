@@ -372,7 +372,7 @@ curl http://localhost:20268/v1/web-search \
 }
 ```
 
-The backend is DuckDuckGo's keyless HTML endpoint. A captcha/rate page (HTTP 200, zero parsed results) surfaces as `502 Web search failed: ... (rate limited?)` — never an empty result set, so an agent can't mistake throttling for "the web has no answer".
+The backend is chosen in **Keys page → Providers → Web search backend** (live status + attempt counters on **Models → Web**): DuckDuckGo (keyless default), your own SearXNG instance (JSON format enabled), or Tavily/Brave/Exa/TinyFish with a free-tier key stored server-side (TinyFish Search is free at any balance — 12k requests/day). The chosen backend runs first; if it cannot answer, the request walks a fixed fallback chain — DuckDuckGo → SearXNG → TinyFish → Exa → Brave → Tavily, skipping candidates without a key or instance URL — all inside one ~25s budget, and `provider` always reports whichever backend actually answered. A response that needed more than one attempt carries an `attempts` array of `{backend, ok, error?}` so you can see who failed and why; only when every candidate fails does the endpoint answer `502` with each backend's error joined together. Every attempt is counted per backend (today / this month, served by `GET /api/settings/web-search` as `usage`) so you can watch the free tiers being consumed. A captcha/rate page on the answering backend (HTTP 200, zero parsed results) counts as a failure and keeps the chain moving — never an empty result set, so an agent can't mistake throttling for "the web has no answer".
 
 ### `POST /v1/fetch`
 
@@ -392,7 +392,7 @@ curl http://localhost:20268/v1/fetch \
 { "url": "https://example.com/docs", "via": "direct", "title": "...", "text": "...", "truncated": false }
 ```
 
-- HTML arrives as readable text (scripts/styles stripped, entities decoded); non-HTML comes back as-is with `content_type`. `via` is `"direct"` or `"jina"` — the keyless reader fallback for bot-walled or JS-heavy pages.
+- HTML arrives as readable text (scripts/styles stripped, entities decoded); non-HTML comes back as-is with `content_type`. `via` is `"direct"`, `"tinyfish"` or `"jina"` — the reader chain for bot-walled or JS-heavy pages: TinyFish Fetch (free tier, when its key is stored) first, then the keyless Jina Reader.
 - **SSRF-guarded**: only public `http(s)` targets. Private ranges, loopback/link-local/metadata addresses, `localhost`-style names, and hostnames whose DNS resolution lands private are rejected with `400` *before* any socket is opened. Response bodies are hard-capped at `max_bytes`.
 - Both endpoints accept only the unified inference key (dashboard session tokens are rejected) and share the `/v1` rate limiter.
 

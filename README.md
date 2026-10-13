@@ -2,14 +2,14 @@
 
 # SRouter
 
-**7.4 billion tokens per month.  63 free LLM providers. 941 free model endpoints. One OpenAI-compatible endpoint.**
+**~15 billion tokens per month.  ~60 free LLM providers. ~1,200+ free model endpoints. One OpenAI-compatible endpoint.**
 
 Aggregate free tiers from dozens of providers, plus custom OpenAI-compatible chat, embedding, image, and audio endpoints, behind a single `/v1` API. Keys are stored encrypted. A router picks the best available model for each request, falls over to the next provider when one is rate-limited, and tracks per-key usage so you stay under every free-tier cap.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-**728 model families · 941 free endpoints** — the full list lives in your dashboard's Models page
+**~900+ model families · ~1,200+ free endpoints** — the full list lives in your dashboard's Models page
 
 **English** · [简体中文](README.zh-cn.md)
 
@@ -17,7 +17,7 @@ Aggregate free tiers from dozens of providers, plus custom OpenAI-compatible cha
   <a href="docs/en/install/01-install.md#docker-compose"><img src="repo-assets/badges/docker.svg" height="48" alt="Self-host with Docker"></a>
 </p>
 
-![SRouter dashboard — Models page with the monthly token budget](repo-assets/github-hero.png)
+![SRouter dashboard — live routing, monthly token budget, and usage stats](repo-assets/github-hero.png)
 
 
 Your router updates its own model catalog from a signed feed: new free models, quota changes, and compatibility fixes land without a `git pull`.
@@ -50,13 +50,13 @@ Your router updates its own model catalog from a signed feed: new free models, q
 
 ## Why this exists
 
-Every serious AI lab now offers a free tier, a few million tokens a month, a few thousand requests a day. On its own each tier is a toy. Stacked together, they add up to roughly **7.4 billion tokens per month** of working inference capacity, across **728 model families / 941 provider endpoints** from small-and-fast to reasonably capable.
+Every serious AI lab now offers a free tier, a few million tokens a month, a few thousand requests a day. On its own each tier is a toy. Stacked together, they add up to roughly **15 billion tokens per month** of working inference capacity, across **~900+ model families / ~1,200+ provider endpoints** from small-and-fast to reasonably capable.
 
-The problem is that stacking them by hand is painful: sixty-three different SDKs, sixty-three different rate limits, sixty-three places a request can fail. SRouter collapses that into one OpenAI-compatible endpoint. Point any OpenAI client library at your local server, and it routes transparently across whichever providers you've added keys for.
+The problem is that stacking them by hand is painful: dozens of different SDKs, dozens of different rate limits, dozens of places a request can fail. SRouter collapses that into one OpenAI-compatible endpoint. Point any OpenAI client library at your local server, and it routes transparently across whichever providers you've added keys for.
 
 And the free-tier landscape shifts weekly: providers launch models, retire them, and change quotas without notice. SRouter tracks all of that for you. The router pulls a signed model catalog on its own, so your install keeps up without a `git pull`. See [Live catalog](#live-catalog) for how it stays current.
 
-![The free tier, stacked — ~15B tokens of free inference per month across 63 providers](repo-assets/free-tier.png)
+![The free tier, stacked — ~15B tokens of free inference per month across ~60 providers](repo-assets/free-tier.png)
 
 ## Supported providers
 
@@ -272,9 +272,9 @@ quota changes, and provider quirk fixes to your local DB. Your own
 enable/disable choices and custom providers are never touched, and every
 download is verified against a pinned Ed25519 key before it is applied.
 
-The catalog currently tracks **63 providers**, **728 model families**, **941
-free provider/model endpoints** (841 chat, 50 embeddings, 16 image, 11 audio,
-21 transcription, 2 video), and roughly **7.4 billion tokens per month** of
+The catalog currently tracks **~60 providers**, **~900+ model families**, **~1,200+
+free provider/model endpoints** (1,101 chat, 79 embeddings, 16 image, 30 audio,
+28 transcription, 10 video), and roughly **15 billion tokens per month** of
 listed free-tier capacity. The full set is browsable from your dashboard's
 **Models** page.
 

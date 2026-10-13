@@ -49,3 +49,10 @@ server/server-err.log
 # Staged into server/ by scripts/prepare-server-pack.mjs (npm pack)
 server/client/
 server/LICENSE
+
+# Internal agent notes — personal paths, session logs, never public
+AGENTS.md
+HANDOFF.md
+PROVIDER_CLASSIFICATION.md
+.claude/settings.local.json
+opencode.json

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
 import { MutationCache, QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bell, ChevronDown, KeyRound, LogOut, Menu, MoreHorizontal, Search, Settings, Sparkles } from 'lucide-react'
+import { Bell, ChevronDown, KeyRound, LogOut, Menu, MoreHorizontal, Search, Settings } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,7 +23,6 @@ import { ErrorBoundary } from '@/components/error-boundary'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { Toaster } from '@/components/toaster'
 import { UpdateReminder } from '@/components/update-reminder'
-import { usePremium } from '@/hooks/use-premium'
 import { I18nProvider, useI18n } from '@/i18n'
 import { apiFetch, logout } from '@/lib/api'
 import { platformLabel } from '@/lib/platform-label'
@@ -43,9 +42,10 @@ import EmbeddingDetailPage from '@/pages/EmbeddingDetailPage'
 import AnalyticsPage from '@/pages/AnalyticsPage'
 import DashboardPage from '@/pages/DashboardPage'
 import LogsPage from '@/pages/LogsPage'
-// PremiumPage removed — catalog sync is fully automatic now.
 import NotFoundPage from '@/pages/NotFoundPage'
 import AgentsPage from '@/pages/AgentsPage'
+import SystemOnePage from '@/pages/SystemOnePage'
+import WebSearchPage from '@/pages/WebSearchPage'
 
 // Every failed mutation surfaces as an error toast, so no action fails
 // silently. A page that already shows the failure inline can opt out with
@@ -75,7 +75,6 @@ const navItems = [
   { to: '/keys', labelKey: 'nav.keys' },
   { to: '/agents', labelKey: 'nav.agents' },
   { to: '/analytics', labelKey: 'nav.analytics' },
-  // Premium page removed — catalog sync is fully automatic now.
 ]
 
 // The modality pages behind "Models"; surfaced in the nav dropdown and
@@ -88,6 +87,8 @@ const modelItems = [
   { to: '/models/video', labelKey: 'models.videoTab' },
   { to: '/models/audio', labelKey: 'models.audioTab' },
   { to: '/models/fusion', labelKey: 'models.fusionTab' },
+  { to: '/models/system-one', labelKey: 'models.systemOneTab' },
+  { to: '/models/web-search', labelKey: 'models.webSearchTab' },
 ]
 
 // The pages that hang off "Analytics". Logs is reachable only from here — it is
@@ -171,36 +172,24 @@ if (isDesktopApp) {
 }
 
 function AccountMenuItems({
-  showUpgrade,
-  upgradeLabel,
   settingsLabel,
   signOutLabel,
   changeEmailLabel,
   changePasswordLabel,
-  onUpgrade,
   onOpenSettings,
   onChangeEmail,
   onChangePassword,
 }: {
-  showUpgrade: boolean
-  upgradeLabel: string
   settingsLabel: string
   signOutLabel: string
   changeEmailLabel: string
   changePasswordLabel: string
-  onUpgrade: () => void
   onOpenSettings: () => void
   onChangeEmail: () => void
   onChangePassword: () => void
 }) {
   return (
     <>
-      {showUpgrade && (
-        <DropdownMenuItem onClick={onUpgrade}>
-          <Sparkles />
-          {upgradeLabel}
-        </DropdownMenuItem>
-      )}
       <DropdownMenuItem onClick={onOpenSettings}>
         <Settings />
         {settingsLabel}
@@ -344,8 +333,6 @@ function Navbar() {
   const navigate = useNavigate()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [credentialsMode, setCredentialsMode] = useState<'password' | 'email' | null>(null)
-  const { licensed } = usePremium()
-  const showUpgrade = !licensed
 
   return (
     <>
@@ -420,13 +407,10 @@ function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <AccountMenuItems
-                  showUpgrade={showUpgrade}
-                  upgradeLabel={t('nav.upgrade')}
                   settingsLabel={t('nav.settings')}
                   signOutLabel={t('nav.signOut')}
                   changeEmailLabel={t('auth.changeEmail')}
                   changePasswordLabel={t('auth.changePassword')}
-                  onUpgrade={() => navigate('/keys')}
                   onOpenSettings={() => setSettingsOpen(true)}
                   onChangeEmail={() => setCredentialsMode('email')}
                   onChangePassword={() => setCredentialsMode('password')}
@@ -474,13 +458,10 @@ function Navbar() {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <AccountMenuItems
-                  showUpgrade={showUpgrade}
-                  upgradeLabel={t('nav.upgrade')}
                   settingsLabel={t('nav.settings')}
                   signOutLabel={t('nav.signOut')}
                   changeEmailLabel={t('auth.changeEmail')}
                   changePasswordLabel={t('auth.changePassword')}
-                  onUpgrade={() => navigate('/keys')}
                   onOpenSettings={() => setSettingsOpen(true)}
                   onChangeEmail={() => setCredentialsMode('email')}
                   onChangePassword={() => setCredentialsMode('password')}
@@ -522,7 +503,7 @@ const FULL_BLEED_ROUTES = new Set(['/playground'])
 // as the widest thing that has finished rendering. On a page that fills in from
 // several independent queries — Analytics fires ten — that turns every arriving
 // response into a visible horizontal jump as the column re-fits, and pages
-// whose content never reaches 72rem (Analytics, Premium) settle narrower than
+// whose content never reaches 72rem (Analytics) settle narrower than
 // they were designed to be. A definite width makes the column 72rem from the
 // first paint, and `mx-auto` goes back to only centring it.
 function PageContainer({ children }: { children: ReactNode }) {
@@ -579,15 +560,18 @@ function App() {
                       <Route path="/models/video" element={<VideoPage />} />
                       <Route path="/models/video/:id" element={<MediaDetailPage modality="video" />} />
                       <Route path="/models/audio" element={<AudioPage />} />
-                      <Route path="/models/audio/:id" element={<MediaDetailPage modality="audio" />} />
-                      <Route path="/models/transcription/:id" element={<MediaDetailPage modality="transcription" />} />
+        <Route path="/models/audio/:id" element={<MediaDetailPage modality="audio" />} />
+        <Route path="/models/transcription/:id" element={<MediaDetailPage modality="transcription" />} />
+        <Route path="/models/tools" element={<Navigate to="/models/web-search" replace />} />
+                <Route path="/models/system-one" element={<SystemOnePage />} />
+                <Route path="/models/web-search" element={<WebSearchPage />} />
+                <Route path="/models/web-fetch" element={<Navigate to="/models/web-search" replace />} />
                       <Route path="/playground" element={<PlaygroundPage />} />
                       <Route path="/keys" element={<KeysPage />} />
                       <Route path="/agents" element={<AgentsPage />} />
                       <Route path="/fallback" element={<Navigate to="/models/chat" replace />} />
                       <Route path="/analytics" element={<AnalyticsPage />} />
                       <Route path="/logs" element={<LogsPage />} />
-                      <Route path="/premium" element={<Navigate to="/keys" replace />} />
                       <Route path="/test" element={<Navigate to="/playground" replace />} />
                       <Route path="/health" element={<Navigate to="/keys" replace />} />
                       <Route path="*" element={<NotFoundPage />} />

@@ -43,6 +43,7 @@ export const openapiSpec = {
     { name: 'Gemini', description: 'Native Gemini generateContent wire format' },
     { name: 'Ollama', description: 'Opt-in Ollama-compatible local-client surface' },
     { name: 'URL tokens', description: 'Headerless-client aliases using separately revocable URL tokens' },
+    { name: 'Tools', description: 'Agent utilities: web search and page fetch (keyless-first)' },
   ],
   paths: {
     '/v1/chat/completions': {
@@ -626,6 +627,72 @@ export const openapiSpec = {
         responses: { '200': { description: 'Ollama model list.' }, '401': { description: 'Invalid or revoked URL token.' } },
       },
     },
+    '/v1/web-search': {
+      post: {
+        tags: ['Tools'],
+        operationId: 'webSearch',
+        summary: 'Search the web',
+        description:
+          'Agentic web search over the configured backend (Dashboard → Keys page → Web search backend; ' +
+          'live status on Models → Web Search): ' +
+          'DuckDuckGo (keyless default), your own SearXNG instance, or a Tavily/Brave free-tier key. ' +
+          'Every non-DuckDuckGo backend falls back to DuckDuckGo when it is unreachable, and `provider` ' +
+          'reports whichever backend actually answered.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/WebSearchRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Ranked results with the backend that served them.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/WebSearchResponse' },
+              },
+            },
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '502': { $ref: '#/components/responses/UpstreamError' },
+        },
+      },
+    },
+    '/v1/fetch': {
+      post: {
+        tags: ['Tools'],
+        operationId: 'fetchPage',
+        summary: 'Fetch a page as readable text',
+        description:
+          'Fetches a public http(s) URL and returns readable text (HTML entities decoded, boilerplate ' +
+          'stripped). Falls back to the free Jina Reader tier when the direct fetch is blocked by a bot ' +
+          'wall. Private network addresses are rejected (SSRF guard).',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/FetchRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Readable page text, byte-bounded and marked when truncated.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/FetchResponse' },
+              },
+            },
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '502': { $ref: '#/components/responses/UpstreamError' },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -674,6 +741,55 @@ export const openapiSpec = {
       },
     },
     schemas: {
+      WebSearchRequest: {
+        type: 'object',
+        required: ['query'],
+        properties: {
+          query: { type: 'string', minLength: 1, maxLength: 500, description: 'Search query.' },
+          max_results: { type: 'integer', minimum: 1, maximum: 10, default: 5, description: 'How many results to return.' },
+        },
+      },
+      WebSearchResponse: {
+        type: 'object',
+        properties: {
+          provider: {
+            type: 'string',
+            enum: ['duckduckgo', 'searxng', 'tavily', 'brave'],
+            description: 'The backend that actually answered (fallback is reflected here).',
+          },
+          query: { type: 'string' },
+          results: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                url: { type: 'string' },
+                title: { type: 'string' },
+                snippet: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+      FetchRequest: {
+        type: 'object',
+        required: ['url'],
+        properties: {
+          url: { type: 'string', minLength: 1, maxLength: 2048, description: 'Public http(s) URL to fetch.' },
+          max_bytes: { type: 'integer', minimum: 1024, maximum: 2097152, default: 524288, description: 'Response body cap in bytes (hard max 2 MB).' },
+        },
+      },
+      FetchResponse: {
+        type: 'object',
+        properties: {
+          url: { type: 'string', description: 'Final URL after redirects.' },
+          via: { type: 'string', enum: ['direct', 'jina'], description: 'Direct fetch or the Jina Reader fallback.' },
+          title: { type: 'string', nullable: true, description: 'HTML page title when available.' },
+          text: { type: 'string', description: 'Readable page text (or markdown from the reader fallback).' },
+          truncated: { type: 'boolean', description: 'True when the body hit the byte cap.' },
+          content_type: { type: 'string', description: 'Original content type (non-HTML responses).' },
+        },
+      },
       GeminiGenerateRequest: {
         type: 'object',
         required: ['contents'],

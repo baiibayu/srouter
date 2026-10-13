@@ -1,5 +1,11 @@
 import type { ReactNode, SVGProps } from 'react'
 import { cn } from '@/lib/utils'
+import crushImg from '@/assets/agents/crush.png'
+import deepseekHarnessImg from '@/assets/agents/deepseek-harness.png'
+import factoryDroidImg from '@/assets/agents/factory-droid.png'
+import hermesImg from '@/assets/agents/hermes-agent.png'
+import mimoImg from '@/assets/agents/mimo.png'
+import ohMyPiImg from '@/assets/agents/oh-my-pi.png'
 
 // Brand marks for the tools listed on the Agents page. Every mark below is the
 // tool's own published logo, taken verbatim from the source in the table and
@@ -42,23 +48,23 @@ import { cn } from '@/lib/utils'
 //                          docs `img/roo-code-logo-{dark,white}.svg`
 //   kilo      Kilo Code    Kilo-Org/kilocode `packages/kilo-console/public/kilo-logo.svg`   MIT
 //   cursor    Cursor       cursor.com/brand asset pack, `Cube/SVG/CUBE_2D_{LIGHT,DARK}.svg` Cursor TM, nominative use
-//   crush     Crush        no vector published; hue sampled from the official               Charm TM, nominative use
-//                          stuff.charm.sh/crush/charm-crush.png (Charm's `charple`)
-//   dsh       DeepSeek     lettermark only: DSH's brand guidelines ask third parties not    DeepSeek TM, nominative use
-//             Harness      to reuse official artwork; tinted with DeepSeek's brand blue
-//   mimo      MiMo Code    lettermark only: no vector published, only the 32px favicon      Xiaomi TM, nominative use
-//                          at cdn.cnbj1.fds.api.mi-img.com/.../mimo.ico, which is flat black
-//   atomcode  AtomCode     lettermark only: no vector published; hue sampled from the        AtomGit TM, nominative use
-//                          app icon cdn-news.gitcode.com/news/atomcode-icon1.png (the
-//                          gradient's dominant blue, at two of its four corners)
+//   crush     Crush        repo-assets/agents/crush.png (charm-crush.png), used verbatim;    Charm TM, nominative use
+//                          its brand-charple plate fills the tile
+//   dsh       DeepSeek     repo-assets/agents/deepseek-harness.png, background baked to      DeepSeek TM, nominative use
+//             Harness      transparency (README.md shows the same file)
+//   mimo      MiMo Code    mimo.xiaomi.com favicon.ico (32px, black plate + light glyph),    Xiaomi TM, nominative use
+//                          copied to client/src/assets/agents/mimo.png
+//   omp       Oh My Pi     omp.sh/favicon-180x180.png (the published site icon),          Stencil Labs TM, nominative use
+//                          resized to the shared 88px art size
 //   openclaw  OpenClaw     openclaw.ai/favicon.svg (the lobster mark: body, claws and         MIT (openclaw/openclaw)
 //                          antennae); the eyes are dropped with the gradient, as every
 //                          mark here is painted flat in one brand colour
-//   hermes    Hermes Agent lettermark only: the published mark (NousResearch/hermes-agent   Nous Research TM, nominative use
-//                          website/static/img/logo.png) is a raster portrait and the SVG
-//                          favicon is a text glyph, so neither fits the 24px grid
+//   hermes    Hermes Agent repo-assets/agents/hermes-agent.png (the published raster),       Nous Research TM, nominative use
+//                          background baked to transparency; glyph inverts on dark
 //   pi        Pi           pi.dev/favicon.svg (the monochrome mark; the press kit's       Earendil TM, nominative use
 //                          three-colour logo is the same geometry)
+//   droid     Factory Droid factory.ai/favicon.svg (the published site icon: flat plate    Factory TM, nominative use
+//                          with the glyph), rendered to the shared 88px art size
 //
 //   id        light tile        ratio  dark tile         ratio  dark-mode treatment
 //   claude    #D37152            3.08  #D97757            5.52  brand #D97757 on dark; light tile is
@@ -84,17 +90,19 @@ import { cn } from '@/lib/utils'
 //                                                               is oklch(0.638 0.136 108.4), the most
 //                                                               saturated yellow that clears 3:1 there
 //   cursor    #26251E           14.10  #EDECEC           14.61  published pair (CUBE_2D_LIGHT/DARK)
-//   crush     #6B50FF            4.57  #6B50FF            3.46  brand purple unchanged; clears on both tiles
-//   dsh       #4D6BFE            3.97  #4D6BFE            3.98  brand blue unchanged; clears on both tiles
-//   mimo      #000000           19.26  #FFFFFF           17.22  published pair (the favicon is black artwork on
-//                                                               transparent, so it inverts on the dark tile)
-//   atomcode  #3C82F6            3.37  #3C82F6            4.69  icon blue unchanged; clears on both tiles
+//   crush     —               —   —               —   PNG plate fills the tile on both schemes
+//   dsh       #4D6BFE            3.97  #4D6BFE            3.98  PNG artwork on baked transparency; blue clears both
+//   mimo      —               —   —               —   PNG plate fills the light tile, melts into the dark one
+//   omp       —               —   —               —   PNG artwork on baked transparency; the near-black plate
+//                                                               reads on the light tile and melts into the dark
+//                                                               one, where the light glyph carries the mark
+//   droid     —               —   —               —   PNG plate fills the tile on both schemes
 //   openclaw  #991B1B            7.62  #FF4D4D            5.27  published pair: the mark is a gradient from
 //                                                               #FF4D4D to #991B1B, and each tile takes the
 //                                                               stop that clears on it (the light stop is
 //                                                               3.00 on the light tile, right at the line)
-//   hermes    #000000           19.26  #FFFFFF           17.22  published pair (the logo is flat black artwork
-//                                                               on white, so it inverts on the dark tile)
+//   hermes    #000000           19.26  #FFFFFF           17.22  PNG artwork on baked transparency; glyph inverts
+//                                                               on the dark tile
 //   pi        #111111           17.32  #F6F6F6           15.94  published pair (the favicon's own light and
 //                                                               dark-scheme fills)
 //   generic   currentColor         —   currentColor         —   not a brand mark
@@ -112,9 +120,13 @@ import { cn } from '@/lib/utils'
 // dark plate; both are used here as the plain letterform the plate carries, which
 // is the same geometry with the background dropped for the colour swap.
 //
-// Crush has no published vector mark (charmbracelet/crush ships the icon as a
-// PNG only), so it keeps the lettermark fallback below rather than an invented
-// symbol; it is tinted with Charm's own purple so it sits in the coloured row.
+// Crush ships its icon as a PNG only (charmbracelet/crush), so the tile renders
+// that raster verbatim — its brand-charple plate covers the whole tile on both
+// schemes instead of an invented vector. The tiles without a published vector
+// (crush, dsh, mimo, hermes) render their PNG artwork directly (feedback
+// 2026-10-09), and oh-my-pi and factory-droid joined them as PNG tiles the same
+// day; the white-background ones are baked to transparency so they sit on the
+// tile in either scheme.
 // `generic` is not a brand: it is our own terminal glyph, on the same lucide grid
 // and weight as the icons used elsewhere in the app.
 
@@ -122,7 +134,7 @@ type Brand = {
   // Tailwind arbitrary properties set `--mk` (and `--mk2` for the one two-tone
   // mark) on the tile. The `dark:` half swaps in the dark-tile value, so the
   // whole colour scheme is CSS — no theme hook, no flash on first paint.
-  tint: string
+  tint?: string
   // Optical size correction, applied about the centre on top of the geometry
   // already fitted to the grid; omitted means the mark is used at its fitted
   // size. A bright saturated fill blooms next to a near-black or white one, so
@@ -133,6 +145,11 @@ type Brand = {
   // other mark already fills 21–24 of the 24-unit grid, so there is no room.
   scale?: number
   art?: ReactNode
+  // Six brands render their published PNG artwork instead of a lettermark:
+  // the same files README.md uses from repo-assets/agents (the three white-
+  // background ones are baked to transparency here for the dark tile).
+  img?: string
+  imgClass?: string
 }
 
 const brands: Record<string, Brand> = {
@@ -227,29 +244,30 @@ const brands: Record<string, Brand> = {
       />
     ),
   },
-  // No vector mark exists, so the lettermark fallback stands in — tinted with
-  // Charm's own purple so the tile still carries the brand.
+  // charm-crush.png (the published raster), used verbatim: its brand-purple
+  // plate fills the tile on both schemes, so no tint or dark swap is needed.
   crush: {
-    tint: '[--mk:#6B50FF] dark:[--mk:#6B50FF]',
+    img: crushImg,
   },
-  // DeepSeek Harness asks third parties not to reuse its official artwork
-  // (BRAND_GUIDELINES.md), so the lettermark stands in, in DeepSeek's blue.
+  // The same harness PNG README.md shows, background baked to transparency so
+  // DeepSeek's blue sits straight on the light and dark tiles.
   dsh: {
-    tint: '[--mk:#4D6BFE] dark:[--mk:#4D6BFE]',
+    img: deepseekHarnessImg,
   },
-  // Xiaomi publishes no vector mark for MiMo Code — the only artwork on
-  // mimo.xiaomi.com is the 32px favicon — so the lettermark stands in. That
-  // favicon is drawn in flat black on transparent, which is the published
-  // pair treatment: black on the light tile, white on the dark one.
+  // The site's 32px favicon (flat black plate, light glyph): the plate reads
+  // as a solid app icon on the light tile and melts into the dark one.
   mimo: {
-    tint: '[--mk:#000000] dark:[--mk:#FFFFFF]',
+    img: mimoImg,
   },
-  // AtomGit publishes AtomCode's icon only as a raster (the app icon the site
-  // header uses: an atom orbit on a cyan-to-violet gradient), so the lettermark
-  // stands in. It is tinted with the gradient's dominant blue, sampled from
-  // that PNG, which clears 3:1 on both tiles as published.
-  atomcode: {
-    tint: '[--mk:#3C82F6] dark:[--mk:#3C82F6]',
+  // omp.sh's published favicon: a near-black rounded plate with the light
+  // Pi-derived glyph, rendered at the shared 88px size.
+  omp: {
+    img: ohMyPiImg,
+  },
+  // factory.ai's published favicon.svg: a flat near-black plate with the
+  // white droid glyph, rendered at the shared 88px size.
+  droid: {
+    img: factoryDroidImg,
   },
   // openclaw.ai/favicon.svg, drawn on a 120-unit box: the body and the two
   // claws are filled paths, the antennae stroked. Scaled 0.2 and centred onto
@@ -267,11 +285,11 @@ const brands: Record<string, Brand> = {
       </g>
     ),
   },
-  // Nous Research publishes the Hermes Agent mark only as a raster portrait,
-  // so the lettermark stands in. The artwork is flat black on white, which is
-  // the published pair treatment: black on the light tile, white on the dark.
+  // NousResearch's raster portrait (the same file README.md shows), background
+  // baked to transparency; the black glyph inverts on the dark tile.
   hermes: {
-    tint: '[--mk:#000000] dark:[--mk:#FFFFFF]',
+    img: hermesImg,
+    imgClass: 'dark:invert',
   },
   // pi.dev/favicon.svg, drawn on a 560-unit box with three solid blocks.
   // Scaled 0.0375 and centred, so it spans 21 units: a mark that fills its
@@ -341,16 +359,18 @@ export function AgentIcon({
         className,
       )}
     >
-      {brand?.art
-        ? <Mark className="size-5" scale={brand.scale}>{brand.art}</Mark>
-        : (
-            <span
-              className="font-mono text-[11px] font-semibold"
-              style={{ color: 'var(--mk, currentColor)' }}
-            >
-              {lettermark(name)}
-            </span>
-          )}
+      {brand?.img
+        ? <img src={brand.img} alt="" className={cn('size-5 object-contain', brand.imgClass)} />
+        : brand?.art
+          ? <Mark className="size-5" scale={brand.scale}>{brand.art}</Mark>
+          : (
+              <span
+                className="font-mono text-[11px] font-semibold"
+                style={{ color: 'var(--mk, currentColor)' }}
+              >
+                {lettermark(name)}
+              </span>
+            )}
     </span>
   )
 }

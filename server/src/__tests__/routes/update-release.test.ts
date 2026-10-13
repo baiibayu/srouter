@@ -8,8 +8,8 @@ import { createUpdateRouter, UPDATE_CHECK_SETTING } from '../../routes/update.js
 import { mintDashboardToken } from '../helpers/auth.js';
 
 const NOW = Date.parse('2026-08-09T14:00:00.000Z');
-const RELEASE_URL = 'https://api.github.com/repos/tashfeenahmed/freellmapi/releases/latest';
-const RELEASES_PAGE = 'https://github.com/tashfeenahmed/freellmapi/releases';
+const RELEASE_URL = 'https://api.github.com/repos/baiibayu/srouter/releases/latest';
+const RELEASES_PAGE = 'https://github.com/baiibayu/srouter/releases';
 
 function httpGet(app: Express, path: string): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
@@ -62,7 +62,7 @@ function createTestApp(overrides: Parameters<typeof createUpdateRouter>[0] = {})
     ...overrides,
     // No default repository (upstream's releases are not this fork's) — tests
     // name one so the asserted URLs stay verbatim; '' exercises the gate.
-    env: { SROUTER_UPDATE_REPO: 'tashfeenahmed/freellmapi', ...(overrides.env ?? {}) },
+    env: { SROUTER_UPDATE_REPO: 'baiibayu/srouter', ...(overrides.env ?? {}) },
     fetch: fetchMock,
     logger,
   }));

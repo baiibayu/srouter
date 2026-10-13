@@ -6,6 +6,7 @@ Doc revision history for `docs/architecture/`, seeded from commits touching arch
 
 ## 2026-10-09
 
+- **docs(architecture): complexity gate base URL is a setting** — the `jev` backend bullet in `01-routing-and-bandit-scoring.md#16` now names `complexity_gate_jev_base_url` (default `https://api.typesafe.ai`, dashboard-editable next to the key): any System One-compatible host — v1m, system-one.dev — is a drop-in switch. Sources: `server/src/services/complexity-gate.ts`, `server/src/routes/settings.ts`.
 - **docs(architecture): document the complexity gate (Jev-B)** — new section 16 in `01-routing-and-bandit-scoring.md`: opt-in, default-off, fail-open per-request `trivial/normal/hard` classification that biases weights toward speed (trivial) or intelligence (hard) at a 25% share (`COMPLEXITY_WEIGHT_SHARE`); backends `heuristic` (size/structure rules) vs `jev` (TypeSafe SystemOne `POST /v1/systemone`, 0–10 → level, 400 ms timeout, write-only key) via `GET/PUT /api/settings/complexity-gate`; exempt strategies skip the bias; wiring `proxy.ts:classifyComplexity` → `routeRequest` → `orderChain` → `scoring.ts:complexityAdjustedWeights`. Sources: `server/src/services/complexity-gate.ts`.
 
 ## 2026-09-02

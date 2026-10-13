@@ -1,7 +1,7 @@
 # LLMTR
 
 LLMTR exposes an OpenAI-compatible API at `https://llmtr.com/v1`. Create an account,
-verify email, and create a dashboard API key. Add it under **Keys → LLMTR**, or
+verify email, and create a dashboard API key. Add it under **Keys ΓåÆ LLMTR**, or
 import `LLMTR_API_KEY` from an environment file. Never commit the key.
 
 Selected routes are zero-priced with daily or rolling quotas, not monthly cash
