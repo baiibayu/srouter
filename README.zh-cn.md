@@ -42,6 +42,7 @@
 - [工作原理](#工作原理)
 - [局限性](#局限性)
 - [参与贡献](#参与贡献)
+- [支持项目](#支持项目)
 - [免责声明](#免责声明)
 
 **指南：** [安装与部署](docs/zh-cn/install/01-install.md) · [API 参考](docs/zh-cn/api/01-rest-api.md) · [客户端与编程智能体](docs/zh-cn/clients/01-agent-clients.md) · [提示词压缩](docs/zh-cn/compression/01-compression-pipeline.md) · [架构与内部实现](docs/zh-cn/architecture/00-high-level-index.md) · [文档索引](docs/zh-cn/README.md) · [贡献者指南](CONTRIBUTING.md)
@@ -61,31 +62,66 @@
 ## 支持的提供方
 
 <div align="center">
+
+<sub>一个端点背后约 60 家免费提供方 —— 自带密钥，路由交给它</sub>
+
 <table>
 <tr>
 <td align="center" width="150"><img src="repo-assets/providers/google.png" width="44" alt="Google"><br/><b>Google</b></td>
 <td align="center" width="150"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/groq-dark.png"><img src="repo-assets/providers/groq.png" width="44" alt="Groq"></picture><br/><b>Groq</b></td>
 <td align="center" width="150"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/opencode-dark.png"><img src="repo-assets/providers/opencode.png" width="44" alt="OpenCode Zen"></picture><br/><b>OpenCode Zen</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/mistral.png" width="44" alt="Mistral"><br/><b>Mistral</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/openrouter.png" width="44" alt="OpenRouter"><br/><b>OpenRouter</b></td>
 </tr>
 <tr>
-<td align="center"><img src="repo-assets/providers/mistral.png" width="44" alt="Mistral"><br/><b>Mistral</b></td>
-<td align="center"><img src="repo-assets/providers/openrouter.png" width="44" alt="OpenRouter"><br/><b>OpenRouter</b></td>
-<td align="center"><img src="repo-assets/providers/cloudflare.png" width="44" alt="Cloudflare"><br/><b>Cloudflare</b></td>
-<td align="center"><img src="repo-assets/providers/cohere.png" width="44" alt="Cohere"><br/><b>Cohere</b></td>
-</tr>
-<tr>
-<td align="center"><img src="repo-assets/providers/zhipu.png" width="44" alt="Z.ai (Zhipu)"><br/><b>Z.ai（智谱）</b></td>
-<td align="center"><img src="repo-assets/providers/nvidia.png" width="44" alt="NVIDIA"><br/><b>NVIDIA</b></td>
-<td align="center"><img src="repo-assets/providers/huggingface.png" width="44" alt="HuggingFace"><br/><b>HuggingFace</b></td>
-</tr>
-<tr>
-<td align="center"><a href="https://modelscope.cn"><b>ModelScope 魔搭</b><br/>Qwen3 · DeepSeek V4 · GLM-5（需要绑定阿里云中国站账号）</a></td>
+<td align="center" width="150"><img src="repo-assets/providers/cloudflare.png" width="44" alt="Cloudflare"><br/><b>Cloudflare</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/cohere.png" width="44" alt="Cohere"><br/><b>Cohere</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/zhipu.png" width="44" alt="Z.ai (Zhipu)"><br/><b>Z.ai（智谱）</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/nvidia.png" width="44" alt="NVIDIA"><br/><b>NVIDIA</b></td>
+<td align="center" width="150"><img src="repo-assets/providers/huggingface.png" width="44" alt="HuggingFace"><br/><b>HuggingFace</b></td>
 </tr>
 </table>
 
-<i>…… 以及另外 52 家免费提供方</i>
-
 </div>
+
+### ⚡ 免密钥
+
+| | | |
+|---|---|---|
+| [Kilo Gateway](https://app.kilo.ai) | [OVH AI Endpoints](https://endpoints.ai.cloud.ovh.net) | [LLM7](https://llm7.io) |
+| [OpenCode Free](https://opencode.ai) | [AI Horde](https://aihorde.net/register)（较慢） | |
+
+### 🌏 需要区域认证 / 特殊注册
+
+| | | |
+|---|---|---|
+| [ModelScope 魔搭](https://modelscope.cn/my/myaccesstoken) —— Qwen3 · DeepSeek V4 · GLM-5（需要绑定阿里云中国站账号） | [Baidu Qianfan](https://console.bce.baidu.com/qianfan/overview)（需要中国站实名） | [Volcengine Ark](https://console.volcengine.com/ark)（需要中国站实名） |
+| [LongCat](https://longcat.chat/platform)（邮箱注册即可） | [iFlytek Spark](https://console.xfyun.cn)（需要中国站实名） | |
+
+### 🔌 免费网关与路由
+
+<details>
+<summary>另外 43 家 —— 点击展开</summary>
+
+| | | |
+|---|---|---|
+| [ACLIDE](https://aclide.com/en/dashboard/api-keys)（共享月度额度） | [Speka](https://speka.me/dashboard/keys)（$1 共享月度额度） | [LLMTR](https://llmtr.com)（零价格路由） |
+| [Gizmo](https://gizmoplatforms.com/developers)（月度免费模型请求） | [BlockRun](https://user.blockrun.ai/dashboard/keys)（零价格模型） | [Moondream](https://moondream.ai/c/cloud/api-keys)（$5 共享月度额度） |
+| [Nous Portal](https://portal.nousresearch.com)（免费模型） | [OpenTyphoon](https://playground.opentyphoon.ai/api-key)（免费研究展示） | [Plugsky](https://plugsky.com)（免费密钥） |
+| [Token Harbor](https://tokenharbor.ai/dashboard/api-keys)（免费路由需先开通） | [Alibaba Model Studio](https://modelstudio.console.alibabacloud.com)（免费额度，国际站） | [Sail Research](https://app.sailresearch.com)（$5/月，需绑支付方式） |
+| [ElectronHub](https://app.electronhub.ai)（共享周额度） | [Router9](https://www.router9.com)（共享月度额度） | [Septor Labs](https://septorlabs.com/dashboard)（每日免费模型额度） |
+| [CLōD](https://newapp.clod.io)（共享每日免费请求） | [Speechify](https://platform.speechify.ai)（月度免费 TTS） | [BlazeAPI](https://blazeapi.org/dashboard)（每日免费词元） |
+| [Lucidity](https://composite.lucidity.sh)（每日免费模型请求） | [Api.Airforce](https://api.airforce)（每日免费请求） | [DreamPrompting](https://dreamprompting.com)（24 小时滚动免费词元） |
+| [Waterfall](https://getwaterfall.org)（社区免费模型） | [Logfare](https://logfare.ai)（合理使用免费模型） | [B.AI](https://b.ai)（推广免费模型） |
+| [AMD Radeon Cloud](https://developer.amd.com.cn/radeon/tokenfactory)（免费共享模型） | [Ollama Cloud](https://ollama.com/settings/keys) | [Pollinations](https://enter.pollinations.ai) |
+| [OpenCode Go](https://opencode.ai/auth)（独立档位） | [Agnes AI](https://platform.agnes-ai.com)（免费密钥） | [Reka](https://platform.reka.ai)（预付费额度） |
+| [SiliconFlow](https://siliconflow.com)（图像 + TTS） | [Routeway](https://routeway.ai)（免费密钥） | [BazaarLink](https://bazaarlink.ai)（免费密钥） |
+| [AINative](https://ainative.studio)（免费密钥） | [Aion Labs](https://www.aionlabs.ai)（免费密钥） | [Requesty](https://www.requesty.ai)（免费密钥） |
+| [NavyAI](https://api.navy)（免费密钥） | [NaraRouter](https://router.bynara.id)（免费密钥） | [SEA-LION](https://sea-lion.ai)（免费密钥） |
+| [OrcaRouter](https://www.orcarouter.ai)（免费密钥） | [UnoRouter](https://unorouter.com)（免费密钥） | [xKiro](https://xkiro.com)（免费密钥） |
+| [AnyAPI](https://anyapi.ai)（免费密钥） | | |
+
+</details>
 
 此外还有 **自定义** 提供方：在密钥页上，把聊天、嵌入、图像或音频模型指向任意 OpenAI 兼容端点（llama.cpp、LM Studio、vLLM、本地 Ollama，或者一个远程网关）。
 
@@ -313,6 +349,14 @@ print("Routed via:", resp.headers.get("x-routed-via"))
 ### 贡献者
 
 约 130 位贡献者的头像墙维护在[英文 README](README.md#contributors) 里。它几乎每次合并都会变动，所以只保留一份，不在各语言版本中重复。
+
+## 支持项目
+
+如果 SRouter 对你的工作有帮助，请考虑支持开发。每一份贡献都让项目保持活力和成长。
+
+[![Trakteer](https://img.shields.io/badge/Trakteer-e11d48?style=for-the-badge&logo=ko-fi&logoColor=white)](https://trakteer.id/baiibayu/tip)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/baiibayu)
+[![PayPal](https://img.shields.io/badge/PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/baiibayu)
 
 ## 免责声明
 

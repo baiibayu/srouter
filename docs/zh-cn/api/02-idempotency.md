@@ -162,7 +162,7 @@ curl -i http://localhost:20268/v1/chat/completions \
 
 - 每个逻辑操作使用一个 **UUID v4** 或 KSUID；不要在不相关的调用之间复用键。
 - 超时正是预期的使用场景 —— 把客户端超时设得比网关的提供方预算短，重试才真的会触发。
-- 重放可通过 `X-Routed-Via: idempotency` 识别（正常命中是 `X-Routed-Via: <platform>/<model>`）；缓存命中则是 `X-FreeLLM-Cache: HIT`。
+- 重放可通过 `X-Routed-Via: idempotency` 识别（正常命中是 `X-Routed-Via: <platform>/<model>`）；缓存命中则是 `X-SRouter-Cache: HIT`。
 
 ---
 
@@ -180,7 +180,7 @@ curl -i http://localhost:20268/v1/chat/completions \
 
 ## 10. 与响应缓存及降级模式的关系
 
-- **响应缓存**（`services/cache.ts`，`X-FreeLLM-Cache`）是正交的：全局、受温度门控、内存 LRU，流式与非流式一并覆盖；幂等则是持久化的（SQLite）、按调用方、与指纹绑定，且仅限非流式。两者都会绕过提供方调用。
+- **响应缓存**（`services/cache.ts`，`X-SRouter-Cache`）是正交的：全局、受温度门控、内存 LRU，流式与非流式一并覆盖；幂等则是持久化的（SQLite）、按调用方、与指纹绑定，且仅限非流式。两者都会绕过提供方调用。
 - **降级模式**（`../architecture/04-degraded-mode-and-failover.md`）会关闭老虎机探索，但不影响幂等 —— 重放仍然完全绕过路由。
 - **故障转移**：只存储最终成功的正文。若一个请求耗尽了回退循环，该键不会存储任何内容。
 

@@ -19,7 +19,7 @@
 
 ```
 解析 + 校验 (zod)
-  ├─ 压缩（可选，X-FreeLLM-Compress）
+  ├─ 压缩（可选，X-SRouter-Compress）
   ├─ 系统提示词注入（配置档强制）
   ├─ 图片降采样 (normalizeMessageImages)
   ├─ 词元估算（chars/4 启发式）
@@ -106,7 +106,7 @@ headerSent = false
 
 ### 错误映射（耗尽）
 
-| FreeLLM 类别 | Anthropic 类型 |
+| SRouter 类别 | Anthropic 类型 |
 |--------------|----------------|
 | `auth` | `api_error` |
 | `bad_request` | `invalid_request_error` |
@@ -215,8 +215,8 @@ Codex CLI 和 Agents SDK 说 **Responses API**（有状态、`previous_response_
 | `X-Fallback-Trail` | `platform/model keyN=class; …`（最多 10，1KB） |
 | `X-Fallback-Detail` | **可选**：`platform/model keyN=outcome t=start+dur msg=summary; …`（2KB） |
 | `Retry-After` | 到最近冷却过期的秒数（429 耗尽） |
-| `X-FreeLLM-Cache` | `HIT` / `MISS`（响应缓存） |
-| `X-FreeLLM-Compress` | 压缩管线元数据 |
+| `X-SRouter-Cache` | `HIT` / `MISS`（响应缓存） |
+| `X-SRouter-Compress` | 压缩管线元数据 |
 
 ---
 
@@ -246,14 +246,14 @@ Codex CLI 和 Agents SDK 说 **Responses API**（有状态、`previous_response_
 
 ## 12. 压缩管线（可选）
 
-`X-FreeLLM-Compress` 头 → `compressRequest(messages, {header, tools, cacheControlPrefixLength})` → 返回压缩后消息 + 缓存键。引擎：`lite`、`jsoncompact`、`dedup`、`aging`、`relevance`、`hard-budget`、`filter-definitions`、`custom-filters`、`toolfilter`、`read-lifecycle`。缓存键含 `compression.cacheKey`，不同压缩等级永不碰撞。
+`X-SRouter-Compress` 头 → `compressRequest(messages, {header, tools, cacheControlPrefixLength})` → 返回压缩后消息 + 缓存键。引擎：`lite`、`jsoncompact`、`dedup`、`aging`、`relevance`、`hard-budget`、`filter-definitions`、`custom-filters`、`toolfilter`、`read-lifecycle`。缓存键含 `compression.cacheKey`，不同压缩等级永不碰撞。
 
 ---
 
 ## 13. 响应缓存（可选）
 
-- **范围**：流式与非流式皆可、可缓存温度（`temperature ≤ 1` 或未设）、`X-FreeLLM-Cache: on` 或 `RESPONSE_CACHE=1`。
+- **范围**：流式与非流式皆可、可缓存温度（`temperature ≤ 1` 或未设）、`X-SRouter-Cache: on` 或 `RESPONSE_CACHE=1`。
 - **键**：规范化请求（模型、消息、所有采样参数、工具、stop、response_format、n、seed、惩罚、logit_bias、logprobs、top_logprobs、reasoning_effort、压缩）的 SHA-256。
 - **存储**：内存 LRU、TTL + 温度闸门。分两个存储 —— JSON 正文（持久化到 SQLite）与流式 SSE（仅内存），共用同一个 `RESPONSE_CACHE_MAX_ENTRIES` 上限；统计中的 `entries` 同时计入两者。
-- **命中**：返回缓存体、`X-Routed-Via: cache`、`X-FreeLLM-Cache: HIT`，**零提供方额度消耗**。流式命中会逐字节重放存储的 SSE。
+- **命中**：返回缓存体、`X-Routed-Via: cache`、`X-SRouter-Cache: HIT`，**零提供方额度消耗**。流式命中会逐字节重放存储的 SSE。
 - **流式存储**：仅在请求可缓存时才缓冲帧（缓存关闭时不保留任何内容），超过 2 MB 重放上限即丢弃。被截断（`finish_reason: length`）、出错或中断的流永不存储。

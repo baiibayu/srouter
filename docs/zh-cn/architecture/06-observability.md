@@ -229,8 +229,8 @@ interface AttemptTraceRecord {
 | `X-Fallback-Trail` | `platform/model keyN=class; …`（最多 10，1KB） |
 | `X-Fallback-Detail` | **可选**：`platform/model keyN=outcome t=start+dur msg=summary; …`（2KB） |
 | `Retry-After` | 到最近冷却过期的秒数（429 耗尽） |
-| `X-FreeLLM-Cache` | `HIT` / `MISS`（响应缓存） |
-| `X-FreeLLM-Compress` | 压缩管线元数据 |
+| `X-SRouter-Cache` | `HIT` / `MISS`（响应缓存） |
+| `X-SRouter-Compress` | 压缩管线元数据 |
 
 ---
 

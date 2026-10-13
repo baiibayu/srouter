@@ -29,7 +29,7 @@ The dashboard also controls each engine independently, the estimated-token auto-
 
 ## Per-request control
 
-Send one of these values with `X-FreeLLM-Compress`:
+Send one of these values with `X-SRouter-Compress`:
 
 ```text
 off | on | lossless | standard | aggressive
@@ -38,7 +38,7 @@ off | on | lossless | standard | aggressive
 The header may turn compression off or lower the operator's configured mode, but it cannot raise it. `on` uses the configured mode. Responses report the effective mode and estimated savings:
 
 ```text
-X-FreeLLM-Compress: standard; saved~=1840
+X-SRouter-Compress: standard; saved~=1840
 ```
 
 Savings use the same estimated `chars / 4` accounting as routing, so the header deliberately uses `~=`.

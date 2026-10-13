@@ -17,7 +17,7 @@ Doc revision history for `docs/api/`, seeded from API-relevant commits.
 
 ## 2026-09-03
 
-- **docs(api): document the task-type routing header** — added `X-FreeLLM-Task-Type: code|chat|auto` (#1127) to the per-request headers section, with the weight shift it applies and the strategies that ignore it.
+- **docs(api): document the task-type routing header** — added `X-SRouter-Task-Type: code|chat|auto` (#1127) to the per-request headers section, with the weight shift it applies and the strategies that ignore it.
 - **docs(api): document the task-weight-share setting** — added `GET/PUT /api/settings/task-weight-share` (#1127), the operator knob for how much weight the task-type bias moves.
 
 ## 2026-09-02
