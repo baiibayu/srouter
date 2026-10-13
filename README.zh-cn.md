@@ -237,7 +237,6 @@ SRouter 在单个 `/v1` 接口之后聚合了 **约 60 家提供方** 与 **1,20
 <tr>
 <td align="center" width="140"><img src="repo-assets/providers/google.png" width="40" alt="Google"><br/><b>Google Gemini</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/groq.png" width="40" alt="Groq"><br/><b>Groq Llama</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/mistral.png" width="40" alt="Mistral"><br/><b>Mistral AI</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/openrouter.png" width="40" alt="OpenRouter"><br/><b>OpenRouter</b></td>
 </tr>
@@ -246,14 +245,18 @@ SRouter 在单个 `/v1` 接口之后聚合了 **约 60 家提供方** 与 **1,20
 <td align="center"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"><br/><b>Cohere</b></td>
 <td align="center"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"><br/><b>智谱清言 GLM</b></td>
 <td align="center"><img src="repo-assets/providers/nvidia.png" width="40" alt="NVIDIA"><br/><b>NVIDIA NIM</b></td>
-<td align="center"><img src="repo-assets/providers/huggingface.png" width="40" alt="HuggingFace"><br/><b>HuggingFace</b></td>
 </tr>
 <tr>
+<td align="center"><img src="repo-assets/providers/huggingface.png" width="40" alt="HuggingFace"><br/><b>HuggingFace</b></td>
 <td align="center"><img src="repo-assets/providers/aihorde.png" width="40" alt="AI Horde"><br/><b>AI Horde 社区池</b></td>
 <td align="center"><img src="repo-assets/providers/kilo.png" width="40" alt="Kilo"><br/><b>Kilo Gateway</b></td>
 <td align="center"><img src="repo-assets/providers/llm7.png" width="40" alt="LLM7"><br/><b>LLM7</b></td>
+</tr>
+<tr>
 <td align="center"><img src="repo-assets/providers/ollama.png" width="40" alt="Ollama"><br/><b>Ollama Cloud</b></td>
 <td align="center"><img src="repo-assets/providers/ovh.png" width="40" alt="OVH"><br/><b>OVH AI Endpoints</b></td>
+<td align="center" width="140"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
+<td align="center"><img src="repo-assets/providers/opencode.png" width="40" alt="OpenCode Zen"><br/><b>OpenCode Zen</b></td>
 </tr>
 </table>
 

@@ -44,8 +44,8 @@ export function ModelMakerIcon({ modelId, platform, className = 'size-3.5' }: Mo
   }
   return (
     <span title={title} aria-label={title} className="inline-flex shrink-0" data-maker={maker!.id}>
-      <svg viewBox="0 0 24 24" className={className} fill={`#${mark.hex}`} aria-hidden="true" focusable="false">
-        <path d={mark.path} />
+      <svg viewBox="0 0 24 24" className={className} style={{ color: `#${mark.hex}` }} aria-hidden="true" focusable="false">
+        <path d={mark.path} fill="currentColor" />
       </svg>
     </span>
   )

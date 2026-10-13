@@ -282,6 +282,11 @@ const brands: Record<string, Brand> = {
         <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" />
         <path d="M45 15 Q35 5 30 8" fill="none" stroke="var(--mk, currentColor)" strokeWidth={3} strokeLinecap="round" />
         <path d="M75 15 Q85 5 90 8" fill="none" stroke="var(--mk, currentColor)" strokeWidth={3} strokeLinecap="round" />
+        {/* Eyes - from official favicon: dark base #050810 with cyan highlight #00e5cc */}
+        <circle cx="45" cy="35" r="6" fill="#050810" />
+        <circle cx="75" cy="35" r="6" fill="#050810" />
+        <circle cx="46" cy="34" r="2.5" fill="#00e5cc" />
+        <circle cx="76" cy="34" r="2.5" fill="#00e5cc" />
       </g>
     ),
   },
