@@ -5,7 +5,10 @@
 // "read that". SRouter answers those itself — same API key as the inference
 // endpoints, rate-limited by the shared /v1 proxy limiter (mounted in app.ts).
 //
-//   POST /v1/web-search  {query, max_results?}   → DuckDuckGo HTML (no key)
+//   POST /v1/web-search  {query, max_results?}   → multi-backend search (see
+//       services/web-search.ts: keyless-first — DuckDuckGo default, SearXNG /
+//       Tavily / Brave / Exa / TinyFish via Settings, auto-fallback to
+//       DuckDuckGo)
 //   POST /v1/fetch       {url, max_bytes?}       → readable text, SSRF-guarded
 //
 // Fetch is an SSRF surface by definition (the caller hands us a URL to
@@ -20,13 +23,15 @@ import { z } from 'zod';
 import net from 'node:net';
 import dns from 'node:dns/promises';
 import { requireInferenceAuth } from './proxy.js';
+import { stripTags } from '../lib/html.js';
+import { searchWeb, getTinyfishApiKey } from '../services/web-search.js';
 
 export const toolsRouter = Router();
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
-const SEARCH_TIMEOUT_MS = 15_000;
 const FETCH_TIMEOUT_MS = 15_000;
 const JINA_TIMEOUT_MS = 20_000;
+const TINYFISH_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_BYTES = 512 * 1024;
 const HARD_MAX_BYTES = 2 * 1024 * 1024;
 
@@ -120,22 +125,6 @@ async function readBounded(res: { body?: ReadableStream<Uint8Array> | null; arra
   return { buf: Buffer.concat(chunks), truncated };
 }
 
-function decodeEntities(text: string): string {
-  return text
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;|&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
-
-function stripTags(html: string): string {
-  return decodeEntities(html.replace(/<[^>]*>/g, ''));
-}
-
 /** Bounded HTML → plain text: title + visible body text, sane whitespace. */
 export function htmlToText(html: string): { title: string | null; text: string } {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -163,60 +152,10 @@ function bounded(text: string, maxBytes: number): { text: string; truncated: boo
 }
 
 // ── POST /v1/web-search ────────────────────────────────────────────────────
-
-export interface WebSearchResult {
-  title: string;
-  url: string;
-  snippet: string;
-}
-
-function resolveDdgHref(href: string): string | null {
-  const abs = href.startsWith('//') ? `https:${href}` : href;
-  try {
-    const u = new URL(abs);
-    if (u.hostname.endsWith('duckduckgo.com') && u.pathname === '/l/') {
-      return u.searchParams.get('uddg');
-    }
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
-
-/** Parse DuckDuckGo's HTML result page (no-key backend). Exported for tests. */
-export function parseDdgHtml(html: string): WebSearchResult[] {
-  const links: { url: string; title: string }[] = [];
-  const linkRe = /<a\b([^>]*class="result__a"[^>]*)>([\s\S]*?)<\/a>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = linkRe.exec(html)) !== null) {
-    const href = m[1].match(/href="([^"]+)"/i)?.[1];
-    if (!href) continue;
-    const url = resolveDdgHref(decodeEntities(href));
-    if (!url) continue;
-    const title = stripTags(m[2]).trim();
-    if (title) links.push({ url, title });
-  }
-  const snippets: string[] = [];
-  const snippetRe = /<[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/(?:a|td|div|span)>/gi;
-  while ((m = snippetRe.exec(html)) !== null) {
-    snippets.push(stripTags(m[1]).replace(/\s+/g, ' ').trim());
-  }
-  return links.map((l, i) => ({ ...l, snippet: snippets[i] ?? '' }));
-}
-
-async function duckduckgoSearch(query: string, maxResults: number): Promise<WebSearchResult[]> {
-  const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
-    headers: { 'user-agent': UA, accept: 'text/html' },
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`search backend responded ${res.status}`);
-  const html = await res.text();
-  const results = parseDdgHtml(html);
-  // A captcha/anomaly/rate page comes back HTTP 200 with zero results — that
-  // must not masquerade as "the web has no answer".
-  if (results.length === 0) throw new Error('search backend returned no results (rate limited?)');
-  return results.slice(0, maxResults);
-}
+// Backends, config and parsing live in services/web-search.ts (keyless-first,
+// fallback chain: pick → DuckDuckGo → SearXNG → keyed largest-quota-first);
+// this router only validates and shapes. A response that needed more than one
+// attempt carries `attempts` (who failed, why, who answered).
 
 const webSearchSchema = z.object({
   query: z.string().trim().min(1).max(500),
@@ -231,8 +170,8 @@ toolsRouter.post('/web-search', async (req: Request, res: Response) => {
     return;
   }
   try {
-    const results = await duckduckgoSearch(parsed.data.query, parsed.data.max_results ?? 5);
-    res.json({ provider: 'duckduckgo', query: parsed.data.query, results });
+    const { provider, results, attempts } = await searchWeb(parsed.data.query, parsed.data.max_results ?? 5);
+    res.json({ provider, query: parsed.data.query, results, ...(attempts ? { attempts } : {}) });
   } catch (err: any) {
     res.status(502).json({ error: { message: `Web search failed: ${err.message}`, type: 'api_error' } });
   }
@@ -285,10 +224,42 @@ toolsRouter.post('/fetch', async (req: Request, res: Response) => {
     }
     throw new Error(`direct fetch responded ${direct.status}`);
   } catch {
-    // fall through to the reader fallback
+    // fall through to the reader fallbacks
   }
 
-  // 2) Jina Reader fallback — handles bot walls/JS-heavy pages, returns
+  // 2) TinyFish Fetch (free tier: 1,000 URLs/day) — only when its key is
+  //    stored (the same account-wide key powers the search backend). Renders
+  //    JS-heavy/anti-bot pages and returns markdown, same contract as Jina.
+  try {
+    const tinyfishKey = getTinyfishApiKey();
+    if (tinyfishKey) {
+      const reader = await fetch('https://api.fetch.tinyfish.ai', {
+        method: 'POST',
+        headers: {
+          'x-api-key': tinyfishKey,
+          'content-type': 'application/json',
+          accept: 'application/json',
+          'user-agent': UA,
+        },
+        body: JSON.stringify({ urls: [url.toString()], format: 'markdown' }),
+        signal: AbortSignal.timeout(TINYFISH_TIMEOUT_MS),
+      });
+      if (reader.ok) {
+        const data = await reader.json() as { results?: Array<{ title?: string | null; text?: string | null }> };
+        const got = data.results?.[0];
+        if (got?.text) {
+          const cut = bounded(got.text, maxBytes);
+          res.json({ url: url.toString(), via: 'tinyfish', title: got.title ?? null, text: cut.text, truncated: cut.truncated, content_type: 'text/markdown' });
+          return;
+        }
+      }
+      // Anything else (429/402/no text) → fall through to Jina.
+    }
+  } catch {
+    // TinyFish unreachable → Jina next
+  }
+
+  // 3) Jina Reader fallback — handles bot walls/JS-heavy pages, returns
   //    markdown, free tier without a key (rate-limited per IP).
   try {
     const reader = await fetch(`https://r.jina.ai/${url.toString()}`, {

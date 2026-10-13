@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -17,14 +18,16 @@ import { BackupsSection } from '@/components/keys/backups-section'
 import { AnthropicSection } from '@/components/keys/anthropic-section'
 import { ProviderList } from '@/components/keys/provider-list'
 import { ProviderChecklistSection } from '@/components/keys/provider-checklist-section'
+import { WebSearchSection } from '@/components/keys/web-search-section'
 import { AddKeyDialog } from '@/components/keys/add-key-dialog'
 import { ExportKeysDialog } from '@/components/keys/export-keys-dialog'
 import { AgentCompatibilitySection } from '@/components/keys/agent-compatibility-section'
 import { SyncAllResultsDialog, type SyncAllResult } from '@/components/keys/sync-all-results-dialog'
 
-type KeysTab = 'providers' | 'quotaSignals' | 'apiKey' | 'anthropic' | 'agents'
+type KeysTab = 'providers' | 'webSearch' | 'quotaSignals' | 'apiKey' | 'anthropic' | 'agents'
 const KEYS_TABS: { id: KeysTab; labelKey: string }[] = [
   { id: 'providers', labelKey: 'keys.tabProviders' },
+  { id: 'webSearch', labelKey: 'keys.tabWebSearch' },
   { id: 'quotaSignals', labelKey: 'keys.tabQuotaSignals' },
   { id: 'apiKey', labelKey: 'keys.tabApiKey' },
   { id: 'anthropic', labelKey: 'keys.tabAnthropic' },
@@ -34,7 +37,12 @@ const KEYS_TABS: { id: KeysTab; labelKey: string }[] = [
 export default function KeysPage() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
-  const [tab, setTab] = useState<KeysTab>('providers')
+  // Deep links (e.g. Models → Web: /keys?tab=webSearch) land on the right tab.
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab')
+  const [tab, setTab] = useState<KeysTab>(
+    KEYS_TABS.some(tb => tb.id === initialTab) ? (initialTab as KeysTab) : 'providers',
+  )
   const [addOpen, setAddOpen] = useState(false)
   // Provider the Add key dialog opens preselected to, when the add flow was
   // entered from a checklist chip rather than the generic Add key button.
@@ -155,6 +163,7 @@ export default function KeysPage() {
 
         {tab === 'anthropic' && <AnthropicSection />}
         {tab === 'agents' && <AgentCompatibilitySection />}
+        {tab === 'webSearch' && <WebSearchSection />}
 
         {tab === 'quotaSignals' && (
           <QuotaSignalsSection states={healthData?.quotaStates ?? []} />

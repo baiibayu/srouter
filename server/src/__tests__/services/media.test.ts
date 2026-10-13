@@ -346,66 +346,6 @@ describe('media service', () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('Hugging Face: submits and resolves the fal.ai queue without leaking the token to the media URL', async () => {
-      addMedia(
-        'huggingface',
-        'Lightricks/LTX-Video-0.9.5',
-        'video',
-        1,
-        null,
-        JSON.stringify({ providerModelId: 'fal-ai/ltx-video-v095' }),
-      );
-      addKey('huggingface', 'hf_test_token');
-      // The submit is answered with a job that is still queued, so the poll
-      // loop actually runs: an unmatched URL is a hard failure rather than
-      // falling through to a canned COMPLETED reply.
-      const submitUrl = 'https://router.huggingface.co/fal-ai/fal-ai/ltx-video-v095?_subdomain=queue';
-      const jobUrl = 'https://router.huggingface.co/fal-ai/fal-ai/ltx-video-v095/requests/job-1?_subdomain=queue';
-      const statusUrl = 'https://router.huggingface.co/fal-ai/fal-ai/ltx-video-v095/requests/job-1/status?_subdomain=queue';
-      const fetchMock = vi.fn(async (input: string | URL | Request) => {
-        const url = String(input);
-        if (url === submitUrl) {
-          return jsonResponse({
-            request_id: 'job-1',
-            status: 'IN_QUEUE',
-            response_url: 'https://queue.fal.run/fal-ai/ltx-video-v095/requests/job-1',
-          });
-        }
-        if (url === statusUrl) return jsonResponse({ status: 'COMPLETED' });
-        if (url === jobUrl) {
-          return jsonResponse({ video: { url: 'https://cdn.example.test/video.mp4', content_type: 'video/mp4' } });
-        }
-        if (url === 'https://cdn.example.test/video.mp4') {
-          return new Response(Buffer.from('HFVIDEO'), { status: 200, headers: { 'content-type': 'video/mp4' } });
-        }
-        throw new Error(`unexpected fetch: ${url}`);
-      });
-      globalThis.fetch = fetchMock as any;
-
-      const result = await runVideoGeneration('Lightricks/LTX-Video-0.9.5', {
-        prompt: 'paper boats on a stream',
-        seed: 42,
-      });
-
-      expect(result.video.toString()).toBe('HFVIDEO');
-      expect(fetchMock.mock.calls.map(c => String(c[0]))).toEqual([
-        submitUrl,
-        statusUrl,
-        jobUrl,
-        'https://cdn.example.test/video.mp4',
-      ]);
-      expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))).toEqual({
-        prompt: 'paper boats on a stream',
-        seed: 42,
-      });
-      // The status and result reads are authenticated; the CDN download is not,
-      // so the HF token never reaches a host named by an upstream response.
-      expect((fetchMock.mock.calls[1][1] as RequestInit).headers).toMatchObject({
-        Authorization: 'Bearer hf_test_token',
-      });
-      expect((fetchMock.mock.calls[3][1] as RequestInit).headers).toBeUndefined();
-    });
-
     it('stops the chain when the API caller hangs up instead of paying for a second provider', async () => {
       addMedia('pollinations', 'nova-reel', 'video', 1);
       addMedia('pollinations', 'wan-fast', 'video', 2);
@@ -436,38 +376,6 @@ describe('media service', () => {
       globalThis.fetch = vi.fn(async () => new Response('bad prompt', { status: 400 })) as any;
       await expect(runVideoGeneration('nova-reel', { prompt: 'x' }))
         .rejects.toMatchObject({ status: 400 });
-    });
-
-    it('Hugging Face: refuses a result URL that points at a blocked address class', async () => {
-      // The result URL is the one URL in this adapter that comes out of an
-      // upstream JSON body, so it goes through the same guard custom-provider
-      // base URLs do (#440) instead of being fetched and streamed back.
-      addMedia(
-        'huggingface',
-        'Lightricks/LTX-Video-0.9.5',
-        'video',
-        1,
-        null,
-        JSON.stringify({ providerModelId: 'fal-ai/ltx-video-v095' }),
-      );
-      addKey('huggingface', 'hf_test_token');
-      const fetchMock = vi.fn(async (input: string | URL | Request) => {
-        const url = String(input);
-        if (url.includes('requests/job-1?_subdomain=queue')) {
-          return jsonResponse({ video: { url: 'http://169.254.169.254/latest/meta-data/' } });
-        }
-        return jsonResponse({
-          request_id: 'job-1',
-          status: 'COMPLETED',
-          response_url: 'https://queue.fal.run/fal-ai/ltx-video-v095/requests/job-1',
-        });
-      });
-      globalThis.fetch = fetchMock as any;
-
-      await expect(runVideoGeneration('Lightricks/LTX-Video-0.9.5', { prompt: 'x' }))
-        .rejects.toThrow(/unusable video URL/);
-      // Submit + result read only; the metadata address was never contacted.
-      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
 

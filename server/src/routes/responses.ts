@@ -709,12 +709,12 @@ responsesRouter.post('/responses', async (req: Request, res: Response) => {
       && content.some(block => block && typeof block === 'object' && 'cache_control' in block);
   });
   const compressionResult = compressRequest(messages, {
-    header: req.headers['x-freellm-compress'],
+    header: req.headers['x-srouter-compress'],
     tools,
     cacheControlPrefixLength: hasCacheControl ? messages.length : 0,
   });
   messages = compressionResult.messages;
-  res.setHeader('X-FreeLLM-Compress', formatCompressionHeader(compressionResult));
+  res.setHeader('x-srouter-Compress', formatCompressionHeader(compressionResult));
 
   // Server-enforced system prompt (#411): after compression so it is never
   // compressed away, first in the list so the caller's own instructions

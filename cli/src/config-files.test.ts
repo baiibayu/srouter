@@ -399,11 +399,11 @@ describe('safe config writes', () => {
     expect(fs.readFileSync(bad, 'utf8')).toBe('{ this is not json');
   });
 
-  it('merges an AtomCode config: root key above existing tables, other providers kept', () => {
-    // A user with a DeepSeek provider already configured runs setup-atomcode:
-    // `default_provider` must land in the root region (a key appended after
-    // `[providers.deepseek]` would become that table's key), the deepseek
-    // table must survive, and a stale `[providers.srouter]` is replaced.
+  it('merges a TOML config: root key above existing tables, other tables kept', () => {
+    // A file that already holds root keys and two provider tables: our key
+    // must land in the root region (a key appended after `[providers.deepseek]`
+    // would become that table's key), the deepseek table must survive, and a
+    // stale `[providers.srouter]` is replaced.
     const existing = [
       'default_provider = "deepseek"',
       'auto_update = true',

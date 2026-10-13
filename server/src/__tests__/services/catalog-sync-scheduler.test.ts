@@ -26,8 +26,16 @@ function makeScheduler() {
 
 describe('startCatalogSync / stopCatalogSync', () => {
   beforeAll(() => {
+    // These tests exercise the remote-catalog polling path (boot delay +
+    // interval registration + fetch). Standalone bundled mode schedules no
+    // remote poll, so CATALOG_BASE_URL must be set to reach this code.
+    process.env.CATALOG_BASE_URL = 'https://catalog.test';
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
+  });
+
+  afterAll(() => {
+    delete process.env.CATALOG_BASE_URL;
   });
 
   afterEach(() => {

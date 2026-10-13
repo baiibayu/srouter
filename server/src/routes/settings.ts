@@ -25,6 +25,7 @@ import {
 } from '../services/compression/config.js';
 import { getHeadroomThresholds, setHeadroomThresholds, getTaskWeightShare, setTaskWeightShare } from '../services/router.js';
 import { getComplexityGate, setComplexityGate } from '../services/complexity-gate.js';
+import { getWebSearchConfig, setWebSearchConfig, getWebSearchUsage } from '../services/web-search.js';
 import { MCP_ENABLED_SETTING, isMcpServerEnabled } from './mcp.js';
 import { z } from 'zod';
 import { getAppVersion } from '../lib/app-version.js';
@@ -387,15 +388,18 @@ const complexityGatePutSchema = z.object({
   backend: z.enum(['heuristic', 'jev']).optional(),
   jevBaseUrl: z.string().url().nullable().optional(),
   jevApiKey: z.string().min(1).nullable().optional(),
+  jevModel: z.string().min(1).max(120).nullable().optional(),
   jevTimeoutMs: z.number().int().min(50).max(5000).optional(),
 });
 
 // Partial update: send only the fields to change. jevApiKey null clears the
-// stored key. Takes effect on the next request — no restart needed.
+// stored key; jevModel null clears the override (back to the preset default).
+// A detected host needs no key field at all — the scorer borrows the linked
+// provider key at call time. Takes effect on the next request, no restart.
 settingsRouter.put('/complexity-gate', (req: Request, res: Response) => {
   const parsed = complexityGatePutSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: { message: 'Invalid complexity-gate config: send {enabled?, backend?, jevBaseUrl?, jevApiKey?, jevTimeoutMs?}', type: 'invalid_request_error' } });
+    res.status(400).json({ error: { message: 'Invalid complexity-gate config: send {enabled?, backend?, jevBaseUrl?, jevApiKey?, jevModel?, jevTimeoutMs?}', type: 'invalid_request_error' } });
     return;
   }
   try {
@@ -403,6 +407,43 @@ settingsRouter.put('/complexity-gate', (req: Request, res: Response) => {
     res.json(getComplexityGate());
   } catch (err: any) {
     res.status(400).json({ error: { message: `Invalid complexity-gate config: ${err.message}`, type: 'invalid_request_error' } });
+  }
+});
+
+// Web search backend (POST /v1/web-search): keyless-first pick — DuckDuckGo
+// default, SearXNG self-host, Tavily/Brave/Exa/TinyFish free-tier keys edited
+// on the Keys page (the TinyFish key also feeds the /v1/fetch chain). The
+// keys are write-only over the wire — GET reports only whether each is stored.
+// Both verbs also report `usage` (attempt counts per backend, current day and
+// month) so the Web tab can show quota burn without a provider-side API.
+const webSearchView = () => ({ ...getWebSearchConfig(), usage: getWebSearchUsage() });
+
+settingsRouter.get('/web-search', (_req: Request, res: Response) => {
+  res.json(webSearchView());
+});
+
+const webSearchPutSchema = z.object({
+  backend: z.enum(['duckduckgo', 'searxng', 'tavily', 'brave', 'exa', 'tinyfish']).optional(),
+  baseUrl: z.string().url().nullable().optional(),
+  tavilyKey: z.string().min(1).nullable().optional(),
+  braveKey: z.string().min(1).nullable().optional(),
+  exaKey: z.string().min(1).nullable().optional(),
+  tinyfishKey: z.string().min(1).nullable().optional(),
+});
+
+// Partial update: send only the fields to change. A null key clears the
+// stored one. Takes effect on the next search — no restart needed.
+settingsRouter.put('/web-search', (req: Request, res: Response) => {
+  const parsed = webSearchPutSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid web-search config: send {backend?, baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?}', type: 'invalid_request_error' } });
+    return;
+  }
+  try {
+    setWebSearchConfig(parsed.data);
+    res.json(webSearchView());
+  } catch (err: any) {
+    res.status(400).json({ error: { message: `Invalid web-search config: ${err.message}`, type: 'invalid_request_error' } });
   }
 });
 

@@ -56,7 +56,7 @@ describe('GET /api/embeddings/usage', () => {
 
   it('reports the highest-priority enabled provider for the legend', async () => {
     // Priority 2 is seeded first on purpose: order must come from priority.
-    seedFamily('bge-m3', 'huggingface', 'BAAI/bge-m3', 2, '$0.10/mo credits');
+    seedFamily('bge-m3', 'openrouter', 'BAAI/bge-m3', 2, '$0.10/mo credits');
     seedFamily('bge-m3', 'cloudflare', '@cf/baai/bge-m3', 1, '10K neurons/day (shared)');
 
     const { body } = await get(app, '/api/embeddings/usage');

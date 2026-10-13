@@ -720,7 +720,6 @@ export function providerDailyTokenCount(platform: string, keyId: number, now = D
   const suffix = `:${keyId}:tpd`;
   for (const [key, w] of windows) {
     if (!key.startsWith(`${platform}:`) || !key.endsWith(suffix)) continue;
-    const modelId = key.slice(platform.length + 1, -suffix.length);
     // Read-only: the tpd window is shared with the per-model 24h token check, so
     // narrowing it to the midnight boundary here must not prune the stored entries.
     const raw = w.tokenTimestamps

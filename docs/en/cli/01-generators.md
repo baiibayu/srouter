@@ -9,7 +9,8 @@ npx srouter setup-claude        # wire Claude Code
 npx srouter setup-codex         # wire Codex CLI
 npx srouter setup-dsh           # wire DeepSeek Harness
 npx srouter setup-mimo          # wire MiMo Code
-npx srouter setup-atomcode      # wire AtomCode
+npx srouter setup-omp           # wire Oh My Pi
+npx srouter setup-droid         # wire Factory Droid
 npx srouter --dry-run setup-claude  # preview without writing
 npx srouter setup-claude --model gpt-4o  # pin a model
 ```
@@ -33,7 +34,8 @@ Every generator (`cli/src/tools.ts:52-622`) fetches the live catalog, resolves `
 | `setup-crush` | `~/.config/crush/config.json` | OpenAI Chat | Crush (charmbracelet) |
 | `setup-dsh` | `~/.dsh/config.json` | OpenAI Chat | DeepSeek Harness (#995) |
 | `setup-mimo` | `~/.config/mimocode/config.json` | OpenAI Chat | MiMo Code `~/.config/mimocode/config.json` `default_provider=SRouter` + `[providers.SRouter]` `type=openai` `base_url=/v1` `api_key` `model` `context_window` (#1003) |
-| `setup-atomcode` | `~/.atomcode/config.toml` | OpenAI Chat | AtomCode `default_provider=SRouter` + `[providers.SRouter]` TOML preserve other providers (#1025) |
+| `setup-omp` | `~/.omp/agent/models.yml` (+ `config.yml`) | OpenAI Chat | Oh My Pi `providers.srouter` (`openai-completions`, `discovery: openai-models-list`) + `modelRoles.default` |
+| `setup-droid` | `~/.factory/settings.json` | OpenAI Chat | Factory Droid `customModels[]` entry (`generic-chat-completion-api`); arrays are replaced, other keys kept |
 | `setup-cursor` | guide only | OpenAI Chat | Manual `Cursor Settings → Models → Add Model` (no file) |
 | `setup-generic` | guide only | OpenAI Chat | Any OpenAI-compatible client |
 

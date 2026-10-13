@@ -59,12 +59,6 @@ export const MODEL_PRICING: PricingRow[] = [
   ['groq', 'openai/gpt-oss-safeguard-20b', 0.075, 0.30],
   ['groq', 'qwen/qwen3-32b', 0.08, 0.28],
 
-  // Hugging Face Inference
-  ['huggingface', 'Qwen/Qwen3-Coder-Next', 0.11, 0.80],
-  ['huggingface', 'deepseek-ai/DeepSeek-V4-Flash', 0.098, 0.197],
-  ['huggingface', 'moonshotai/Kimi-K2.6', 0.684, 3.42],
-  ['huggingface', 'accounts/fireworks/models/llama-v3p3-70b-instruct', 0.10, 0.32], // legacy
-
   // Kilo (Poolside Laguna is stealth — no paid equivalent)
   ['kilo', 'nvidia/nemotron-3-super-120b-a12b:free', 0.09, 0.45],
   ['kilo', 'poolside/laguna-m.1:free', null, null],

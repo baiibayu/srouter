@@ -11,7 +11,7 @@
 Every `Xxx()` generator in `cli/src/tools.ts` returns a `Generation { files: { path, format, sensitive, value }[], notes }`. `config-files.ts` applies each file via:
 
 - **JSON** (`settings.json`, `config.json`) — deep-merge, preserve unrelated keys; `0600` (`0o600`) on write.
-- **TOML** (`config.toml` for Codex, AtomCode) — structural merge preserves other `[providers.*]` tables; Codex's single-file `~/.codex/config.toml` uses `[profiles.NAME]` tables, not per-profile files.
+- **TOML** (`config.toml` for Codex) — structural merge preserves other tables; Codex's single-file `~/.codex/config.toml` uses `[profiles.NAME]` tables, not per-profile files.
 - **YAML** (`config.yaml` for Goose) — similar merge.
 
 ### Backup

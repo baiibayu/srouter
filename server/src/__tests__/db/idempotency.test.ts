@@ -206,6 +206,31 @@ describe('Migration idempotency', () => {
     expect(orphans.n).toBe(0);
   });
 
+  it('2026-10b provider drop: llmtr is fully purged (huggingface retained)', () => {
+    process.env.ENCRYPTION_KEY = '0'.repeat(64);
+    const db = initDb(':memory:');
+
+    const dead = "('llmtr')";
+    const models = db.prepare(`SELECT COUNT(*) AS n FROM models WHERE platform IN ${dead}`).get() as { n: number };
+    expect(models.n).toBe(0);
+    const keys = db.prepare(`SELECT COUNT(*) AS n FROM api_keys WHERE platform IN ${dead}`).get() as { n: number };
+    expect(keys.n).toBe(0);
+    const embeddings = db.prepare(`SELECT COUNT(*) AS n FROM embedding_models WHERE platform IN ${dead}`).get() as { n: number };
+    expect(embeddings.n).toBe(0);
+    const media = db.prepare(`SELECT COUNT(*) AS n FROM media_models WHERE platform IN ${dead}`).get() as { n: number };
+    expect(media.n).toBe(0);
+    const fallback = db.prepare(`
+      SELECT COUNT(*) AS n FROM fallback_config fb
+       LEFT JOIN models m ON m.id = fb.model_db_id
+      WHERE m.id IS NULL
+    `).get() as { n: number };
+    expect(fallback.n).toBe(0);
+
+    // HuggingFace is retained: the router registration still seeds model rows.
+    const hf = db.prepare(`SELECT COUNT(*) AS n FROM models WHERE platform = 'huggingface'`).get() as { n: number };
+    expect(hf.n).toBeGreaterThan(0);
+  });
+
   it('V23: sambanova/chutes are gone; live-verified free additions are present with the right flags', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     const db = initDb(':memory:');

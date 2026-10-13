@@ -84,9 +84,18 @@ describe('fallback loop time-budget hedging', () => {
   it('aborts the stalled in-flight attempt when the budget expires, rendering timedOut exhaustion', async () => {
     const state = newFallbackState();
     const hedgeAbort = new AbortController();
-    // First two attempts fail quickly and retryably (each ~30ms < the 100ms
-    // budget, so the third attempt gets to start); the third hangs and is
-    // aborted when the remaining budget (~40ms) expires mid-flight.
+    // First two attempts fail quickly and retryably (each ~30ms), so the
+    // third attempt gets to start; the third hangs and is aborted when the
+    // remaining budget expires mid-flight. The budget is 200ms rather than
+    // 100ms because this is the file's FIRST test: it pays one-time
+    // initDb/prepare/lease warm-up on top of the ladder, and at 100ms that
+    // cold-start overhead alone could spend the budget before attempt 3 —
+    // a timing accident in the harness, not the behavior under test. 200ms
+    // keeps both edges comfortable: attempt 3 starts only if the ladder has
+    // consumed <200ms (it consumes ~60ms + warm-up), and the stall is "the
+    // whole budget" (HEDGE_BENCH_MIN_SILENT_FRACTION 0.75) only if attempt 3
+    // started within the first 50ms — impossible behind two 30ms failures —
+    // so the no-bench assertions below stay deterministic.
     const dispatch = vi.fn()
       .mockImplementationOnce(async () => {
         await new Promise(r => setTimeout(r, 30));
@@ -100,7 +109,7 @@ describe('fallback loop time-budget hedging', () => {
 
     const h = hooks(state, {
       maxRetries: 5,
-      timeBudgetMs: 100,
+      timeBudgetMs: 200,
       abortInFlight: () => hedgeAbort.abort(newHedgeAbortError()),
       route: () => leasedRoute().route,
       dispatch,

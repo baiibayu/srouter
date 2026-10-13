@@ -34,7 +34,7 @@
 | `kilo` | Kilo Gateway | 免密钥 | OpenAI 兼容 | 匿名 `:free` 路由按 IP 限流每小时 200 次请求；提示词/输出会被记录用于训练；校验探测 `/api/gateway/models`（#181）。 |
 | `pollinations` | Pollinations | 带密钥 | 原生（`PollinationsProvider`） | 即使密钥已被撤销，`GET /v1/models` 也返回 200，因此校验改为探测需鉴权的 `/account/key`（#608）。 |
 | `llm7` | LLM7.io | 带密钥（基础模型可匿名） | OpenAI 兼容 | 免费档每小时 100 次请求。 |
-| `huggingface` | Hugging Face Router | 带密钥 | OpenAI 兼容 | `router.huggingface.co` 元路由器（V13 重新加入）；免费档每月循环发放 $0.10 路由额度。 |
+| `huggingface` | Hugging Face Router | 带密钥 | OpenAI 兼容 | `router.huggingface.co` 元路由器（V13 重新加入）；免费档每月循环发放的 $0.10 路由额度。官方文档于 2026-10-07 移除免费额度说明（huggingface/hub-docs#2865），但 grandfathered 账户仍可获得每月额度 —— 保留。 |
 | `opencode` | OpenCode Zen | 带密钥 | OpenAI 兼容 | 自 2026-09 起免费名册仅限 OpenCode 客户端使用（403 FreeTierError，#1249），已在目录中停用；仅支持付费模型。 |
 | `ovh` | OVHcloud AI Endpoints | 免密钥 | OpenAI 兼容 | 匿名档：每 IP 每模型每分钟 2 次请求（实测更严）；鉴权档要求绑定了支付方式的 Public Cloud 项目（`migrateModelsV26`）。 |
 | `agnes` | Agnes AI | 带密钥 | OpenAI 兼容 | 专有模型以 $0/词元促销提供；约 30 个并发请求后开始出现 429；为推理首字节设 60s 超时。 |
@@ -50,7 +50,7 @@
 | `sealion` | SEA-LION (AI Singapore) | 带密钥 | OpenAI 兼容 | 第一方 API；Google 登录、无需信用卡、没有地区墙；免费档每月循环 10 RPM。 |
 | `orcarouter` | OrcaRouter | 带密钥 | OpenAI 兼容 | 循环 `$0` 免费别名，限额刻意不予公布（#896）：429 是干净的额度信号，因为免费路由从不回退到付费模型。 |
 | `unorouter` | UnoRouter | 带密钥 | OpenAI 兼容 | 免费模型带 `:free` 后缀；每分钟限流（达上限即 429）。`GET /v1/models` 公开（无密钥也返回 200），但错误密钥会得到 401；默认密钥校验有效。目录行在托管目录中（目前是付费，30 天观察期后转免费）。 |
-| `xkiro` | xKiro | 带密钥 | OpenAI 兼容 | 免费计划：免费模型（Mistral、MiniMax、DeepSeek 系列）每日 500 万词元；付费模型返回 403。`GET /v1/models` 公开（无密钥返回 200），所以 `validateUrl` 指向 `/v1/usage`，缺失或无效密钥时返回 401。接受 Bearer 或 `x-api-key`。目录行在托管目录中（目前是付费，30 天观察期后转免费）。 |
+| `xkiro` | xKiro | 带密钥 | OpenAI 兼容 | 免费计划：免费模型（Mistral、MiniMax、DeepSeek 系列）每日 50 万词元（Telegram 验证后 100 万词元）；付费模型返回 403。`GET /v1/models` 公开（无密钥返回 200），所以 `validateUrl` 指向 `/v1/usage`，缺失或无效密钥时返回 401。接受 Bearer 或 `x-api-key`。目录行在托管目录中（目前是付费，30 天观察期后转免费）。 |
 | `modelscope` | ModelScope (Alibaba) | 带密钥 | 原生（`ModelScopeProvider`） | 调用需要绑定完成实名的阿里云中国站账号；`GET /v1/models` 接受任意垃圾令牌，所以校验采用单词元聊天探测；退役模型以 429「余额不足」回应（#581）。 |
 | `qianfan` | Baidu Qianfan | 带密钥 | OpenAI 兼容 | ERNIE-Speed/Lite/Tiny 以按量计费封顶于限流规则的方式长期免费；需要中国实名认证（#936）。 |
 | `volcengine` | Volcengine Ark (ByteDance) | 带密钥 | OpenAI 兼容 | 个人开发者在一次性 50 万词元新用户赠金之外，还有每模型每日 200 万词元的循环奖励额度；需要实名认证（#936）。 |

@@ -73,6 +73,11 @@ export class OpenAICompatProvider extends BaseProvider {
   readonly platform: Platform;
   readonly name: string;
   private readonly baseUrl: string;
+
+  /** Read-only accessor for the merged provider catalog export. */
+  get baseUrlPublic(): string {
+    return this.baseUrl;
+  }
   private readonly extraHeaders: Record<string, string>;
   private readonly validateUrl?: string;
   /** Per-provider HTTP timeout override. OpenAI-compatible gateways often buffer

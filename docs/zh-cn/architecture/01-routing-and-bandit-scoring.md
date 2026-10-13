@@ -249,6 +249,6 @@ keyScore       = 0.75·keyReliability + 0.25·keySpeed
 - **默认关闭的 opt-in，且 fail-open。** 分类报错、超时或后端不可达时回退到无偏置权重；路由绝不因分类器而阻塞。
 - 两种后端，经 `GET/PUT /api/settings/complexity-gate` 切换：
   - `heuristic`（默认）—— 内置的体积/结构规则：≤300 字符且无代码围栏/图片/工具 → `trivial`；≥4000 字符或 ≥4 个代码围栏 → `hard`；其余（含空输入）→ `normal`。
-  - `jev` —— 远端 TypeSafe SystemOne（`POST {base}/v1/systemone`，得分 0–10 → 等级：≤3 为 `trivial`、≥7 为 `hard`），默认超时 400 ms，API key 只写存储（仪表盘只能看到 `hasJevApiKey`）。
+  - `jev` —— 远端 System One（`POST {systemoneUrl}`，5 级得分问题换算为 0–10 → 等级：≤3 为 `trivial`、≥7 为 `hard`），默认超时 2000 ms。主机预设：**OpenCode Zen（默认、免 key，免费 `jev-1.13-free`）**、**OpenRouter（`typesafe/jev-1.13`，2026-10-10 实测可用；key 借自已关联的 provider 账户）**、TypeSafe、v1m、system-one.dev、jev-ai.pro（key 只写存储，仪表盘只能看到 `hasJevApiKey`），或自定义 base URL。在 Keys 中有关联 key 的预设会出现在 `detectedHosts`（Models → System One 显示"已检测"标记），打分器在调用时**直接借用该 provider 的 key** —— 不向门控复制任何内容（`jevKeyStored` 保持 false），解密只在服务端进行，手动存储的 key（若有）始终优先；`hasJevApiKey` 表示是否存在可用 key（存储或借用均可）。主机是设置项（`complexity_gate_jev_base_url`），模型为可选覆盖（`complexity_gate_jev_model`，默认取预设模型）—— 两者都在 Models → System One 中编辑；任何 System One 兼容主机改个字段即可切换，无需改代码。
 - 豁免策略（`fastest`、`reliable`、自定义预设）跳过偏置 —— 已经固定排序的策略不再二次改写。
 - 接线：`proxy.ts` 每个请求调用一次 `classifyComplexity` → `routeRequest` → `orderChain` 在任务类型偏置之后紧接着应用；权重来自 `scoring.ts:complexityAdjustedWeights`。

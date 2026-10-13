@@ -291,17 +291,6 @@ describe('embeddings service', () => {
       expect(headers.Authorization).toBe('Bearer cf-token-xyz');
     });
 
-    it('normalizes hugging face feature-extraction output', async () => {
-      // bge-m3: cloudflare first (no key) → falls through to huggingface
-      addKey('huggingface');
-      const fetchMock = mockFetch(async () => new Response(JSON.stringify([[0.1, 0.2, 0.3]]), { status: 200 }));
-
-      const result = await runEmbeddings('bge-m3', ['hello']);
-      expect(result.platform).toBe('huggingface');
-      expect(result.dimensions).toBe(3);
-      expect(String(fetchMock.mock.calls[0][0])).toContain('feature-extraction');
-    });
-
     it('routes SEA-LION catalog embeddings through its OpenAI-compatible endpoint', async () => {
       getDb().prepare(`
         INSERT INTO embedding_models

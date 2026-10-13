@@ -80,7 +80,7 @@ function createTestApp(overrides: Parameters<typeof createUpdateRouter>[0] = {})
     // There is no default repository anymore (upstream's version numbers do
     // not apply to this fork), so tests name one explicitly to keep the
     // asserted URLs verbatim; pass an empty string to test the disabled path.
-    env: { SROUTER_UPDATE_REPO: 'tashfeenahmed/freellmapi', ...(overrides.env ?? {}) },
+    env: { SROUTER_UPDATE_REPO: 'baiibayu/srouter', ...(overrides.env ?? {}) },
     fetch: fetchMock,
     execFile: execMock,
     logger,
@@ -112,7 +112,7 @@ describe('Update API', () => {
         checkedAt: '2026-07-28T14:00:00.000Z',
       });
       expect(fetchMock).toHaveBeenCalledWith(
-        `https://api.github.com/repos/tashfeenahmed/freellmapi/compare/${LOCAL_SHA}...main`,
+        `https://api.github.com/repos/baiibayu/srouter/compare/${LOCAL_SHA}...main`,
         expect.any(Object),
       );
     });
@@ -169,7 +169,7 @@ describe('Update API', () => {
         if (String(url).includes('/releases/latest')) {
           return response({
             tag_name: 'v0.11.0',
-            html_url: 'https://github.com/tashfeenahmed/freellmapi/releases/tag/v0.11.0',
+            html_url: 'https://github.com/baiibayu/srouter/releases/tag/v0.11.0',
           });
         }
         return response(compareBody('identical'));
@@ -183,7 +183,7 @@ describe('Update API', () => {
 
       expect(result.body).toMatchObject({ status: 'current', installation: 'desktop' });
       expect(fetchMock).toHaveBeenCalledWith(
-        `https://api.github.com/repos/tashfeenahmed/freellmapi/compare/${LOCAL_SHA}...v0.11.0`,
+        `https://api.github.com/repos/baiibayu/srouter/compare/${LOCAL_SHA}...v0.11.0`,
         expect.any(Object),
       );
       // 'identical' against the tag: no update offered for untagged main commits.
@@ -195,7 +195,7 @@ describe('Update API', () => {
         if (String(url).includes('/releases/latest')) {
           return response({
             tag_name: 'v0.12.0',
-            html_url: 'https://github.com/tashfeenahmed/freellmapi/releases/tag/v0.12.0',
+            html_url: 'https://github.com/baiibayu/srouter/releases/tag/v0.12.0',
           });
         }
         return response(compareBody('ahead'));
@@ -232,7 +232,7 @@ describe('Update API', () => {
         if (String(url).includes('/releases/latest')) {
           return response({
             tag_name: 'v0.11.0',
-            html_url: 'https://github.com/tashfeenahmed/freellmapi/releases/tag/v0.11.0',
+            html_url: 'https://github.com/baiibayu/srouter/releases/tag/v0.11.0',
           });
         }
         return response({ message: 'rate limited' }, 403);
@@ -327,7 +327,7 @@ describe('Update API', () => {
       });
       expect(fetchMock).toHaveBeenNthCalledWith(
         2,
-        'https://github.com/tashfeenahmed/freellmapi/commits/main.atom',
+        'https://github.com/baiibayu/srouter/commits/main.atom',
         expect.any(Object),
       );
     });
@@ -585,7 +585,7 @@ describe('Update API', () => {
         localSha: LOCAL_SHA.slice(0, 7),
         lastChecked: null,
         version: VERSION,
-        releasesUrl: 'https://github.com/tashfeenahmed/freellmapi/releases',
+        releasesUrl: 'https://github.com/baiibayu/srouter/releases',
       });
     });
 
@@ -598,7 +598,7 @@ describe('Update API', () => {
         localSha: null,
         lastChecked: null,
         version: VERSION,
-        releasesUrl: 'https://github.com/tashfeenahmed/freellmapi/releases',
+        releasesUrl: 'https://github.com/baiibayu/srouter/releases',
       });
     });
 
@@ -613,7 +613,7 @@ describe('Update API', () => {
         localSha: LOCAL_SHA.slice(0, 7),
         lastChecked: '2026-07-28T14:00:00.000Z',
         version: VERSION,
-        releasesUrl: 'https://github.com/tashfeenahmed/freellmapi/releases',
+        releasesUrl: 'https://github.com/baiibayu/srouter/releases',
       });
       expect(fetchMock).toHaveBeenCalledOnce();
     });

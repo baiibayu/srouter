@@ -14,7 +14,7 @@ import { contentToString } from './content.js';
 
 export type TaskType = 'code' | 'chat' | 'auto';
 
-export const TASK_TYPE_HEADER = 'x-freellm-task-type';
+export const TASK_TYPE_HEADER = 'x-srouter-task-type';
 
 // Bounded scan so a huge user message never costs the router a full read.
 const MAX_SCAN_CHARS = 4000;

@@ -49,14 +49,16 @@ npx srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
 | **Kilo Code** | `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat |
 | **Crush** | `setup-crush` | `http://localhost:20268/v1` | OpenAI Chat |
 | **DeepSeek Harness** | `setup-dsh` | `http://localhost:20268/v1` | OpenAI Chat (`api: openai-completions`) |
+| **Oh My Pi** | `setup-omp` | `http://localhost:20268/v1` | OpenAI Chat（`api: openai-completions`） |
 | **OpenClaw** | `setup-openclaw` | `http://localhost:20268/v1` | OpenAI Chat（`api: openai-completions`） |
 | **Hermes Agent** | `setup-hermes` | `http://localhost:20268/v1` | OpenAI Chat（`provider: custom`） |
 | **Pi** | `setup-pi` | `http://localhost:20268/v1` | OpenAI Chat（`api: openai-completions`） |
+| **Factory Droid** | `setup-droid` | `http://localhost:20268/v1` | OpenAI Chat（`provider: generic-chat-completion-api`） |
 | **QwenPaw** | 手动配置 | `http://localhost:20268/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` 打印指引 | 公共 `https://…/v1` | OpenAI Chat |
 | **其他** | `setup-generic` 打印现成配置块 | `http://localhost:20268/v1` | OpenAI Chat |
 
-根路径与 `/v1` 的区别很重要：Claude Code 期望服务器根路径，因为它会追加 Anthropic Messages 路径。本表中兼容 OpenAI 的客户端——包括 Cline、Aider、Goose、Codex、Continue、OpenCode、Qwen、Roo、Kilo、Crush、QwenPaw 和 DeepSeek Harness——期望它们配置的 base URL 包含 `/v1`。
+根路径与 `/v1` 的区别很重要：Claude Code 期望服务器根路径，因为它会追加 Anthropic Messages 路径。本表中兼容 OpenAI 的客户端——包括 Cline、Aider、Goose、Codex、Continue、OpenCode、Qwen、Roo、Kilo、Crush、Oh My Pi、Factory Droid、QwenPaw 和 DeepSeek Harness——期望它们配置的 base URL 包含 `/v1`。
 
 ### DeepSeek Harness (`dsh`)
 
@@ -70,6 +72,17 @@ npx @deepseek-ai/dsh web
 ```
 
 设置是热重载的，所以运行中的 `dsh` 下一次请求就会用上这条路由。`--profile <name>` 添加第二条路由（`SRouter-<name>`）而不改变默认模型；`--model <id>` 固定默认值。路由只声明文本——在 `SRouter.models` 下给某模型条目加上 `input: [text, image]` 即可发图。尊重 `DSH_HOME`。
+
+### Oh My Pi（`omp`）
+
+[Oh My Pi](https://omp.sh/) 是 Stencil Labs 的终端编码智能体，Pi 的分支，与 IDE 深度集成。它读取 `~/.omp/agent/models.yml`，其中 `providers` 下的每个键都是一个 OpenAI 兼容端点：`api: openai-completions` 决定协议，`baseUrl` 指向网关的 `/v1`，`discovery: openai-models-list` 会从 `GET /v1/models` 拉取选择器里的模型列表。`setup-omp` 将其写为 `srouter` 提供方，并在 `~/.omp/agent/config.yml` 中把 `modelRoles.default` 设为 `srouter/<模型>`。写入是结构化合并：`models.yml` 里的其他提供方保持原样；带 `--profile <name>` 时只添加各自的提供方、不改动默认模型——运行 `omp` 后在 `/model` 中选择即可。
+
+```bash
+npx srouter setup-omp --url http://localhost:20268 --api-key <统一密钥>
+omp
+```
+
+用 `curl -fsSL https://omp.sh/install | sh`（或 `bun install -g @oh-my-pi/pi-coding-agent`）安装。`--model <id>` 固定默认模型。
 
 ### OpenClaw
 
@@ -106,6 +119,17 @@ pi -p "Say hello"
 ```
 
 正在运行的会话在打开 `/model` 时会重新加载 `models.json`。`--profile <name>` 改为添加 `srouter-<name>` provider——用 `pi --model srouter-<name>/<model>` 或在 `/model` 中选择——不改动默认模型；`--model <id>` 固定默认模型。模型声明为纯文本、`reasoning: false`；要给视觉模型发送图片，在其 `input` 中加上 `"image"`。Pi 对自定义端点只发送 SDK 的通用 User-Agent，所以该 provider 带有 `headers: { "User-Agent": "pi-coding-agent" }`，Agents 页面的"最近出现"徽章据此识别。设置了 `PI_CODING_AGENT_DIR` 时会被尊重。
+
+### Factory Droid（`droid`）
+
+[Factory Droid](https://docs.factory.ai/droid-cli/quickstart) 是 Factory 的终端智能体。它的 BYOK 自定义模型位于 `~/.factory/settings.json` 的 `customModels` 数组中，每个条目用 `provider: "generic-chat-completion-api"` 走 OpenAI Chat 协议：`baseUrl` 指向网关的 `/v1`、统一密钥作为 `apiKey`、以及所选模型。`setup-droid` 写入该条目；正在运行的 `droid` 会话会自行察觉文件变化——`settings.json` 被监视，无需重启。
+
+```bash
+npx srouter setup-droid --url http://localhost:20268 --api-key <统一密钥>
+droid
+```
+
+在 `/model` 中选择 `custom:<模型>` 即可让会话经由网关路由。`settings.json` 中的其他键会保留，但 `customModels` 数组会被整体替换——你原有的其他自定义模型需要重新加回。安装：`curl -fsSL https://app.factory.ai/cli | sh`（或 `npm install -g droid`）；`--model <id>` 固定条目。
 
 ### QwenPaw
 

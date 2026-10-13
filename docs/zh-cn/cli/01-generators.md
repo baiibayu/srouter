@@ -9,7 +9,8 @@ npx srouter setup-claude        # 接入 Claude Code
 npx srouter setup-codex         # 接入 Codex CLI
 npx srouter setup-dsh           # 接入 DeepSeek Harness
 npx srouter setup-mimo          # 接入 MiMo Code
-npx srouter setup-atomcode      # 接入 AtomCode
+npx srouter setup-omp           # 接入 Oh My Pi
+npx srouter setup-droid         # 接入 Factory Droid
 npx srouter --dry-run setup-claude  # 预览而不写入
 npx srouter setup-claude --model gpt-4o  # 固定模型
 ```
@@ -33,7 +34,8 @@ npx srouter setup-claude --model gpt-4o  # 固定模型
 | `setup-crush` | `~/.config/crush/config.json` | OpenAI Chat | Crush（charmbracelet） |
 | `setup-dsh` | `~/.dsh/config.json` | OpenAI Chat | DeepSeek Harness（#995） |
 | `setup-mimo` | `~/.config/mimocode/config.json` | OpenAI Chat | MiMo Code `~/.config/mimocode/config.json` `default_provider=SRouter` + `[providers.SRouter]` `type=openai` `base_url=/v1` `api_key` `model` `context_window`（#1003） |
-| `setup-atomcode` | `~/.atomcode/config.toml` | OpenAI Chat | AtomCode `default_provider=SRouter` + `[providers.SRouter]` TOML 保留其他提供方（#1025） |
+| `setup-omp` | `~/.omp/agent/models.yml`（及 `config.yml`） | OpenAI Chat | Oh My Pi `providers.srouter`（`openai-completions`、`discovery: openai-models-list`）+ `modelRoles.default` |
+| `setup-droid` | `~/.factory/settings.json` | OpenAI Chat | Factory Droid `customModels[]` 条目（`generic-chat-completion-api`）；数组整体替换，其他键保留 |
 | `setup-cursor` | 仅指引 | OpenAI Chat | 手动 `Cursor Settings → Models → Add Model`（无文件） |
 | `setup-generic` | 仅指引 | OpenAI Chat | 任意 OpenAI 兼容客户端 |
 
