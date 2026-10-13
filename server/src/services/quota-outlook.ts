@@ -1,4 +1,4 @@
-import type { QuotaOutlookPool, QuotaOutlookResponse } from '@srouter/shared/types.js';
+import type { QuotaOutlookPool, QuotaOutlookResponse } from '@baiibayu/srouter-shared/types.js';
 import { getQuotaStateForKeys, type QuotaObservationView } from './provider-quota.js';
 import { estimateExhaustionAt, getRecentQuotaActivity, MIN_FORECAST_REQUESTS, RATE_OBSERVATION_WINDOW_MINUTES } from './quota-forecast.js';
 

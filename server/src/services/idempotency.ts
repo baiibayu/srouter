@@ -25,7 +25,7 @@
 
 import crypto from 'crypto';
 import { getDb } from '../db/index.js';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 
 // ── Config (read per call so tests can flip it live) ──
 

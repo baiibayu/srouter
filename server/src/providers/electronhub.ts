@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@srouter/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import type { CompletionOptions } from './base.js';
 import type { QuotaObservationContext } from '../services/provider-quota.js';
 import { contentToString } from '../lib/content.js';

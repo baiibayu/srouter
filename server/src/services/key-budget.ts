@@ -37,7 +37,7 @@ import type {
   BudgetPeriod,
   ConcreteBudgetPeriod,
   BudgetPeriodSource,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 
 /** Re-exported so consumers can import the shared types from here. */
 export type { BudgetPeriod, ConcreteBudgetPeriod, BudgetPeriodSource };

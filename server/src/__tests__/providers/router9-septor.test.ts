@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ChatCompletionChunk } from '@srouter/shared/types.js';
+import type { ChatCompletionChunk } from '@baiibayu/srouter-shared/types.js';
 import { getProvider, hasProvider } from '../../providers/index.js';
 import { isRetryableError } from '../../lib/error-classify.js';
 

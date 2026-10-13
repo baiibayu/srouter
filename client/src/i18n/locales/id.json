@@ -1312,5 +1312,8 @@
     "failed": "Gagal",
     "afterAttempts": "Sukses setelah {n} percobaan",
     "activeCount": "{n} aktif"
+  },
+  "donate": {
+    "support": "Dukung SRouter"
   }
 }

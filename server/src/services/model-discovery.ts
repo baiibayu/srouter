@@ -1,6 +1,6 @@
 import { OpenAICompatProvider } from '../providers/openai-compat.js';
 import { isAbortLikeError } from '../lib/error-classify.js';
-import type { ChatCompletionResponse, ChatMessage, ChatToolDefinition } from '@srouter/shared/types.js';
+import type { ChatCompletionResponse, ChatMessage, ChatToolDefinition } from '@baiibayu/srouter-shared/types.js';
 
 // ── Model discovery on a user's own custom endpoint (#488) ──────────────────
 //

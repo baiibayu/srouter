@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { getDb, getUnifiedApiKey } from '../db/index.js';
 
 // Per-client API keys with server-enforced system prompts (#411). A client

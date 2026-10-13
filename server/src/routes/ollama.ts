@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type {
   ChatMessage,
   ChatToolDefinition,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 import { getSetting, getUnifiedApiKey } from '../db/index.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';

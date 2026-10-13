@@ -5,8 +5,8 @@ import { OpenAICompatProvider } from '../../providers/openai-compat.js';
 import { GoogleProvider } from '../../providers/google.js';
 import { resetTimeoutWarnings } from '../../lib/provider-timeout.js';
 import { isClientAbortError, isRetryableError, newClientAbortError } from '../../lib/error-classify.js';
-import type { ChatMessage } from '@srouter/shared/types.js';
-import type { ChatCompletionChunk } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
+import type { ChatCompletionChunk } from '@baiibayu/srouter-shared/types.js';
 
 /**
  * First-byte grace period for streaming (issue #584).

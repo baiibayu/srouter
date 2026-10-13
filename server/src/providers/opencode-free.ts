@@ -3,7 +3,7 @@ import type {
   ChatCompletionResponse,
   ChatMessage,
   ChatToolCall,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 import {
   BaseProvider,
   providerHttpError,

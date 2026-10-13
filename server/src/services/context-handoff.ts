@@ -1,4 +1,4 @@
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { contentToString } from '../lib/content.js';
 
 export type ContextHandoffMode = 'off' | 'on_model_switch';

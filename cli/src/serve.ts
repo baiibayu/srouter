@@ -124,7 +124,7 @@ export async function runServe(options: ServeOptions): Promise<number> {
   // starts the server (native sqlite, sharp, the whole boot sequence), and a
   // static graph edge here would make the CLI build depend on the server's
   // declaration output.
-  const gateway = '@srouterhq/server';
+  const gateway = '@baiibayu/srouter-server';
   await import(gateway);
 
   const port = Number(process.env.PORT ?? 20268);
