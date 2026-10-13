@@ -89,7 +89,7 @@
  │     第一级: 高速/订阅    │   │     第二级: 大额度/高质  │   │   第三级: 100% 免费免密  │
  │  • Google Gemini 2.5     │   │  • Mistral / Codestral   │   │  • Kilo Gateway (免密)   │
  │  • Groq (Llama 3.3 70B)  │──►│  • 智谱 GLM-4 / 视觉模型 │──►│  • OpenCode Free (免密)  │
- │  • Cerebras (极致速度)   │   │  • Cloudflare Workers AI │   │  • OVH Endpoints (免密)  │
+ │  • Pollinations (免费)   │   │  • Cloudflare Workers AI │   │  • OVH Endpoints (免密)  │
  │  • OpenRouter / DeepSeek │   │  • Cohere / NVIDIA NIM   │   │  • LLM7 / AI Horde       │
  └──────────────────────────┘   └──────────────────────────┘   └──────────────────────────┘
 ```
@@ -237,16 +237,23 @@ SRouter 在单个 `/v1` 接口之后聚合了 **约 60 家提供方** 与 **1,20
 <tr>
 <td align="center" width="140"><img src="repo-assets/providers/google.png" width="40" alt="Google"><br/><b>Google Gemini</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/groq.png" width="40" alt="Groq"><br/><b>Groq Llama</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/cerebras.png" width="40" alt="Cerebras"><br/><b>Cerebras</b></td>
+<td align="center" width="140"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/mistral.png" width="40" alt="Mistral"><br/><b>Mistral AI</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/openrouter.png" width="40" alt="OpenRouter"><br/><b>OpenRouter</b></td>
 </tr>
 <tr>
 <td align="center"><img src="repo-assets/providers/cloudflare.png" width="40" alt="Cloudflare"><br/><b>Cloudflare</b></td>
-<td align="center"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"><br/><b>Cohere</b></td>
-<td align="center"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"><br/><b>智谱清言 GLM</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/cohere-dark.png"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"></picture><br/><b>Cohere</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/zhipu-dark.png"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"></picture><br/><b>智谱清言 GLM</b></td>
 <td align="center"><img src="repo-assets/providers/nvidia.png" width="40" alt="NVIDIA"><br/><b>NVIDIA NIM</b></td>
 <td align="center"><img src="repo-assets/providers/huggingface.png" width="40" alt="HuggingFace"><br/><b>HuggingFace</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/providers/aihorde.png" width="40" alt="AI Horde"><br/><b>AI Horde 社区池</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/kilo-dark.png"><img src="repo-assets/providers/kilo.png" width="40" alt="Kilo"></picture><br/><b>Kilo Gateway</b></td>
+<td align="center"><img src="repo-assets/providers/llm7.png" width="40" alt="LLM7"><br/><b>LLM7</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ollama-dark.png"><img src="repo-assets/providers/ollama.png" width="40" alt="Ollama"></picture><br/><b>Ollama Cloud</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ovh-dark.png"><img src="repo-assets/providers/ovh.png" width="40" alt="OVH"></picture><br/><b>OVH AI Endpoints</b></td>
 </tr>
 </table>
 
@@ -264,7 +271,7 @@ SRouter 在单个 `/v1` 接口之后聚合了 **约 60 家提供方** 与 **1,20
 ### 2. 🌐 具备大额免费配额的海外与主流提供方
 - **Google AI Studio:** Gemini 2.5 Flash / Pro（极具性价比的每日免费调用限额）
 - **Groq:** Llama 3.3 70B & Mixtral（极速推理，30 RPM 免费档）
-- **Cerebras Cloud:** 全球领先的推理速度
+- **Pollinations:** 免费文本+图像 (无需密钥)
 - **Mistral AI:** Codestral（专业代码模型）、Mistral Small
 - **Cloudflare Workers AI:** 每日 10,000 neurons 免费额度
 - **Cohere:** Command R / Command R+ 测试点数
@@ -325,7 +332,7 @@ srouter/
   - 压缩重复 JSON 结构与多余上下文，**节省 20–40% Token 消耗**。
 - **六大智能路由策略：**
   - `auto`：兼顾延迟、模型智力与剩余配额的综合最优解。
-  - `auto:fast`：优先选择超低延迟提供方（Groq、Cerebras）。
+  - `auto:fast`：优先选择超低延迟提供方（Groq）。
   - `auto:smart`：优先指派高推理能力模型（Gemini 2.5 Pro、Codestral）。
   - `auto:cheap`：保护核心额度，优先调用轻量免密模型。
   - `auto:<profile>`：在仪表盘中自定义的命名降级链。

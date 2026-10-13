@@ -89,7 +89,7 @@ Coding with AI agents (Claude Code, Cursor, Windsurf, Cline) is transformative, 
  │  Tier 1: Sub / Fast Key  │   │  Tier 2: Generous Quota  │   │ Tier 3: 100% Free / Anon │
  │  • Google Gemini 2.5     │   │  • Mistral / Codestral   │   │  • Kilo Gateway (No Key) │
  │  • Groq (Llama 3.3 70B)  │──►│  • Zhipu GLM-4 / CogView │──►│  • OpenCode Free (No Key)│
- │  • Cerebras (High-speed) │   │  • Cloudflare Workers AI │   │  • OVH Endpoints (No Key)│
+ │  • Pollinations (Free)   │   │  • Cloudflare Workers AI │   │  • OVH Endpoints (No Key)│
  │  • OpenRouter / DeepSeek │   │  • Cohere / NVIDIA NIM   │   │  • LLM7 / AI Horde       │
  └──────────────────────────┘   └──────────────────────────┘   └──────────────────────────┘
 ```
@@ -237,16 +237,23 @@ SRouter aggregates **~60 providers** and **~1,200+ endpoints** behind one `/v1` 
 <tr>
 <td align="center" width="140"><img src="repo-assets/providers/google.png" width="40" alt="Google"><br/><b>Google Gemini</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/groq.png" width="40" alt="Groq"><br/><b>Groq Llama</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/cerebras.png" width="40" alt="Cerebras"><br/><b>Cerebras</b></td>
+<td align="center" width="140"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/mistral.png" width="40" alt="Mistral"><br/><b>Mistral AI</b></td>
 <td align="center" width="140"><img src="repo-assets/providers/openrouter.png" width="40" alt="OpenRouter"><br/><b>OpenRouter</b></td>
 </tr>
 <tr>
 <td align="center"><img src="repo-assets/providers/cloudflare.png" width="40" alt="Cloudflare"><br/><b>Cloudflare</b></td>
-<td align="center"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"><br/><b>Cohere</b></td>
-<td align="center"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"><br/><b>Zhipu GLM</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/cohere-dark.png"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"></picture><br/><b>Cohere</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/zhipu-dark.png"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"></picture><br/><b>Zhipu GLM</b></td>
 <td align="center"><img src="repo-assets/providers/nvidia.png" width="40" alt="NVIDIA"><br/><b>NVIDIA NIM</b></td>
 <td align="center"><img src="repo-assets/providers/huggingface.png" width="40" alt="HuggingFace"><br/><b>HuggingFace</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/providers/aihorde.png" width="40" alt="AI Horde"><br/><b>AI Horde</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/kilo-dark.png"><img src="repo-assets/providers/kilo.png" width="40" alt="Kilo"></picture><br/><b>Kilo Gateway</b></td>
+<td align="center"><img src="repo-assets/providers/llm7.png" width="40" alt="LLM7"><br/><b>LLM7</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ollama-dark.png"><img src="repo-assets/providers/ollama.png" width="40" alt="Ollama"></picture><br/><b>Ollama Cloud</b></td>
+<td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="repo-assets/providers/ovh-dark.png"><img src="repo-assets/providers/ovh.png" width="40" alt="OVH"></picture><br/><b>OVH AI Endpoints</b></td>
 </tr>
 </table>
 
@@ -264,7 +271,7 @@ SRouter aggregates **~60 providers** and **~1,200+ endpoints** behind one `/v1` 
 ### 2. 🌐 Generous Free Tier with API Key
 - **Google AI Studio:** Gemini 2.5 Flash / Pro (Generous free daily requests)
 - **Groq:** Ultra-fast Llama 3.3 70B & Mixtral (30 RPM free tier)
-- **Cerebras Cloud:** Lightning-fast inference speeds
+- **Pollinations:** Free text + image generation (no key needed)
 - **Mistral AI:** Codestral, Mistral Small, Embeddings
 - **Cloudflare Workers AI:** 10,000 neurons/day free tier
 - **Cohere:** Command R / Command R+ trial credits
@@ -326,7 +333,7 @@ srouter/
   - Compacts repeated JSON structures and removes stale conversational context to save **20–40% tokens**.
 - **Six Intelligent Routing Strategies:**
   - `auto`: Automatically balances speed, intelligence, and provider quota.
-  - `auto:fast`: Prioritizes ultra-low latency providers (Groq, Cerebras).
+  - `auto:fast`: Prioritizes ultra-low latency providers (Groq).
   - `auto:smart`: Routes to highest capability models (Gemini 2.5 Pro, Codestral).
   - `auto:cheap`: Conserves premium quotas by routing to lightweight free endpoints.
   - `auto:<profile>`: Custom named fallback chains created in the dashboard.
