@@ -46,7 +46,6 @@ const UNIFIED_KEY_SR_PREFIX_FILENAME = '20261004_000001_unified_key_sr_prefix.ts
 const KEY_BUDGET_PERIOD_FILENAME = '20261005_000001_key_budget_period.ts';
 const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_period_auto.ts';
 const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts';
-const REMOVE_LLMTR_FILENAME = '20261011_000001_remove_llmtr.ts';
 
 interface SchemaRow {
   type: string;
@@ -139,7 +138,6 @@ describe('migration round trip', () => {
         KEY_BUDGET_PERIOD_FILENAME,
         KEY_BUDGET_PERIOD_AUTO_FILENAME,
         REMOVE_DEAD_PLATFORMS_FILENAME,
-        REMOVE_LLMTR_FILENAME,
       ]);
     } finally {
       db.close();
