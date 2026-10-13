@@ -1,0 +1,90 @@
+import { createHash } from 'node:crypto';
+import { execFile as execFileCallback } from 'node:child_process';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+const execFile = promisify(execFileCallback);
+const projectRoot = resolve(import.meta.dirname, '..');
+const powershell = process.platform === 'win32' ? 'powershell.exe' : null;
+
+async function makeFixture(t) {
+  const fixture = await mkdtemp(join(tmpdir(), 'srouter-bootstrap-'));
+  const lockfile = join(fixture, 'package-lock.json');
+  const lockContents = '{"name":"bootstrap-fixture","lockfileVersion":3}\n';
+  const lockHash = createHash('sha256').update(lockContents).digest('hex');
+
+  await writeFile(join(fixture, 'package.json'), '{"name":"bootstrap-fixture"}\n');
+  await writeFile(lockfile, lockContents);
+  await mkdir(join(fixture, 'node_modules'));
+  await writeFile(join(fixture, 'node_modules', '.srouter-bootstrap-lock'), lockHash);
+  t.after(() => rm(fixture, { force: true, recursive: true }));
+  return { fixture, lockfile };
+}
+
+async function assertEnvIsCreatedAndPreserved(runBootstrap, t) {
+  const { fixture } = await makeFixture(t);
+
+  await runBootstrap(fixture);
+  const generatedEnv = await readFile(join(fixture, '.env'), 'utf8');
+  assert.match(generatedEnv, /^ENCRYPTION_KEY=[0-9a-f]{64}\r?\nPORT=20268\r?\n$/);
+
+  const existingEnv = 'ENCRYPTION_KEY=keep-this-value\nPORT=4444\n';
+  await writeFile(join(fixture, '.env'), existingEnv);
+  await runBootstrap(fixture);
+  assert.equal(await readFile(join(fixture, '.env'), 'utf8'), existingEnv);
+}
+
+async function assertMissingStampInstalls(runBootstrap, t) {
+  const { fixture, lockfile } = await makeFixture(t);
+  await rm(join(fixture, 'node_modules', '.srouter-bootstrap-lock'));
+
+  await runBootstrap(fixture);
+
+  const lockHash = createHash('sha256').update(await readFile(lockfile)).digest('hex');
+  assert.equal(
+    (await readFile(join(fixture, 'node_modules', '.srouter-bootstrap-lock'), 'utf8')).trim(),
+    lockHash,
+  );
+}
+
+test('PowerShell bootstrap creates and preserves .env', { skip: powershell === null }, async (t) => {
+  await assertEnvIsCreatedAndPreserved(
+    (fixture) => execFile(powershell, [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', join(projectRoot, 'scripts', 'dev-bootstrap.ps1'),
+      '-ProjectRoot', fixture,
+    ]),
+    t,
+  );
+});
+
+test('Bash bootstrap creates and preserves .env', { skip: process.platform === 'win32' }, async (t) => {
+  await assertEnvIsCreatedAndPreserved(
+    (fixture) => execFile('bash', [join(projectRoot, 'scripts', 'dev-bootstrap.sh'), '--project-root', fixture]),
+    t,
+  );
+});
+
+test('PowerShell bootstrap installs when the lockfile stamp is missing', { skip: powershell === null }, async (t) => {
+  await assertMissingStampInstalls(
+    (fixture) => execFile(powershell, [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', join(projectRoot, 'scripts', 'dev-bootstrap.ps1'),
+      '-ProjectRoot', fixture,
+    ]),
+    t,
+  );
+});
+
+test('Bash bootstrap installs when the lockfile stamp is missing', { skip: process.platform === 'win32' }, async (t) => {
+  await assertMissingStampInstalls(
+    (fixture) => execFile('bash', [join(projectRoot, 'scripts', 'dev-bootstrap.sh'), '--project-root', fixture]),
+    t,
+  );
+});

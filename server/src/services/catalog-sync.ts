@@ -1,0 +1,1275 @@
+import crypto from 'crypto';
+import type { Db } from '../db/types.js';
+import { getDb, getSetting, setSetting } from '../db/index.js';
+import { hasProvider } from '../providers/index.js';
+import { MEDIA_PLATFORMS, TRANSCRIPTION_PLATFORMS, VIDEO_PLATFORMS } from './media.js';
+import { EMBEDDING_PLATFORMS } from './embeddings.js';
+import type { Platform } from '@srouter/shared/types.js';
+import type { Scheduler } from '../lib/scheduler.js';
+import {
+  applyAllModelOverrides,
+  refreshModelOverrideBaselines,
+  applyModelOverrides,
+  deleteTombstonedCatalogModels,
+  isCatalogModelTombstoned,
+  reinstateUpstreamRetiredCatalogModel,
+} from './model-state.js';
+import { ensureAllModelsInProfiles } from './profile-models.js';
+
+// Generative-media modalities are routed into the separate media_models table
+// (see services/media.ts), never into the chat `models` table.
+const MEDIA_MODALITIES = new Set(['image', 'audio']);
+
+/**
+ * catalog-sync — keeps the local model catalog in step with the published one.
+ *
+ * Twice a day (and on on boot) the server pulls the signed catalog from the
+ * catalog service. Everyone gets the monthly snapshot, which self-heals on a
+ * regular cadence. The response is verified against a pinned Ed25519 public
+ * key over the exact bytes received; anything unsigned or tampered with is
+ * discarded, which means a compromised CDN or MITM cannot inject models or
+ * quirks into the router.
+ *
+ * The bundled migrations remain the baseline: a fetched catalog is applied
+ * only when it is NEWER than what the binary shipped with (MIN_CATALOG_VERSION
+ * below), so a stale monthly snapshot can never roll back models that a newer
+ * app version added via migrations.
+ */
+
+const DEFAULT_BASE_URL = 'https://api.freellmapi.co';
+
+// The Ed25519 public key the production catalog is signed with. The private
+// half was generated on the catalog host and has never left it. Self-hosters
+// running their own catalog server can override both via env.
+const PINNED_CATALOG_PUBKEY = `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAq9yv4+3EeyMHKsfVYBhkcz1lYgIXSUeHNnN6tNgYX3k=
+-----END PUBLIC KEY-----
+`;
+
+// Catalogs older than this are ignored. Bump to today's date whenever a model
+// migration lands, so the bundled DB is always the floor.
+export const MIN_CATALOG_VERSION = '2026.06.07';
+
+const DEFAULT_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000; // default: 12h
+const BOOT_DELAY_MS = 10 * 1000; // let the server settle before first sync
+const FETCH_TIMEOUT_MS = 20 * 1000;
+
+// settings table keys
+const SETTING_APPLIED_VERSION = 'catalog_applied_version';
+const SETTING_APPLIED_TIER = 'catalog_applied_tier';
+const SETTING_APPLIED_JSON = 'catalog_applied_json';
+const SETTING_LAST_SYNC_MS = 'catalog_last_sync_ms';
+const SETTING_LAST_ERROR = 'catalog_last_error';
+const SETTING_SYNC_INTERVAL_HOURS = 'sync_interval_hours';
+const SETTING_NOTIFICATIONS = 'sync_notifications';
+
+// ── Sync schedule (configurable from Settings → General) ──────
+
+export type SyncInterval = 'off' | 6 | 12 | 24;
+const VALID_INTERVALS: SyncInterval[] = ['off', 6, 12, 24];
+
+export function getSyncIntervalHours(): SyncInterval {
+  const raw = getSetting(SETTING_SYNC_INTERVAL_HOURS);
+  // Unset (fresh install) keeps the upstream default of twice daily; only an
+  // explicit 'off' disables the timer.
+  if (!raw) return DEFAULT_SYNC_INTERVAL_MS / (60 * 60 * 1000) as SyncInterval;
+  if (raw === 'off') return 'off';
+  const n = Number(raw);
+  return VALID_INTERVALS.includes(n as SyncInterval) ? (n as SyncInterval) : 'off';
+}
+
+export function setSyncIntervalHours(interval: SyncInterval): void {
+  setSetting(SETTING_SYNC_INTERVAL_HOURS, interval === 'off' ? 'off' : String(interval));
+}
+
+function syncIntervalMs(): number {
+  const hours = getSyncIntervalHours();
+  return hours === 'off' ? 0 : hours * 60 * 60 * 1000;
+}
+
+// ── Notifications (model changes from sync) ──────────────────
+
+/**
+ * Localization payload for the client to render.
+ *
+ * Server-side notification text used to be a hardcoded Indonesian string,
+ * which meant every install saw Indonesian regardless of the chosen locale.
+ * Emitters now fill this instead: the client looks up `key` in its own
+ * dictionary and substitutes `vars`, so the bell speaks the user's language
+ * while the server stays the single source of truth for WHAT changed.
+ *
+ * The model names themselves never need translating — they are proper nouns —
+ * so they ride in `SyncNotification.message` (untruncated list, already
+ * elided by the emitter) and only the sentence around them is localized.
+ * Older notifications written before this field existed render displayName
+ * and message verbatim, exactly as they always did.
+ */
+export interface SyncNotificationPayload {
+  key: string;
+  vars?: Record<string, string | number>;
+}
+
+export interface SyncNotification {
+  id: string;
+  type: 'added' | 'removed' | 'updated' | 'degraded' | 'update_available';
+  modelId: string;
+  displayName: string;
+  platform: string;
+  message: string;
+  /** Structured, localizable content. Absent on notifications written by
+   *  older builds — the client then renders displayName/message verbatim. */
+  data?: SyncNotificationPayload;
+  timestamp: number;
+  read: boolean;
+}
+
+export function getNotifications(): SyncNotification[] {
+  const raw = getSetting(SETTING_NOTIFICATIONS);
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const rows = parsed as SyncNotification[];
+    // A *pending* update notification is pinned above everything else no
+    // matter how old it is: the operator must keep seeing it (and the bell
+    // badge) until the update lands. Everything else — including a settled
+    // update row — is plain newest-first chronological order. Storage stays
+    // chronological; the pin is presentation, applied on read.
+    const pinned = (n: SyncNotification): number =>
+      n.type === 'update_available' && !n.read ? 1 : 0;
+    return [...rows].sort((a, b) => pinned(b) - pinned(a) || b.timestamp - a.timestamp);
+  } catch {
+    return [];
+  }
+}
+
+export function addNotifications(notifs: SyncNotification[]): void {
+  if (notifs.length === 0) return;
+  const existing = getNotifications();
+  // Prepend new ones, cap at 50.
+  const merged = [...notifs, ...existing].slice(0, 50);
+  merged.sort((a, b) => b.timestamp - a.timestamp);
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(merged));
+}
+
+export function markNotificationsRead(): void {
+  // A pending update_available row deliberately survives the mark-all: the
+  // bell keeps its badge until the update actually lands (the periodic check
+  // settles it via settleUpdateNotifications). Everything else reads on cue.
+  const all = getNotifications().map(n =>
+    n.type === 'update_available' && !n.read ? n : { ...n, read: true },
+  );
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(all));
+}
+
+/**
+ * Settle the update-available reminder once the installed version caught up:
+ * collapse historical duplicates down to the newest row, mark it read (which
+ * un-pins it — it sinks into normal chronological order), and keep it in the
+ * list so the history still shows what happened.
+ */
+export function settleUpdateNotifications(): void {
+  const all = getNotifications();
+  const updates = all.filter(n => n.type === 'update_available');
+  if (updates.length === 0) return;
+  if (updates.length === 1 && updates[0].read) return;
+  updates.sort((a, b) => b.timestamp - a.timestamp);
+  const rest = all.filter(n => n.type !== 'update_available');
+  const merged = [{ ...updates[0], read: true }, ...rest]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 50);
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(merged));
+}
+
+export function unreadNotificationCount(): number {
+  return getNotifications().filter(n => !n.read).length;
+}
+
+/** Remove all notifications of a given type (e.g. 'update_available' after user updates). */
+export function removeNotificationsByType(type: SyncNotification['type']): void {
+  const all = getNotifications();
+  const filtered = all.filter(n => n.type !== type);
+  if (filtered.length === all.length) return; // nothing matched — skip the write
+  setSetting(SETTING_NOTIFICATIONS, JSON.stringify(filtered));
+}
+
+export function catalogBaseUrl(): string {
+  return (process.env.CATALOG_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, '');
+}
+
+function catalogPublicKey(): crypto.KeyObject {
+  const pem = process.env.CATALOG_PUBKEY ? process.env.CATALOG_PUBKEY.replace(/\\n/g, '\n') : PINNED_CATALOG_PUBKEY;
+  return crypto.createPublicKey({ key: pem, format: 'pem' });
+}
+
+interface CatalogQuirk {
+  slug: string;
+  title: string;
+  body: string;
+  severity: 'blocker' | 'warning' | 'info';
+  targets: { platform: string | null; modelGlob: string | null }[];
+}
+
+interface CatalogModel {
+  platform: string;
+  modelId: string;
+  displayName: string;
+  intelligenceRank: number;
+  speedRank: number;
+  sizeLabel: string;
+  limits: { rpm: number | null; rpd: number | null; tpm: number | null; tpd: number | null };
+  monthlyTokenBudget: string | null;
+  contextWindow: number | null;
+  enabled: boolean;
+  supportsVision: boolean;
+  supportsTools: boolean;
+  /** 'text' (default/absent) routes to the chat `models` table; 'image'/'audio'
+   *  route to the separate `media_models` table. */
+  modality?: string;
+  /** Short display note for media models (e.g. "Keyless - up to 1024x1024"). */
+  mediaNote?: string;
+  /** Adapter request flavor for media rows, where one platform hosts more than
+   *  one deployment style (cloudflare images: absent/'json' = JSON body,
+   *  'multipart' = form-data, which the FLUX.2 family requires). Mirrors the
+   *  same field on CatalogTranscriptionModel and lands in meta_json. */
+  requestStyle?: string | null;
+}
+
+interface CatalogEmbedding {
+  family: string;
+  platform: string;
+  modelId: string;
+  displayName: string;
+  dimensions: number;
+  maxInputTokens: number | null;
+  priority: number;
+  enabled: boolean;
+  quotaLabel: string;
+}
+
+interface CatalogTranscriptionModel {
+  platform: string;
+  modelId: string;
+  displayName: string;
+  /** Failover order within the STT chain, lower first. */
+  priority: number;
+  enabled: boolean;
+  /** Subtitle formats the provider returns natively (e.g. ['vtt']). */
+  subtitleFormats?: string[];
+  /** Provider upload ceiling in bytes; absent = the route-wide 25 MB cap. */
+  maxBytes?: number | null;
+  /** Adapter request flavor where one platform hosts more than one deployment
+   *  style (cloudflare: 'json' = base64 JSON body, 'binary' = raw bytes). */
+  requestStyle?: string | null;
+  /** Short display note, mirrored into media_models.quota_label. */
+  quotaLabel?: string;
+}
+
+interface CatalogVideoModel {
+  platform: string;
+  modelId: string;
+  displayName: string;
+  /** Failover order within the video chain, lower first. */
+  priority: number;
+  enabled: boolean;
+  /** Short display note, mirrored into media_models.quota_label. */
+  quotaLabel?: string;
+  /** Provider-native deployment id when it differs from the public model id
+   *  (for example Hugging Face's fal.ai mapping). */
+  providerModelId?: string;
+}
+
+interface Catalog {
+  version: string;
+  generatedAt: string;
+  tier: 'live' | 'monthly';
+  models: CatalogModel[];
+  /** Optional for backward compatibility with catalogs published before the
+   * embedding registry joined the signed freshness feed. */
+  embeddings?: CatalogEmbedding[];
+  /** Speech-to-text registry, landing in media_models with
+   * modality='transcription'. Deliberately a NEW top-level key rather than
+   * more `models` entries: deployed binaries that predate the transcription
+   * modality would ingest unknown-modality `models` entries as CHAT models,
+   * while an unknown optional key is simply ignored by their isCatalog. */
+  transcriptionModels?: CatalogTranscriptionModel[];
+  /** Text-to-video registry. Kept out of `models` so pre-video binaries ignore
+   *  it rather than routing unknown-modality rows through chat. */
+  videoModels?: CatalogVideoModel[];
+  /** Platforms the catalog service manages even when this tier ships no rows
+   *  for them (#1348): a provider still inside its Premium window, or one the
+   *  audit deliberately keeps at zero rows. Names only, never model rows, so
+   *  the monthly snapshot can carry it without leaking Premium models. Any
+   *  platform listed here is off limits to built-in model discovery. Optional:
+   *  older catalogs omit it and older binaries ignore it. */
+  managedPlatforms?: string[];
+  quirks: CatalogQuirk[];
+}
+
+export interface SyncResult {
+  ok: boolean;
+  action: 'applied' | 'up_to_date' | 'skipped_older' | 'error';
+  version?: string;
+  tier?: string;
+  detail?: string;
+  counts?: { updated: number; inserted: number; removed: number; skippedUnknownPlatform: number; quirks: number };
+  /** Platform → the models that changed, so the bell can name the provider
+   *  and the exact models instead of a bare "12 models added". */
+  details?: CatalogChangeDetails;
+}
+
+/** Per-platform model change ledger produced by applyCatalog. */
+export interface CatalogChangeDetails {
+  added: Map<string, string[]>;
+  removed: Map<string, string[]>;
+  updated: Map<string, string[]>;
+}
+
+/** Minimal structural check — enough to fail loudly on a wrong/garbled body. */
+function isCatalog(value: unknown): value is Catalog {
+  const c = value as Catalog;
+  return (
+    !!c &&
+    typeof c.version === 'string' &&
+    (c.tier === 'live' || c.tier === 'monthly') &&
+    Array.isArray(c.models) &&
+    Array.isArray(c.quirks) &&
+    (c.embeddings === undefined ||
+      (Array.isArray(c.embeddings) &&
+        c.embeddings.every(
+          (m) =>
+            typeof m?.family === 'string' &&
+            typeof m?.platform === 'string' &&
+            typeof m?.modelId === 'string' &&
+            typeof m?.displayName === 'string' &&
+            typeof m?.dimensions === 'number' &&
+            typeof m?.priority === 'number' &&
+            typeof m?.enabled === 'boolean',
+        ))) &&
+    (c.transcriptionModels === undefined ||
+      (Array.isArray(c.transcriptionModels) &&
+        c.transcriptionModels.every(
+          (m) =>
+            typeof m?.platform === 'string' &&
+            typeof m?.modelId === 'string' &&
+            typeof m?.displayName === 'string' &&
+            typeof m?.priority === 'number' &&
+            typeof m?.enabled === 'boolean' &&
+            (m.subtitleFormats === undefined ||
+              (Array.isArray(m.subtitleFormats) && m.subtitleFormats.every((f) => typeof f === 'string'))) &&
+            (m.maxBytes === undefined || m.maxBytes === null || typeof m.maxBytes === 'number') &&
+            (m.requestStyle === undefined || m.requestStyle === null || typeof m.requestStyle === 'string'),
+        ))) &&
+    (c.videoModels === undefined ||
+      (Array.isArray(c.videoModels) &&
+        c.videoModels.every(
+          (m) =>
+            typeof m?.platform === 'string' &&
+            typeof m?.modelId === 'string' &&
+            typeof m?.displayName === 'string' &&
+            typeof m?.priority === 'number' &&
+            typeof m?.enabled === 'boolean' &&
+            (m.quotaLabel === undefined || typeof m.quotaLabel === 'string') &&
+            (m.providerModelId === undefined || typeof m.providerModelId === 'string'),
+        ))) &&
+    c.models.every(
+      (m) =>
+        typeof m?.platform === 'string' &&
+        typeof m?.modelId === 'string' &&
+        typeof m?.displayName === 'string' &&
+        typeof m?.enabled === 'boolean' &&
+        (m.requestStyle === undefined || m.requestStyle === null || typeof m.requestStyle === 'string') &&
+        !!m?.limits &&
+        typeof m.limits === 'object',
+    ) &&
+    (c.managedPlatforms === undefined ||
+      (Array.isArray(c.managedPlatforms) && c.managedPlatforms.every((p) => typeof p === 'string'))) &&
+    c.quirks.every((q) => typeof q?.slug === 'string' && Array.isArray(q?.targets))
+  );
+}
+
+/**
+ * Apply a verified catalog to the local DB inside one transaction.
+ *
+ * Rules of engagement with user data:
+ *  - metadata (name, ranks, limits, context, capabilities) tracks the catalog
+ *    unless the user has an explicit local override;
+ *  - catalog enabled=false force-disables (the model is dead upstream), but
+ *    enabled=true never re-enables a model the user turned off themselves;
+ *  - rows the user created (models.source = 'user': custom providers,
+ *    declarative config, admin adds) are never updated, never deleted, and
+ *    never adopted — on a platform:model_id collision the user row wins and
+ *    the catalog entry is skipped outright;
+ *  - catalog models the user deleted stay deleted via tombstones, while models
+ *    auto-retired from an upstream 410/end-of-life response (#634) are only
+ *    disabled — a catalog that still lists them lifts the retirement;
+ *  - models that vanished from the catalog are deleted, exactly like the
+ *    dead-model migrations do (fallback_config row first, FK order);
+ *  - rows found by built-in model discovery (models.source = 'discovered',
+ *    #1348) are a stopgap for platforms the catalog does not manage. The
+ *    catalog outranks them: a listed platform:model_id adopts the discovered
+ *    row as a catalog row, and once the catalog manages a platform at all,
+ *    every other discovered row on it is retired.
+ */
+/** models.source for rows written by built-in model discovery (#1348). */
+export const DISCOVERED_MODEL_SOURCE = 'discovered';
+
+/** Every platform a catalog document manages: any row in any registry, plus
+ *  the names-only managedPlatforms list. */
+function catalogPlatforms(catalog: Catalog): Set<string> {
+  const platforms = new Set<string>();
+  for (const m of catalog.models) platforms.add(m.platform);
+  for (const m of catalog.embeddings ?? []) platforms.add(m.platform);
+  for (const m of catalog.transcriptionModels ?? []) platforms.add(m.platform);
+  for (const m of catalog.videoModels ?? []) platforms.add(m.platform);
+  for (const p of catalog.managedPlatforms ?? []) platforms.add(p);
+  return platforms;
+}
+
+let appliedPlatformsCache: { raw: string; platforms: Set<string> } | null = null;
+
+/**
+ * Platforms the catalog applied on this install manages (see catalogPlatforms),
+ * read from the cached verified document. Empty when no catalog has been
+ * applied yet. Built-in model discovery treats every platform in here as off
+ * limits, so the audited catalog, not an upstream /models list, decides what
+ * those providers serve.
+ */
+export function appliedCatalogPlatforms(db: Db): Set<string> {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(SETTING_APPLIED_JSON) as { value: string } | undefined;
+  const raw = row?.value ?? '';
+  if (appliedPlatformsCache && appliedPlatformsCache.raw === raw) return appliedPlatformsCache.platforms;
+  let platforms = new Set<string>();
+  if (raw) {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (isCatalog(parsed)) platforms = catalogPlatforms(parsed);
+    } catch { /* an unreadable cache manages nothing; the DB checks still apply */ }
+  }
+  appliedPlatformsCache = { raw, platforms };
+  return platforms;
+}
+
+export function applyCatalog(db: Db, catalog: Catalog): NonNullable<SyncResult['counts']> {
+  return applyCatalogDetailed(db, catalog).counts;
+}
+
+/** Same apply, but also returns the per-platform ledger of which models
+ *  changed — what feeds the "3 models added on Groq" bell notifications.
+ *  Counts alone cannot name a provider or a model. */
+export function applyCatalogDetailed(db: Db, catalog: Catalog): {
+  counts: NonNullable<SyncResult['counts']>;
+  details: CatalogChangeDetails;
+} {
+  // One transaction for the whole apply (#1047): the body runs hundreds of
+  // individual statements, and under WAL each one outside a transaction is its
+  // own commit + fsync executed on the event loop. On slow storage that made
+  // the 12-hourly sync freeze every in-flight request — including the 3-query
+  // profile-activate POST — for minutes.
+  return db.transaction(() => applyCatalogInner(db, catalog))();
+}
+
+function applyCatalogInner(db: Db, catalog: Catalog): {
+  counts: NonNullable<SyncResult['counts']>;
+  details: CatalogChangeDetails;
+} {
+  const counts = { updated: 0, inserted: 0, removed: 0, skippedUnknownPlatform: 0, quirks: 0 };
+  const details: CatalogChangeDetails = { added: new Map(), removed: new Map(), updated: new Map() };
+
+  /** Note one model change against its provider. Names use the catalog
+ *  display_name where we have it (that is what the user recognises) and fall
+ *  back to the raw model_id for pruned rows, whose catalog entry is gone. */
+  const record = (ledger: Map<string, string[]>, platform: string, name: string): void => {
+    const bucket = ledger.get(platform);
+    if (bucket) bucket.push(name);
+    else ledger.set(platform, [name]);
+  };
+
+  // The previous display_name/enabled are read alongside so an "updated" entry
+  // records what actually changed. Without them every catalog row looks
+  // updated on every sync, which drowns the real news.
+  const selectModel = db.prepare(
+    'SELECT id, enabled, source, display_name AS displayName FROM models WHERE platform = ? AND model_id = ?',
+  );
+  const updateModel = db.prepare(`
+    UPDATE models SET
+      display_name = @displayName, intelligence_rank = @intelligenceRank, speed_rank = @speedRank,
+      size_label = @sizeLabel, rpm_limit = @rpm, rpd_limit = @rpd, tpm_limit = @tpm, tpd_limit = @tpd,
+      monthly_token_budget = @monthlyTokenBudget, context_window = @contextWindow,
+      supports_vision = @supportsVision, supports_tools = @supportsTools,
+      enabled = @enabled
+    WHERE id = @id
+  `);
+  const adoptModel = db.prepare("UPDATE models SET source = 'catalog' WHERE id = ?");
+  const insertModel = db.prepare(`
+    INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, size_label,
+                        rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget, context_window,
+                        enabled, supports_vision, supports_tools, source)
+    VALUES (@platform, @modelId, @displayName, @intelligenceRank, @speedRank, @sizeLabel,
+            @rpm, @rpd, @tpm, @tpd, @monthlyTokenBudget, @contextWindow,
+            @enabled, @supportsVision, @supportsTools, 'catalog')
+  `);
+
+  // Generative-media models go to their own table (never the chat router's pool).
+  const selectMedia = db.prepare(
+    'SELECT id, enabled, display_name AS displayName FROM media_models WHERE platform = ? AND model_id = ?',
+  );
+  const updateMedia = db.prepare(`
+    UPDATE media_models SET
+      display_name = @displayName, modality = @modality, priority = @priority,
+      quota_label = @quotaLabel, enabled = @enabled, meta_json = @metaJson
+    WHERE id = @id
+  `);
+  const insertMedia = db.prepare(`
+    INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+    VALUES (@platform, @modelId, @displayName, @modality, @priority, @enabled, @quotaLabel, @metaJson)
+  `);
+  // Transcription rows share media_models but carry adapter metadata in
+  // meta_json (subtitle capability, upload ceiling, request flavor).
+  const updateTranscription = db.prepare(`
+    UPDATE media_models SET
+      display_name = @displayName, modality = 'transcription', priority = @priority,
+      quota_label = @quotaLabel, enabled = @enabled, meta_json = @metaJson
+    WHERE id = @id
+  `);
+  const insertTranscription = db.prepare(`
+    INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+    VALUES (@platform, @modelId, @displayName, 'transcription', @priority, @enabled, @quotaLabel, @metaJson)
+  `);
+  const selectEmbedding = db.prepare(
+    'SELECT id, enabled, display_name AS displayName FROM embedding_models WHERE platform = ? AND model_id = ?',
+  );
+  const updateEmbedding = db.prepare(`
+    UPDATE embedding_models SET
+      family = @family, display_name = @displayName, dimensions = @dimensions,
+      max_input_tokens = @maxInputTokens, priority = @priority,
+      quota_label = @quotaLabel, enabled = @enabled
+    WHERE id = @id
+  `);
+  const insertEmbedding = db.prepare(`
+    INSERT INTO embedding_models
+      (family, platform, model_id, display_name, dimensions, max_input_tokens,
+       priority, enabled, quota_label)
+    VALUES
+      (@family, @platform, @modelId, @displayName, @dimensions, @maxInputTokens,
+       @priority, @enabled, @quotaLabel)
+  `);
+
+  const apply = db.transaction(() => {
+    const inCatalog = new Set<string>();
+    const inMediaCatalog = new Set<string>();
+    const inEmbeddingCatalog = new Set<string>();
+    const inTranscriptionCatalog = new Set<string>();
+    const inVideoCatalog = new Set<string>();
+
+    for (const m of catalog.models) {
+      // Media modalities are gated on MEDIA_PLATFORMS (decoupled from the chat
+      // provider registry) and routed to media_models, then skip the chat path.
+      const modality = m.modality ?? 'text';
+      if (MEDIA_MODALITIES.has(modality)) {
+        if (!MEDIA_PLATFORMS.has(m.platform)) {
+          counts.skippedUnknownPlatform++;
+          continue;
+        }
+        if (isCatalogModelTombstoned(db, 'media', m.platform, m.modelId)) continue;
+        inMediaCatalog.add(`${m.platform}:${m.modelId}`);
+        const mrow = selectMedia.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
+        // Generative-media meta carries only the adapter request flavor today;
+        // a row without one stores NULL so the adapter keeps its default.
+        const mmeta: Record<string, unknown> = {};
+        if (typeof m.requestStyle === 'string') mmeta.requestStyle = m.requestStyle;
+        const mfields = {
+          displayName: m.displayName,
+          modality,
+          priority: m.intelligenceRank ?? 0,
+          quotaLabel: m.mediaNote ?? '',
+          metaJson: Object.keys(mmeta).length > 0 ? JSON.stringify(mmeta) : null,
+        };
+        if (mrow) {
+          const enabled = m.enabled ? mrow.enabled : 0; // catalog disable wins; local disable wins
+          updateMedia.run({ ...mfields, id: mrow.id, enabled });
+          counts.updated++;
+          if (mrow.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
+        } else {
+          insertMedia.run({ ...mfields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+          counts.inserted++;
+          record(details.added, m.platform, m.displayName);
+        }
+        continue;
+      }
+
+      if (m.platform === 'custom' || !hasProvider(m.platform as Platform)) {
+        // An older binary may receive models for providers it cannot route yet;
+        // skip them — they will appear after the user updates the app.
+        counts.skippedUnknownPlatform++;
+        continue;
+      }
+      if (isCatalogModelTombstoned(db, 'chat', m.platform, m.modelId)) continue;
+      // A model auto-retired from a 410/end-of-life response (#634) is disabled,
+      // not deleted. A catalog that STILL lists it — and lists it enabled — is
+      // newer evidence than that one provider response, so lift the retirement.
+      if (m.enabled) reinstateUpstreamRetiredCatalogModel(db, m.platform, m.modelId);
+      inCatalog.add(`${m.platform}:${m.modelId}`);
+
+      const row = selectModel.get(m.platform, m.modelId) as
+        | { id: number; enabled: number; source: string; displayName: string | null }
+        | undefined;
+      // Collision rule: if the user hand-added a model and the catalog later
+      // ships the same platform:model_id, the user row wins — the catalog
+      // neither clobbers its metadata nor adopts it (same spirit as the
+      // never-touch rule for custom-provider models). The row also survives
+      // the prune below because the delete pass only considers source='catalog'.
+      if (row && row.source === 'user') continue;
+      // #1348: a DISCOVERED row is the opposite case. Discovery only fills a
+      // gap the catalog left, so once the catalog lists the model it takes the
+      // row over: the metadata below replaces discovery's guesses and the row
+      // becomes catalog-owned (pruned with the catalog from then on). Local
+      // disables survive, like on any catalog row.
+      if (row && row.source === DISCOVERED_MODEL_SOURCE) adoptModel.run(row.id);
+      const fields = {
+        displayName: m.displayName,
+        intelligenceRank: m.intelligenceRank,
+        speedRank: m.speedRank,
+        sizeLabel: m.sizeLabel,
+        rpm: m.limits.rpm,
+        rpd: m.limits.rpd,
+        tpm: m.limits.tpm,
+        tpd: m.limits.tpd,
+        monthlyTokenBudget: m.monthlyTokenBudget,
+        contextWindow: m.contextWindow,
+        supportsVision: m.supportsVision ? 1 : 0,
+        supportsTools: m.supportsTools ? 1 : 0,
+      };
+      if (row) {
+        // Catalog disable wins (dead upstream); local disable also wins.
+        const enabled = m.enabled ? row.enabled : 0;
+        updateModel.run({ ...fields, id: row.id, enabled });
+        refreshModelOverrideBaselines(db, m.platform, m.modelId);
+        applyModelOverrides(db, m.platform, m.modelId);
+        counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
+      } else {
+        insertModel.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+        refreshModelOverrideBaselines(db, m.platform, m.modelId);
+        applyModelOverrides(db, m.platform, m.modelId);
+        counts.inserted++;
+          record(details.added, m.platform, m.displayName);
+      }
+    }
+
+    // Video models use their own optional full snapshot. Older catalogs omit
+    // the key and leave existing video rows untouched; older binaries ignore
+    // the key entirely, which is why these rows must not live in models[].
+    if (catalog.videoModels) {
+      for (const m of catalog.videoModels) {
+        if (!VIDEO_PLATFORMS.has(m.platform)) {
+          counts.skippedUnknownPlatform++;
+          continue;
+        }
+        if (isCatalogModelTombstoned(db, 'media', m.platform, m.modelId)) continue;
+        inVideoCatalog.add(`${m.platform}:${m.modelId}`);
+        const meta = typeof m.providerModelId === 'string'
+          ? JSON.stringify({ providerModelId: m.providerModelId })
+          : null;
+        const fields = {
+          displayName: m.displayName,
+          modality: 'video',
+          priority: m.priority,
+          quotaLabel: m.quotaLabel ?? '',
+          metaJson: meta,
+        };
+        const row = selectMedia.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
+        if (row) {
+          const enabled = m.enabled ? row.enabled : 0;
+          updateMedia.run({ ...fields, id: row.id, enabled });
+          counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
+        } else {
+          insertMedia.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+          counts.inserted++;
+          record(details.added, m.platform, m.displayName);
+        }
+      }
+    }
+
+    // Embeddings are their own full snapshot. Older catalogs omit this field;
+    // in that case retain the app's bundled embedding baseline untouched.
+    if (catalog.embeddings) {
+      for (const m of catalog.embeddings) {
+        if (!EMBEDDING_PLATFORMS.has(m.platform)) {
+          counts.skippedUnknownPlatform++;
+          continue;
+        }
+        inEmbeddingCatalog.add(`${m.platform}:${m.modelId}`);
+        const row = selectEmbedding.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
+        const fields = {
+          family: m.family,
+          displayName: m.displayName,
+          dimensions: m.dimensions,
+          maxInputTokens: m.maxInputTokens,
+          priority: m.priority,
+          quotaLabel: m.quotaLabel,
+        };
+        if (row) {
+          const enabled = m.enabled ? row.enabled : 0; // catalog and local disables both win
+          updateEmbedding.run({ ...fields, id: row.id, enabled });
+          counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
+        } else {
+          insertEmbedding.run({
+            ...fields,
+            platform: m.platform,
+            modelId: m.modelId,
+            enabled: m.enabled ? 1 : 0,
+          });
+          counts.inserted++;
+          record(details.added, m.platform, m.displayName);
+        }
+      }
+    }
+
+    // Transcription models are their own full snapshot, routed into
+    // media_models with modality='transcription' and gated on
+    // TRANSCRIPTION_PLATFORMS the way MEDIA_PLATFORMS gates the generative
+    // rows. Older catalogs omit this key; keep existing rows untouched then.
+    if (catalog.transcriptionModels) {
+      for (const m of catalog.transcriptionModels) {
+        if (!TRANSCRIPTION_PLATFORMS.has(m.platform)) {
+          counts.skippedUnknownPlatform++;
+          continue;
+        }
+        if (isCatalogModelTombstoned(db, 'media', m.platform, m.modelId)) continue;
+        inTranscriptionCatalog.add(`${m.platform}:${m.modelId}`);
+        const meta: Record<string, unknown> = {};
+        if (m.subtitleFormats?.length) meta.subtitleFormats = m.subtitleFormats;
+        if (typeof m.maxBytes === 'number') meta.maxBytes = m.maxBytes;
+        if (typeof m.requestStyle === 'string') meta.requestStyle = m.requestStyle;
+        const fields = {
+          displayName: m.displayName,
+          priority: m.priority,
+          quotaLabel: m.quotaLabel ?? '',
+          metaJson: Object.keys(meta).length > 0 ? JSON.stringify(meta) : null,
+        };
+        const row = selectMedia.get(m.platform, m.modelId) as
+          { id: number; enabled: number; displayName: string | null } | undefined;
+        if (row) {
+          const enabled = m.enabled ? row.enabled : 0; // catalog and local disables both win
+          updateTranscription.run({ ...fields, id: row.id, enabled });
+          counts.updated++;
+          if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
+        } else {
+          insertTranscription.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+          counts.inserted++;
+          record(details.added, m.platform, m.displayName);
+        }
+      }
+    }
+
+    counts.removed += deleteTombstonedCatalogModels(db);
+    applyAllModelOverrides(db);
+
+    // Ensure every model has a fallback_config row (same invariant migrations keep).
+    const missingFb = db
+      .prepare(
+        `SELECT m.id FROM models m LEFT JOIN fallback_config f ON m.id = f.model_db_id WHERE f.id IS NULL`,
+      )
+      .all() as { id: number }[];
+    if (missingFb.length > 0) {
+      const maxPriority = (db.prepare('SELECT COALESCE(MAX(priority), 0) AS mx FROM fallback_config').get() as { mx: number }).mx;
+      const addFb = db.prepare('INSERT INTO fallback_config (model_db_id, priority, enabled) VALUES (?, ?, 1)');
+      missingFb.forEach((r, i) => addFb.run(r.id, maxPriority + 1 + i));
+    }
+    ensureAllModelsInProfiles(db);
+
+    // Remove catalog-managed models that the catalog no longer lists.
+    // Ownership is decided by the `source` provenance column: only rows the
+    // catalog itself created are prune candidates. Rows with source='user'
+    // (declarative config, admin adds, custom endpoints) are never deleted
+    // here, no matter what their size_label or platform says — that replaces
+    // the old size_label NOT IN ('User','Custom') heuristic, which lost user
+    // rows whose label didn't follow the convention. The platform/key_id
+    // predicates stay as belt and braces.
+    const candidates = db
+      .prepare(`
+        SELECT id, platform, model_id, display_name AS displayName
+          FROM models
+         WHERE platform != 'custom'
+           AND key_id IS NULL
+           AND source = 'catalog'
+      `)
+      .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
+    const deleteFb = db.prepare('DELETE FROM fallback_config WHERE model_db_id = ?');
+    const deleteModel = db.prepare('DELETE FROM models WHERE id = ?');
+    for (const c of candidates) {
+      if (!hasProvider(c.platform as Platform)) continue; // not catalog-managed by this binary
+      if (!inCatalog.has(`${c.platform}:${c.model_id}`)) {
+        deleteFb.run(c.id);
+        deleteModel.run(c.id);
+        counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
+      }
+    }
+
+    // #1348: retire discovered rows on every platform the catalog now
+    // manages. A platform counts as managed when this catalog carries ANY row
+    // for it (chat, media, embedding, STT or video; enabled or disabled, since
+    // a disabled row is still an audit verdict) or names it in
+    // managedPlatforms. Rows the catalog listed were adopted above and are
+    // source='catalog' by now, so what is left is exactly the discovered
+    // stopgap the catalog has superseded.
+    const managed = catalogPlatforms(catalog);
+    const discoveredRows = db
+      .prepare('SELECT id, platform, model_id, display_name AS displayName FROM models WHERE source = ?')
+      .all(DISCOVERED_MODEL_SOURCE) as
+        { id: number; platform: string; model_id: string; displayName: string | null }[];
+    for (const d of discoveredRows) {
+      if (!managed.has(d.platform)) continue;
+      deleteFb.run(d.id);
+      deleteModel.run(d.id);
+      counts.removed++;
+      record(details.removed, d.platform, d.displayName ?? d.model_id);
+    }
+
+    // Remove media models the catalog no longer lists (own table, no
+    // fallback_config). Deliberately an ALLOWLIST of the two modalities that
+    // `models[]` maintains, not "everything except transcription": video and
+    // transcription rows come from their own optional snapshots below, so a
+    // catalog that omits those keys must leave them alone. Widening this back
+    // to a `!=` filter would silently delete every video row on the first sync
+    // from an older catalog.
+    const mediaCandidates = db
+      .prepare("SELECT id, platform, model_id, display_name AS displayName FROM media_models WHERE modality IN ('image', 'audio')")
+      .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
+    const deleteMedia = db.prepare('DELETE FROM media_models WHERE id = ?');
+    for (const c of mediaCandidates) {
+      if (!MEDIA_PLATFORMS.has(c.platform)) continue; // not media-managed by this binary
+      if (!inMediaCatalog.has(`${c.platform}:${c.model_id}`)) {
+        deleteMedia.run(c.id);
+        counts.removed++;
+        record(details.removed, c.platform, c.displayName ?? c.model_id);
+      }
+    }
+
+    // Prune video rows only when this catalog actually carries the dedicated
+    // snapshot. An older catalog cannot know whether a video row was retired.
+    if (catalog.videoModels) {
+      const videoCandidates = db
+        .prepare("SELECT id, platform, model_id, display_name AS displayName FROM media_models WHERE modality = 'video'")
+        .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
+      for (const c of videoCandidates) {
+        if (!VIDEO_PLATFORMS.has(c.platform)) continue;
+        if (!inVideoCatalog.has(`${c.platform}:${c.model_id}`)) {
+          deleteMedia.run(c.id);
+          counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
+        }
+      }
+    }
+
+    // Prune transcription rows only when the catalog actually carries the
+    // snapshot (mirrors the embeddings rule), scoped to the modality so
+    // image/audio rows are never touched by it.
+    if (catalog.transcriptionModels) {
+      const sttCandidates = db
+        .prepare("SELECT id, platform, model_id, display_name AS displayName FROM media_models WHERE modality = 'transcription'")
+        .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
+      for (const c of sttCandidates) {
+        if (!TRANSCRIPTION_PLATFORMS.has(c.platform)) continue;
+        if (!inTranscriptionCatalog.has(`${c.platform}:${c.model_id}`)) {
+          deleteMedia.run(c.id);
+          counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
+        }
+      }
+    }
+
+    // Embeddings are their own full snapshot. Older catalogs omit this field,
+    // AND catalogs may publish `embeddings: []` while still shipping model
+    // rows — both cases mean "retain the app's bundled embedding baseline
+    // untouched". The JS truthy check on a non-empty array object would
+    // misfire on `[]`, wiping the seeded rows; gate on length instead.
+    if (catalog.embeddings && catalog.embeddings.length > 0) {
+      const embeddingCandidates = db
+        .prepare(`
+          SELECT id, platform, model_id, display_name AS displayName
+            FROM embedding_models
+           WHERE platform != 'custom' AND key_id IS NULL
+        `)
+        .all() as { id: number; platform: string; model_id: string; displayName: string | null }[];
+      const deleteEmbedding = db.prepare('DELETE FROM embedding_models WHERE id = ?');
+      for (const c of embeddingCandidates) {
+        if (!EMBEDDING_PLATFORMS.has(c.platform)) continue;
+        if (!inEmbeddingCatalog.has(`${c.platform}:${c.model_id}`)) {
+          deleteEmbedding.run(c.id);
+          counts.removed++;
+          record(details.removed, c.platform, c.displayName ?? c.model_id);
+        }
+      }
+    }
+
+    // Quirks are pure content: replace wholesale.
+    db.prepare('DELETE FROM quirk_targets').run();
+    db.prepare('DELETE FROM quirks').run();
+    const insertQuirk = db.prepare(
+      `INSERT INTO quirks (slug, title, body, severity, created_at_ms, updated_at_ms) VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+    const insertTarget = db.prepare(
+      `INSERT INTO quirk_targets (quirk_id, platform, model_glob) VALUES (?, ?, ?)`,
+    );
+    const now = Date.now();
+    for (const q of catalog.quirks) {
+      const info = insertQuirk.run(q.slug, q.title, q.body, q.severity, now, now);
+      for (const t of q.targets) insertTarget.run(info.lastInsertRowid, t.platform ?? null, t.modelGlob ?? null);
+      counts.quirks++;
+    }
+  });
+
+  apply();
+  return { counts, details };
+}
+
+/**
+ * Fetch the catalog, verify its signature, and apply it if it moves us forward.
+ * `force` skips the `since` short-circuit — forces a full catalog fetch
+ * regardless of version changes.
+ */
+/** In-flight run for syncCatalog — concurrent callers share the same run. */
+let inFlightSync: Promise<SyncResult> | null = null;
+
+export async function syncCatalog(force = false): Promise<SyncResult> {
+  // In-flight guard: if a run is already active, hand back the same promise
+  // instead of starting a duplicate fetch+apply.
+  if (inFlightSync) {
+    console.log('[catalog-sync] sync already in flight — reusing run');
+    return inFlightSync;
+  }
+  inFlightSync = runSyncCatalog(force);
+  try {
+    return await inFlightSync;
+  } finally {
+    inFlightSync = null;
+  }
+}
+
+async function runSyncCatalog(force: boolean): Promise<SyncResult> {
+  const db = getDb();
+  const applied = getSetting(SETTING_APPLIED_VERSION);
+
+  try {
+    const url = new URL(`${catalogBaseUrl()}/v1/latest`);
+    if (applied && !force) url.searchParams.set('since', applied);
+
+    const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+
+    if (res.status === 304) {
+      setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
+      setSetting(SETTING_LAST_ERROR, '');
+      return { ok: true, action: 'up_to_date', version: applied };
+    }
+    if (!res.ok) throw new Error(`catalog fetch failed: HTTP ${res.status}`);
+
+    const signature = res.headers.get('x-catalog-signature');
+    if (!signature) throw new Error('catalog response missing signature');
+    const bytes = Buffer.from(await res.arrayBuffer());
+    const verified = crypto.verify(null, bytes, catalogPublicKey(), Buffer.from(signature, 'base64'));
+    if (!verified) throw new Error('catalog signature verification FAILED — discarding response');
+
+    const parsed: unknown = JSON.parse(bytes.toString('utf8'));
+    if (!isCatalog(parsed)) throw new Error('catalog payload has unexpected shape');
+    const catalog = parsed;
+
+    if (catalog.version < MIN_CATALOG_VERSION) {
+      // Older than the bundled baseline (e.g. monthly snapshot lagging a fresh
+      // app release) — applying it would roll back migrations. Wait it out.
+      setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
+      setSetting(SETTING_LAST_ERROR, '');
+      return { ok: true, action: 'skipped_older', version: catalog.version, tier: catalog.tier };
+    }
+
+    const sameAsApplied = applied === catalog.version && getSetting(SETTING_APPLIED_TIER) === catalog.tier;
+    if (!sameAsApplied) {
+      const { counts, details } = applyCatalogDetailed(db, catalog);
+      setSetting(SETTING_APPLIED_VERSION, catalog.version);
+      setSetting(SETTING_APPLIED_TIER, catalog.tier);
+      // Cache the verified document so boots can re-apply it offline (see
+      // reapplyCachedCatalog). Stored post-verification: anything that could
+      // tamper this row could tamper the models table directly, so the cache
+      // adds no new trust surface.
+      setSetting(SETTING_APPLIED_JSON, bytes.toString('utf8'));
+      console.log(
+        `[catalog-sync] applied ${catalog.tier} v${catalog.version}: ` +
+          `${counts.updated} updated, ${counts.inserted} new, ${counts.removed} removed, ` +
+          `${counts.quirks} quirks` +
+          (counts.skippedUnknownPlatform ? `, ${counts.skippedUnknownPlatform} skipped (unknown platform)` : ''),
+      );
+      setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
+      setSetting(SETTING_LAST_ERROR, '');
+      const syncResult: SyncResult = {
+        ok: true,
+        action: 'applied',
+        version: catalog.version,
+        tier: catalog.tier,
+        counts,
+        details,
+      };
+      emitSyncNotifications(syncResult);
+      return syncResult;
+    }
+
+    setSetting(SETTING_LAST_SYNC_MS, String(Date.now()));
+    setSetting(SETTING_LAST_ERROR, '');
+    return { ok: true, action: 'up_to_date', version: catalog.version, tier: catalog.tier };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[catalog-sync] ${message}`);
+    setSetting(SETTING_LAST_ERROR, message);
+    return { ok: false, action: 'error', detail: message };
+  }
+}
+
+export interface CatalogSyncState {
+  baseUrl: string;
+  appliedVersion: string | null;
+  appliedTier: string | null;
+  lastSyncMs: number | null;
+  lastError: string | null;
+}
+
+export function getSyncState(): CatalogSyncState {
+  return {
+    baseUrl: catalogBaseUrl(),
+    appliedVersion: getSetting(SETTING_APPLIED_VERSION) ?? null,
+    appliedTier: getSetting(SETTING_APPLIED_TIER) ?? null,
+    lastSyncMs: Number(getSetting(SETTING_LAST_SYNC_MS)) || null,
+    lastError: getSetting(SETTING_LAST_ERROR) || null,
+  };
+}
+
+/**
+ * Re-apply the cached (already signature-verified) catalog after boot.
+ *
+ * Migrations run on every boot and re-assert the bundled baseline — they
+ * INSERT OR IGNORE baseline models the catalog may have deleted and re-run
+ * the family-rule resets — while the boot-time network sync 304s on an
+ * unchanged version and so would NOT re-apply. Without this step every
+ * restart drifts the DB back toward the baseline until the next catalog
+ * version bump. Re-applying from the local cache is synchronous, needs no
+ * network, and keeps the catalog authoritative even offline.
+ *
+ * Legacy upgrade path: installs that applied a catalog before the cache
+ * existed have an applied-version setting but no cached document. Clearing
+ * the applied version makes the next poll fetch the full catalog (no `since`
+ * short-circuit), which re-applies it and populates the cache.
+ */
+export function reapplyCachedCatalog(): { reapplied: boolean; version?: string } {
+  try {
+    const raw = getSetting(SETTING_APPLIED_JSON);
+    if (!raw) {
+      if (getSetting(SETTING_APPLIED_VERSION)) {
+        getDb().prepare('DELETE FROM settings WHERE key = ?').run(SETTING_APPLIED_VERSION);
+      }
+      return { reapplied: false };
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!isCatalog(parsed) || parsed.version < MIN_CATALOG_VERSION) return { reapplied: false };
+    applyCatalog(getDb(), parsed);
+    console.log(`[catalog-sync] re-applied cached ${parsed.tier} v${parsed.version} after boot`);
+    return { reapplied: true, version: parsed.version };
+  } catch (err) {
+    console.warn(`[catalog-sync] cached catalog re-apply failed: ${err instanceof Error ? err.message : err}`);
+    return { reapplied: false };
+  }
+}
+
+let cancelBootTimer: (() => void) | null = null;
+let cancelInterval: (() => void) | null = null;
+let currentScheduler: Scheduler | null = null;
+
+function restartInterval(): void {
+  if (!currentScheduler) return;
+  if (cancelInterval) { cancelInterval(); cancelInterval = null; }
+  const ms = syncIntervalMs();
+  if (ms > 0) {
+    cancelInterval = currentScheduler.every(ms, () => { void syncCatalog(); });
+    console.log(`[catalog-sync] polling ${catalogBaseUrl()} every ${ms / 3600000}h`);
+  } else {
+    console.log('[catalog-sync] auto-sync disabled (manual mode)');
+  }
+}
+
+export function startCatalogSync(scheduler: Scheduler): void {
+  if (cancelInterval) return;
+  if (process.env.CATALOG_SYNC_DISABLED === '1') {
+    console.log('[catalog-sync] disabled via CATALOG_SYNC_DISABLED=1');
+    stopCatalogSync();
+    return;
+  }
+  currentScheduler = scheduler;
+  reapplyCachedCatalog();
+  const run = () => {
+    void syncCatalog();
+  };
+  cancelBootTimer = scheduler.after(BOOT_DELAY_MS, async () => {
+    run();
+    // Auto-discover models for providers that have keys but zero models in
+    // the catalog. Bypasses the monthly catalog: instead of waiting for
+    // the next snapshot to include a new provider, we query their APIs.
+    try {
+      const { autoDiscoverAll } = await import('./auto-discover.js');
+      await autoDiscoverAll();
+    } catch (err) {
+      console.warn(`[catalog-sync] auto-discover failed: ${err instanceof Error ? err.message : err}`);
+    }
+    // Check for server updates on boot (if enabled in settings)
+    try {
+      const { checkUpdateAvailable } = await import('./notification-emitter.js');
+      await checkUpdateAvailable();
+    } catch {
+      // Silent — update check is best-effort
+    }
+  });
+  restartInterval();
+}
+
+export function stopCatalogSync(): void {
+  if (cancelBootTimer) {
+    cancelBootTimer();
+    cancelBootTimer = null;
+  }
+  if (cancelInterval) {
+    cancelInterval();
+    cancelInterval = null;
+  }
+}
+
+/** Call after changing the schedule setting to restart the polling timer. */
+export function updateSyncSchedule(): void {
+  restartInterval();
+  // Also restart auto-discover on the same schedule
+  import('./auto-discover.js').then(m => m.restartRefreshInterval()).catch(() => {});
+}
+
+/** How many model names one notification line may name before it elides. */
+const MAX_NOTIFICATION_MODELS = 5;
+
+/**
+ * One notification per provider that actually changed, naming the models.
+ *
+ * A bare "12 models added" line tells the user nothing actionable, so the
+ * per-platform ledger from applyCatalogInner drives this: each entry is a
+ * provider plus the models that changed on it. Names are elided past
+ * MAX_NOTIFICATION_MODELS — one sync can land a whole new provider's roster —
+ * while the count stays the true total, so nothing is hidden.
+ *
+ * `updated` collapses to one line per provider with a count rather than
+ * naming models: the ledger there is every catalog row whose display name
+ * moved, which on a routine monthly snapshot is essentially the entire
+ * catalog (370 rows on the install this was built for), and a bell listing
+ * all of them is noise, not news.
+ */
+function emitSyncNotifications(result: SyncResult): void {
+  if (!result.counts) return;
+  const { inserted, removed, updated } = result.counts;
+  if (inserted === 0 && removed === 0 && updated === 0) return;
+  const now = Date.now();
+  const notifs: SyncNotification[] = [];
+  const ledger = result.details;
+
+  const names = (list: string[]): string =>
+    list.slice(0, MAX_NOTIFICATION_MODELS).join(', ') + (list.length > MAX_NOTIFICATION_MODELS ? '…' : '');
+
+  /** Per-platform lines for added/removed, one line per changed provider. */
+  const perPlatform = (
+    changes: Map<string, string[]>,
+    type: SyncNotification['type'],
+    dataKey: string,
+  ): void => {
+    for (const [platform, list] of changes) {
+      const count = list.length;
+      notifs.push({
+        id: `sync-${now}-${type}-${platform}`,
+        type,
+        modelId: '*',
+        platform,
+        displayName: `${count} model ${type === 'added' ? 'baru' : 'dihapus'}`,
+        message: names(list),
+        data: { key: dataKey, vars: { count, platform } },
+        timestamp: now,
+        read: false,
+      });
+    }
+  };
+
+  if (inserted > 0) {
+    if (ledger && ledger.added.size > 0) {
+      perPlatform(ledger.added, 'added', 'notifications.catalogAddedFrom');
+    } else {
+      notifs.push({
+        id: `sync-${now}-added`,
+        type: 'added',
+        modelId: '*',
+        platform: '',
+        displayName: `${inserted} model baru`,
+        // Empty sub-line: the localized title already carries the count and
+        // source — this sentence only repeated it in server-side Indonesian.
+        message: '',
+        data: { key: 'notifications.catalogAdded', vars: { count: inserted } },
+        timestamp: now,
+        read: false,
+      });
+    }
+  }
+
+  if (removed > 0) {
+    if (ledger && ledger.removed.size > 0) {
+      perPlatform(ledger.removed, 'removed', 'notifications.catalogRemovedFrom');
+    } else {
+      notifs.push({
+        id: `sync-${now}-removed`,
+        type: 'removed',
+        modelId: '*',
+        platform: '',
+        displayName: `${removed} model dihapus`,
+        message: '',
+        data: { key: 'notifications.catalogRemoved', vars: { count: removed } },
+        timestamp: now,
+        read: false,
+      });
+    }
+  }
+
+  if (updated > 0) {
+    if (ledger && ledger.updated.size > 0) {
+      for (const [platform, list] of ledger.updated) {
+        notifs.push({
+          id: `sync-${now}-updated-${platform}`,
+          type: 'updated',
+          modelId: '*',
+          platform,
+          displayName: `${list.length} model diperbarui`,
+          message: '',
+          data: { key: 'notifications.catalogUpdatedFrom', vars: { count: list.length, platform } },
+          timestamp: now,
+          read: false,
+        });
+      }
+    } else {
+      notifs.push({
+        id: `sync-${now}-updated`,
+        type: 'updated',
+        modelId: '*',
+        platform: '',
+        displayName: `${updated} model diperbarui`,
+        message: '',
+        data: { key: 'notifications.catalogUpdated', vars: { count: updated } },
+        timestamp: now,
+        read: false,
+      });
+    }
+  }
+
+  addNotifications(notifs);
+}
