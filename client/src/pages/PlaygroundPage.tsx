@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, CircleAlert, FileText, X } from 'lucide-react'
+import { ChevronRight, CircleAlert, FileText, Globe, X } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { buildModelOptions } from '@/lib/model-groups'
 import type { Chain } from '@/components/chain-manager'
@@ -94,6 +94,23 @@ function fusionRouteLabel(p: { platform: string; model: string }): string {
   return p.model.startsWith(`${p.platform}/`) ? p.model : `${p.platform}/${p.model}`
 }
 
+// Smooth show/hide for the Playground's tucked-away detail (thinking, web
+// sources, the fusion panel). The content stays mounted and the row animates
+// from 0fr to 1fr, so it opens to its natural height without measuring;
+// `inert` keeps a closed panel's links out of the tab order.
+function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div
+      data-open={open}
+      className="grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none data-[open=false]:opacity-0"
+      style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+      inert={!open}
+    >
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </div>
+  )
+}
+
 // Collapsible, minimal-font trace shown OUTSIDE the main answer bubble: each
 // panel model's raw answer as it streamed in, plus the judge that synthesized
 // the final answer. Default-open so you can watch it work; collapse to tuck away.
@@ -122,7 +139,7 @@ function FusionTrace({ panel, judge, streaming, answerStarted }: {
         <ChevronRight className={`size-3 transition-transform ${open ? 'rotate-90' : ''}`} />
         {t('playground.fusionTrace', { count: panel.length })}{streaming ? ' …' : ''}
       </button>
-      {open && (
+      <Collapse open={open}>
         <div className="mt-1 space-y-2 border-l border-border/60 pl-2.5">
           {panel.map((p, i) => (
             <div key={i} className="space-y-0.5">
@@ -141,7 +158,7 @@ function FusionTrace({ panel, judge, streaming, answerStarted }: {
             </div>
           )}
         </div>
-      )}
+      </Collapse>
     </div>
   )
 }
@@ -150,29 +167,49 @@ function FusionTrace({ panel, judge, streaming, answerStarted }: {
 // visual language as FusionTrace (minimal font, muted, hanging rule, chevron
 // toggle) and the same behaviour: open while it streams so you can watch the
 // model work, auto-collapsing once the answer itself starts.
-function ReasoningTrace({ text, answerStarted }: { text: string; answerStarted?: boolean }) {
+function ReplyTrace({ reasoning, search, answerStarted }: {
+  reasoning?: string
+  search?: WebSearchMeta
+  answerStarted?: boolean
+}) {
   const { t } = useI18n()
-  const [open, setOpen] = useState(true)
+  // Thinking opens while it streams and tucks away once the answer starts.
+  // Web sources never open on their own: they are there for the curious, so a
+  // searched reply with no thinking starts closed.
+  const [open, setOpen] = useState(() => !!reasoning && !answerStarted)
   const touched = useRef(false)
   useEffect(() => {
     if (answerStarted && !touched.current) setOpen(false)
   }, [answerStarted])
+  useEffect(() => {
+    if (reasoning && !answerStarted && !touched.current) setOpen(true)
+  }, [reasoning, answerStarted])
+  const sourceCount = search?.sources.length ?? 0
   return (
     <div className="mb-2 text-muted-foreground/80">
       <button
         type="button"
         onClick={() => { touched.current = true; setOpen(o => !o) }}
+        aria-expanded={open}
         className="inline-flex items-center gap-1 font-mono text-[10px] leading-snug hover:text-foreground transition-colors"
       >
-        <ChevronRight className={`size-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+        <ChevronRight className={`size-3 transition-transform duration-300 ${open ? 'rotate-90' : ''}`} />
         {open ? t('common.hide') : t('common.show')}
+        {sourceCount > 0 && (
+          <span className="inline-flex items-center gap-1 opacity-80">
+            · <Globe className="size-2.5" /> {t('search.traceSources', { count: sourceCount })}
+          </span>
+        )}
       </button>
-      {open && (
-        // Same type as the answer beneath it, size and leading, only quieter.
-        <div className="mt-1 whitespace-pre-wrap border-l border-border/60 pl-2.5 text-sm leading-relaxed text-muted-foreground">
-          {text}
-        </div>
-      )}
+      <Collapse open={open}>
+        {search && sourceCount > 0 && <SearchSources search={search} />}
+        {reasoning && (
+          // Same type as the answer beneath it, size and leading, only quieter.
+          <div className="mt-1 whitespace-pre-wrap border-l border-border/60 pl-2.5 text-sm leading-relaxed text-muted-foreground">
+            {reasoning}
+          </div>
+        )}
+      </Collapse>
     </div>
   )
 }
@@ -1084,15 +1121,16 @@ export default function PlaygroundPage() {
                             </div>
                           ) : msg.role === 'assistant' ? (
                             <>
-                              {msg.reasoning && (
-                                <ReasoningTrace text={msg.reasoning} answerStarted={msg.content.length > 0} />
+                              {(msg.reasoning || (msg.meta?.webSearch && msg.meta.webSearch.sources.length > 0)) && (
+                                <ReplyTrace
+                                  reasoning={msg.reasoning}
+                                  search={msg.meta?.webSearch}
+                                  answerStarted={msg.content.length > 0}
+                                />
                               )}
                               <ArtifactHostContext.Provider value={artifactHost}>
                                 <Markdown>{msg.content}</Markdown>
                               </ArtifactHostContext.Provider>
-                              {msg.meta?.webSearch && msg.meta.webSearch.sources.length > 0 && (
-                                <SearchSources search={msg.meta.webSearch} />
-                              )}
                             </>
                           ) : (
                             <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -1249,7 +1287,7 @@ export default function PlaygroundPage() {
             loading={loading}
             onSend={handleSend}
             onAttach={() => fileInputRef.current?.click()}
-            labels={{ attach: t('playground.attach'), send: t('playground.send'), sending: t('playground.sending') }}
+            labels={{ add: t('playground.addMenu'), attach: t('playground.attach'), send: t('playground.send'), sending: t('playground.sending') }}
             dictation={{
               available: transcriptionAvailable,
               model: dictationModel,
@@ -1259,9 +1297,13 @@ export default function PlaygroundPage() {
                 inputRef.current?.focus()
               },
             }}
-            webSearch={webSearchOn
-              ? { label: t('search.chipOn'), offLabel: t('search.chipOff'), onDisable: () => updateWebSearch(false) }
-              : undefined}
+            webSearch={{
+              enabled: webSearchOn,
+              available: webSearchAvailable,
+              label: t('search.playgroundToggle'),
+              unavailableHint: t('search.playgroundNoKeys'),
+              onToggle: updateWebSearch,
+            }}
           />
         </div>
       </div>
