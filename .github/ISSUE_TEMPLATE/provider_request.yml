@@ -1,0 +1,52 @@
+name: "🔌 Request New Free Provider / Model"
+description: Propose adding a new free LLM provider or free model endpoint to SRouter
+title: "[Provider]: "
+labels: ["provider", "catalog"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SRouter prioritizes free-tier inference and keyless endpoints. Please ensure the provider offers a genuinely free tier without requiring a paid credit card.
+  - type: input
+    id: provider_name
+    attributes:
+      label: Provider Name
+      placeholder: "e.g. Sambanova / Together AI / DeepSeek"
+    validations:
+      required: true
+  - type: input
+    id: provider_url
+    attributes:
+      label: Provider Website & API Documentation URL
+      placeholder: "https://example.com/api-docs"
+    validations:
+      required: true
+  - type: dropdown
+    id: tier_type
+    attributes:
+      label: Free Tier Type
+      options:
+        - "100% Free / Keyless (No sign-up or credit card required)"
+        - "Free with API Key (Generous daily/monthly quota, no credit card)"
+        - "Promotional / Free Trial Credits (Generous balance)"
+    validations:
+      required: true
+  - type: textarea
+    id: models_and_limits
+    attributes:
+      label: Supported Models & Rate Limits
+      description: What models are available on the free tier, and what are the rate limits (RPM / RPD / TPM)?
+      placeholder: "e.g. Model X (30 RPM, 100K tokens/day)"
+    validations:
+      required: true
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: API Compatibility
+      options:
+        - "OpenAI Compatible (/v1/chat/completions)"
+        - "Anthropic Messages Compatible (/v1/messages)"
+        - "Google Gemini Compatible"
+        - "Custom / Proprietary SDK"
+    validations:
+      required: true
