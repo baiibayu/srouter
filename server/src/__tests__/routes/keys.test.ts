@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
 import { initDb, getDb } from '../../db/index.js';
@@ -6,6 +6,9 @@ import { decrypt } from '../../lib/crypto.js';
 import { mintDashboardToken, isGatedApiPath } from '../helpers/auth.js';
 
 let dashToken = '';
+
+// Original fetch, captured once so the per-test agnes stub below can restore it.
+const realFetchForTests = globalThis.fetch;
 
 async function request(app: Express, method: string, path: string, body?: any) {
   const server = app.listen(0, '127.0.0.1');
@@ -72,6 +75,21 @@ describe('Keys API', () => {
   beforeEach(() => {
     const db = getDb();
     db.prepare('DELETE FROM api_keys').run();
+    // #438/#1327: these cases assert the zero-catalog-models path, but the
+    // route auto-discovers over the network when the count is zero — and
+    // apihub.agnes-ai.com answers /v1/models inconsistently (sometimes a
+    // public list, sometimes 401), which made CI depend on a third party's
+    // mood. Force the offline path for that host so the tests are hermetic.
+    // Local-app requests (127.0.0.1) pass through untouched.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: any, init?: any) => {
+      if (String(url).includes('agnes-ai.com')) throw new Error('offline (test stub)');
+      return realFetch(url, init);
+    }) as typeof fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = realFetchForTests;
   });
 
   it('GET /api/keys returns empty array initially', async () => {

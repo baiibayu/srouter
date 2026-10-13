@@ -1,0 +1,76 @@
+name: "🐛 Bug Report"
+description: File a bug report for SRouter (gateway, dashboard, CLI, or desktop)
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Please check existing issues before submitting.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of SRouter has the issue?
+      options:
+        - "Gateway Server (/v1 API)"
+        - "Web Dashboard"
+        - "Desktop App (Tray / Electron)"
+        - "CLI (srouter / setup-*)"
+        - "Prompt Compression"
+        - "Provider / Model Catalog"
+        - "Docker"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SRouter Version / Commit
+      description: e.g. 0.1.0, latest Docker, or git commit hash
+      placeholder: "v0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment & OS
+      description: OS (Windows / macOS / Linux / Termux), Node.js version, Docker version
+      placeholder: "Windows 11, Node v22.14.0"
+    validations:
+      required: true
+  - type: input
+    id: agent_client
+    attributes:
+      label: Coding Agent / Client Used (if applicable)
+      description: e.g. Claude Code, Cursor, Cline, Roo Code, Codex CLI, Python SDK
+      placeholder: "Claude Code / Cursor"
+  - type: input
+    id: provider
+    attributes:
+      label: Provider & Model (if routing issue)
+      description: e.g. Google Gemini 2.5 Flash, Groq Llama 3.3, Kilo Free
+      placeholder: "groq / llama-3.3-70b-versatile"
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      placeholder: |
+        1. Start SRouter with `srouter`
+        2. Call endpoint `POST /v1/chat/completions` with ...
+        3. See error ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs & Error Messages
+      description: Please paste logs from server terminal or container. REDACT ALL REAL API KEYS!
+      render: shell
