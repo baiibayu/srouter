@@ -18,6 +18,7 @@ import {
   Coins,
   Gauge,
   GitBranch,
+  Globe,
   KeyRound,
   Layers,
   List,
@@ -43,6 +44,7 @@ import { sortRows, useTableSort, type SortValueFn } from '@/lib/table-sort'
 import { platformColors } from '@/lib/routing'
 import { categoryAxisProps, verticalCategoryAxisProps } from '@/lib/chart-axis'
 import { useI18n } from '@/i18n'
+import type { SearchAnalytics } from '@/lib/search'
 
 type TimeRange = '24h' | '7d' | '30d' | '90d'
 
@@ -573,6 +575,15 @@ export default function AnalyticsPage() {
     queryFn: () => apiFetch<RecentErrorRow[]>(`/api/analytics/errors?range=${range}`),
   })
 
+  // Web search usage (#1174). Its two panels sit under the token chart and
+  // only appear once this install has run a search in the window; an older
+  // server without the endpoint simply has none.
+  const { data: searchStats } = useQuery({
+    queryKey: ['analytics', 'search', range],
+    queryFn: () => apiFetch<SearchAnalytics>(`/api/analytics/search?range=${range}`),
+    retry: false,
+  })
+
   const { data: errorDist } = useQuery({
     queryKey: ['analytics', 'error-distribution', range],
     queryFn: () => apiFetch<ErrorDistribution>(`/api/analytics/error-distribution?range=${range}`),
@@ -770,6 +781,49 @@ export default function AnalyticsPage() {
               )}
             </Panel>
           </div>
+
+          {searchStats && searchStats.total > 0 && (
+            <>
+              <Panel icon={Globe} title={t('search.analyticsByEngine')}>
+                <div className="space-y-2.5">
+                  {searchStats.byEngine
+                    .slice()
+                    .sort((a, b) => b.count - a.count)
+                    .map(row => {
+                      const max = Math.max(...searchStats.byEngine.map(r => r.count), 1)
+                      const platform = row.engineId.split('-')[0]
+                      return (
+                        <div key={row.engineId} className="flex items-center gap-3 text-xs">
+                          <span className="w-24 shrink-0 truncate text-muted-foreground" title={row.engineId}>{row.displayName}</span>
+                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${(row.count / max) * 100}%`, backgroundColor: platformColors[platform] ?? primaryFill }}
+                            />
+                          </div>
+                          <span className="w-10 shrink-0 text-right tabular-nums">{row.count}</span>
+                        </div>
+                      )
+                    })}
+                </div>
+              </Panel>
+              <Panel icon={Activity} title={t('search.analyticsSummary')}>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: t('search.analyticsSearches'), value: String(searchStats.total) },
+                    { label: t('analytics.successRate'), value: `${Math.round(searchStats.successRate * 10) / 10}%` },
+                    { label: t('analytics.avgLatency'), value: `${Math.round(searchStats.avgLatencyMs)} ms` },
+                    { label: t('search.analyticsToday'), value: String(searchStats.today) },
+                  ].map(cell => (
+                    <div key={cell.label} className="rounded-2xl border px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{cell.label}</p>
+                      <p className="mt-0.5 text-lg font-semibold tabular-nums">{cell.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            </>
+          )}
 
           <Panel icon={Server} title={t('analytics.requestsByProvider')}>
             {byPlatform.length === 0 ? (

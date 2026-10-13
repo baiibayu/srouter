@@ -57,6 +57,13 @@ export interface SettingsRailProps {
   onSystemPromptChange: (value: string) => void
   sampling: SamplingSettings
   onSamplingChange: (next: SamplingSettings) => void
+  /** Look the question up with POST /v1/search before answering (#1174). */
+  webSearch: boolean
+  onWebSearchChange: (enabled: boolean) => void
+  /** False until at least one search key is configured. */
+  webSearchAvailable: boolean
+  /** Enabled engines in failover order, e.g. "Tavily → Exa". */
+  webSearchChain: string
 }
 
 function SamplingControlRow({
@@ -146,11 +153,15 @@ export function SettingsRail({
   onSystemPromptChange,
   sampling,
   onSamplingChange,
+  webSearch,
+  onWebSearchChange,
+  webSearchAvailable,
+  webSearchChain,
 }: SettingsRailProps) {
   const { t } = useI18n()
   // Anything the collapsed strip should own up to: a system prompt riding on
   // every request, or a knob overriding the provider's default.
-  const tweaked = samplingActiveCount(sampling) > 0 || systemPrompt.trim().length > 0
+  const tweaked = samplingActiveCount(sampling) > 0 || systemPrompt.trim().length > 0 || webSearch
 
   return (
     <div
@@ -269,6 +280,32 @@ export function SettingsRail({
                 onChange={onSamplingChange}
               />
             ))}
+          </div>
+
+          <div className="space-y-2">
+            <div className="space-y-0.5">
+              <span className="block text-xs font-medium">{t('search.playgroundHeading')}</span>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {webSearchAvailable ? t('search.playgroundHelp') : t('search.playgroundNoKeys')}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="playground-web-search" className="flex-1 text-xs">
+                {t('search.playgroundToggle')}
+              </label>
+              <Switch
+                id="playground-web-search"
+                size="sm"
+                checked={webSearch && webSearchAvailable}
+                onCheckedChange={onWebSearchChange}
+                disabled={!webSearchAvailable}
+              />
+            </div>
+            {webSearchAvailable && webSearchChain && (
+              <p className="text-[11px] text-muted-foreground">
+                {t('search.playgroundEngines', { chain: webSearchChain })}
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -696,3 +696,101 @@ describe('applyCatalog: generative media meta', () => {
     expect(reapplyCachedCatalog().reapplied).toBe(false);
   });
 });
+
+// Web search engines (#1174) ride their own optional registry into
+// media_models with modality 'search', on the same rules as video: a catalog
+// without the key keeps the bundled baseline, one with it is a full snapshot.
+describe('applyCatalog: searchEngines', () => {
+  type CatalogSearch = NonNullable<AnyCatalog['searchEngines']>[number];
+
+  beforeAll(() => {
+    process.env.ENCRYPTION_KEY = '0'.repeat(64);
+    initDb(':memory:');
+  });
+
+  function searchRoster(): CatalogSearch[] {
+    return [
+      {
+        platform: 'exa', engineId: 'exa-search', displayName: 'Exa Search', priority: 0, enabled: true,
+        quotaLabel: '$10/month in credits', creditsPerQuery: null,
+        features: { news: true, answer: false, fullContent: true },
+      },
+      {
+        platform: 'tavily', engineId: 'tavily-search', displayName: 'Tavily Search', priority: 1, enabled: true,
+        quotaLabel: '1,000 credits/month', creditsPerQuery: 1,
+        features: { news: true, answer: true }, premiumSince: '2026-10-13T00:00:00.000Z',
+      },
+    ];
+  }
+
+  function searchCatalog(entries?: CatalogSearch[]): AnyCatalog {
+    const catalog = catalogOf(existingAsCatalogModels());
+    if (entries) catalog.searchEngines = entries;
+    return catalog;
+  }
+
+  function searchRows(): Array<{ platform: string; model_id: string; enabled: number; priority: number; quota_label: string; meta_json: string | null }> {
+    return getDb().prepare(`
+      SELECT platform, model_id, enabled, priority, quota_label, meta_json
+        FROM media_models WHERE modality = 'search' ORDER BY priority, id
+    `).all() as any;
+  }
+
+  it('ships no search engines until a catalog carries the registry', () => {
+    expect(searchRows()).toEqual([]);
+  });
+
+  it('applies the registry as a full snapshot with metadata in meta_json', () => {
+    applyCatalog(getDb(), searchCatalog(searchRoster()));
+    expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual(['exa:exa-search', 'tavily:tavily-search']);
+    expect(searchRows()[0].quota_label).toBe('$10/month in credits');
+    expect(JSON.parse(searchRows()[1].meta_json!)).toEqual({
+      creditsPerQuery: 1,
+      features: { news: true, answer: true },
+      premiumSince: '2026-10-13T00:00:00.000Z',
+    });
+  });
+
+  it('keeps existing engines when a catalog omits the optional registry', () => {
+    applyCatalog(getDb(), searchCatalog(undefined));
+    expect(searchRows()).toHaveLength(2);
+  });
+
+  it('removes every engine when the registry is empty (a free catalog before an engine ages in)', () => {
+    const counts = applyCatalog(getDb(), searchCatalog([]));
+    expect(counts.removed).toBeGreaterThanOrEqual(2);
+    expect(searchRows()).toEqual([]);
+    applyCatalog(getDb(), searchCatalog(searchRoster()));
+    expect(searchRows()).toHaveLength(2);
+  });
+
+  it('keeps a local disable across catalog applies', () => {
+    getDb().prepare("UPDATE media_models SET enabled = 0 WHERE model_id = 'exa-search'").run();
+    applyCatalog(getDb(), searchCatalog(searchRoster()));
+    expect(searchRows().find(r => r.model_id === 'exa-search')!.enabled).toBe(0);
+  });
+
+  it('never prunes a custom search relay', () => {
+    getDb().prepare(`
+      INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label)
+      VALUES ('custom', 'my-searxng', 'My SearXNG', 'search', 9, 1, 'custom endpoint')
+    `).run();
+    applyCatalog(getDb(), searchCatalog(searchRoster()));
+    expect(searchRows().map(r => r.model_id)).toContain('my-searxng');
+  });
+
+  it('skips an engine whose platform has no search adapter in this binary', () => {
+    const roster = searchRoster();
+    roster.push({ platform: 'brave', engineId: 'brave-search', displayName: 'Brave', priority: 5, enabled: true });
+    const counts = applyCatalog(getDb(), searchCatalog(roster));
+    expect(counts.skippedUnknownPlatform).toBeGreaterThanOrEqual(1);
+    expect(searchRows().map(r => r.model_id)).not.toContain('brave-search');
+  });
+
+  it('rejects a malformed searchEngines entry before applying the cached catalog', () => {
+    const catalog = searchCatalog(searchRoster());
+    (catalog.searchEngines![0] as any).priority = 'first';
+    setSetting('catalog_applied_json', JSON.stringify(catalog));
+    expect(reapplyCachedCatalog().reapplied).toBe(false);
+  });
+});

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import { getDb, getUnifiedApiKey, getSetting } from '../db/index.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';
+import { runSearch } from '../services/search.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { supportedParametersForPlatforms } from '../lib/sampling-params.js';
 import { getRoutingScores, getRoutingStrategy, setRoutingStrategy } from '../services/router.js';
@@ -355,6 +356,23 @@ function healthcheck(): unknown {
   };
 }
 
+async function webSearch(args: Record<string, unknown>): Promise<unknown> {
+  const query = typeof args.query === 'string' ? args.query.trim() : '';
+  if (!query) throw new Error('query is required');
+  const maxResults = typeof args.max_results === 'number' && Number.isFinite(args.max_results)
+    ? Math.min(Math.max(Math.floor(args.max_results), 1), 20)
+    : 5;
+  const topic = args.topic === 'news' ? 'news' : 'general';
+  const result = await runSearch(query, { maxResults, topic });
+  return {
+    query: result.query,
+    provider: result.provider,
+    ...((result as { engine?: unknown }).engine ? { engine: (result as { engine?: unknown }).engine } : {}),
+    ...(result.answer ? { answer: result.answer } : {}),
+    results: result.results.map(r => ({ title: r.title, url: r.url, content: r.content })),
+  };
+}
+
 // ── Tool registry ────────────────────────────────────────────────────────
 
 interface McpTool {
@@ -474,6 +492,22 @@ const TOOLS: Record<string, McpTool> = {
     annotations: READ_ONLY_LOCAL,
     run: () => getCacheStats(),
   },
+  web_search: {
+    title: 'Search the web',
+    description: 'Search the web through the search providers configured in FreeLLMAPI (Tavily, Exa, Firecrawl, Linkup, or a custom search endpoint). Returns titles, URLs and short extracts. Spends the search provider\'s free quota, not model tokens.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        query: { type: 'string', minLength: 1, maxLength: 400, description: 'The search query.' },
+        max_results: { type: 'integer', minimum: 1, maximum: 20, default: 5 },
+        topic: { type: 'string', enum: ['general', 'news'], default: 'general' },
+      },
+      required: ['query'],
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    run: webSearch,
+  },
   compression_stats: {
     title: 'Inspect prompt-compression savings',
     description: 'Prompt-compression statistics: requests compressed, estimated tokens saved, fidelity-gate discards, and per-engine savings.',
@@ -504,7 +538,7 @@ async function dispatchRpc(msg: JsonRpcRequest, id: number | string | null, req:
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
         serverInfo: { name: 'srouter', version: '1.0.0' },
-        instructions: 'Use ask_srouter when the user explicitly asks srouter or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, usage_summary, cache_stats, compression_stats, and routing_info for diagnostics. set_routing_strategy changes server state.',
+        instructions: 'Use ask_srouter when the user explicitly asks srouter or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, usage_summary, cache_stats, compression_stats, and routing_info for diagnostics. set_routing_strategy changes server state. web_search searches the web through the configured search providers.',
       });
     }
     case 'ping':

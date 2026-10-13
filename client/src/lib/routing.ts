@@ -455,6 +455,11 @@ export const platformColors: Record<string, string> = {
   volcengine:  '#00b8d9',
   longcat:     '#ffd100',
   xfyun:       '#1f6fd0',
+  // Web search providers (#1174).
+  tavily:      '#f97316',
+  exa:         '#2563eb',
+  firecrawl:   '#ef4444',
+  linkup:      '#10b981',
 }
 
 // ── Grouped (unified) rendering ──────────────────────────────────────────────

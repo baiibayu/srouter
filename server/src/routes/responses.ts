@@ -39,6 +39,7 @@ import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
 import { isClientAbortError, newClientAbortError, newHedgeAbortError } from '../lib/error-classify.js';
 import { inferQuotaPoolKey, type QuotaObservationContext } from '../services/provider-quota.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
+import { maybeServeResponsesWebSearch, webSearchCallToText } from '../lib/responses-web-search.js';
 import {
   FUSION_MODEL_ID,
   FusionError,
@@ -352,10 +353,29 @@ export function toChatMessages(req: ResponsesRequest): ChatMessage[] {
   }
 
   const messages: ChatMessage[] = [];
+  // Replayed web_search_call items (served by the gateway's search pool, or
+  // by OpenAI) become a short note on the assistant turn that follows, so the
+  // model keeps the context of what it searched without an extra assistant
+  // turn (consecutive assistant turns 400 on strict upstreams, #96).
+  let pendingSearchNotes: string[] = [];
+  const flushSearchNotes = () => {
+    if (pendingSearchNotes.length === 0) return;
+    messages.push({ role: 'assistant', content: pendingSearchNotes.join('\n') });
+    pendingSearchNotes = [];
+  };
 
   const items = req.input;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+
+    if ('type' in item && item.type === 'web_search_call') {
+      const note = webSearchCallToText(item as Record<string, unknown>);
+      if (note) pendingSearchNotes.push(note);
+      continue;
+    }
+    if (!('type' in item && item.type === 'message' && (item as { role?: string }).role === 'assistant')) {
+      flushSearchNotes();
+    }
 
     if ('type' in item && item.type === 'function_call') {
       // Parallel tool calls replay as consecutive standalone function_call
@@ -399,7 +419,7 @@ export function toChatMessages(req: ResponsesRequest): ChatMessage[] {
     const m = item as z.infer<typeof messageItemSchema>;
     // 'developer' is the Responses-era system role.
     const role = m.role === 'developer' ? 'system' : m.role;
-    const content = partsToChatContent(m.content);
+    let content = partsToChatContent(m.content);
 
     if (role === 'system') {
       // Hoist system/developer messages to the start of the conversation:
@@ -411,6 +431,14 @@ export function toChatMessages(req: ResponsesRequest): ChatMessage[] {
     }
 
     if (role === 'assistant') {
+      const searchNotes = pendingSearchNotes;
+      pendingSearchNotes = [];
+      if (searchNotes.length > 0) {
+        const notes = searchNotes.join('\n');
+        content = typeof content === 'string'
+          ? (content.length > 0 ? `${notes}\n\n${content}` : notes)
+          : [{ type: 'text', text: notes }, ...content];
+      }
       // A Responses assistant turn is a message item followed by its
       // function_call items. Merge them into a single chat assistant message
       // (content + tool_calls); emitting consecutive assistant turns makes
@@ -444,6 +472,7 @@ export function toChatMessages(req: ResponsesRequest): ChatMessage[] {
 
     messages.push({ role, content });
   }
+  flushSearchNotes();
 
   return [...systemMessages, ...messages];
 }
@@ -621,7 +650,15 @@ function quotaContextForRoute(route: RouteResult, endpoint: string): QuotaObserv
   };
 }
 
+// A `web_search` tool is served through the search loop
+// (lib/responses-web-search.ts) when a search key exists; it re-enters
+// handleResponses once per model turn. Everything else goes straight through.
 responsesRouter.post('/responses', async (req: Request, res: Response) => {
+  if (await maybeServeResponsesWebSearch(handleResponses, req, res)) return;
+  await handleResponses(req, res);
+});
+
+export async function handleResponses(req: Request, res: Response): Promise<void> {
   const start = Date.now();
   const requestGroupId = getRequestGroupId(req);
   res.setHeader('X-Request-ID', requestGroupId);
@@ -1625,4 +1662,4 @@ responsesRouter.post('/responses', async (req: Request, res: Response) => {
       }
     },
   });
-});
+}

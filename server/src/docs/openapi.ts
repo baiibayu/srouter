@@ -37,6 +37,7 @@ export const openapiSpec = {
   tags: [
     { name: 'Chat', description: 'OpenAI-compatible chat and completion endpoints' },
     { name: 'Media', description: 'Image generation and text-to-speech' },
+    { name: 'Search', description: 'Web search over your Tavily, Exa, Firecrawl and Linkup keys' },
     { name: 'Responses', description: 'OpenAI Responses API (Codex CLI wire format)' },
     { name: 'Anthropic', description: 'Anthropic Messages API (Claude Code and the Anthropic SDKs)' },
     { name: 'Models', description: 'Model discovery' },
@@ -171,6 +172,106 @@ export const openapiSpec = {
           '401': { $ref: '#/components/responses/Unauthorized' },
           '429': { $ref: '#/components/responses/RateLimited' },
           '502': { $ref: '#/components/responses/UpstreamError' },
+        },
+      },
+    },
+    '/v1/search': {
+      post: {
+        tags: ['Search'],
+        operationId: 'createSearch',
+        summary: 'Search the web',
+        description:
+          'Web search routed over the search engines in the catalog (Tavily, Exa, Firecrawl, Linkup) and any ' +
+          'custom search relay. Omit `engine` (or set `auto`) to fail over across engines that have a key; ' +
+          'rate-limited or out-of-credit keys cool down and the next one is tried.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['query'],
+                properties: {
+                  query: { type: 'string', example: 'latest Node.js LTS release' },
+                  max_results: { type: 'integer', minimum: 1, maximum: 20, default: 5 },
+                  topic: { type: 'string', enum: ['general', 'news'] },
+                  include_answer: { type: 'boolean', description: 'Ask engines that support it (Tavily, Linkup) for a short answer.' },
+                  engine: { type: 'string', description: 'Pin one engine id from GET /v1/search/engines, or `auto`.' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Search hits from the first engine that answered.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    query: { type: 'string' },
+                    answer: { type: 'string' },
+                    results: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          title: { type: 'string' },
+                          url: { type: 'string' },
+                          content: { type: 'string' },
+                          score: { type: 'number' },
+                        },
+                      },
+                    },
+                    provider: { type: 'string', example: 'tavily' },
+                    engine: { type: 'string', example: 'tavily-search' },
+                  },
+                },
+              },
+            },
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '429': { $ref: '#/components/responses/RateLimited' },
+          '502': { $ref: '#/components/responses/UpstreamError' },
+        },
+      },
+    },
+    '/v1/search/engines': {
+      get: {
+        tags: ['Search'],
+        operationId: 'listSearchEngines',
+        summary: 'List search engines',
+        description: 'The enabled search engines, in failover order, and whether each has a usable key.',
+        responses: {
+          '200': {
+            description: 'Search engines.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    object: { type: 'string', example: 'list' },
+                    data: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', example: 'tavily-search' },
+                          object: { type: 'string', example: 'search_engine' },
+                          provider: { type: 'string', example: 'tavily' },
+                          name: { type: 'string' },
+                          available: { type: 'boolean' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' },
         },
       },
     },

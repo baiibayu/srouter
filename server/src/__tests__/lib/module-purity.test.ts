@@ -46,9 +46,12 @@ const PURE_MODULES = [
   'provider-identity.ts',
   'provider-size-parser.ts',
   'retry-hint.ts',
-  // In-memory tracker for the dashboard's live routing strip: no imports by
+ // In-memory tracker for the dashboard's live routing strip: no imports by
   // design, so the strip's data source cannot drag the request path around.
   'route-live.ts',
+
+ // Search platform list; the provider list, keys route and search service import it.
+  'search-platforms.ts', (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
   'structured-output.ts',
   'tool-args.ts',
   'tool-call-rescue.ts',

@@ -3,6 +3,10 @@ import type { BaseProvider } from './base.js';
 import { GoogleProvider } from './google.js';
 import { OpenAICompatProvider } from './openai-compat.js';
 import { CohereProvider } from './cohere.js';
+import { TavilyProvider } from './tavily.js';
+import { ExaProvider } from './exa.js';
+import { FirecrawlProvider } from './firecrawl.js';
+import { LinkupProvider } from './linkup.js';
 import { CloudflareProvider } from './cloudflare.js';
 import { AIHordeProvider } from './aihorde.js';
 import { ModelScopeProvider } from './modelscope.js';
@@ -183,6 +187,13 @@ register(new OpenAICompatProvider({
 
 // Cohere - OpenAI-compatible via Cohere compatibility endpoint
 register(new CohereProvider());
+// Web search APIs (#1174). They serve /v1/search and the agents' web_search
+// tools, never chat (see providers/search-only.ts); they are registered so
+// their keys can be added and health-checked like every platform.
+register(new TavilyProvider());
+register(new ExaProvider());
+register(new FirecrawlProvider());
+register(new LinkupProvider());
 
 // Cloudflare Workers AI - OpenAI-compatible endpoint (key = "account_id:token")
 register(new CloudflareProvider());

@@ -31,6 +31,7 @@ import type { ReasoningEffort } from '../lib/sampling-params.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
 import { normalizeMessageImages } from '../lib/image-normalize.js';
+import { maybeServeAnthropicWebSearch, serverToolUseToText, webSearchResultToText } from '../lib/anthropic-web-search.js';
 
 // Anthropic-compatible Messages API (`POST /v1/messages`). This is a thin
 // translation layer over the SAME router/fallback/analytics machinery the
@@ -325,6 +326,13 @@ function convertRequest(input: AnthropicRequest): ConvertedRequest {
           tool_call_id: String((block as any).tool_use_id ?? ''),
           content: flattenToolResult((block as any).content),
         });
+      } else if (type === 'server_tool_use') {
+        // A replayed web search (ours, or real Anthropic's): the routed model
+        // has no server tool, so the search and its results come back as text.
+        const note = serverToolUseToText(block as any);
+        if (note) textParts.push(note);
+      } else if (type === 'web_search_tool_result') {
+        textParts.push(webSearchResultToText(block as any));
       } else if (type === 'document') {
         // A document that is already text costs nothing to inline. One that
         // needs decoding cannot be served by any provider here, and dropping
@@ -441,7 +449,15 @@ function rescuedToToolCalls(
   }));
 }
 
+// Requests carrying a web_search server tool are served through the search
+// loop (lib/anthropic-web-search.ts) when a search key exists; it re-enters
+// handleMessages once per model turn. Everything else goes straight through.
 anthropicRouter.post('/messages', async (req: Request, res: Response) => {
+  if (await maybeServeAnthropicWebSearch(handleMessages, req, res)) return;
+  await handleMessages(req, res);
+});
+
+export async function handleMessages(req: Request, res: Response): Promise<void> {
   const start = Date.now();
   if (!authenticate(req, res)) return;
 
@@ -779,7 +795,7 @@ anthropicRouter.post('/messages', async (req: Request, res: Response) => {
       sendExhaustion(res, exhaustion);
     },
   });
-});
+}
 
 // Thrown by streamCompletion once the SSE response is underway, so the outer
 // loop knows the request is finished (honestly errored mid-stream) and must

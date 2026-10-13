@@ -41,6 +41,7 @@ import EmbeddingsPage from '@/pages/EmbeddingsPage'
 import ImagePage from '@/pages/ImagePage'
 import VideoPage from '@/pages/VideoPage'
 import AudioPage from '@/pages/AudioPage'
+import SearchPage from '@/pages/SearchPage'
 import MediaDetailPage from '@/pages/MediaDetailPage'
 import EmbeddingDetailPage from '@/pages/EmbeddingDetailPage'
 import AnalyticsPage from '@/pages/AnalyticsPage'
@@ -90,6 +91,7 @@ const modelItems = [
   { to: '/models/image', labelKey: 'models.imageTab' },
   { to: '/models/video', labelKey: 'models.videoTab' },
   { to: '/models/audio', labelKey: 'models.audioTab' },
+  { to: '/models/search', labelKey: 'search.tab' },
   { to: '/models/fusion', labelKey: 'models.fusionTab' },
   { to: '/models/system-one', labelKey: 'models.systemOneTab' },
   { to: '/models/web-search', labelKey: 'models.webSearchTab' },
@@ -584,12 +586,13 @@ function App() {
                       <Route path="/models/video" element={<VideoPage />} />
                       <Route path="/models/video/:id" element={<MediaDetailPage modality="video" />} />
                       <Route path="/models/audio" element={<AudioPage />} />
-        <Route path="/models/audio/:id" element={<MediaDetailPage modality="audio" />} />
-        <Route path="/models/transcription/:id" element={<MediaDetailPage modality="transcription" />} />
-        <Route path="/models/tools" element={<Navigate to="/models/web-search" replace />} />
-                <Route path="/models/system-one" element={<SystemOnePage />} />
-                <Route path="/models/web-search" element={<WebSearchPage />} />
-                <Route path="/models/web-fetch" element={<Navigate to="/models/web-search" replace />} />
+                      <Route path="/models/audio/:id" element={<MediaDetailPage modality="audio" />} />
+                      <Route path="/models/transcription/:id" element={<MediaDetailPage modality="transcription" />} />
+                      <Route path="/models/tools" element={<Navigate to="/models/web-search" replace />} />
+                      <Route path="/models/system-one" element={<SystemOnePage />} />
+                      <Route path="/models/web-search" element={<WebSearchPage />} />
+                      <Route path="/models/web-fetch" element={<Navigate to="/models/web-search" replace />} />
+                      <Route path="/models/search" element={<SearchPage />} /> (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
                       <Route path="/playground" element={<PlaygroundPage />} />
                       <Route path="/keys" element={<KeysPage />} />
                       <Route path="/agents" element={<AgentsPage />} />
@@ -617,3 +620,10 @@ function App() {
 }
 
 export default App
+                      <Route path="/models/audio/:id" element={<MediaDetailPage modality="audio" />} />
+                      <Route path="/models/transcription/:id" element={<MediaDetailPage modality="transcription" />} />
+                      <Route path="/models/tools" element={<Navigate to="/models/web-search" replace />} />
+                      <Route path="/models/system-one" element={<SystemOnePage />} />
+                      <Route path="/models/web-search" element={<WebSearchPage />} />
+                      <Route path="/models/web-fetch" element={<Navigate to="/models/web-search" replace />} />
+                      <Route path="/models/search" element={<SearchPage />} />

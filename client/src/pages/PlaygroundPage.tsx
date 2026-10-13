@@ -32,6 +32,8 @@ import { readChatStream } from '@/lib/playground-stream'
 import { ConversationSidebar } from '@/components/playground/conversation-sidebar'
 import { SettingsRail } from '@/components/playground/settings-rail'
 import { LiquidComposer } from '@/components/playground/liquid-composer'
+import { SearchSources } from '@/components/playground/search-sources'
+import { engineChain, searchContextMessage, searchProviderName, type SearchEngine, type SearchResult } from '@/lib/search'
 import { ModelMakerIcon } from '@/components/model-maker-icon'
 import { composerHasContent } from '@/lib/composer-geometry'
 import {
@@ -61,6 +63,7 @@ import {
   updateConversation,
   writeActiveConversationId,
   type ChatMessage,
+  type WebSearchMeta,
   type ConversationSummary,
   type FusionPanelEntry,
 } from '@/lib/playground-conversations'
@@ -217,6 +220,16 @@ export default function PlaygroundPage() {
     setSampling(next)
     writeSampling(next)
   }
+  // "Search the web" (#1174): look the question up with POST /v1/search first
+  // and hand the model numbered sources to cite. A preference like the
+  // sampling knobs, so it is remembered here rather than per conversation.
+  const [webSearch, setWebSearch] = useState<boolean>(
+    () => localStorage.getItem('playground.webSearch') === '1',
+  )
+  const updateWebSearch = (enabled: boolean) => {
+    setWebSearch(enabled)
+    localStorage.setItem('playground.webSearch', enabled ? '1' : '0')
+  }
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedModel, setSelectedModel] = useState<string>(
@@ -276,6 +289,17 @@ export default function PlaygroundPage() {
     queryFn: () => apiFetch('/api/media'),
   })
   const mediaModels = mediaData?.models ?? []
+
+  // Engines that can actually run a search: enabled, with a key behind them.
+  // An older server without the endpoint just leaves the switch unavailable.
+  const { data: searchEngines = [] } = useQuery<SearchEngine[]>({
+    queryKey: ['search-engines'],
+    queryFn: () => apiFetch('/api/search/engines'),
+    retry: false,
+  })
+  const usableEngines = engineChain(searchEngines).filter(e => e.keyCount > 0)
+  const webSearchAvailable = usableEngines.length > 0
+  const webSearchOn = webSearch && webSearchAvailable
   const transcriptionAvailable = hasTranscription(mediaModels)
   const [dictationChoice, setDictationChoice] = useState<string>(
     () => localStorage.getItem(DICTATION_MODEL_STORAGE_KEY) ?? DICTATION_AUTO,
@@ -666,6 +690,7 @@ export default function PlaygroundPage() {
     start: number,
     routedVia: string | null,
     fallbackAttempts: string | null,
+    webSearchMeta?: WebSearchMeta,
   ) => {
     const via = routedVia
       ? { platform: routedVia.split('/')[0], model: routedVia.split('/').slice(1).join('/') }
@@ -691,6 +716,7 @@ export default function PlaygroundPage() {
             model: via?.model,
             latency: Date.now() - start,
             fallbackAttempts: fallbackAttempts ? parseInt(fallbackAttempts) : undefined,
+            ...(webSearchMeta ? { webSearch: webSearchMeta } : {}),
           },
         })
       }
@@ -784,12 +810,44 @@ export default function PlaygroundPage() {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (keyData?.apiKey) headers['Authorization'] = `Bearer ${keyData.apiKey}`
+      const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+      // Web search first, when it is on and there is a question to look up. A
+      // failed search is reported and the question is answered without it.
+      let searchContext: string | null = null
+      let webSearchMeta: WebSearchMeta | undefined
+      if (webSearchOn && text) {
+        const searchStart = Date.now()
+        try {
+          const res = await fetch(`${base}/v1/search`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ query: text, max_results: 5 }),
+          })
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}` } }))
+            throw new Error(err.error?.message ?? err.message ?? `HTTP ${res.status}`)
+          }
+          const found = await res.json() as SearchResult
+          if (found.results.length > 0) {
+            searchContext = searchContextMessage(found)
+            webSearchMeta = {
+              engine: searchProviderName(found.provider),
+              latency: Date.now() - searchStart,
+              sources: found.results.map(r => ({ title: r.title, url: r.url })),
+            }
+          }
+        } catch (err) {
+          toast.error(t('search.playgroundFailed', { reason: err instanceof Error ? err.message : String(err) }))
+        }
+      }
 
       const isFusion = selectedModel === 'fusion'
       const sysPrompt = systemPrompt.trim()
       const body: Record<string, unknown> = {
         messages: [
           ...(sysPrompt ? [{ role: 'system', content: sysPrompt }] : []),
+          ...(searchContext ? [{ role: 'system', content: searchContext }] : []),
           ...newMessages.map(m => ({ role: m.role, content: toMessageContent(m.content, m.images) })),
         ],
         // Only the knobs switched on in the settings rail: temperature, top_p
@@ -807,7 +865,6 @@ export default function PlaygroundPage() {
       const controller = new AbortController()
       abortRef.current = controller
 
-      const base = import.meta.env.BASE_URL.replace(/\/$/, '')
       const start = Date.now()
       const res = await fetch(`${base}/v1/chat/completions`, {
         method: 'POST',
@@ -844,7 +901,7 @@ export default function PlaygroundPage() {
       // fall back to the buffered path rather than trusting that: a proxy in
       // front of us, or a future non-streaming route, can still hand back JSON.
       if (!isFusion && res.body && (res.headers.get('Content-Type') ?? '').includes('text/event-stream')) {
-        await streamChat(res.body, newMessages, start, routedVia, fallbackAttempts)
+        await streamChat(res.body, newMessages, start, routedVia, fallbackAttempts, webSearchMeta)
         return
       }
 
@@ -872,6 +929,7 @@ export default function PlaygroundPage() {
           fallbackAttempts: fallbackAttempts ? parseInt(fallbackAttempts) : undefined,
           fusionPanel: fusion?.panel,
           fusionJudge: fusion?.judge,
+          ...(webSearchMeta ? { webSearch: webSearchMeta } : {}),
         },
       }]
       setMessages(answered)
@@ -1032,6 +1090,9 @@ export default function PlaygroundPage() {
                               <ArtifactHostContext.Provider value={artifactHost}>
                                 <Markdown>{msg.content}</Markdown>
                               </ArtifactHostContext.Provider>
+                              {msg.meta?.webSearch && msg.meta.webSearch.sources.length > 0 && (
+                                <SearchSources search={msg.meta.webSearch} />
+                              )}
                             </>
                           ) : (
                             <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -1198,6 +1259,9 @@ export default function PlaygroundPage() {
                 inputRef.current?.focus()
               },
             }}
+            webSearch={webSearchOn
+              ? { label: t('search.chipOn'), offLabel: t('search.chipOff'), onDisable: () => updateWebSearch(false) }
+              : undefined}
           />
         </div>
       </div>
@@ -1232,6 +1296,10 @@ export default function PlaygroundPage() {
         onSystemPromptChange={updateSystemPrompt}
         sampling={sampling}
         onSamplingChange={updateSampling}
+        webSearch={webSearch}
+        onWebSearchChange={updateWebSearch}
+        webSearchAvailable={webSearchAvailable}
+        webSearchChain={usableEngines.map(e => e.displayName).join(' → ')}
       />
       )}
     </div>

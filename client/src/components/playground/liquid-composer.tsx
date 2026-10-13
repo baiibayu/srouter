@@ -1,6 +1,6 @@
 import { useEffect, useState, type ClipboardEvent, type KeyboardEvent, type RefObject } from 'react'
 import { Liquid } from 'liquid-gooey'
-import { ArrowUp, Paperclip } from 'lucide-react'
+import { ArrowUp, Globe, Paperclip, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DictationButton, type DictationPhase } from './dictation-button'
 import { DictationWave } from './dictation-wave'
@@ -44,10 +44,12 @@ export interface LiquidComposerProps {
   labels: { attach: string; send: string; sending: string }
   /** Speech to text for the mic; the transcript is appended to `value`. */
   dictation: { available: boolean; model: string; apiKey: string | null | undefined; onText: (text: string) => void }
+  /** Shown as a chip while web search is on (#1174); clicking it turns it off. */
+  webSearch?: { label: string; offLabel: string; onDisable: () => void }
 }
 
 export function LiquidComposer({
-  inputRef, value, onChange, onKeyDown, onPaste, placeholder, hasContent, loading, onSend, onAttach, labels, dictation,
+  inputRef, value, onChange, onKeyDown, onPaste, placeholder, hasContent, loading, onSend, onAttach, labels, dictation, webSearch,
 }: LiquidComposerProps) {
   // Set from input events; an empty value never counts as grown, so a
   // programmatic clear (send, new chat) drops back to one line by itself.
@@ -96,6 +98,19 @@ export function LiquidComposer({
           >
             <Paperclip className="size-4" />
           </Button>
+          {webSearch && (
+            <button
+              type="button"
+              onClick={webSearch.onDisable}
+              aria-label={webSearch.offLabel}
+              title={webSearch.offLabel}
+              className={`group/ws inline-flex h-7 shrink-0 items-center gap-1 self-center rounded-full border border-sky-600/30 bg-background px-2 text-[11px] text-sky-700 transition-colors hover:border-foreground/20 hover:text-foreground dark:text-sky-300 ${grown ? 'mb-0.5' : ''}`}
+            >
+              <Globe className="size-3 group-hover/ws:hidden" />
+              <X className="hidden size-3 group-hover/ws:block" />
+              {webSearch.label}
+            </button>
+          )}
           {/* While the mic is open the field shows the voice, not the text:
               the textarea keeps its value and size, the wave paints over it. */}
           {/* A flex wrapper: an inline textarea inside a block div gets a

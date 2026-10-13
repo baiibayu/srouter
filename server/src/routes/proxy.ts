@@ -7,6 +7,8 @@ import { type RouteResult, type ResolvedChain, type ChainRow, routeRequest, reso
 import { secondsUntilNextMonth } from '../services/key-budget.js';
 import { classifyComplexity } from '../services/complexity-gate.js';
 import { runEmbeddings, EmbeddingsError } from '../services/embeddings.js';
+import { runRerank, RerankError, rerankRetryAfterSec } from '../services/rerank.js';
+import { runSearch, SearchError, searchRetryAfterSec, listSearchEngines } from '../services/search.js';
 import { retryAfterSeconds } from '../lib/retry-hint.js';
 import { runImageGeneration, runVideoGeneration, runSpeech, runTranscription, MediaError, MAX_TRANSCRIPTION_BYTES } from '../services/media.js';
 import multer from 'multer';
@@ -725,6 +727,116 @@ proxyRouter.post('/embeddings', async (req: Request, res: Response) => {
     const type = status === 400 ? 'invalid_request_error' : status === 429 ? 'rate_limit_error' : 'server_error';
     res.status(status).json({ error: { message: `embedding error: ${err?.message ?? 'unknown'}`, type, ...code } });
   }
+});
+
+// Cohere/Jina-style rerank over the key pool (#1029). No catalog: a Cohere key
+// or a custom OpenAI-compatible endpoint exposing POST {base_url}/rerank is a
+// provider; the first success wins, custom endpoints tried first.
+const RerankBody = z.object({
+  model: z.string().optional(),
+  query: z.string().min(1),
+  documents: z.array(z.string()).min(1),
+  top_n: z.number().int().positive().optional(),
+});
+
+proxyRouter.post('/rerank', async (req: Request, res: Response) => {
+  if (!requireInferenceAuth(req, res)) return;
+  const parsed = RerankBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid request: `query` and `documents` are required', type: 'invalid_request_error' } });
+    return;
+  }
+  try {
+    const result = await runRerank(parsed.data.model, parsed.data.query, parsed.data.documents, parsed.data.top_n);
+    res.json({
+      results: result.results.map(r => ({
+        index: r.index,
+        relevance_score: r.relevanceScore,
+        document: { text: r.document },
+      })),
+      model: result.modelId,
+      provider: result.platform,
+    });
+  } catch (err: any) {
+    const status = err instanceof RerankError ? err.status : 502;
+    if (err instanceof RerankError) {
+      const retryAfter = rerankRetryAfterSec(err);
+      if (retryAfter !== undefined) res.setHeader('Retry-After', String(retryAfter));
+    }
+    const type = status === 400 ? 'invalid_request_error' : status === 429 ? 'rate_limit_error' : 'server_error';
+    res.status(status).json({ error: { message: `rerank error: ${err?.message ?? 'unknown'}`, type } });
+  }
+});
+
+// Web search over the key pool (#1174). Engines are catalog rows (Tavily,
+// Exa, Firecrawl, Linkup, plus custom relays speaking Tavily's wire shape);
+// the first engine that returns hits wins. See services/search.ts.
+const SearchBody = z.object({
+  query: z.string().min(1),
+  max_results: z.number().int().positive().optional(),
+  topic: z.enum(['general', 'news']).optional(),
+  include_answer: z.boolean().optional(),
+  engine: z.string().min(1).optional(),
+});
+
+proxyRouter.post('/search', async (req: Request, res: Response) => {
+  if (!requireInferenceAuth(req, res)) return;
+  const parsed = SearchBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid request: `query` is required', type: 'invalid_request_error' } });
+    return;
+  }
+  // A departed client drops the upstream search instead of spending a credit.
+  const abort = new AbortController();
+  res.on('close', () => { if (!res.writableFinished) abort.abort(); });
+  try {
+    const result = await runSearch(parsed.data.query, {
+      maxResults: parsed.data.max_results,
+      topic: parsed.data.topic,
+      includeAnswer: parsed.data.include_answer,
+      engine: parsed.data.engine,
+      signal: abort.signal,
+    });
+    res.json({
+      query: result.query,
+      ...(result.answer !== undefined ? { answer: result.answer } : {}),
+      results: result.results,
+      provider: result.provider,
+      engine: result.engine,
+    });
+  } catch (err: any) {
+    if (res.headersSent || abort.signal.aborted) return;
+    const status = err instanceof SearchError ? err.status : 502;
+    if (err instanceof SearchError) {
+      const retryAfter = searchRetryAfterSec(err);
+      if (retryAfter !== undefined) res.setHeader('Retry-After', String(retryAfter));
+    }
+    const type = status === 400 ? 'invalid_request_error' : status === 429 ? 'rate_limit_error' : 'server_error';
+    res.status(status).json({
+      error: {
+        message: `search error: ${err?.message ?? 'unknown'}`,
+        type,
+        ...(err instanceof SearchError && err.code ? { code: err.code } : {}),
+      },
+    });
+  }
+});
+
+// The engines a caller can pin with `engine` on POST /v1/search.
+proxyRouter.get('/search/engines', (req: Request, res: Response) => {
+  if (!requireInferenceAuth(req, res)) return;
+  res.json({
+    object: 'list',
+    data: listSearchEngines()
+      .filter(e => e.enabled)
+      .map(e => ({
+        id: e.engineId,
+        object: 'search_engine',
+        provider: e.platform,
+        name: e.displayName,
+        available: e.healthyKeyCount > 0,
+      })),
+  });
 });
 
 // OpenAI-compatible image generation. Routed through the media catalog (its own

@@ -211,10 +211,12 @@ export function listMediaModels(modality: MediaModality): MediaModelRow[] {
     .all(modality) as MediaModelRow[];
 }
 
-/** All media models (both modalities, including disabled) for the dashboard. */
+/** All media models (every media modality, including disabled) for the
+ *  dashboard. Search engines share the table (modality 'search') but have
+ *  their own page and API (routes/search.ts), so they are left out here. */
 export function listAllMediaModels(): MediaModelRow[] {
   return getDb()
-    .prepare('SELECT * FROM media_models ORDER BY modality, priority, id')
+    .prepare("SELECT * FROM media_models WHERE modality != 'search' ORDER BY modality, priority, id")
     .all() as MediaModelRow[];
 }
 

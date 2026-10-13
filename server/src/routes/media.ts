@@ -106,7 +106,10 @@ const customMediaSchema = z.object({
   // 'transcription' registers a custom OpenAI-compatible STT endpoint. The
   // media_models table, GET /api/media/usage, the /v1/audio/transcriptions
   // handler and the media service's 'custom' adapter all accept it.
-  modality: z.enum(['image', 'audio', 'transcription']),
+  // 'search' registers a custom web search relay (Tavily wire shape at
+  // POST {base_url}/search), listed on the Search page and tried first by
+  // POST /v1/search (#1174).
+  modality: z.enum(['image', 'audio', 'transcription', 'search']),
   apiKey: z.string().optional(),
   label: z.string().optional(),
   quotaLabel: z.string().optional(),

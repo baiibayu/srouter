@@ -41,6 +41,8 @@ import * as unifiedKeySrPrefix from '../migrations/20261004_000001_unified_key_s
 import * as keyBudgetPeriod from '../migrations/20261005_000001_key_budget_period.js';
 import * as keyBudgetPeriodAuto from '../migrations/20261005_000002_key_budget_period_auto.js';
 import * as removeDeadPlatforms from '../migrations/20261009_000001_remove_dead_platforms.js';
+import * as customEndpointGroupLabel from '../migrations/20260930_000001_custom_endpoint_group_label.js';
+import * as searchEngines from '../migrations/20261013_000001_search_engines.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -94,6 +96,8 @@ export const UNIFIED_KEY_SR_PREFIX_FILENAME = '20261004_000001_unified_key_sr_pr
 export const KEY_BUDGET_PERIOD_FILENAME = '20261005_000001_key_budget_period.ts';
 export const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_period_auto.ts';
 export const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts';
+export const CUSTOM_ENDPOINT_GROUP_LABEL_FILENAME = '20260930_000001_custom_endpoint_group_label.ts';
+export const SEARCH_ENGINES_FILENAME = '20261013_000001_search_engines.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -138,4 +142,6 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: KEY_BUDGET_PERIOD_FILENAME, module: keyBudgetPeriod },
   { filename: KEY_BUDGET_PERIOD_AUTO_FILENAME, module: keyBudgetPeriodAuto },
   { filename: REMOVE_DEAD_PLATFORMS_FILENAME, module: removeDeadPlatforms },
+  { filename: CUSTOM_ENDPOINT_GROUP_LABEL_FILENAME, module: customEndpointGroupLabel },
+  { filename: SEARCH_ENGINES_FILENAME, module: searchEngines },
 ];

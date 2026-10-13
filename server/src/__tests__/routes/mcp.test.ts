@@ -141,6 +141,7 @@ describe('MCP server (/mcp, stateless Streamable HTTP)', () => {
       'routing_info',
       'set_routing_strategy',
       'usage_summary',
+      'web_search',
     ]);
     for (const tool of body.result.tools) {
       expect(tool.title.length).toBeGreaterThan(5);

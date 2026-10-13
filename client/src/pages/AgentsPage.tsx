@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle2, ExternalLink } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Globe } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
 import { PageHeader } from '@/components/page-header'
@@ -50,6 +50,13 @@ const analyticsIds: Record<string, string> = {
   droid: 'droid',
   reasonix: 'reasonix',
   cursor: 'cursor',
+}
+
+// Agents whose built-in web search tool the gateway serves from the search
+// keys (#1174): Claude Code's WebSearch and Codex's web_search.
+const WEB_SEARCH_TOOL_KEYS: Record<string, string> = {
+  claude: 'search.agentsBadgeClaude',
+  codex: 'search.agentsBadgeCodex',
 }
 
 function masked(value: string): string {
@@ -149,6 +156,15 @@ export default function AgentsPage() {
                 </CardAction>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-4">
+                {WEB_SEARCH_TOOL_KEYS[tool.id] && (
+                  <Badge
+                    variant="outline"
+                    className="h-auto w-fit whitespace-normal border-sky-600/30 py-0.5 text-[11px] text-sky-700 dark:text-sky-300"
+                  >
+                    <Globe />
+                    {t(WEB_SEARCH_TOOL_KEYS[tool.id])}
+                  </Badge>
+                )}
                 <div>
                   <p className="text-xs font-medium">{t('agents.setupLabel')}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">

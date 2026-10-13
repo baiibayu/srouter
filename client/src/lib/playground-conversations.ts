@@ -51,7 +51,16 @@ export interface ChatMessage {
     fusionPanel?: FusionPanelEntry[]
     fusionJudge?: { platform: string; model: string } | null
     fusionStreaming?: boolean
+    // Set when the question was looked up on the web first (#1174).
+    webSearch?: WebSearchMeta
   }
+}
+
+/** The web search an answer was grounded on: engine, timing, numbered sources. */
+export interface WebSearchMeta {
+  engine: string
+  latency: number
+  sources: { title: string; url: string }[]
 }
 
 /** Sidebar row: enough to list a conversation, never its transcript. */
