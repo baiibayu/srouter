@@ -1,4 +1,4 @@
-import type { ModelListRow } from '@srouter/shared/types.js';
+import type { ModelListRow } from '@baiibayu/srouter-shared/types.js';
 import { getDb } from '../db/index.js';
 import { isUnifyEnabled, getModelGroups } from './model-groups.js';
 import { hasUsableKeyForModel } from './router.js';

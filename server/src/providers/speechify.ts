@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse } from '@srouter/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse } from '@baiibayu/srouter-shared/types.js';
 import { BaseProvider, providerHttpError, type KeyValidationResult } from './base.js';
 
 export const SPEECHIFY_BASE_URL = 'https://api.speechify.ai/v1';

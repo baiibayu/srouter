@@ -1,4 +1,4 @@
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 
 // OpenAI-spec message content can be one of:
 //   - string                        (plain text)

@@ -5,7 +5,7 @@ import type {
   ChatToolDefinition,
   ChatToolChoice,
   Platform,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 import type { QuotaObservationContext } from '../services/provider-quota.js';
 import type { ExtendedSamplingOptions } from '../lib/sampling-params.js';
 import { proxyFetch } from '../lib/proxy.js';

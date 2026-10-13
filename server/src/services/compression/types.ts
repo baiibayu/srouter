@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatToolDefinition } from '@srouter/shared/types.js';
+import type { ChatMessage, ChatToolDefinition } from '@baiibayu/srouter-shared/types.js';
 import type { ZodTypeAny } from 'zod';
 
 export const COMPRESSION_MODES = ['off', 'lossless', 'standard', 'aggressive'] as const;

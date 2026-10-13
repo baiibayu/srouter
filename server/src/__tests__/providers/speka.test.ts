@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ChatCompletionChunk } from '@srouter/shared/types.js';
+import type { ChatCompletionChunk } from '@baiibayu/srouter-shared/types.js';
 import { SpekaProvider } from '../../providers/speka.js';
 import { getProvider } from '../../providers/index.js';
 import { AUTH_JSON_PROVIDER_MAP, detectPlatform, parseKeysFromFile } from '../../lib/key-parser.js';

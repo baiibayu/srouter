@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { initDb, getDb, getSetting } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
 import {

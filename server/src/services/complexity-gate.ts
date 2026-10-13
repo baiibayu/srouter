@@ -20,7 +20,7 @@
 // preset stands, exactly like the task-type bias (#1127).
 
 import { getSetting, setSetting, getDb } from '../db/index.js';
-import type { ChatMessage } from '@srouter/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { contentToString } from '../lib/content.js';
 import { decrypt } from '../lib/crypto.js';
 

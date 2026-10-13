@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ChatCompletionChunk, ChatMessage } from '@srouter/shared/types.js';
+import type { ChatCompletionChunk, ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { GizmoProvider } from '../../providers/gizmo.js';
 import { BlockRunProvider } from '../../providers/blockrun.js';
 import { getProvider } from '../../providers/index.js';

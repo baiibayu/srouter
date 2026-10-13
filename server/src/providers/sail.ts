@@ -6,7 +6,7 @@ import type {
   ChatToolChoice,
   Platform,
   TokenUsage,
-} from '@srouter/shared/types.js';
+} from '@baiibayu/srouter-shared/types.js';
 import {
   BaseProvider,
   providerHttpError,

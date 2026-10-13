@@ -1312,5 +1312,8 @@
     "failed": "Failed",
     "afterAttempts": "Success after {n} attempts",
     "activeCount": "{n} active"
+  },
+  "donate": {
+    "support": "SRouter unterstützen"
   }
 }
