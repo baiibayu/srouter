@@ -56,8 +56,8 @@ This documentation hub covers everything you need to install, configure, and ope
 
 ### ✂️ 4. Prompt Compression & Token Saver
 - **[Compression Pipeline](compression/01-compression-pipeline.md):**
-  - AST-based and heuristic output pruning for `git diff`, grep, and terminal output.
-  - Compact repeated JSON structures to save **20–40% tokens per request**.
+  - Structure-aware and heuristic output pruning for `git diff`, grep, and terminal output.
+  - Compact repeated JSON structures to **typically save 20–40% tokens per request**.
   - Context window trimming before routing to upstream providers.
 
 ### ⚡ 5. Routing Engine & Architecture

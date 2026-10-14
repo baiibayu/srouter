@@ -58,7 +58,7 @@ AI コーディングツール（Claude Code、Cursor、Windsurf、Cline）で�
 | :--- | :--- |
 | **有料サブスク枠の失効と無駄遣い：** 毎月の割り当てトークンが使い切れずに月末に消滅する。 | **トークン価値を最大化：** クォータ期限が近いものをインテリジェントに優先消費し、最適にプロバイダー間を巡回。 |
 | **突然のレート制限（429）による作業停止：** 長いプロンプトや連続したツール呼び出しで、コーディング思考が中断される。 | **スマート3階層自動フォールバック：** サブスク $\to$ 格安モデル $\to$ 100% 無料・キー不要モデルへと瞬時に切り替え、ダウンタイムゼロを実現。 |
-| **ツール出力によるトークンの無駄消費：** `git diff`、ログ、テスト結果、肥大化した JSON でコンテキスト長が瞬く間に枯渇する。 | **プロンプト圧縮 & トークンセーバー：** AST 構文解析とヒューリスティックフィルタでノイズを剪定し、**トークンを 20〜40% 削減**。 |
+| **ツール出力によるトークンの無駄消費：** `git diff`、ログ、テスト結果、肥大化した JSON でコンテキスト長が瞬く間に枯渇する。 | **プロンプト圧縮 & トークンセーバー：** ヒューリスティックと構造認識フィルタでノイズを剪定し、**通常 20〜40% のトークンを削減**。 |
 | **複数 SDK・API 形式の断片化：** 数十社のプロバイダーごとに異なる認証形式やエンドポイントを管理する負担。 | **単一の汎用 `/v1` ゲートウェイ：** 1つの OpenAI 互換エンドポイント（`http://localhost:20268/v1`）で、Anthropic Messages（`/v1/messages`）、Gemini（`/v1beta`）、Ollama エミュレーションに対応。 |
 | **予告のない無料枠の仕様変更：** 各社が週単位でモデルの追加・廃止や制限変更をサイレント実施。 | **署名付きカタログの自動同期：** 約 1,200 以上のモデル情報をローカル SQLite へ自動更新。常に最新環境を維持。 |
 | **API キー漏洩のプライバシーリスク：** 外部の未知のクラウドプロキシに生の API キーを送信するリスク。 | **100% ローカル AES-256-GCM 暗号化：** キーはローカルの SQLite 内に暗号化保存され、リクエストは端末から直接各公式プロバイダーへ送信されます。 |
@@ -375,8 +375,8 @@ srouter/
   - Google Gemini API（`/v1beta/models/*:generateContent`）。
   - Zed や JetBrains AI 向けのローカル Ollama エミュレーション。
 - **プロンプト圧縮 & トークンセーバー：**
-  - AST 構文解析と正規表現による非破壊フィルタで、肥大化したツール呼び出し結果（`git diff`、ターミナルログ、ファイル内容）を剪定。
-  - 重複 JSON 構造を圧縮し、**トークン消費量を 20〜40% 削減**。
+  - 構造認識と正規表現による非破壊フィルタで、肥大化したツール呼び出し結果（`git diff`、ターミナルログ、ファイル内容）を剪定。
+  - 重複 JSON 構造を圧縮し、**通常トークン消費量を 20〜40% 削減**。
 - **6つのインテリジェントルーティング戦略：**
   - `auto`: 応答速度、モデル性能、残りクォータを総合判定した最適解。
   - `auto:fast`: 超低遅延プロバイダー（Groq）を最優先。
@@ -478,7 +478,7 @@ docker compose logs -f srouter
 
 SRouter が日々の開発コスト削減や生産性向上にお役に立ちましたら、ぜひ継続的な開発のご支援をお願いいたします：
 
-[![Trakteer](https://img.shields.io/badge/Trakteer-e11d48?style=for-the-badge&logo=ko-fi&logoColor=white)](https://trakteer.id/baiibayu/tip)
+[![Trakteer](https://img.shields.io/badge/Trakteer-e11d48?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik00IDRoMTZ2M2gtNi41djExaC0zVjdINFY0eiIvPjwvc3ZnPg%3D%3D&logoColor=white)](https://trakteer.id/baiibayu/tip)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/baiibayu)
 [![PayPal](https://img.shields.io/badge/PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/baiibayu)
 

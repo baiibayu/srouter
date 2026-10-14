@@ -53,9 +53,9 @@ SRouter Docs
 │   └── Multi-Account Rate Tracking (RPM / RPD / TPM)
 │
 ├── ✂️ 5. Prompt Compression & Token Saver
-│   ├── Heuristic & AST Tool Output Filter
+│   ├── Heuristic & Structure-Aware Tool Output Filter
 │   ├── JSON Compaction & Context Trimming
-│   └── 20–40% Token Reduction Benchmarks
+│   └── Typical 20–40% Token Reduction
 │
 └── 🔒 6. Security & Architecture
     ├── Local AES-256-GCM Key Vault in SQLite

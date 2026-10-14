@@ -58,7 +58,7 @@ Penggunaan AI Coding Agent (seperti Claude Code, Cursor, Windsurf, Cline) kini m
 | :--- | :--- |
 | **Kuota Langganan Terbuang:** Jatah kuota bulanan provider berbayar sering tersisa atau hangus tanpa termanfaatkan optimal. | **Maksimalkan Tiap Token:** SRouter menghabiskan kuota prioritas terlebih dahulu, kemudian mengalihkan beban secara cerdas. |
 | **Terhenti karena Rate Limit (429):** Satu prompt panjang atau eksekusi berkali-kali seketika menghentikan sesi coding Anda. | **Smart 3-Tier Auto-Fallback:** Peralihan otomatis seketika (*Subscription → Budget Model → 100% Free Keyless*) tanpa downtime. |
-| **Boros Token pada Output Terminal:** Log `git diff`, `grep`, hasil compile, dan JSON berulang menguras batas konteks (context window). | **Kompresi Prompt & Token Saver:** Filter heuristik dan parsing AST bawaan memangkas output alat yang bising, menghemat **20–40% token**. |
+| **Boros Token pada Output Terminal:** Log `git diff`, `grep`, hasil compile, dan JSON berulang menguras batas konteks (context window). | **Kompresi Prompt & Token Saver:** Filter heuristik dan sadar-struktur bawaan memangkas output alat yang bising, **umumnya menghemat 20–40% token**. |
 | **Fragmentasi Puluhan SDK:** Menghubungkan 50+ provider membutuhkan konfigurasi SDK, format auth, dan base URL yang berbeda-beda. | **Satu Endpoint Universal `/v1`:** Cukup arahkan ke `http://localhost:20268/v1` yang mendukung OpenAI, Anthropic (`/v1/messages`), Gemini (`/v1beta`), dan emulasi Ollama. |
 | **Batas Free Tier Sering Berubah:** Provider sering menambah, mengurangi kuota, atau menghentikan model gratis tanpa pemberitahuan. | **Katalog Model Sinkron Otomatis:** Signed feed terverifikasi Ed25519 memperbarui katalog ~1.200+ model ke database lokal dua kali sehari. |
 | **Kekhawatiran Keamanan & Privasi:** Mengirim API key ke proxy pihak ketiga di cloud berisiko membocorkan rahasia kredensial Anda. | **100% Lokal & Terenkripsi AES-256-GCM:** Semua API key tersimpan aman di SQLite lokal Anda. Trafik AI dikirim langsung dari komputer Anda ke provider asal. |
@@ -377,8 +377,8 @@ srouter/
   - Emulasi Ollama untuk editor seperti Zed dan JetBrains AI.
   - Mendukung endpoint `/v1/responses` untuk Codex CLI.
 - **Kompresi Prompt & Penghemat Token (Prompt Compression):**
-  - Pemfilteran heuristik berbasis AST dan regex untuk merapikan output tools yang bising (`git diff`, pembacaan file, log terminal).
-  - Merapikan struktur JSON berulang dan memangkas konteks usang, menghemat **20–40% token**.
+  - Pemfilteran heuristik berbasis struktur dan regex untuk merapikan output tools yang bising (`git diff`, pembacaan file, log terminal).
+  - Merapikan struktur JSON berulang dan memangkas konteks usang, **umumnya menghemat 20–40% token**.
 - **Enam Strategi Routing Pintar:**
   - `auto`: Menyeimbangkan kecepatan, kecerdasan model, dan sisa kuota.
   - `auto:fast`: Memprioritaskan provider berlatensi super rendah (Groq).
@@ -480,7 +480,7 @@ Kami sangat menyambut kontribusi dari komunitas! Baik dalam bentuk penambahan pr
 
 Jika SRouter membantu produktivitas koding harian Anda, menghemat anggaran API, atau mempermudah riset AI Anda, Anda dapat mendukung pengembangan proyek ini melalui donasi:
 
-[![Trakteer](https://img.shields.io/badge/Trakteer-e11d48?style=for-the-badge&logo=ko-fi&logoColor=white)](https://trakteer.id/baiibayu/tip)
+[![Trakteer](https://img.shields.io/badge/Trakteer-e11d48?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik00IDRoMTZ2M2gtNi41djExaC0zVjdINFY0eiIvPjwvc3ZnPg%3D%3D&logoColor=white)](https://trakteer.id/baiibayu/tip)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/baiibayu)
 [![PayPal](https://img.shields.io/badge/PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/baiibayu)
 
