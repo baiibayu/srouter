@@ -38,8 +38,9 @@
 
 <p align="center">
   <a href="docs/zh-cn/install/01-install.md#docker-compose"><img src="repo-assets/badges/docker.svg" height="42" alt="Docker 自建"></a>
-  <a href="desktop/"><img src="repo-assets/badges/windows.svg" height="42" alt="Windows 桌面客户端"></a>
-  <a href="desktop/"><img src="repo-assets/badges/macos.svg" height="42" alt="macOS 桌面客户端"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-Setup-win.exe"><img src="repo-assets/badges/windows.svg" height="42" alt="下载 Windows 版"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest"><img src="repo-assets/badges/macos.svg" height="42" alt="下载 macOS 版"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter.AppImage"><img src="repo-assets/badges/linux.svg" height="42" alt="下载 Linux 版"></a>
 </p>
 
 ![SRouter 仪表盘 —— 实时路由、每月词元额度与用量统计](repo-assets/github-hero.png)
@@ -62,6 +63,8 @@
 | **SDK 与接口协议极其碎片化：** 对接数十家供应商需要维护多套 SDK、不同的 Auth 格式与 URL。 | **单个通用 `/v1` 网关：** 一个 OpenAI 兼容地址（`http://localhost:20268/v1`），同时原生支持 Anthropic Messages（`/v1/messages`）、Gemini（`/v1beta`）及 Ollama 仿真。 |
 | **免费额度变化频繁且无通知：** 厂商每周都会上线、下线模型或悄悄修改限制规则。 | **模型目录自动签名同步：** 每天两次从受信签名源同步约 1,200+ 模型至本地 SQLite，持久保鲜。 |
 | **隐私泄露风险：** 将真实 API 密钥发送给未知的第三方云端代理容易造成凭据泄露。 | **100% 本地 AES-256-GCM 加密存储：** 密钥完全保存在本地；AI 请求直接从本机发送至官方上游，无第三方中转嗅探。 |
+
+![SRouter 对比 OpenRouter、LiteLLM 与 Portkey — 单一路由器、自有密钥、零加价](repo-assets/comparison.png)
 
 ---
 
@@ -95,6 +98,8 @@
 ```
 
 当请求到达时，SRouter 评估模型可用状态、速率限制与任务复杂度。一旦上游返回 `429 Too Many Requests` 或 `5xx` 错误，该密钥将自动进入冷却保护，SRouter **瞬间自动重试降级链中的下一个最优模型**，编程过程完全不被打断。
+
+![SRouter 如何通过实时评分降级链路由一次请求](repo-assets/router-flow.png)
 
 ---
 
@@ -268,6 +273,8 @@ print("实际服务提供方:", response.headers.get("x-routed-via"))
 
 SRouter 在单个 `/v1` 接口之后聚合了 **约 60 家提供方** 与 **1,200+ 免费模型端点**。
 
+![堆叠的免费层 — 约 60 家提供方、1,200+ 免费模型端点、900+ 模型家族](repo-assets/free-tier.png)
+
 <div align="center">
 
 <table>
@@ -369,6 +376,8 @@ srouter/
 ---
 
 ## ✨ 核心特性
+
+![SRouter 功能一览 — 智能路由、自动故障转移、Fusion、分析、多协议](repo-assets/features.png)
 
 - **多协议原生双向翻译：**
   - 完整 OpenAI 表面（`/v1/chat/completions`、`/v1/models`、`/v1/embeddings`、`/v1/images/*` 等）。
@@ -491,5 +500,5 @@ docker compose logs -f srouter
 - **免责声明：** SRouter 专为个人技术探索、原型开发与编程智能体增强而设计。各免费额度的使用受对应上游提供方的服务条款约束。对于关键性生产任务，建议直接采购官方付费企业端点。
 
 <div align="center">
-<sub>由 <b>Bayu Indra Sugiharto (<a href="https://github.com/baiibayu">@baiibayu</a>)</b> 与开源社区贡献者倾心打造。</sub>
+<sub>由 <b><a href="https://github.com/baiibayu">@baiibayu</a></b> 与开源社区贡献者倾心打造。</sub>
 </div>

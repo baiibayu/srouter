@@ -38,8 +38,9 @@
 
 <p align="center">
   <a href="docs/en/install/01-install.md#docker-compose"><img src="repo-assets/badges/docker.svg" height="42" alt="Self-host dengan Docker"></a>
-  <a href="desktop/"><img src="repo-assets/badges/windows.svg" height="42" alt="Aplikasi Windows Desktop"></a>
-  <a href="desktop/"><img src="repo-assets/badges/macos.svg" height="42" alt="Aplikasi macOS Desktop"></a>
+<a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-Setup-win.exe"><img src="repo-assets/badges/windows.svg" height="42" alt="Download untuk Windows"></a>
+<a href="https://github.com/baiibayu/srouter/releases/latest"><img src="repo-assets/badges/macos.svg" height="42" alt="Download untuk macOS"></a>
+<a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter.AppImage"><img src="repo-assets/badges/linux.svg" height="42" alt="Download untuk Linux"></a>
 </p>
 
 ![Dashboard SRouter — live routing, kalkulasi kuota bulanan, dan analitik penggunaan](repo-assets/github-hero.png)
@@ -62,6 +63,8 @@ Penggunaan AI Coding Agent (seperti Claude Code, Cursor, Windsurf, Cline) kini m
 | **Fragmentasi Puluhan SDK:** Menghubungkan 50+ provider membutuhkan konfigurasi SDK, format auth, dan base URL yang berbeda-beda. | **Satu Endpoint Universal `/v1`:** Cukup arahkan ke `http://localhost:20268/v1` yang mendukung OpenAI, Anthropic (`/v1/messages`), Gemini (`/v1beta`), dan emulasi Ollama. |
 | **Batas Free Tier Sering Berubah:** Provider sering menambah, mengurangi kuota, atau menghentikan model gratis tanpa pemberitahuan. | **Katalog Model Sinkron Otomatis:** Signed feed terverifikasi Ed25519 memperbarui katalog ~1.200+ model ke database lokal dua kali sehari. |
 | **Kekhawatiran Keamanan & Privasi:** Mengirim API key ke proxy pihak ketiga di cloud berisiko membocorkan rahasia kredensial Anda. | **100% Lokal & Terenkripsi AES-256-GCM:** Semua API key tersimpan aman di SQLite lokal Anda. Trafik AI dikirim langsung dari komputer Anda ke provider asal. |
+
+![Perbandingan SRouter vs OpenRouter, LiteLLM, dan Portkey — satu router, kunci milik Anda, tanpa markup](repo-assets/comparison.png)
 
 ---
 
@@ -95,6 +98,8 @@ Penggunaan AI Coding Agent (seperti Claude Code, Cursor, Windsurf, Cline) kini m
 ```
 
 Saat sebuah permintaan dikirim dari editor Anda, SRouter memilih model berprioritas tertinggi yang sehat dan belum mencapai batas rate limit. Jika provider merespons dengan kode status `429` atau `5xx`, SRouter **secara otomatis mendinginkan key tersebut dan langsung mengalihkan (failover) request ke model terbaik berikutnya** dalam antrean fallback Anda tanpa menghentikan koding Anda.
+
+![Bagaimana SRouter merutekan satu request melalui rantai fallback ber-skor live](repo-assets/router-flow.png)
 
 ---
 
@@ -268,6 +273,8 @@ print("Dilayani melalui provider:", response.headers.get("x-routed-via"))
 
 SRouter menyatukan **~60 provider** dan **~1.200+ endpoint model** di balik satu endpoint `/v1`.
 
+![Free tier bertumpuk — ~60 provider, ~1.200+ endpoint model gratis, ~900+ keluarga model](repo-assets/free-tier.png)
+
 <div align="center">
 
 <table>
@@ -369,6 +376,8 @@ srouter/
 ---
 
 ## ✨ Fitur Unggulan
+
+![Ringkasan fitur SRouter — routing pintar, failover otomatis, fusion, analitik, multi-protocol](repo-assets/features.png)
 
 - **Translasi Berbagai Format Protokol:**
   - Mendukung seluruh endpoint OpenAI (`/v1/chat/completions`, `/v1/models`, `/v1/embeddings`, `/v1/images/generations`, `/v1/audio/*`).
@@ -492,5 +501,5 @@ Jika SRouter membantu produktivitas koding harian Anda, menghemat anggaran API, 
 - **Disclaimer:** SRouter dikembangkan untuk keperluan pengembangan software, eksperimen riset, dan produktivitas coding agent secara mandiri. Penggunaan free tier tunduk pada Terms of Service (ToS) dari masing-masing provider penyedia layanan AI. Untuk beban kerja produksi skala perusahaan, kami menyarankan tetap menggunakan tier enterprise berbayar resmi.
 
 <div align="center">
-<sub>Dikembangkan dengan dedikasi oleh <b>Bayu Indra Sugiharto (<a href="https://github.com/baiibayu">@baiibayu</a>)</b> & kontributor komunitas sumber terbuka.</sub>
+<sub>Dikembangkan dengan dedikasi oleh <b><a href="https://github.com/baiibayu">@baiibayu</a></b> & kontributor komunitas sumber terbuka.</sub>
 </div>

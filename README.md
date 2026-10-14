@@ -38,8 +38,9 @@
 
 <p align="center">
   <a href="docs/en/install/01-install.md#docker-compose"><img src="repo-assets/badges/docker.svg" height="42" alt="Self-host with Docker"></a>
-  <a href="desktop/"><img src="repo-assets/badges/windows.svg" height="42" alt="Windows Desktop App"></a>
-  <a href="desktop/"><img src="repo-assets/badges/macos.svg" height="42" alt="macOS Desktop App"></a>
+<a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-Setup-win.exe"><img src="repo-assets/badges/windows.svg" height="42" alt="Download for Windows"></a>
+<a href="https://github.com/baiibayu/srouter/releases/latest"><img src="repo-assets/badges/macos.svg" height="42" alt="Download for macOS"></a>
+<a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter.AppImage"><img src="repo-assets/badges/linux.svg" height="42" alt="Download for Linux"></a>
 </p>
 
 ![SRouter dashboard — live routing, monthly token budget, and usage stats](repo-assets/github-hero.png)
@@ -62,6 +63,8 @@ Coding with AI agents (Claude Code, Cursor, Windsurf, Cline) is transformative, 
 | **SDK & API Fragmentation:** Juggling 50+ incompatible SDKs, auth formats, and endpoint URLs. | **One Universal `/v1` Gateway:** A single OpenAI-compatible base URL (`http://localhost:20268/v1`) that also natively handles Anthropic Messages (`/v1/messages`), Gemini (`/v1beta`), and Ollama emulation. |
 | **Unpredictable Free Tiers:** Providers add, change, or deprecate free models every week. | **Self-Updating Catalog:** Pinned Ed25519 signed catalog auto-updates ~1,200+ models twice daily into your local SQLite DB. |
 | **Privacy & Security Risks:** Sending API keys to cloud proxy providers exposes your credentials. | **100% Local & Encrypted:** Keys are stored locally using **AES-256-GCM** encryption; traffic proxies directly from your machine to upstream providers. |
+
+![SRouter comparison vs OpenRouter, LiteLLM, and Portkey — one router, your keys, zero markup](repo-assets/comparison.png)
 
 ---
 
@@ -95,6 +98,8 @@ Coding with AI agents (Claude Code, Cursor, Windsurf, Cline) is transformative, 
 ```
 
 When a request arrives, SRouter evaluates model health, current RPM/RPD limits, and complexity. If an upstream provider returns `429 Too Many Requests` or `5xx Server Error`, the key enters a temporary cooldown, and SRouter **instantly retries the next best model in your fallback chain**.
+
+![How SRouter routes one request through a live-scored fallback chain](repo-assets/router-flow.png)
 
 ---
 
@@ -268,6 +273,8 @@ print("Served via:", response.headers.get("x-routed-via"))
 
 SRouter aggregates **~60 providers** and **~1,200+ endpoints** behind one `/v1` endpoint.
 
+![The free tier stacked — ~60 providers, ~1,200+ free model endpoints, ~900+ model families](repo-assets/free-tier.png)
+
 <div align="center">
 
 <table>
@@ -369,6 +376,8 @@ srouter/
 ---
 
 ## ✨ Key Features
+
+![SRouter feature overview — smart routing, automatic failover, fusion, analytics, multi-protocol](repo-assets/features.png)
 
 - **Multi-Wire Protocol Translation:**
   - Full OpenAI surface (`/v1/chat/completions`, `/v1/models`, `/v1/embeddings`, `/v1/images/generations`, `/v1/audio/*`).
@@ -492,5 +501,5 @@ If SRouter saves you money, boosts your coding flow, or helps your workflow, con
 - **Disclaimer:** SRouter is designed for personal development, experimentation, and coding agent enhancement. Free tiers are governed by the terms of service of each respective upstream provider. For mission-critical production workloads, we recommend using official enterprise paid endpoints.
 
 <div align="center">
-<sub>Crafted with passion by <b>Bayu Indra Sugiharto (<a href="https://github.com/baiibayu">@baiibayu</a>)</b> & community contributors.</sub>
+<sub>Crafted with passion by <b><a href="https://github.com/baiibayu">@baiibayu</a></b> & community contributors.</sub>
 </div>
