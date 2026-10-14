@@ -39,7 +39,8 @@
 <p align="center">
   <a href="docs/zh-cn/install/01-install.md#docker-compose"><img src="repo-assets/badges/docker.svg" height="42" alt="Docker 自建"></a>
   <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-Setup-win.exe"><img src="repo-assets/badges/windows.svg" height="42" alt="下载 Windows 版"></a>
-  <a href="https://github.com/baiibayu/srouter/releases/latest"><img src="repo-assets/badges/macos.svg" height="42" alt="下载 macOS 版"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-mac-arm64.dmg"><img src="repo-assets/badges/macos-arm64.svg" height="42" alt="下载 macOS (Apple Silicon) 版"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-mac-x64.dmg"><img src="repo-assets/badges/macos-x64.svg" height="42" alt="下载 macOS (Intel) 版"></a>
   <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter.AppImage"><img src="repo-assets/badges/linux.svg" height="42" alt="下载 Linux 版"></a>
 </p>
 
