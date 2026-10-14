@@ -169,6 +169,47 @@ npm run dev
 
 SRouter includes automated configuration generators (`setup-*`) that inspect your live model catalog, back up existing settings, and write the exact configuration your tool expects:
 
+<div align="center">
+
+<table>
+<tr>
+<td align="center"><img src="repo-assets/agents/claude-code.png" width="40" alt="Claude Code"><br/><b>Claude Code</b></td>
+<td align="center"><img src="repo-assets/agents/cursor.png" width="40" alt="Cursor"><br/><b>Cursor</b></td>
+<td align="center"><img src="repo-assets/agents/codex.png" width="40" alt="Codex CLI"><br/><b>Codex CLI</b></td>
+<td align="center"><img src="repo-assets/agents/cline.png" width="40" alt="Cline"><br/><b>Cline</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/agents/continue.png" width="40" alt="Continue"><br/><b>Continue</b></td>
+<td align="center"><img src="repo-assets/agents/aider.png" width="40" alt="Aider"><br/><b>Aider</b></td>
+<td align="center"><img src="repo-assets/agents/opencode.png" width="40" alt="OpenCode"><br/><b>OpenCode</b></td>
+<td align="center"><img src="repo-assets/agents/gemini-cli.png" width="40" alt="Gemini CLI"><br/><b>Gemini CLI</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/agents/roo-code.png" width="40" alt="Roo Code"><br/><b>Roo Code</b></td>
+<td align="center"><img src="repo-assets/agents/kilo-code.png" width="40" alt="Kilo Code"><br/><b>Kilo Code</b></td>
+<td align="center"><img src="repo-assets/agents/zed.png" width="40" alt="Zed"><br/><b>Zed</b></td>
+<td align="center"><img src="repo-assets/agents/jetbrains.png" width="40" alt="JetBrains"><br/><b>JetBrains</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/agents/goose.png" width="40" alt="Goose"><br/><b>Goose</b></td>
+<td align="center"><img src="repo-assets/agents/qwen-code.png" width="40" alt="Qwen Code"><br/><b>Qwen Code</b></td>
+<td align="center"><img src="repo-assets/agents/crush.png" width="40" alt="Crush"><br/><b>Crush</b></td>
+<td align="center"><img src="repo-assets/agents/factory-droid.png" width="40" alt="Factory Droid"><br/><b>Factory Droid</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/agents/openclaw.png" width="40" alt="OpenClaw"><br/><b>OpenClaw</b></td>
+<td align="center"><img src="repo-assets/agents/deepseek-harness.png" width="40" alt="DeepSeek Harness"><br/><b>DeepSeek Harness</b></td>
+<td align="center"><img src="repo-assets/agents/oh-my-pi.png" width="40" alt="Oh My Pi"><br/><b>Oh My Pi</b></td>
+<td align="center"><img src="repo-assets/agents/hermes-agent.png" width="40" alt="Hermes"><br/><b>Hermes</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/agents/pi.png" width="40" alt="Pi"><br/><b>Pi</b></td>
+<td align="center"><img src="repo-assets/agents/atomcode.png" width="40" alt="AtomCode"><br/><b>AtomCode</b></td>
+</tr>
+</table>
+
+</div>
+
 ```bash
 # Automatic setup with your SRouter instance
 npx srouter setup-claude --url http://localhost:20268 --api-key <your-unified-key>
@@ -235,28 +276,40 @@ SRouter aggregates **~60 providers** and **~1,200+ endpoints** behind one `/v1` 
 
 <table>
 <tr>
-<td align="center" width="140"><img src="repo-assets/providers/google.png" width="40" alt="Google"><br/><b>Google Gemini</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/groq.png" width="40" alt="Groq"><br/><b>Groq Llama</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/mistral.png" width="40" alt="Mistral"><br/><b>Mistral AI</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/openrouter.png" width="40" alt="OpenRouter"><br/><b>OpenRouter</b></td>
+<td align="center"><img src="repo-assets/providers/google.png" width="40" alt="Google Gemini"><br/><b>Google Gemini</b></td>
+<td align="center"><img src="repo-assets/providers/groq.png" width="40" alt="Groq"><br/><b>Groq</b></td>
+<td align="center"><img src="repo-assets/providers/mistral.png" width="40" alt="Mistral"><br/><b>Mistral</b></td>
+<td align="center"><img src="repo-assets/providers/openrouter.png" width="40" alt="OpenRouter"><br/><b>OpenRouter</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/providers/alibaba.png" width="40" alt="Alibaba Qwen"><br/><b>Alibaba Qwen</b></td>
+<td align="center"><img src="repo-assets/providers/nous.png" width="40" alt="Nous Research"><br/><b>Nous Research</b></td>
+<td align="center"><img src="repo-assets/providers/siliconflow.png" width="40" alt="SiliconFlow"><br/><b>SiliconFlow</b></td>
+<td align="center"><img src="repo-assets/providers/modelscope.png" width="40" alt="ModelScope"><br/><b>ModelScope</b></td>
 </tr>
 <tr>
 <td align="center"><img src="repo-assets/providers/cloudflare.png" width="40" alt="Cloudflare"><br/><b>Cloudflare</b></td>
 <td align="center"><img src="repo-assets/providers/cohere.png" width="40" alt="Cohere"><br/><b>Cohere</b></td>
-<td align="center"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu AI"><br/><b>Zhipu GLM</b></td>
-<td align="center"><img src="repo-assets/providers/nvidia.png" width="40" alt="NVIDIA"><br/><b>NVIDIA NIM</b></td>
+<td align="center"><img src="repo-assets/providers/zhipu.png" width="40" alt="Zhipu GLM"><br/><b>Zhipu GLM</b></td>
+<td align="center"><img src="repo-assets/providers/nvidia.png" width="40" alt="NVIDIA NIM"><br/><b>NVIDIA NIM</b></td>
+</tr>
+<tr>
+<td align="center"><img src="repo-assets/providers/baidu.png" width="40" alt="Baidu Qianfan"><br/><b>Baidu Qianfan</b></td>
+<td align="center"><img src="repo-assets/providers/bytedance.png" width="40" alt="ByteDance Ark"><br/><b>ByteDance Ark</b></td>
+<td align="center"><img src="repo-assets/providers/iflytek.png" width="40" alt="iFlytek Spark"><br/><b>iFlytek Spark</b></td>
+<td align="center"><img src="repo-assets/providers/amd.png" width="40" alt="AMD Radeon"><br/><b>AMD Radeon</b></td>
 </tr>
 <tr>
 <td align="center"><img src="repo-assets/providers/huggingface.png" width="40" alt="HuggingFace"><br/><b>HuggingFace</b></td>
-<td align="center"><img src="repo-assets/providers/aihorde.png" width="40" alt="AI Horde"><br/><b>AI Horde</b></td>
-<td align="center"><img src="repo-assets/providers/kilo.png" width="40" alt="Kilo"><br/><b>Kilo Gateway</b></td>
+<td align="center"><img src="repo-assets/providers/kilo.png" width="40" alt="Kilo"><br/><b>Kilo</b></td>
 <td align="center"><img src="repo-assets/providers/llm7.png" width="40" alt="LLM7"><br/><b>LLM7</b></td>
+<td align="center"><img src="repo-assets/providers/ollama.png" width="40" alt="Ollama"><br/><b>Ollama</b></td>
 </tr>
 <tr>
-<td align="center"><img src="repo-assets/providers/ollama.png" width="40" alt="Ollama"><br/><b>Ollama Cloud</b></td>
-<td align="center"><img src="repo-assets/providers/ovh.png" width="40" alt="OVH"><br/><b>OVH AI Endpoints</b></td>
-<td align="center" width="140"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
-<td align="center"><img src="repo-assets/providers/opencode.png" width="40" alt="OpenCode Zen"><br/><b>OpenCode Zen</b></td>
+<td align="center"><img src="repo-assets/providers/ovh.png" width="40" alt="OVH"><br/><b>OVH</b></td>
+<td align="center"><img src="repo-assets/providers/pollinations.png" width="40" alt="Pollinations"><br/><b>Pollinations</b></td>
+<td align="center"><img src="repo-assets/providers/opencode.png" width="40" alt="OpenCode"><br/><b>OpenCode</b></td>
+<td align="center"><img src="repo-assets/providers/aihorde.png" width="40" alt="AI Horde"><br/><b>AI Horde</b></td>
 </tr>
 </table>
 

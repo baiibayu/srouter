@@ -16,7 +16,7 @@ export interface PlatformEntry {
 }
 
 // `url` points to each provider's key-management / signup page so the Keys page
-// can show a "Get API key" shortcut (#137). OpenCode Zen's key is free from
+// can show a "Get API key" shortcut (#137). OpenCode's key is free from
 // opencode.ai/auth — no card needed; billing only applies to paid models (#128).
 // `keyless: true` providers (Kilo, OVH, AI Horde) need no API key but accept
 // one (#1331): the key field is optional, a blank submit stores a sentinel so
@@ -62,7 +62,7 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'ovh', label: 'OVH AI Endpoints (no key needed)', url: 'https://endpoints.ai.cloud.ovh.net', keyless: true },
   { value: 'llm7', label: 'LLM7 (anon ok)', url: 'https://llm7.io' },
   { value: 'huggingface', label: 'HuggingFace Router (monthly free credit)', url: 'https://huggingface.co/settings/billing' },
-  { value: 'opencode', label: 'OpenCode Zen (paid models only)', url: 'https://opencode.ai/auth' },
+  { value: 'opencode', label: 'OpenCode (paid models only)', url: 'https://opencode.ai/auth' },
   { value: 'opencode-free', label: 'OpenCode Free (no key needed)', url: 'https://opencode.ai', keyless: true },
   { value: 'opencode-go', label: 'OpenCode Go (separate tier)', url: 'https://opencode.ai/auth' },
   { value: 'agnes', label: 'Agnes AI (free key)', url: 'https://platform.agnes-ai.com' },
