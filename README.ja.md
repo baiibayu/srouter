@@ -38,8 +38,9 @@
 
 <p align="center">
   <a href="docs/en/install/01-install.md#docker-compose"><img src="repo-assets/badges/docker.svg" height="42" alt="Docker でセルフホスト"></a>
-  <a href="desktop/"><img src="repo-assets/badges/windows.svg" height="42" alt="Windows デスクトップアプリ"></a>
-  <a href="desktop/"><img src="repo-assets/badges/macos.svg" height="42" alt="macOS デスクトップアプリ"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-Setup-win.exe"><img src="repo-assets/badges/windows.svg" height="42" alt="Windows 版をダウンロード"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest"><img src="repo-assets/badges/macos.svg" height="42" alt="macOS 版をダウンロード"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter.AppImage"><img src="repo-assets/badges/linux.svg" height="42" alt="Linux 版をダウンロード"></a>
 </p>
 
 ![SRouter ダッシュボード — リアルタイムルーティング、月間トークン予算、使用量統計](repo-assets/github-hero.png)
@@ -62,6 +63,8 @@ AI コーディングツール（Claude Code、Cursor、Windsurf、Cline）で�
 | **複数 SDK・API 形式の断片化：** 数十社のプロバイダーごとに異なる認証形式やエンドポイントを管理する負担。 | **単一の汎用 `/v1` ゲートウェイ：** 1つの OpenAI 互換エンドポイント（`http://localhost:20268/v1`）で、Anthropic Messages（`/v1/messages`）、Gemini（`/v1beta`）、Ollama エミュレーションに対応。 |
 | **予告のない無料枠の仕様変更：** 各社が週単位でモデルの追加・廃止や制限変更をサイレント実施。 | **署名付きカタログの自動同期：** 約 1,200 以上のモデル情報をローカル SQLite へ自動更新。常に最新環境を維持。 |
 | **API キー漏洩のプライバシーリスク：** 外部の未知のクラウドプロキシに生の API キーを送信するリスク。 | **100% ローカル AES-256-GCM 暗号化：** キーはローカルの SQLite 内に暗号化保存され、リクエストは端末から直接各公式プロバイダーへ送信されます。 |
+
+![SRouter と OpenRouter・LiteLLM・Portkey の比較 — 単一ルーター、自有キー、マークアップなし](repo-assets/comparison.png)
 
 ---
 
@@ -95,6 +98,8 @@ AI コーディングツール（Claude Code、Cursor、Windsurf、Cline）で�
 ```
 
 リクエストを受信すると、SRouter はモデルの稼働状態、残りレート制限、タスク複雑度を評価して最適なルートを選択します。プロバイダーから `429 Too Many Requests` や `5xx` エラーが返された場合、該当キーを一時クールダウンし、**フォールバックチェーン内の次の最適モデルへ即座にリトライ**します。
+
+![リクエストがライブスコア付きフォールバックチェーンを経由してルーティングされる様子](repo-assets/router-flow.png)
 
 ---
 
@@ -268,6 +273,8 @@ print("ルーティング先:", response.headers.get("x-routed-via"))
 
 SRouter は **約60社のプロバイダー** と **1,200 以上のエンドポイント** を統合しています。
 
+![積み上がる無料枠 — 約60プロバイダー、1,200以上の無料モデルエンドポイント、900以上のモデルファミリー](repo-assets/free-tier.png)
+
 <div align="center">
 
 <table>
@@ -368,6 +375,8 @@ srouter/
 ---
 
 ## ✨ 主な機能
+
+![SRouter の機能概要 — スマートルーティング、自動フェイルオーバー、Fusion、分析、マルチプロトコル](repo-assets/features.png)
 
 - **マルチプロトコル自動相互変換：**
   - 完全な OpenAI サーフェス（`/v1/chat/completions`、`/v1/models`、`/v1/embeddings`、`/v1/images/*` 等）。
@@ -490,5 +499,5 @@ SRouter が日々の開発コスト削減や生産性向上にお役に立ちま
 - **免責事項：** SRouter は個人の研究開発、プロトタイピング、コーディングエージェントの最適化を目的として設計されています。各無料利用枠の運用は各提供元の利用規約に準拠します。企業の本番運用には公式のエンタープライズ有料エンドポイントを推奨します。
 
 <div align="center">
-<sub>Crafted with passion by <b>Bayu Indra Sugiharto (<a href="https://github.com/baiibayu">@baiibayu</a>)</b> & community contributors.</sub>
+<sub>Crafted with passion by <b><a href="https://github.com/baiibayu">@baiibayu</a></b> & community contributors.</sub>
 </div>
