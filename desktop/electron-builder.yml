@@ -70,6 +70,11 @@ win:
 linux:
   category: Development;Utility;
   icon: assets/appicon_1024.png # electron-builder can automatically scale PNGs
+  # Scoped package name (@baiibayu/srouter-desktop) otherwise leaks into tar.xz /
+  # deb / rpm filenames as "@baiibayu/srouter-desktop-0.1.0.tar.xz" — the "@"
+  # becomes a subdirectory and the release globs (*.tar.xz, *.deb, *.rpm) miss
+  # every file. Stamp productName so all Linux artifacts read SRouter-*.
+  artifactName: "${productName}-${version}-${arch}.${ext}"
   target:
     - target: AppImage
       arch:
@@ -83,6 +88,12 @@ linux:
     - target: rpm
       arch:
         - x64
+# fpm targets use their own artifactName keys; repeat it so deb/rpm never fall
+# back to the package name either.
+deb:
+  artifactName: "${productName}-${version}-${arch}.deb"
+rpm:
+  artifactName: "${productName}-${version}-${arch}.rpm"
 nsis:
   oneClick: true
   deleteAppDataOnUninstall: false
