@@ -58,7 +58,7 @@
 | :--- | :--- |
 | **付费额度闲置与过期：** 每月付费订阅的 Token 额度用不完或月末直接清零。 | **最大化利用每一枚 Token：** 优先智能消耗即将过期的配额，并在多提供方间自动轮询。 |
 | **突发限流中断开发（429）：** 一次复杂的提示词或连续工具调用瞬间打断编码思路。 | **智能三级自动降级（Auto-Fallback）：** 毫秒级无感故障转移（订阅模型 $\to$ 廉价模型 $\to$ 100% 免费免密模型），保证零停机。 |
-| **工具输出疯狂燃烧 Token：** 冗长的 `git diff`、终端日志、测试输出与 JSON 快速撑爆上下文窗口。 | **提示词压缩与 Token 节省器：** 内置启发式 AST 规则，自动裁剪嘈杂的工具输出，**立省 20–40% Token**。 |
+| **工具输出疯狂燃烧 Token：** 冗长的 `git diff`、终端日志、测试输出与 JSON 快速撑爆上下文窗口。 | **提示词压缩与 Token 节省器：** 内置启发式与结构感知过滤，自动裁剪嘈杂的工具输出，**通常可节省 20–40% Token**。 |
 | **SDK 与接口协议极其碎片化：** 对接数十家供应商需要维护多套 SDK、不同的 Auth 格式与 URL。 | **单个通用 `/v1` 网关：** 一个 OpenAI 兼容地址（`http://localhost:20268/v1`），同时原生支持 Anthropic Messages（`/v1/messages`）、Gemini（`/v1beta`）及 Ollama 仿真。 |
 | **免费额度变化频繁且无通知：** 厂商每周都会上线、下线模型或悄悄修改限制规则。 | **模型目录自动签名同步：** 每天两次从受信签名源同步约 1,200+ 模型至本地 SQLite，持久保鲜。 |
 | **隐私泄露风险：** 将真实 API 密钥发送给未知的第三方云端代理容易造成凭据泄露。 | **100% 本地 AES-256-GCM 加密存储：** 密钥完全保存在本地；AI 请求直接从本机发送至官方上游，无第三方中转嗅探。 |
@@ -376,8 +376,8 @@ srouter/
   - 原生 Google Gemini API（`/v1beta/models/*:generateContent`）。
   - 本地优先 Ollama 仿真，赋能 Zed 与 JetBrains AI。
 - **提示词压缩与 Token 节省流水线：**
-  - 基于 AST 和正则的非破坏性过滤，智能裁剪嘈杂的工具调用结果（`git diff`、终端日志、文件读取）。
-  - 压缩重复 JSON 结构与多余上下文，**节省 20–40% Token 消耗**。
+  - 基于结构感知和正则的非破坏性过滤，智能裁剪嘈杂的工具调用结果（`git diff`、终端日志、文件读取）。
+  - 压缩重复 JSON 结构与多余上下文，**通常可节省 20–40% Token 消耗**。
 - **六大智能路由策略：**
   - `auto`：兼顾延迟、模型智力与剩余配额的综合最优解。
   - `auto:fast`：优先选择超低延迟提供方（Groq）。
@@ -479,7 +479,7 @@ docker compose logs -f srouter
 
 如果 SRouter 帮您节省了昂贵的 API 费用、保障了编程心流或提升了工作效率，欢迎赞助支持本项目的持续维护：
 
-[![Trakteer](https://img.shields.io/badge/Trakteer-e11d48?style=for-the-badge&logo=ko-fi&logoColor=white)](https://trakteer.id/baiibayu/tip)
+[![Trakteer](https://img.shields.io/badge/Trakteer-e11d48?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Ik00IDRoMTZ2M2gtNi41djExaC0zVjdINFY0eiIvPjwvc3ZnPg%3D%3D&logoColor=white)](https://trakteer.id/baiibayu/tip)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/baiibayu)
 [![PayPal](https://img.shields.io/badge/PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/baiibayu)
 

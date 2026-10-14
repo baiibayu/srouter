@@ -1,4 +1,4 @@
-import { OpenAICompatProvider } from './openai-compat.js';
+import { OpenAICompatProvider, isAnonymousCredential } from './openai-compat.js';
 import type { KeyValidationResult } from './base.js';
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 
@@ -9,28 +9,21 @@ const POLLINATIONS_ACCOUNT_KEY_URL = 'https://gen.pollinations.ai/account/key';
 /**
  * Pollinations — OpenAI-compatible shared-capacity tier.
  *
- * Everything except key validation is stock OpenAI-compat. validateKey is
- * overridden because Pollinations serves its catalog without auth:
+ * Free models are accessible without an API key (keyless). The public
+ * GET /v1/models catalog lists all available models, including 135+ free
+ * routes that accept requests with no Authorization header. Authenticated
+ * keys unlock paid models and higher rate limits.
  *
- *   GET /v1/models answers 200 for a revoked key (and for no key at all —
- *   verified live 2026-07-28), while POST /v1/chat/completions answers 401.
- *   The default openai-compat probe therefore reported dead keys as healthy
- *   and routing degraded silently. See issue #608.
+ * validateKey probes the public /v1/models endpoint (which answers 200
+ * without auth) to confirm network reachability. A live /v1/models response
+ * means the platform is up and keyless routing will work.
  *
- * The probe is GET /account/key instead, which enforces auth (401 for a
- * garbage bearer, verified the same day) and costs no generation quota.
- * Response classification, all of it deliberate:
- *   200 → authenticated, key is live.
- *   401 → revoked/invalid; surfaces the upstream reason and feeds the
- *         consecutive-failure auto-disable, same as every other provider.
- *   402 → authenticated but out of pollen. The credential is fine; benching
- *         it belongs to the router's quota path, not to key validation.
- *   403 → Pollinations uses 403 for insufficient PERMISSIONS, so a restricted
- *         (but live) key can be refused this endpoint. Inconclusive: throw so
- *         health.ts keeps the previous verdict instead of disabling a good key.
- *   other non-2xx (endpoint moved, provider 5xx) → inconclusive, same as above.
+ * Keyed access validates against /account/key (401 for missing/invalid key,
+ * 200 for live keys, 402 for out-of-pollen accounts). See issue #608.
  */
 export class PollinationsProvider extends OpenAICompatProvider {
+  override keyless = true;
+
   constructor() {
     super({
       platform: 'pollinations',
@@ -40,9 +33,25 @@ export class PollinationsProvider extends OpenAICompatProvider {
   }
 
   override async validateKey(apiKey: string, quotaContext?: QuotaObservationContext): Promise<KeyValidationResult> {
-    // Transport errors (DNS / timeout / TLS) propagate — health.ts marks
-    // status='error' without counting toward auto-disable; only a confirmed
-    // 401 disables a key.
+    // Keyless path: confirm the upstream is reachable via the public models
+    // catalog. A 200 from /v1/models means keyless routing will work.
+    if (isAnonymousCredential(apiKey)) {
+      const res = await this.fetchWithTimeout(`${POLLINATIONS_BASE_URL}/models`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }, 30000, { timeoutBounds: 'request' });
+      recordQuotaObservationsFromResponse(res, {
+        platform: this.platform,
+        keyId: quotaContext?.keyId,
+        providerAccountId: quotaContext?.providerAccountId,
+        quotaPoolKey: quotaContext?.quotaPoolKey,
+        endpoint: 'v1/models',
+      });
+      if (res.ok) return true;
+      return { valid: false, error: `Pollinations /v1/models returned HTTP ${res.status}` };
+    }
+
+    // Keyed path: probe the authenticated /account/key endpoint (#608).
     const res = await this.fetchWithTimeout(POLLINATIONS_ACCOUNT_KEY_URL, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${apiKey}` },

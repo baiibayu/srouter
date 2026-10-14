@@ -236,24 +236,26 @@ register(new OpenAICompatProvider({
   keyless: true,
 }));
 
-// Pollinations — OpenAI-compatible recurring shared-capacity tier. The legacy
+// Pollinations — OpenAI-compatible shared-capacity tier. The legacy
 // text.pollinations.ai host returned 502 in the July 2026 audit; publishable
-// keys now use the unified gen.pollinations.ai endpoint. Free capacity accrues
-// at one pollen per IP per hour, so chat requires a real publishable key.
+// keys now use the unified gen.pollinations.ai endpoint. Free models are
+// accessible without an API key (keyless) — GET /v1/models answers 200
+// publicly and POST /v1/chat/completions works without auth for free routes.
 // Dedicated PollinationsProvider (not plain OpenAICompatProvider) because
-// GET /v1/models is public — it answers 200 for a revoked key — so validation
-// probes the authenticated /account/key instead; see providers/pollinations.ts
-// and issue #608.
+// validateKey must distinguish between the anonymous (keyless) and keyed paths;
+// see providers/pollinations.ts and issue #608.
 register(new PollinationsProvider());
 
 // LLM7.io — OpenAI-compatible aggregator. 100 req/hr free; anonymous access
 // also works for basic models. Wraps a handful of upstream models behind one
 // token (GPT-OSS, Llama 3.1 Turbo via Meta, Codestral via Mistral, Ministral,
-// GLM-4.6V-Flash).
+// GLM-4.6V-Flash). Registered keyless so the gateway stores a sentinel row
+// and routing treats the platform as configured without a real key.
 register(new OpenAICompatProvider({
   platform: 'llm7',
   name: 'LLM7',
   baseUrl: 'https://api.llm7.io/v1',
+  keyless: true,
 }));
 
 // OpenCode Zen — OpenAI-compatible gateway (https://opencode.ai/zen/v1), same

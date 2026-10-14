@@ -40,7 +40,7 @@ describe('Pollinations registration (#608)', () => {
     expect(provider).toBeInstanceOf(PollinationsProvider);
     expect(provider?.platform).toBe('pollinations');
     expect(provider?.name).toBe('Pollinations');
-    expect(provider?.keyless).toBe(false);
+    expect(provider?.keyless).toBe(true);
     expect(resolveProvider('pollinations')).toBe(provider);
   });
 });
@@ -128,5 +128,39 @@ describe('Pollinations validateKey (#608)', () => {
 
     const provider = new PollinationsProvider();
     await expect(provider.validateKey(VALID_KEY)).rejects.toThrow(/aborted/i);
+  });
+
+  describe('keyless (anonymous) path', () => {
+    it('probes GET /v1/models for reachability when no key is provided', async () => {
+      const calls: Array<{ url: string; init: RequestInit }> = [];
+      vi.spyOn(global, 'fetch').mockImplementation(async (url, init) => {
+        calls.push({ url: String(url), init: init as RequestInit });
+        return PUBLIC_MODELS_200 as unknown as Response;
+      });
+
+      const provider = new PollinationsProvider();
+      const result = await provider.validateKey('');
+
+      expect(result).toBe(true);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].url).toBe('https://gen.pollinations.ai/v1/models');
+      expect((calls[0].init.headers as Record<string, string>)['Authorization']).toBeUndefined();
+    });
+
+    it('returns false when /v1/models returns non-2xx for the anonymous path', async () => {
+      vi.spyOn(global, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
+
+      const provider = new PollinationsProvider();
+      const result = await provider.validateKey('no-key');
+      expect(result).not.toBe(true);
+      const failure = result as KeyValidationFailure;
+      expect(failure.valid).toBe(false);
+      expect(failure.error).toContain('HTTP 500');
+    });
   });
 });

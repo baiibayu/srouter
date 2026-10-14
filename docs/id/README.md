@@ -125,10 +125,10 @@ SRouter secara otomatis menerjemahkan request ke format asli yang dibutuhkan ole
 Coding agent sering kali membuang-buang token untuk membaca output terminal yang sangat panjang (seperti `git diff`, hasil unit test berulang, atau respon file sistem yang bising). 
 
 **Mekanisme Kerja Pipeline Kompresi SRouter:**
-1. **Pembersihan Log & Output Alat:** Menggunakan pemfilteran heuristik dan parsing AST untuk memangkas baris log bising tanpa menghilangkan inti error atau perubahan kode.
+1. **Pembersihan Log & Output Alat:** Menggunakan pemfilteran heuristik dan filtering sadar-struktur untuk memangkas baris log bising tanpa menghilangkan inti error atau perubahan kode.
 2. **Kompaksi Struktur JSON:** Menyusutkan payload JSON berulang dan menghapus spasi/formatting yang tidak diperlukan.
 3. **Pemangkasan Konteks Usang (Stale Context):** Menghapus riwayat percakapan lama yang sudah diselesaikan sebelum prompt dikirim ke provider upstream.
-4. **Hasil:** Menghemat **20–40% token per request**, menjaga batas konteks (*context window*) tetap lega.
+4. **Hasil:** **Umumnya menghemat 20–40% token per request**, menjaga batas konteks (*context window*) tetap lega.
 
 *Panduan kompresi: [docs/en/compression/01-compression-pipeline.md](../en/compression/01-compression-pipeline.md)*
 
