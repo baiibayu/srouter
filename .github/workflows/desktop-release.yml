@@ -410,6 +410,45 @@ jobs:
           fi
           gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
 
+      # Version-less copies of the installers so the README badges can deep-link
+      # to releases/latest/download/<name> — clicking downloads immediately
+      # instead of opening the release page. The versioned files stay: the
+      # electron-updater manifests (latest*.yml) reference those names.
+      - name: Upload stable-named aliases (direct download)
+        if: runner.os != 'macOS' && startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          aliases=()
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            for f in desktop/dist-electron/*Setup*.exe; do
+              cp "$f" desktop/dist-electron/SRouter-Setup-win.exe
+              aliases+=(desktop/dist-electron/SRouter-Setup-win.exe)
+            done
+          else
+            declare -A map=(
+              ["*.AppImage"]=SRouter.AppImage
+              ["*.deb"]=SRouter.deb
+              ["*.rpm"]=SRouter.rpm
+              ["*.tar.xz"]=SRouter.tar.xz
+            )
+            for pat in "${!map[@]}"; do
+              for f in desktop/dist-electron/$pat; do
+                cp "$f" "desktop/dist-electron/${map[$pat]}"
+                aliases+=("desktop/dist-electron/${map[$pat]}")
+              done
+            done
+          fi
+          if [ ${#aliases[@]} -eq 0 ]; then
+            echo "::error::no installers found to alias"
+            exit 1
+          fi
+          printf 'uploading alias %s\n' "${aliases[@]}"
+          gh release upload "$GITHUB_REF_NAME" "${aliases[@]}" --clobber
+
   macos-release:
     name: Verify and combine macOS artifacts
     needs: build
@@ -452,6 +491,15 @@ jobs:
             artifacts/macos-installer-*/*.zip \
             artifacts/macos-installer-*/*.blockmap --clobber
           gh release upload "$GITHUB_REF_NAME" artifacts/latest-mac.yml --clobber
+          # Version-less aliases for direct-download links. Both architectures
+          # get one — the macOS badge still points at the release page so users
+          # can pick the right one.
+          arm_dmg=(artifacts/macos-installer-arm64/*.dmg)
+          x64_dmg=(artifacts/macos-installer-x64/*.dmg)
+          cp "${arm_dmg[0]}" SRouter-mac-arm64.dmg
+          cp "${x64_dmg[0]}" SRouter-mac-x64.dmg
+          gh release upload "$GITHUB_REF_NAME" \
+            SRouter-mac-arm64.dmg SRouter-mac-x64.dmg --clobber
 
   # Only once every platform has attached its installers does the release go
   # public. A release created published (the old recipe) is left alone.
@@ -481,3 +529,42 @@ jobs:
           else
             echo "already published; nothing to do"
           fi
+
+  # Retention policy: keep the 2 newest published releases, delete anything
+  # older (release AND tag) so old installers don't pile up. The previous
+  # release stays downloadable until the one after it ships — e.g. when
+  # v0.1.2 publishes, v0.1.0 is removed and v0.1.1 + v0.1.2 remain.
+  cleanup:
+    name: Prune old releases (keep 2)
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete releases older than the 2 newest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEEP=2
+          mapfile -t releases < <(gh api "repos/$GH_REPO/releases" --paginate \
+            --jq 'map(select(.draft == false and .prerelease == false))
+                  | sort_by(.created_at) | reverse
+                  | .[] | "\(.id) \(.tag_name)"')
+          total="${#releases[@]}"
+          echo "published releases: $total, keeping newest $KEEP"
+          if [ "$total" -le "$KEEP" ]; then
+            echo "nothing to prune"
+            exit 0
+          fi
+          for entry in "${releases[@]:$KEEP}"; do
+            id="${entry%% *}"
+            tag="${entry#* }"
+            echo "deleting release $tag (id $id)"
+            gh api -X DELETE "repos/$GH_REPO/releases/$id"
+            echo "deleting tag $tag"
+            gh api -X DELETE "repos/$GH_REPO/git/refs/tags/$tag" || \
+              echo "tag $tag already gone"
+          done
+          echo "pruned $((total - KEEP)) old release(s)"
