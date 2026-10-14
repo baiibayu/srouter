@@ -106,45 +106,46 @@ describe('declarative config import', () => {
     expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'groq' AND label = 'config'").get() as { n: number }).n).toBe(1);
   });
 
-  // #600: pollinations lost `keyless: true` in #573, so a legacy declarative
-  // config with a keyless-era pollinations entry (no `key`) used to throw at
-  // boot and brick the install. Missing-key entries must now degrade to a
-  // per-entry skip + warning instead of killing the apply.
-  it('skips a legacy keyless entry without a key, warns, and still applies the rest', () => {
+  // #600: a legacy declarative config entry for a NON-keyless platform with
+  // no `key` used to throw at boot and brick the install. Missing-key entries
+  // must now degrade to a per-entry skip + warning instead of killing the
+  // apply. (Pollinations is now keyless again, so this uses a non-keyless
+  // platform like Groq to exercise the skip path.)
+  it('skips a legacy entry without a key on a non-keyless platform, warns, and still applies the rest', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const result = applyDeclarativeConfig({
         keys: [
-          { platform: 'pollinations' },
-          { platform: 'groq', key: 'gsk_config_key', label: 'config' },
+          { platform: 'groq' },
+          { platform: 'mistral', key: 'ms_config_key', label: 'config' },
         ],
       });
       expect(result.applied).toBe(true);
       expect(result.keys).toBe(1);
       expect(result.warnings).toHaveLength(1);
-      expect(result.warnings[0]).toContain('pollinations');
-      expect(result.warnings[0]).toContain('enter.pollinations.ai');
+      expect(result.warnings[0]).toContain('groq');
+      expect(result.warnings[0]).toContain('requires an API key');
       expect(result.warnings[0]).toContain('entry skipped');
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining('pollinations'));
-      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'pollinations'").get() as { n: number }).n).toBe(0);
-      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'groq'").get() as { n: number }).n).toBe(1);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('groq'));
+      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'groq'").get() as { n: number }).n).toBe(0);
+      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'mistral'").get() as { n: number }).n).toBe(1);
     } finally {
       warn.mockRestore();
     }
   });
 
-  it('boot apply (FromEnv) survives a legacy keyless pollinations entry', () => {
+  it('boot apply (FromEnv) survives a legacy entry without a key on a non-keyless platform', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       process.env.SROUTER_CONFIG_JSON = JSON.stringify({
         keys: [
-          { platform: 'pollinations', label: 'legacy' },
-          { platform: 'groq', key: 'gsk_config_key', label: 'config' },
+          { platform: 'groq', label: 'legacy' },
+          { platform: 'mistral', key: 'ms_config_key', label: 'config' },
         ],
       });
       expect(() => applyDeclarativeConfigFromEnv()).not.toThrow();
-      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'groq'").get() as { n: number }).n).toBe(1);
-      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'pollinations'").get() as { n: number }).n).toBe(0);
+      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'mistral'").get() as { n: number }).n).toBe(1);
+      expect((getDb().prepare("SELECT COUNT(*) AS n FROM api_keys WHERE platform = 'groq'").get() as { n: number }).n).toBe(0);
     } finally {
       warn.mockRestore();
     }
