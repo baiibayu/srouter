@@ -147,7 +147,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
   const needsAccountId = platform === 'cloudflare'
   // Key-optional providers (Kilo, OVH, AI Horde) work anonymously, but accept a
   // real key too (#1331): the field stays editable and may be left blank.
-  const isKeyless = PLATFORMS.find(p => p.value === platform)?.keyless ?? false
+  const isKeyless = [...SEARCH_PROVIDERS, ...PLATFORMS].find(p => p.value === platform)?.keyless ?? false
   // Cloudflare pairs each token with an account id, and a key-optional
   // provider keeps a single anonymous row, so neither takes a list.
   const canPasteSeveral = !isKeyless && !needsAccountId

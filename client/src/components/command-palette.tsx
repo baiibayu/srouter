@@ -111,7 +111,7 @@ export function CommandPalette() {
       { id: 'p-image', group: 'pages', label: t('models.imageTab'), keywords: 'models image generation', icon: ImageIcon, run: go('/models/image') },
       { id: 'p-video', group: 'pages', label: t('models.videoTab'), keywords: 'models video text to video generation mp4', icon: Clapperboard, run: go('/models/video') },
       { id: 'p-audio', group: 'pages', label: t('models.audioTab'), keywords: 'models audio speech tts stt transcription whisper', icon: AudioLines, run: go('/models/audio') },
-      { id: 'p-search', group: 'pages', label: t('search.tab'), keywords: 'models search web tavily exa firecrawl linkup', icon: Globe, run: go('/models/search') },
+      { id: 'p-search', group: 'pages', label: t('search.tab'), keywords: 'models search web tavily exa firecrawl linkup parallel', icon: Globe, run: go('/models/search') },
       { id: 'p-fusion', group: 'pages', label: t('models.fusionTab'), keywords: 'models fusion synthesis panel judge', icon: Zap, run: go('/models/fusion') },
       { id: 'p-playground', group: 'pages', label: t('nav.playground'), keywords: 'playground test chat try', icon: SquareTerminal, run: go('/playground') },
       { id: 'p-keys', group: 'pages', label: t('nav.keys'), keywords: 'keys providers api tokens', icon: KeyRound, run: go('/keys') },

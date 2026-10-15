@@ -37,7 +37,7 @@ export const openapiSpec = {
   tags: [
     { name: 'Chat', description: 'OpenAI-compatible chat and completion endpoints' },
     { name: 'Media', description: 'Image generation and text-to-speech' },
-    { name: 'Search', description: 'Web search over your Tavily, Exa, Firecrawl and Linkup keys' },
+    { name: 'Search', description: 'Web search over Parallel (keyless) and your Tavily, Exa, Firecrawl and Linkup keys' },
     { name: 'Responses', description: 'OpenAI Responses API (Codex CLI wire format)' },
     { name: 'Anthropic', description: 'Anthropic Messages API (Claude Code and the Anthropic SDKs)' },
     { name: 'Models', description: 'Model discovery' },
@@ -181,7 +181,7 @@ export const openapiSpec = {
         operationId: 'createSearch',
         summary: 'Search the web',
         description:
-          'Web search routed over the search engines in the catalog (Tavily, Exa, Firecrawl, Linkup) and any ' +
+          'Web search routed over the search engines in the catalog (Parallel, Tavily, Exa, Firecrawl, Linkup) and any ' +
           'custom search relay. Omit `engine` (or set `auto`) to fail over across engines that have a key; ' +
           'rate-limited or out-of-credit keys cool down and the next one is tried.',
         requestBody: {

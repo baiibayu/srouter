@@ -494,7 +494,7 @@ const TOOLS: Record<string, McpTool> = {
   },
   web_search: {
     title: 'Search the web',
-    description: 'Search the web through the search providers configured in SRouter (Tavily, Exa, Firecrawl, Linkup, or a custom search endpoint). Returns titles, URLs and short extracts. Spends the search provider\'s free quota, not model tokens.',
+    description: 'Search the web through the search providers configured in SRouter (Parallel, Tavily, Exa, Firecrawl, Linkup, or a custom search endpoint). Returns titles, URLs and short extracts. Spends the search provider\'s free quota, not model tokens.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,

@@ -8,6 +8,9 @@ import { TAVILY_BASE_URL } from '../providers/tavily.js';
 import { EXA_BASE_URL } from '../providers/exa.js';
 import { FIRECRAWL_BASE_URL } from '../providers/firecrawl.js';
 import { LINKUP_BASE_URL } from '../providers/linkup.js';
+import { PARALLEL_BASE_URL, PARALLEL_MCP_URL } from '../providers/parallel.js';
+import { isAnonymousCredential } from '../lib/credential.js';
+import { randomUUID } from 'node:crypto';
 import { secondsUntilNextMonth } from './key-budget.js';
 import { reserveProviderCredential, type ReservedProviderCredential } from './provider-credential.js';
 import { isOnCooldown, setCooldown } from './ratelimit.js';
@@ -188,7 +191,18 @@ async function upstream(url: string, platform: string, init: RequestInit, signal
       parseRetryAfterMs(res.headers?.get('retry-after') ?? null),
     );
   }
+  // MCP servers may answer a POST as a one-event stream instead of plain JSON.
+  if ((res.headers?.get('content-type') ?? '').includes('text/event-stream')) {
+    return lastSseJson(await res.text());
+  }
   return res.json();
+}
+
+/** The JSON payload of the last `data:` event in an SSE body. */
+function lastSseJson(body: string): unknown {
+  const data = body.split('\n').filter(l => l.startsWith('data:')).map(l => l.slice(5).trim()).filter(Boolean);
+  if (data.length === 0) throw new SearchError('upstream sent an empty event stream', 502);
+  return JSON.parse(data[data.length - 1]!);
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -219,6 +233,28 @@ function keepHits(hits: Array<{ title: string; url: string; content: string; sco
     content: clip(decodeEntities(h.content)),
     score: typeof h.score === 'number' && Number.isFinite(h.score) ? h.score : rankScore(i, valid.length),
   }));
+}
+
+// Parallel's anonymous Search MCP asks for a stable conversation id on every
+// call (used for its free-tier rate limiting); one per server process.
+const PARALLEL_SESSION_ID = `freellmapi-${randomUUID()}`;
+const RATE_LIMIT_TEXT = /rate.?limit|too many requests|quota/i;
+
+/** Unwrap a JSON-RPC `tools/call` reply from Parallel's Search MCP into the
+ *  REST-shaped search response its text content carries. */
+function parallelMcpPayload(rpc: unknown): { results?: Array<Record<string, unknown>> } {
+  const r = rpc as { error?: { message?: unknown }; result?: { isError?: boolean; content?: Array<{ type?: string; text?: unknown }> } };
+  const text = (r?.result?.content ?? []).find(c => c?.type === 'text' && typeof c.text === 'string')?.text as string | undefined;
+  const failure = typeof r?.error?.message === 'string' ? r.error.message : (r?.result?.isError ? (text ?? 'tool error') : null);
+  if (failure !== null) {
+    throw new SearchError(`parallel MCP: ${failure.slice(0, 200)}`, RATE_LIMIT_TEXT.test(failure) ? 429 : 502);
+  }
+  if (!text) throw new SearchError('parallel MCP returned no text content', 502);
+  try {
+    return JSON.parse(text) as { results?: Array<Record<string, unknown>> };
+  } catch {
+    throw new SearchError('parallel MCP returned non-JSON content', 502);
+  }
 }
 
 /** Tavily's wire shape, shared by Tavily itself and custom search relays. */
@@ -305,6 +341,34 @@ const ADAPTERS: Record<string, Adapter> = {
     const hits = (Array.isArray(parsed?.results) ? parsed.results : [])
       .filter(r => r.type === undefined || r.type === 'text')
       .map(r => ({ title: str(r.name), url: str(r.url), content: str(r.content) }));
+    return { results: keepHits(hits) };
+  },
+
+  // Keyless: the stored `no-key` sentinel goes through the anonymous Search
+  // MCP; a real key uses the REST API. Both return the same result shape.
+  parallel: async (cred, query, opts, n) => {
+    const args = { objective: query, search_queries: [query] };
+    const parsed = isAnonymousCredential(cred.key)
+      ? parallelMcpPayload(await upstream(PARALLEL_MCP_URL, 'parallel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: { name: 'web_search', arguments: { ...args, session_id: PARALLEL_SESSION_ID } },
+          }),
+        }, opts.signal))
+      : await upstream(`${PARALLEL_BASE_URL}/search`, 'parallel', {
+          method: 'POST',
+          headers: { 'x-api-key': cred.key.trim(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...args, mode: 'fast', advanced_settings: { max_results: n } }),
+        }, opts.signal) as { results?: Array<Record<string, unknown>> };
+    const hits = (Array.isArray(parsed?.results) ? parsed.results : []).slice(0, n).map(r => ({
+      title: str(r.title) || str(r.url),
+      url: str(r.url),
+      content: Array.isArray(r.excerpts) ? r.excerpts.filter(e => typeof e === 'string').join(' … ') : '',
+    }));
     return { results: keepHits(hits) };
   },
 };
@@ -447,7 +511,7 @@ export async function runSearch(query: string, opts: SearchOptions = {}): Promis
       );
     }
     throw new SearchError(
-      'No search key configured. Add a Tavily, Exa, Firecrawl or Linkup key on the Keys page.',
+      'No search key configured. Enable Parallel (no key needed) or add a Tavily, Exa, Firecrawl or Linkup key on the Keys page.',
       503,
       'no_search_keys',
     );

@@ -91,6 +91,7 @@ export const PREFIX_MAP: Record<string, string> = {
   EXA_: 'exa',
   FIRECRAWL_: 'firecrawl',
   LINKUP_: 'linkup',
+  PARALLEL_: 'parallel',
   CLOUDFLARE_: 'cloudflare',
   ZHIPU_: 'zhipu',
   OLLAMA_: 'ollama',
@@ -224,6 +225,7 @@ export const AUTH_JSON_PROVIDER_MAP: Record<string, string> = {
   exa: 'exa',
   firecrawl: 'firecrawl',
   linkup: 'linkup',
+  parallel: 'parallel',
 };
 
 export function detectPlatform(prefix: string): string | null {

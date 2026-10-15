@@ -8,7 +8,7 @@ import type { SearchPlatform as SharedSearchPlatform } from '@baiibayu/srouter-s
 // Mirrors SEARCH_PLATFORMS in shared/types.ts. The client only imports types
 // from shared, so the list is repeated here; the two assertions below fail the
 // typecheck if either side gains a platform the other lacks.
-export const SEARCH_PLATFORMS = ['tavily', 'exa', 'firecrawl', 'linkup'] as const
+export const SEARCH_PLATFORMS = ['tavily', 'exa', 'firecrawl', 'linkup', 'parallel'] as const
 export type SearchPlatform = (typeof SEARCH_PLATFORMS)[number]
 const sharedCoversClient: SharedSearchPlatform = '' as SearchPlatform
 const clientCoversShared: SearchPlatform = '' as SharedSearchPlatform
@@ -20,12 +20,14 @@ export function isSearchPlatform(platform: string): platform is SearchPlatform {
 }
 
 // Same shape and job as PLATFORMS in components/keys/shared.tsx: the label
-// names the free allowance, `url` is where the key is created.
-export const SEARCH_PROVIDERS: { value: SearchPlatform; label: string; url: string }[] = [
+// names the free allowance, `url` is where the key is created, and `keyless`
+// providers work with no key (a blank submit enables the anonymous tier).
+export const SEARCH_PROVIDERS: { value: SearchPlatform; label: string; url: string; keyless?: boolean }[] = [
   { value: 'tavily', label: 'Tavily (1,000 searches/month)', url: 'https://app.tavily.com/home' },
   { value: 'exa', label: 'Exa ($10 search credits/month)', url: 'https://dashboard.exa.ai/api-keys' },
   { value: 'firecrawl', label: 'Firecrawl (1,000 credits/month)', url: 'https://www.firecrawl.dev/app/api-keys' },
   { value: 'linkup', label: 'Linkup (€5 credits/month)', url: 'https://app.linkup.so/api-keys' },
+  { value: 'parallel', label: 'Parallel (no key needed)', url: 'https://platform.parallel.ai', keyless: true },
 ]
 
 /** Short provider name for chips and badges ("Tavily", not the full label). */

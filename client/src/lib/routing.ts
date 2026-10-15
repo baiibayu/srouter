@@ -463,6 +463,7 @@ auray:       '#635bff',
   exa:         '#2563eb',
   firecrawl:   '#ef4444',
   linkup:      '#10b981',
+  parallel:    '#0ea5e9',
 }
 
 // ── Grouped (unified) rendering ──────────────────────────────────────────────

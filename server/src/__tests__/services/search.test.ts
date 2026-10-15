@@ -134,6 +134,87 @@ describe('search service', () => {
     expect(out).toMatchObject({ answer: 'yes', provider: 'linkup', results: [{ title: 'S', url: 'https://s', content: 'src' }] });
   });
 
+  describe('Parallel (keyless)', () => {
+    function seedParallel(): void {
+      getDb().prepare(`
+        INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+        VALUES ('parallel', 'parallel-search', 'Parallel Search', 'search', 4, 1, 'Free, no key needed', '{}')
+      `).run();
+    }
+    const mcpReply = (payload: unknown) => ({
+      jsonrpc: '2.0',
+      id: 1,
+      result: { content: [{ type: 'text', text: JSON.stringify(payload) }] },
+    });
+    const hits = { results: [
+      { url: 'https://a', title: 'A &amp; B', excerpts: ['one', 'two'] },
+      { url: 'https://b', title: null, excerpts: [] },
+      { url: '', title: 'dropped', excerpts: ['x'] },
+    ] };
+
+    it('searches anonymously over MCP with the stored sentinel and maps excerpts', async () => {
+      seedParallel();
+      addKey('parallel', 'no-key');
+      expect(searchAvailable()).toBe(true);
+      const fn = mockFetch(() => json(mcpReply(hits)));
+      const out = await runSearch('node version');
+      const [url, init] = calls(fn)[0];
+      expect(url).toBe('https://search.parallel.ai/mcp');
+      expect((init.headers as Record<string, string>)['x-api-key']).toBeUndefined();
+      const body = bodyOf(calls(fn)[0]);
+      expect(body).toMatchObject({ method: 'tools/call', params: { name: 'web_search', arguments: { objective: 'node version', search_queries: ['node version'] } } });
+      expect(body.params.arguments.session_id).toMatch(/^freellmapi-/);
+      expect(out).toMatchObject({ provider: 'parallel', engine: 'parallel-search' });
+      expect(out.results).toEqual([
+        { title: 'A & B', url: 'https://a', content: 'one … two', score: 1 },
+        { title: 'https://b', url: 'https://b', content: '', score: 0.5 },
+      ]);
+    });
+
+    it('reads an MCP reply sent as an event stream', async () => {
+      seedParallel();
+      addKey('parallel', 'no-key');
+      mockFetch(() => new Response(`event: message\ndata: ${JSON.stringify(mcpReply(hits))}\n\n`, {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+      }));
+      const out = await runSearch('q');
+      expect(out.results.map(r => r.url)).toEqual(['https://a', 'https://b']);
+    });
+
+    it('uses the REST API with x-api-key when a real key is stored', async () => {
+      seedParallel();
+      addKey('parallel', 'real-parallel-key');
+      const fn = mockFetch(() => json(hits));
+      const out = await runSearch('q', { maxResults: 1 });
+      const [url, init] = calls(fn)[0];
+      expect(url).toBe('https://api.parallel.ai/v1/search');
+      expect((init.headers as Record<string, string>)['x-api-key']).toBe('real-parallel-key');
+      expect(bodyOf(calls(fn)[0])).toEqual({ objective: 'q', search_queries: ['q'], mode: 'fast', advanced_settings: { max_results: 1 } });
+      expect(out.results).toHaveLength(1);
+    });
+
+    it('turns an MCP rate-limit tool error into a retryable 429', async () => {
+      seedParallel();
+      addKey('parallel', 'no-key');
+      mockFetch(() => json({ jsonrpc: '2.0', id: 1, result: { isError: true, content: [{ type: 'text', text: 'Rate limit exceeded for free tier' }] } }));
+      await expect(runSearch('q')).rejects.toMatchObject({ status: 429 });
+      expect(logRows()).toEqual([expect.objectContaining({ platform: 'parallel', status: 'error' })]);
+    });
+
+    it('fails over to the next engine when the MCP call errors', async () => {
+      seedParallel();
+      addKey('parallel', 'no-key');
+      addKey('tavily');
+      updateSearchEngine(listSearchEngines().find(e => e.engineId === 'parallel-search')!.id, { priority: 0 });
+      mockFetch(url => url.startsWith('https://search.parallel.ai')
+        ? json({ jsonrpc: '2.0', id: 1, error: { code: -32603, message: 'internal error' } })
+        : json({ results: [{ title: 'T', url: 'https://t', content: 'c' }] }));
+      const out = await runSearch('q');
+      expect(out.provider).toBe('tavily');
+    });
+  });
+
   it('tries a custom relay before the catalog engines', async () => {
     addKey('tavily');
     addCustomRelay('https://relay.example/v1');
