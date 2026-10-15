@@ -123,4 +123,30 @@ describe('request analytics retention', () => {
     const remainingAfter = db.prepare(`SELECT hour FROM request_hourly ORDER BY hour`).all() as Array<{ hour: string }>;
     expect(remainingAfter.map(r => r.hour)).toEqual(['2026-05-15 00:00:00', '2026-05-31 00:00:00']);
   });
+
+  it('sweeps expired idempotency claims and cache rows on the prune pass', () => {
+    // Both tables ship with the migration set; seed one expired and one live
+    // row in each so a prune must keep the live half.
+    const db = getDb();
+    const now = new Date('2026-05-31T00:00:00Z').getTime();
+    const claim = db.prepare(`
+      INSERT INTO idempotency_claims (key_hash, request_fingerprint, response_status, response_body, created_at_ms, expires_at_ms)
+      VALUES (?, 'fp', 200, '{}', ?, ?)
+    `);
+    claim.run('hash-expired', now - 48 * 3600_000, now - 3600_000);
+    claim.run('hash-live', now - 3600_000, now + 3600_000);
+    const cache = db.prepare(`
+      INSERT INTO response_cache (cache_key, body_json, platform, model_id, prompt_tokens, completion_tokens, created_at_ms, expires_at_ms)
+      VALUES (?, '{}', 'groq', 'grok-test', 1, 1, ?, ?)
+    `);
+    cache.run('cache-expired', now - 48 * 3600_000, now - 1000);
+    cache.run('cache-live', now - 1000, now + 60_000);
+
+    const result = pruneRequestAnalytics({ db, force: true, now: new Date(now) });
+    expect(result.deleted).toBe(2);
+    expect((db.prepare("SELECT COUNT(*) AS n FROM idempotency_claims WHERE key_hash = 'hash-expired'").get() as { n: number }).n).toBe(0);
+    expect((db.prepare("SELECT COUNT(*) AS n FROM idempotency_claims WHERE key_hash = 'hash-live'").get() as { n: number }).n).toBe(1);
+    expect((db.prepare("SELECT COUNT(*) AS n FROM response_cache WHERE cache_key = 'cache-expired'").get() as { n: number }).n).toBe(0);
+    expect((db.prepare("SELECT COUNT(*) AS n FROM response_cache WHERE cache_key = 'cache-live'").get() as { n: number }).n).toBe(1);
+  });
 });

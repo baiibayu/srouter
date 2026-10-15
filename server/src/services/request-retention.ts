@@ -199,6 +199,35 @@ export function pruneServerLogs(db: RetentionDb, nowMs: number): number {
   return deleted;
 }
 
+/**
+ * Sweep expired rows from the two short-lived replay stores.
+ *
+ * Both tables are write-once with a TTL that readers already filter on
+ * (`expires_at_ms > now`), and both are indexed on `expires_at_ms`. Neither
+ * had a sweeper: `storeIdempotencyResult` only deletes expired rows for the
+ * SAME key hash it is about to overwrite, so a claim whose hash never repeats
+ * — the common case, since clients send a fresh UUID per request — sat in the
+ * DB forever with its full response JSON. A busy install replaying
+ * Idempotency-Key traffic grew this table monotonically. `response_cache`
+ * swept expired rows only at startup, so a long-running server accumulated
+ * them between restarts too.
+ *
+ * The deletes are plain index-range walks over `expires_at_ms`, so cost scales
+ * with what is actually expired. Guarded against the tables being absent the
+ * same way every other prune here is.
+ */
+export function pruneExpiredClaims(db: RetentionDb, nowMs: number): number {
+  let deleted = 0;
+  for (const table of ['idempotency_claims', 'response_cache'] as const) {
+    const present = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
+      .get(table);
+    if (!present) continue;
+    deleted += db.prepare(`DELETE FROM ${table} WHERE expires_at_ms <= ?`).run(nowMs).changes;
+  }
+  return deleted;
+}
+
 export function pruneRequestAnalytics(options: {
   db?: RetentionDb;
   force?: boolean;
@@ -235,6 +264,10 @@ export function pruneRequestAnalytics(options: {
 
   // Persisted server logs, on the same 60s gate as the requests prune above.
   deleted += pruneServerLogs(db, nowMs);
+
+  // Expired idempotency claims and cache rows, on the same 60s gate. Both are
+  // TTL'd replay stores with no reader past expiry and no other sweeper.
+  deleted += pruneExpiredClaims(db, nowMs);
 
   // Hourly aggregate prune (gated once per day). The UI's widest window is
   // 30d, so we keep at most 30 days of hourly buckets (~720 rows). The table
