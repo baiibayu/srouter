@@ -472,12 +472,22 @@ export function isContextTooLargeError(err: any): boolean {
   if (typeof err?.code === 'string' && err.code.toLowerCase() === 'context_length_exceeded') return true;
   const msg = (err?.message ?? '').toLowerCase();
   return msg.includes('context_length_exceeded')
+    // Agnes AI and some OpenAI-compat aggregators raise a bare
+    // ContextWindowExceededError whose OpenAIException body arrives truncated
+    // mid-sentence ("The input (2250074 tokens) is longer than the mo…"), so
+    // the "maximum context length" marker below never sees its target text and
+    // the error was mis-bucketed as provider_bad_request. The exception class
+    // name is the only reliable signal left in that shape.
+    || msg.includes('contextwindowexceeded')
     || msg.includes('maximum context length')
     || msg.includes('context length exceeded')
     || /exceeds[^.]*context (length|window|size)/.test(msg)
     || msg.includes('prompt is too long')
     || msg.includes('input is too long')
     || /input token count[^.]*exceeds/.test(msg)
+    // "The input (N tokens) is longer than the max/maximum" family, worded
+    // differently by aggregators that never surface an exception class.
+    || /input[^.]*longer than (the )?(max|maximum)/.test(msg)
     || msg.includes('exceeds the maximum number of tokens')
     || msg.includes('request too large')
     || msg.includes('payload too large')
