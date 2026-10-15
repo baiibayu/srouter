@@ -158,6 +158,27 @@ describe('applyCatalog', () => {
     expect(getDb().prepare('SELECT id FROM fallback_config WHERE model_db_id = ?').get(before.id)).toBeUndefined();
   });
 
+  it('sweeps rows pinned to keys that no longer exist (#1516)', () => {
+    const db = getDb();
+    // 999999 names no api_keys row: exactly the orphan the delete cascade
+    // used to leave behind on standard platforms.
+    const chat = db.prepare(`
+      INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, size_label, key_id, enabled, source)
+      VALUES ('groq', 'orphan-sync-chat-1516', 'Orphan Chat', 50, 50, 'Large', 999999, 1, 'user')
+    `).run();
+    db.prepare('INSERT INTO fallback_config (model_db_id, priority, enabled) VALUES (?, 9999, 1)').run(chat.lastInsertRowid);
+    db.prepare(`
+      INSERT INTO embedding_models (family, platform, model_id, display_name, dimensions, priority, enabled, quota_label, key_id)
+      VALUES ('fam-sync-1516', 'groq', 'orphan-sync-embed-1516', 'Orphan Embed', 768, 1, 1, 'test', 999999)
+    `).run();
+
+    const counts = applyCatalog(db, catalogOf(existingAsCatalogModels()));
+    expect(counts.removed).toBeGreaterThanOrEqual(2);
+    expect(db.prepare("SELECT id FROM models WHERE model_id = 'orphan-sync-chat-1516'").get()).toBeUndefined();
+    expect(db.prepare('SELECT id FROM fallback_config WHERE model_db_id = ?').get(chat.lastInsertRowid)).toBeUndefined();
+    expect(db.prepare("SELECT id FROM embedding_models WHERE model_id = 'orphan-sync-embed-1516'").get()).toBeUndefined();
+  });
+
   it('never touches custom-provider models', () => {
     getDb()
       .prepare(

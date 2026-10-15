@@ -917,6 +917,21 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
       record(details.removed, d.platform, d.displayName ?? d.model_id);
     }
 
+    // #1516: sweep rows pinned to keys that no longer exist. The DELETE-key
+    // cascade in routes/keys.ts removes these at delete time; this is the
+    // backstop for orphans from older builds or manual DB edits. Shared rows
+    // (key_id NULL) are never touched — only key-bound rows whose key is gone.
+    const orphanChat = db
+      .prepare('SELECT id FROM models WHERE key_id IS NOT NULL AND key_id NOT IN (SELECT id FROM api_keys)')
+      .all() as { id: number }[];
+    for (const o of orphanChat) {
+      deleteFb.run(o.id);
+      deleteModel.run(o.id);
+      counts.removed++;
+    }
+    counts.removed += (db.prepare('DELETE FROM embedding_models WHERE key_id IS NOT NULL AND key_id NOT IN (SELECT id FROM api_keys)').run().changes as number);
+    counts.removed += (db.prepare('DELETE FROM media_models WHERE key_id IS NOT NULL AND key_id NOT IN (SELECT id FROM api_keys)').run().changes as number);
+
     // Remove media models the catalog no longer lists (own table, no
     // fallback_config). Deliberately an ALLOWLIST of the two modalities that
     // `models[]` maintains, not "everything except transcription": video and
