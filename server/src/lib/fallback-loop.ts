@@ -520,7 +520,7 @@ export function recordRetryableFailure(route: RouteResult, err: any, state: Fall
   // learned just now makes the same route usable again at once (the next
   // attempt is clamped to it); one that was already applied and still got
   // rejected rules the model out for this request.
-  const capBefore = learnedOutputCap(route.platform, route.modelId);
+  const capBefore = learnedOutputCap(route.platform, route.modelId, route.endpointScope);
   const ceiling = learnOutputCapFromError(route, err);
   if (ceiling != null) {
     if (capBefore == null || ceiling < capBefore) {
