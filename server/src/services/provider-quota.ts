@@ -117,6 +117,12 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'sail') return 'sail::monthly-credit';
   if (platform === 'aclide') return 'aclide::monthly-credit';
   if (platform === 'speka') return 'speka::monthly-credit';
+  // Auray: free credits renew monthly and are one wallet shared across chat
+  // and embeddings (see providers/auray.ts), so one pool for the account.
+  if (platform === 'auray') return 'auray::monthly-credit';
+  if (platform === 'plugsky') return 'plugsky::fair-use';
+  if (platform === 'inferbase') return 'inferbase::managed-free';
+  if (platform === 'simplellm') return 'simplellm::free';
   if (platform === 'electronhub') return normalizedModelId.endsWith(':free') ? 'electronhub::daily-free' : 'electronhub::weekly-credit';
   if (platform === 'router9') return 'router9::monthly-credit';
   if (platform === 'septor') return 'septor::daily-free';
@@ -177,8 +183,11 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
 function isSharedPool(platform: Platform): boolean {
   if (platform === 'aclide') return true;
   if (platform === 'speka') return true;
-  if (['electronhub', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
-  return ['openrouter', 'google', 'groq', 'sail', 'bai', 'radeon', 'sambanova', 'nvidia', 'mistral', 'cohere', 'cloudflare', 'zhipu', 'ollama', 'kilo', 'pollinations', 'llm7', 'opencode', 'opencode-free', 'opencode-go', 'routeway', 'bazaarlink', 'ainative', 'aion', 'requesty', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'anyapi', 'modelscope', 'aihorde'].includes(platform);
+  if (platform === 'auray') return true;
+  if (platform === 'plugsky') return true;
+  if (platform === 'inferbase' || platform === 'simplellm') return true;
+  if (['electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
+  return ['openrouter', 'google', 'groq', 'cerebras', 'sail', 'bai', 'radeon', 'sambanova', 'nvidia', 'mistral', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama', 'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'routeway', 'bazaarlink', 'ainative', 'aion', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'anyapi', 'modelscope', 'aihorde'].includes(platform);
 }
 
 type HeaderSpec = { metric: QuotaMetric; limit: string; remaining?: string; reset?: string; strategy?: QuotaResetStrategy };
