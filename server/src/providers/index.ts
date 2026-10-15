@@ -31,8 +31,11 @@ import { AirforceProvider } from './airforce.js';
 import { DreamPromptingProvider } from './dreamprompting.js';
 import { WaterfallProvider } from './waterfall.js';
 import { LogfareProvider } from './logfare.js';
-import { XKiroProvider } from './xkiro.js';
-import { OpenCodeFreeProvider } from './opencode-free.js';
+<<<<<<< HEAD
+import { AurayProvider } from './auray.js';
+=======
+import { AurayProvider } from './auray.js';
+>>>>>>> 5a3abac8 (feat(providers): add Auray and preserve native Gemini TTS WAV (#1518))
 
 const providers = new Map<Platform, BaseProvider>();
 
@@ -73,6 +76,7 @@ register(new LlmtrProvider());
 register(new GizmoProvider());
 register(new BlockRunProvider());
 register(new MoondreamProvider());
+register(new AurayProvider());
 
 // Free-plan grants are shared wallets, not free credits per model. Eligibility
 // and tested model rows belong in Oracle, never in bundled DB migrations.

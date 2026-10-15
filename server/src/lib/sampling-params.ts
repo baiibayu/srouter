@@ -429,6 +429,12 @@ export function platformDropsResponseFormat(platform: string): boolean {
 export function supportedParametersFor(platform: string, caps: { tools?: boolean } = {}): string[] {
   // Unlike the generic base set, Moondream has neither stop nor tools.
   if (platform === 'moondream') return ['temperature', 'top_p', 'max_tokens', 'max_completion_tokens', 'stream', 'reasoning_effort'];
+  // Auray accepts sampling knobs for client compatibility but does not apply
+  // them. Advertise only controls its built-in models actually honor.
+  if (platform === 'auray') return [
+    'max_tokens', 'max_completion_tokens', 'stream', 'response_format', 'reasoning_effort',
+    ...(caps.tools ? ['tools', 'tool_choice'] : []),
+  ];
   const policy = PLATFORM_PARAM_POLICIES[platform as Platform];
   const dropped = new Set<string>(policy?.drop ?? []);
   const params = [
