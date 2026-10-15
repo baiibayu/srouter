@@ -55,6 +55,18 @@ export function verifyCredentials(email: string, password: string): SessionUser 
   return { userId: row.id, email: row.email };
 }
 
+/** Desktop app only: a session for the install's account, creating the hidden
+ *  machine account (`desktop@localhost`, random password nobody knows) on first
+ *  run. The desktop window gets this over IPC; a browser tab on the same
+ *  machine gets it from POST /api/auth/desktop-session (routes/auth.ts). */
+export function desktopSessionToken(): string {
+  if (userCount() === 0) {
+    createUser('desktop@localhost', crypto.randomBytes(24).toString('hex'));
+  }
+  const first = getDb().prepare('SELECT id FROM users ORDER BY id ASC LIMIT 1').get() as { id: number };
+  return createSession(first.id);
+}
+
 /** Mint a session and return the raw token (only the hash is persisted). */
 export function createSession(userId: number): string {
   const token = crypto.randomBytes(32).toString('hex');

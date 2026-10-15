@@ -32,10 +32,20 @@ function desktopSessionBridge(): (() => Promise<string>) | null {
     : null
 }
 
+// The same dashboard opened in a normal browser tab on a desktop install has no
+// preload bridge, so the server mints the session instead (#1399). It only
+// does so for a request from this computer, and says so through `desktop` on
+// /api/auth/status; web and Docker installs never set it and keep their login.
+async function browserDesktopSession(): Promise<string> {
+  const res = await apiFetch<{ token: string }>('/api/auth/desktop-session', { method: 'POST' })
+  return res.token
+}
+
 interface AuthStatus {
   needsSetup: boolean
   authenticated: boolean
   email: string | null
+  desktop?: boolean
 }
 
 function Centered({ children }: { children: ReactNode }) {
@@ -476,7 +486,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // Desktop self-repair: one attempt at a time, and none after the shell has
   // handed back a session the server still rejects — a broken install shows a
   // message instead of looping.
-  const desktopSession = desktopSessionBridge()
+  const desktopSession = desktopSessionBridge() ?? (data?.desktop ? browserDesktopSession : null)
   const desktopNeedsSession = !!desktopSession && !!data && (data.needsSetup || !data.authenticated)
   const repairing = useRef(false)
   const [repairFailed, setRepairFailed] = useState(false)

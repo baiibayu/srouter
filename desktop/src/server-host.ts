@@ -7,7 +7,6 @@
 // The server sources live in this same repo (../../server). Keep these
 // relative imports in sync with the repo-root default in main.ts.
 import '../../server/src/env.js';
-import crypto from 'node:crypto';
 import tls from 'node:tls';
 import type { Server } from 'node:http';
 import { createApp } from '../../server/src/app.js';
@@ -28,7 +27,7 @@ import { loadCacheFromDb } from '../../server/src/services/cache.js';
 import { startWakeDetect } from '../../server/src/lib/wake-detect.js';
 import { installProcessSafetyNet } from '../../server/src/lib/process-safety-net.js';
 import { installLogRedaction } from '../../server/src/lib/log-redaction.js';
-import { userCount, createUser, createSession } from '../../server/src/services/auth.js';
+import { desktopSessionToken } from '../../server/src/services/auth.js';
 import { NodeScheduler } from '../../server/src/lib/scheduler.js';
 
 export { getDb, getUnifiedApiKey, isAutoUpdateCheckEnabled };
@@ -175,11 +174,7 @@ startOpenCodeFreeSync(scheduler);
 // The dashboard window authenticates as a hidden machine user. The password
 // is random and never shown — sessions are minted directly against the DB.
 export function ensureSessionToken(): string {
-  if (userCount() === 0) {
-    createUser('desktop@localhost', crypto.randomBytes(24).toString('hex'));
-  }
-  const first = getDb().prepare('SELECT id FROM users ORDER BY id ASC LIMIT 1').get() as { id: number };
-  return createSession(first.id);
+  return desktopSessionToken();
 }
 
 async function listenWithScan(
