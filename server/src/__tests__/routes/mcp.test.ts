@@ -134,10 +134,13 @@ describe('MCP server (/mcp, stateless Streamable HTTP)', () => {
     expect(names).toEqual([
       'ask_srouter',
       'cache_stats',
+      'clear_cache',
       'compression_stats',
       'healthcheck',
       'list_models',
       'provider_health',
+      'provider_list',
+      'quota_outlook',
       'routing_info',
       'set_routing_strategy',
       'usage_summary',
@@ -147,7 +150,10 @@ describe('MCP server (/mcp, stateless Streamable HTTP)', () => {
       expect(tool.title.length).toBeGreaterThan(5);
       expect(tool.description.length).toBeGreaterThan(20);
       expect(tool.inputSchema.type).toBe('object');
-      expect(tool.annotations.destructiveHint).toBe(false);
+      // clear_cache is the one intentionally destructive tool; all others are safe.
+      if (tool.name !== 'clear_cache') {
+        expect(tool.annotations.destructiveHint).toBe(false);
+      }
       expect(typeof tool.annotations.readOnlyHint).toBe('boolean');
       expect(typeof tool.annotations.openWorldHint).toBe('boolean');
     }
@@ -192,7 +198,7 @@ describe('MCP server (/mcp, stateless Streamable HTTP)', () => {
   });
 
   it('usage, health, cache, and compression stats answer on an empty install', async () => {
-    for (const name of ['healthcheck', 'usage_summary', 'provider_health', 'cache_stats', 'compression_stats']) {
+    for (const name of ['healthcheck', 'usage_summary', 'provider_health', 'cache_stats', 'compression_stats', 'quota_outlook']) {
       const { body } = await rpc({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name } });
       expect(body.result.content[0].type).toBe('text');
       expect(body.result.structuredContent).toEqual(toolResultJson(body));
