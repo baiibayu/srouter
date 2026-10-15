@@ -63,6 +63,96 @@ function positiveIntEnv(raw: string | undefined, fallback: number): number {
 
 // Track consecutive failures per key
 const failureCount = new Map<number, number>();
+// #1510: consecutive transport errors per key. A key whose provider has been
+// unreachable (DNS, connection refused, TCP timeout) for this many probes in a
+// row is parked at status='error'. Unlike 'invalid' this is NOT an auto-disable:
+// 'error' keys are re-probed on every pass (never recency-skipped — see the
+// checkAllKeys due filter) and any live request that serves restores them
+// (markKeyHealthyFromRequest), so a provider outage that heals needs no
+// operator action. At the 5-minute cadence the threshold is ~30 minutes of
+// total unreachability — far past any single blip, and the point where a key
+// still marked 'healthy' is provably worse than no key: the router keeps
+// handing it traffic, every attempt dies, and failover costs the request its
+// latency budget (#1510 measured 264 failures vs 8 successes in a day on a
+// 39-key install with zero keys ever showing 'error').
+//
+// Opt-in: HEALTH_TRANSPORT_PARK_AFTER sets the streak length (6 is the
+// suggested value, ~30 minutes at the default cadence). Unset or 0 keeps the
+// default "keep trying" behaviour: a transport error never takes a key out of
+// rotation, because a key the router stops using can only come back through a
+// probe, and a provider whose validation endpoint is down while chat still
+// works would otherwise lose every key at once.
+export const SUGGESTED_TRANSPORT_PARK_AFTER = 6;
+
+/** Streak length that parks a key, or 0 when parking is off (the default). */
+export function getTransportParkAfter(): number {
+  return positiveIntEnv(process.env.HEALTH_TRANSPORT_PARK_AFTER, 0);
+}
+
+const transportFailures = new Map<number, number>();
+
+/** Test seam: drop transport-parking state. */
+export function clearTransportFailureState(): void {
+  transportFailures.clear();
+}
+
+/** Increment and apply the park rule. A 429 never reaches here — the caller
+ *  treats it as proof the provider is reachable. Returns true when this call
+ *  parked the key (status written to 'error'). */
+function recordTransportFailure(keyId: number, platform: string | undefined): boolean {
+  const parkAfter = getTransportParkAfter();
+  if (parkAfter === 0) return false;
+  const count = (transportFailures.get(keyId) ?? 0) + 1;
+  transportFailures.set(keyId, count);
+  if (count < parkAfter) return false;
+
+  // Park: 'error' is out of rotation (the router only routes healthy/unknown)
+  // but stays eligible for re-probing and self-heals. Never touch 'invalid' —
+  // a confirmed-bad credential verdict outranks network evidence in both
+  // directions, and only a successful validateKey clears it.
+  const db = getDb();
+  const res = db
+    .prepare("UPDATE api_keys SET status = 'error' WHERE id = ? AND enabled = 1 AND status IN ('healthy', 'unknown')")
+    .run(keyId);
+  if (res.changes > 0) {
+    providerLog(
+      'warn',
+      `[Health] Key ${keyId} (${platform}) parked as 'error' after ${count} consecutive transport failures`,
+      { provider: platform, event: 'key_transport_park' },
+    );
+  }
+  return res.changes > 0;
+}
+
+// A key whose last validation was rate-limited (429) is skipped by the
+// scheduled pass until the skip window passes: re-asking a provider that just
+// told us to slow down is how validation traffic becomes a ban. LLMTR's
+// validator is a POST to /chat/completions with a nonexistent model —
+// shaped exactly like the bot traffic their abuse system hunts — so an
+// unpaced re-ask every 5 minutes per key kept accounts flagged (#1369).
+// Forced passes (dashboard check-all, wake re-probe) still probe: explicit
+// operator intent wins over pacing. A later successful validation clears the
+// mark; validation that never ran leaves no mark.
+const validationRateLimitedAt = new Map<number, number>();
+
+const DEFAULT_VALIDATION_RATE_LIMIT_SKIP_MS = 60 * 60 * 1000;
+
+/** How long a 429ed key stays out of the scheduled pass. Tunable like the
+ *  other pacing knobs; 0 or a bad value falls back to the default. */
+function getValidationRateLimitSkipMs(): number {
+  return positiveIntEnv(process.env.HEALTH_CHECK_RATE_LIMIT_SKIP_MS, DEFAULT_VALIDATION_RATE_LIMIT_SKIP_MS);
+}
+
+/** Record that validating this key was just rate-limited. Exported for tests;
+ *  production calls it from checkKeyHealth's 429 path. */
+export function recordValidationRateLimited(keyId: number, atMs = Date.now()): void {
+  validationRateLimitedAt.set(keyId, atMs);
+}
+
+/** Test seam: drop all validation-429 pacing state. */
+export function clearValidationRateLimitState(): void {
+  validationRateLimitedAt.clear();
+}
 
 function recordInvalidFailure(keyId: number, platform?: string): void {
   const count = (failureCount.get(keyId) ?? 0) + 1;
@@ -185,6 +275,12 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
 
     if (isValid) {
       failureCount.delete(keyId);
+      // #1510: the provider answered — whatever unreachable streak this key had
+      // is over, so the transport counter starts from zero again.
+      transportFailures.delete(keyId);
+      // The provider answered again: whatever rate-limit told us to back off
+      // is over, so the key rejoins the normal cadence.
+      validationRateLimitedAt.delete(keyId);
       // #1348: a healthy key on a built-in platform the catalog does not carry
       // serves nothing until its models are discovered. Fire-and-forget; the
       // trigger is a no-op for every other platform, and throttled.
@@ -219,17 +315,28 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
       `[Health] Key ${keyId} (${row.platform}, base=${row.base_url ?? 'default'}) ` +
       `transport error: ${lastError} — status preserved as '${row.status}'`,
     );
-    // Do NOT write status='error'. selectKeyForModel only considers keys with
-    // status IN ('healthy','unknown'), so demoting here silently removes the
-    // key's capacity for up to a full check interval — and a transport error is
-    // evidence about the network, not about the key. One flaky DNS lookup, a
-    // laptop suspended for thirty seconds, or a provider edge outage would take
-    // every key on that provider out of rotation at once. Record the diagnostic
-    // and the timestamp; leave the verdict to a probe that actually reached the
-    // provider. Confirmed 401/403 (the isValid=false path above) still demotes.
+    // Do NOT write status='error' on the first transport failure. selectKeyForModel
+    // only considers keys with status IN ('healthy','unknown'), so demoting here
+    // silently removes the key's capacity for up to a full check interval — and a
+    // transport error is evidence about the network, not about the key. One flaky
+    // DNS lookup, a laptop suspended for thirty seconds, or a provider edge outage
+    // would take every key on that provider out of rotation at once. Record the
+    // diagnostic and the timestamp; leave the verdict to a probe that actually
+    // reached the provider. Confirmed 401/403 (the isValid=false path above) still
+    // demotes.
+    //
+    // #1510 adds the accumulation this path was missing (opt-in via
+    // HEALTH_TRANSPORT_PARK_AFTER): a key that has been unreachable that many
+    // probes in a row is parked at 'error' — still re-probed every pass, self-healing on the first answer
+    // or served request, but no longer first-class routing capacity. A 429 is
+    // proof the provider is reachable, so it counts as a break in the streak,
+    // not an increment.
+    let parked = false;
+    if (err?.status === 429) transportFailures.delete(keyId);
+    else parked = recordTransportFailure(keyId, row.platform);
     db.prepare("UPDATE api_keys SET last_health_error = ?, last_checked_at = datetime('now') WHERE id = ?")
       .run(lastError, keyId);
-    return row.status as KeyStatus;
+    return (parked ? 'error' : row.status) as KeyStatus;
   }
 }
 
@@ -285,6 +392,9 @@ export function markKeyHealthyFromRequest(keyId: number): void {
       .prepare("UPDATE api_keys SET status = 'healthy', last_health_error = NULL WHERE id = ? AND status = 'error'")
       .run(keyId);
     failureCount.delete(keyId);
+    // #1510: a served request is the strongest reachability evidence there is —
+    // it also ends any transport-error streak, parked or not.
+    transportFailures.delete(keyId);
   } catch {
     // Never let health bookkeeping break a request that already succeeded.
   }
