@@ -21,6 +21,12 @@ const DEFAULT_SERVER_LOGS_MAX_ROWS = 50_000;
 // month. Pruned on the daily gate: the delete is a range over created_at.
 const DEFAULT_QUOTA_OBSERVATIONS_RETENTION_DAYS = 30;
 const DEFAULT_QUOTA_OBSERVATIONS_MAX_ROWS = 200_000;
+// search_requests (#1174) is the per-attempt web-search log behind the Search
+// dashboard. Before this it was the one log with no bound at all: every agent
+// web_search (up to 20 per request) appended a row forever. The widest UI
+// window is 90d, so the default age bound matches the `requests` table.
+const DEFAULT_SEARCH_RETENTION_DAYS = 90;
+const DEFAULT_SEARCH_MAX_ROWS = 100_000;
 
 type RetentionDb = ReturnType<typeof getDb>;
 
@@ -77,6 +83,19 @@ export function getQuotaObservationRetentionConfig(): QuotaObservationRetentionC
   return {
     retentionDays: readNonNegativeInt('QUOTA_OBSERVATIONS_RETENTION_DAYS', DEFAULT_QUOTA_OBSERVATIONS_RETENTION_DAYS),
     maxRows: readNonNegativeInt('QUOTA_OBSERVATIONS_MAX_ROWS', DEFAULT_QUOTA_OBSERVATIONS_MAX_ROWS),
+  };
+}
+
+export interface SearchLogRetentionConfig {
+  retentionDays: number;
+  maxRows: number;
+}
+
+/** Same env convention as the pairs above; 0 on either knob disables that half. */
+export function getSearchLogRetentionConfig(): SearchLogRetentionConfig {
+  return {
+    retentionDays: readNonNegativeInt('SEARCH_LOGS_RETENTION_DAYS', DEFAULT_SEARCH_RETENTION_DAYS),
+    maxRows: readNonNegativeInt('SEARCH_LOGS_MAX_ROWS', DEFAULT_SEARCH_MAX_ROWS),
   };
 }
 
@@ -228,6 +247,43 @@ export function pruneExpiredClaims(db: RetentionDb, nowMs: number): number {
   return deleted;
 }
 
+/**
+ * Age- and count-bound the web-search attempt log (#1174).
+ *
+ * Folded into the same 60s pass as the server logs. search_requests grew on
+ * every agent web_search attempt with no prune of any kind; its analytics only
+ * answer windows up to 90d ('all' included), so older rows are pure disk
+ * growth. Guarded against the table being absent like every other prune here.
+ */
+export function pruneSearchLogs(db: RetentionDb, nowMs: number): number {
+  const hasTable = !!db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='search_requests'")
+    .get();
+  if (!hasTable) return 0;
+
+  const { retentionDays, maxRows } = getSearchLogRetentionConfig();
+  let deleted = 0;
+
+  if (retentionDays > 0) {
+    const cutoff = toSqliteTimestamp(new Date(nowMs - retentionDays * DAY_MS));
+    deleted += db.prepare('DELETE FROM search_requests WHERE created_at < ?').run(cutoff).changes;
+  }
+
+  if (maxRows > 0) {
+    deleted += db.prepare(`
+      DELETE FROM search_requests
+      WHERE id IN (
+        SELECT id
+        FROM search_requests
+        ORDER BY created_at DESC, id DESC
+        LIMIT -1 OFFSET ?
+      )
+    `).run(maxRows).changes;
+  }
+
+  return deleted;
+}
+
 export function pruneRequestAnalytics(options: {
   db?: RetentionDb;
   force?: boolean;
@@ -268,6 +324,8 @@ export function pruneRequestAnalytics(options: {
   // Expired idempotency claims and cache rows, on the same 60s gate. Both are
   // TTL'd replay stores with no reader past expiry and no other sweeper.
   deleted += pruneExpiredClaims(db, nowMs);
+  // Web-search attempt log, same gate (see pruneSearchLogs).
+  deleted += pruneSearchLogs(db, nowMs);
 
   // Hourly aggregate prune (gated once per day). The UI's widest window is
   // 30d, so we keep at most 30 days of hourly buckets (~720 rows). The table
