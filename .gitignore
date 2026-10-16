@@ -56,3 +56,9 @@ HANDOFF.md
 PROVIDER_CLASSIFICATION.md
 .claude/settings.local.json
 opencode.json
+
+# Staged into cli/ by scripts/prepare-cli-pack.mjs (npm pack)
+/cli/server/
+/cli/client/
+/cli/desktop/
+/cli/LICENSE

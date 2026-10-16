@@ -1,16 +1,22 @@
 name: CLI release
 
-# Publishes the `srouter` CLI to npm. Closes #671 — the README and
+# Publishes `@baiibayu/srouter` — the CLI, the gateway and the dashboard as a
+# single npm package (server/dist and client/dist are staged into the tarball
+# by scripts/prepare-cli-pack.mjs). Closes #671 — the README and
 # docs/clients/01-agent-clients.md have always documented `npx srouter setup-claude`, but the
 # package was never pushed to the registry, so every one of those commands died
 # with npm E404.
 #
 # Triggers:
-#   - push to main touching cli/**   publish when cli/package.json's version is
-#                                    not on the registry yet; no-op otherwise
+#   - push to main touching cli/**, server/**, client/** or shared/**
+#                                    publish when cli/package.json's version is
+#                                    not on the registry yet; no-op otherwise.
+#                                    Any change that should ship must bump that
+#                                    version in the same PR — the gateway and
+#                                    dashboard ride on the CLI's version.
 #   - workflow_dispatch              manual run
 #
-# The version guard makes this idempotent: ordinary cli/src changes re-run the
+# The version guard makes this idempotent: ordinary source changes re-run the
 # job, see the version already published, and skip. To ship a new version, bump
 # `version` in cli/package.json in the PR that changes the code.
 #
@@ -27,7 +33,9 @@ name: CLI release
 #   Workflow filename:    cli-release.yml
 # Trusted publishing cannot bootstrap a package that does not exist yet — npm
 # has no package settings page to configure until the first version is up — so
-# 0.3.0 was published manually. Every version after it goes through here.
+# the first versions were published manually. Every version after goes through
+# here. (The standalone @baiibayu/srouter-server package is retired: the
+# gateway ships inside @baiibayu/srouter now.)
 #
 # Requires npm >= 11.5.1 and Node >= 22.14.0 for OIDC, hence Node 24 below
 # (still inside the repo's engines range of >=20.18 <25).
@@ -38,6 +46,9 @@ on:
     branches: [main]
     paths:
       - 'cli/**'
+      - 'server/**'
+      - 'client/**'
+      - 'shared/**'
       - '.github/workflows/cli-release.yml'
 
 permissions:
@@ -78,11 +89,13 @@ jobs:
           fi
 
       # `npm publish` runs cli's prepublishOnly (build + test) as a safety net.
-      # Building here as well keeps a broken tsc from reaching the publish step.
-      - name: Build and test the CLI
+      # Building everything here keeps a broken tsc from reaching the publish
+      # step and guarantees the server/client dist trees the prepack staging
+      # copies into the tarball are fresh.
+      - name: Build everything
         if: steps.version.outputs.should-publish == 'true'
         run: |
-          npm run build -w cli
+          npm run build
           npm run test -w cli
 
       - name: Smoke-test the packed tarball
@@ -98,6 +111,18 @@ jobs:
           npm install "$RUNNER_TEMP/$TARBALL" >/dev/null
           npx srouter --help
           npx srouter list >/dev/null
+
+          # The tarball now carries the gateway and the dashboard — boot the
+          # installed package and ping it, which fails if the prepack staging
+          # ever drops server/dist or client/dist from the files list.
+          npx srouter serve --no-browser --port 21268 >serve.log 2>&1 &
+          SERVE_PID=$!
+          trap 'kill $SERVE_PID 2>/dev/null || true; pkill -f "srouter serve" 2>/dev/null || true' EXIT
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:21268/api/ping >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:21268/api/ping >/dev/null
 
       # No NODE_AUTH_TOKEN: the OIDC credential comes from id-token: write.
       # Provenance is attached automatically under trusted publishing.

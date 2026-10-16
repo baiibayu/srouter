@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export interface ServeOptions {
   port?: number;
@@ -120,12 +121,23 @@ export async function runServe(options: ServeOptions): Promise<number> {
 
   process.stdout.write(`[srouter] data directory ${dataDir}\n`);
 
-  // Deliberately a non-literal specifier: the gateway module's top level
-  // starts the server (native sqlite, sharp, the whole boot sequence), and a
-  // static graph edge here would make the CLI build depend on the server's
-  // declaration output.
-  const gateway = '@baiibayu/srouter-server';
-  await import(gateway);
+  // The gateway ships inside this package — cli/server/dist, staged by
+  // scripts/prepare-cli-pack.mjs at pack time — and lives as the sibling
+  // workspace (server/dist) in a source checkout. Pick whichever copy exists:
+  // a static specifier would tie the CLI build to the server's output either
+  // way, and the packaged path must win so a checkout that once ran `npm pack`
+  // cannot shadow the workspace with stale staging.
+  const gatewayCandidates = ['../server/dist/index.js', '../../server/dist/index.js']
+    .map(relative => fileURLToPath(new URL(relative, import.meta.url)));
+  const gateway = gatewayCandidates.find(candidate => fs.existsSync(candidate));
+  if (!gateway) {
+    process.stderr.write(
+      `[srouter] gateway build not found (looked in ${gatewayCandidates.join(', ')}) — `
+      + 'run `npm run build` in the repo, or reinstall @baiibayu/srouter\n',
+    );
+    return 1;
+  }
+  await import(pathToFileURL(gateway).href);
 
   const port = Number(process.env.PORT ?? 20268);
   const url = dashboardUrl(options.host, port);
