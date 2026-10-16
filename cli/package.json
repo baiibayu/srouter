@@ -1,6 +1,6 @@
 {
   "name": "@baiibayu/srouter",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "SRouter — free open-source LLM router: run the gateway, set up coding agents, manage provider keys",
   "license": "MIT",
   "repository": {
@@ -52,21 +52,39 @@
     "dist/tools.d.ts",
     "dist/types.js",
     "dist/types.d.ts",
-    "tools.json"
+    "tools.json",
+    "server",
+    "client",
+    "desktop/package.json"
   ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "lint": "eslint .",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "prepack": "node ../scripts/prepare-cli-pack.mjs",
+    "postpack": "node ../scripts/prepare-cli-pack.mjs --clean"
   },
   "engines": {
     "node": ">=20.18.0 <25.0.0"
   },
   "dependencies": {
-    "@baiibayu/srouter-server": "*",
+    "ajv": "^8.20.0",
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
     "jsonc-parser": "^3.3.1",
-    "yaml": "^2.9.0"
+    "multer": "^2.2.0",
+    "sharp": "^0.35.3",
+    "socks-proxy-agent": "^10.0.0",
+    "undici": "^6.21.0",
+    "yaml": "^2.9.0",
+    "zod": "^3.24.4"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.10.0"
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
