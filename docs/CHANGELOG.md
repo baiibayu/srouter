@@ -1,3 +1,10 @@
+## 2026-10-16 — 0.1.3
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `dcfa21a0` | 2026-10-16 | feat(cli): single-package merge — `@baiibayu/srouter` now ships the gateway and the dashboard itself: `scripts/prepare-cli-pack.mjs` stages `server/dist`, `client/dist` and `desktop/package.json` at prepack (and cleans them at postpack), the CLI inlines the server runtime deps and drops `@aiibayu/srouter-server`, `serve.ts` resolves the bundled gateway, `cli-release.yml` build + CLI-test + smoke-boots the packaged `srouter serve` before publishing; versions bumped to 0.1.3. |
+| `b7339787` | 2026-10-16 | docs: install-first flow — Quick Start leads with `npm install -g @baiibayu/srouter` + bare `srouter`; every `npx srouter …` example becomes `srouter …` (bare `npx srouter` 404s on the registry) with an italic `npx @baiibayu/srouter` fallback note; scoped npx kept for the cli/README headline and the `/agents` copy buttons. |
+
 ## 2026-10-15 — 0.1.2
 
 | Commit | Date | Summary |
