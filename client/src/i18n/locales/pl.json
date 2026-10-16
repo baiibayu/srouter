@@ -1227,7 +1227,11 @@
       "hermes": "Samodoskonalący się agent Nous Research z trwałą pamięcią i umiejętnościami, w terminalu lub w aplikacjach czatowych.",
       "pi": "Minimalistyczny agent terminalowy, który kształtujesz własnymi rozszerzeniami, umiejętnościami i szablonami promptów.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
-      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
+      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
+      "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
+      "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
+      "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
     },
     "modelNoteFull": "Konfiguracja obejmuje wszystkie modele (auto, auto:*, fusion)",
     "modelNoteDefault": "Konfiguracja obejmuje tylko auto — pozostałe wybierz w interfejsie agenta"

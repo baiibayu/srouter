@@ -1227,7 +1227,11 @@
       "hermes": "وكيل Nous Research ذاتي التحسين، بذاكرة دائمة ومهارات، في الطرفية أو على تطبيقات الدردشة.",
       "pi": "إطار وكيل بسيط في الطرفية تُشكّله بإضافاتك ومهاراتك وقوالب أوامرك الخاصة.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
-      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
+      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
+      "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
+      "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
+      "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
     },
     "modelNoteFull": "الإعداد يتضمن جميع النماذج (auto, auto:*, fusion)",
     "modelNoteDefault": "الإعداد يتضمن auto فقط — اختر النماذج الأخرى عبر واجهة الوكيل"

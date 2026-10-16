@@ -1227,7 +1227,11 @@
       "hermes": "Nous Research ನ ಸ್ವಯಂ-ಸುಧಾರಣಾ ಏಜೆಂಟ್, ಶಾಶ್ವತ ಮೆಮೊರಿ ಮತ್ತು ಕೌಶಲ್ಯಗಳೊಂದಿಗೆ, ಟರ್ಮಿನಲ್‌ನಲ್ಲಿ ಅಥವಾ ಚಾಟ್ ಆ್ಯಪ್‌ಗಳಲ್ಲಿ.",
       "pi": "ನಿಮ್ಮದೇ ಎಕ್ಸ್‌ಟೆನ್ಶನ್‌ಗಳು, ಕೌಶಲ್ಯಗಳು ಮತ್ತು ಪ್ರಾಂಪ್ಟ್ ಟೆಂಪ್ಲೇಟ್‌ಗಳಿಂದ ರೂಪಿಸುವ ಕನಿಷ್ಠ ಟರ್ಮಿನಲ್ ಏಜೆಂಟ್.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
-      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
+      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
+      "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
+      "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
+      "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
     },
     "modelNoteFull": "Setup brings in every model (auto, auto:*, fusion)",
     "modelNoteDefault": "Setup brings in only auto — pick other models in the agent UI"
