@@ -24,20 +24,25 @@ describe('resolveInstallMode', () => {
   });
 
   it('recognizes a global install when the entry sits under npm root -g', () => {
-    const globalRoot = 'C:\\Users\\me\\AppData\\Roaming\\npm\\node_modules';
+    // POSIX shapes resolve as absolute on every platform; Windows-style
+    // literals only do so on win32, so they stay platform-guarded.
+    const globalRoot = '/usr/local/lib/node_modules';
     expect(resolveInstallMode({
-      scriptPath: `${globalRoot}\\@baiibayu\\srouter\\dist\\index.js`,
+      scriptPath: `${globalRoot}/@baiibayu/srouter/dist/index.js`,
       globalRoot,
-    })).toBe('global');
-    expect(resolveInstallMode({
-      scriptPath: '/usr/lib/node_modules/@baiibayu/srouter/dist/index.js',
-      globalRoot: '/usr/lib/node_modules',
     })).toBe('global');
     // Sibling directory sharing a prefix must not count as global.
     expect(resolveInstallMode({
-      scriptPath: 'C:\\Users\\me\\AppData\\Roaming\\npm2\\node_modules\\pkg\\dist\\index.js',
+      scriptPath: '/usr/local/lib/node_modules2/pkg/dist/index.js',
       globalRoot,
     })).toBe('local');
+    if (process.platform === 'win32') {
+      const winRoot = 'C:\\Users\\me\\AppData\\Roaming\\npm\\node_modules';
+      expect(resolveInstallMode({
+        scriptPath: `${winRoot}\\@baiibayu\\srouter\\dist\\index.js`,
+        globalRoot: winRoot,
+      })).toBe('global');
+    }
   });
 
   it('recognizes other package managers by their directory name', () => {
@@ -146,8 +151,8 @@ describe('runUpdate install flow', () => {
     const install = vi.fn(() => 0);
     const code = await runUpdate({}, {
       currentVersion: () => '0.1.3',
-      scriptPath: () => 'C:\\Users\\me\\AppData\\Roaming\\npm\\node_modules\\@baiibayu\\srouter\\dist\\index.js',
-      globalRoot: () => 'C:\\Users\\me\\AppData\\Roaming\\npm\\node_modules',
+      scriptPath: () => '/usr/lib/node_modules/@baiibayu/srouter/dist/index.js',
+      globalRoot: () => '/usr/lib/node_modules',
       install,
     });
     expect(code).toBe(0);
