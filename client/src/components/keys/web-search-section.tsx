@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ExternalLink } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
@@ -122,9 +122,11 @@ export function WebSearchSection() {
   const [urlDraft, setUrlDraft] = useState('')
   const [urlSaved, setUrlSaved] = useState(false)
 
-  useEffect(() => {
-    if (cfg) setUrlDraft(cfg.baseUrl)
-  }, [cfg?.baseUrl])
+  const [syncedUrl, setSyncedUrl] = useState<string | null>(null)
+  if (cfg && cfg.baseUrl !== syncedUrl) {
+    setSyncedUrl(cfg.baseUrl)
+    setUrlDraft(cfg.baseUrl)
+  }
 
   if (!cfg) return null
 

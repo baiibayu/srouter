@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
@@ -69,20 +69,22 @@ export default function SystemOnePage() {
   const [configOpen, setConfigOpen] = useState(false)
   const [configInit, setConfigInit] = useState(false)
 
-  useEffect(() => {
-    if (cfg) setUrlDraft(cfg.jevBaseUrl)
-  }, [cfg?.jevBaseUrl])
+  const [syncedUrl, setSyncedUrl] = useState<string | null>(null)
+  if (cfg && cfg.jevBaseUrl !== syncedUrl) {
+    setSyncedUrl(cfg.jevBaseUrl)
+    setUrlDraft(cfg.jevBaseUrl)
+  }
 
-  useEffect(() => {
-    if (cfg) setModelDraft(cfg.jevModel)
-  }, [cfg?.jevModel])
+  const [syncedModel, setSyncedModel] = useState<string | null>(null)
+  if (cfg && cfg.jevModel !== syncedModel) {
+    setSyncedModel(cfg.jevModel)
+    setModelDraft(cfg.jevModel)
+  }
 
-  useEffect(() => {
-    if (cfg && !configInit) {
-      setConfigOpen(cfg.backend === 'jev')
-      setConfigInit(true)
-    }
-  }, [cfg, configInit])
+  if (cfg && !configInit) {
+    setConfigOpen(cfg.backend === 'jev')
+    setConfigInit(true)
+  }
 
   const enabled = cfg?.enabled ?? false
   const remoteActive = enabled && cfg?.backend === 'jev'

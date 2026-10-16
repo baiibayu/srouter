@@ -629,7 +629,11 @@ export default function PlaygroundPage() {
         if (!tl.startsWith('data:')) continue
         const d = tl.slice(5).trim()
         if (d === '[DONE]') continue
-        let obj: any
+        let obj: {
+          _fusion?: { event: string } & FusionPanelEntry
+          error?: { message?: string }
+          choices?: { delta?: { content?: string } }[]
+        }
         try { obj = JSON.parse(d) } catch { continue }
         if (obj._fusion) {
           if (obj._fusion.event === 'panel') {
@@ -783,7 +787,7 @@ export default function PlaygroundPage() {
 
       const isFusion = selectedModel === 'fusion'
       const sysPrompt = systemPrompt.trim()
-      const body: any = {
+      const body: Record<string, unknown> = {
         messages: [
           ...(sysPrompt ? [{ role: 'system', content: sysPrompt }] : []),
           ...newMessages.map(m => ({ role: m.role, content: toMessageContent(m.content, m.images) })),
@@ -872,15 +876,15 @@ export default function PlaygroundPage() {
       }]
       setMessages(answered)
       await persistConversation(answered)
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Clearing the chat (or leaving the page) aborts the stream on purpose —
       // that is not a failure to report, and the transcript it belonged to is
       // already gone.
-      if (err?.name === 'AbortError') return
+      if (err instanceof Error && err.name === 'AbortError') return
       const failed: ChatMessage[] = [...newMessages, {
         role: 'assistant',
         isError: true,
-        content: err.message,
+        content: err instanceof Error ? err.message : String(err),
       }]
       setMessages(failed)
       await persistConversation(failed)

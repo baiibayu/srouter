@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useI18n } from '@/i18n'
 import { Tooltip } from '@/components/tooltip'
 import { PEAK_EXEMPT_STRATEGIES, type RoutingData, type RoutingStrategy } from '@/lib/routing'
@@ -45,7 +45,12 @@ export function PeakHoursControls({ routing, strategy, saving, onSave }: {
   const [tzError, setTzError] = useState(false)
 
   // Re-sync when the server's value changes under us (poll, or another tab).
-  useEffect(() => { setTz(routing.peakTimezone); setTzError(false) }, [routing.peakTimezone])
+  const [syncedTz, setSyncedTz] = useState(routing.peakTimezone)
+  if (routing.peakTimezone !== syncedTz) {
+    setSyncedTz(routing.peakTimezone)
+    setTz(routing.peakTimezone)
+    setTzError(false)
+  }
 
   const enabled = routing.peakHoursAdjust
   const exempt = PEAK_EXEMPT_STRATEGIES.includes(strategy)

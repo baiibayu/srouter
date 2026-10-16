@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -53,12 +53,12 @@ export function ProxySettingsSection() {
 
   // Sync from server when the query refetches; keep the user's typed value
   // in between (controlled input).
-  useEffect(() => {
-    if (data) {
-      setProxyUrl(data.proxyUrl)
-      setProxyMode(data.proxyMode)
-    }
-  }, [data?.proxyUrl, data?.proxyMode])
+  const [syncedProxy, setSyncedProxy] = useState<{ proxyUrl: string; proxyMode: ProxyMode } | null>(null)
+  if (data && (data.proxyUrl !== syncedProxy?.proxyUrl || data.proxyMode !== syncedProxy?.proxyMode)) {
+    setSyncedProxy({ proxyUrl: data.proxyUrl, proxyMode: data.proxyMode })
+    setProxyUrl(data.proxyUrl)
+    setProxyMode(data.proxyMode)
+  }
 
   const saveProxy = useMutation({
     meta: { silenceToast: true },

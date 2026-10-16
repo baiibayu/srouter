@@ -5,7 +5,7 @@ import { ArrowRight, Check, Copy, X } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
 import { toast } from '@/lib/toast'
-import { apiBaseUrl } from '@/components/api-usage'
+import { apiBaseUrl } from '@/lib/api-base-url'
 import { Button } from '@/components/ui/button'
 import { useI18n } from '@/i18n'
 

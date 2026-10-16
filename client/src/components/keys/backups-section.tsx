@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch, getToken } from '@/lib/api'
 import { toast } from '@/lib/toast'
@@ -297,13 +297,14 @@ function AutoBackupForm({ schedule, onSaved }: { schedule: BackupSchedule | null
   const [backupPath, setBackupPath] = useState('')
   const [savedFlash, setSavedFlash] = useState(false)
 
-  useEffect(() => {
-    if (!schedule) return
+  const [syncedSchedule, setSyncedSchedule] = useState<BackupSchedule | null>(null)
+  if (schedule && schedule !== syncedSchedule) {
+    setSyncedSchedule(schedule)
     setEnabled(schedule.enabled)
     setTime(schedule.time)
     setIntervalDays(String(schedule.intervalDays))
     setBackupPath(schedule.backupPath ?? '')
-  }, [schedule])
+  }
 
   const save = useMutation({
     meta: { silenceToast: true },

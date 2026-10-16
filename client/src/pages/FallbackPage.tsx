@@ -132,9 +132,11 @@ export default function FallbackPage() {
   // Staged edits are DISCARDED when the active chain changes, not just hidden
   // (#1047): merely masking them meant switching A→B→A resurrected A's stale
   // unsaved rows over freshly fetched data, with only a refresh clearing them.
-  useEffect(() => {
+  const [syncedProfile, setSyncedProfile] = useState(activeProfileId)
+  if (activeProfileId !== syncedProfile) {
+    setSyncedProfile(activeProfileId)
     setStaged(prev => (prev && prev.profileId !== activeProfileId ? null : prev))
-  }, [activeProfileId])
+  }
 
   const localEntries = staged && staged.profileId === activeProfileId ? staged.entries : null
   const setLocalEntries = (entries: FallbackEntry[] | null) =>

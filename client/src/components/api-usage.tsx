@@ -1,15 +1,6 @@
 import { CopyButton } from '@/components/copy-button'
 import { useI18n } from '@/i18n'
 
-// The /v1 base URL for ready-to-run snippets, derived the same way as the chat
-// model page + Keys page: the dev server port in DEV, the page origin in a
-// packaged/hosted build.
-export function apiBaseUrl(): string {
-  return import.meta.env.DEV
-    ? `http://${window.location.hostname}:${__SERVER_PORT__}/v1`
-    : `${window.location.origin}/v1`
-}
-
 // A copy-able "ways to use the API" code block, matching the chat detail page's
 // snippet card so every modality's detail page looks the same.
 export function ApiUsageBlock({ snippet, title }: { snippet: string; title?: string }) {

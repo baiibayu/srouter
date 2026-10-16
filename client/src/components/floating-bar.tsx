@@ -7,7 +7,9 @@ export function FloatingBar({ show, children }: { show: boolean; children: React
   const [render, setRender] = useState(show)
   useEffect(() => {
     if (show) {
-      setRender(true)
+      // Deferred so the effect body itself stays free of synchronous setState
+      // (react-hooks set-state-in-effect); microtask runs before paint.
+      queueMicrotask(() => setRender(true))
       return
     }
     const t = setTimeout(() => setRender(false), 300) // match animation duration

@@ -14,7 +14,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities'
 import { ArrowDown, ArrowUp, Layers } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
-import { dragDots } from '@/components/model-table'
+import { dragDots } from '@/components/drag-dots'
 import { Button } from '@/components/ui/button'
 import { ConfirmButton } from '@/components/confirm-button'
 import { EmptyState } from '@/components/empty-state'

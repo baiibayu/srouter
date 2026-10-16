@@ -1,4 +1,5 @@
-import type { Plugin } from 'vite'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { Connect, Plugin } from 'vite'
 
 // Dev-only in-memory mock of the /api surface the Fallback page needs, so the
 // frontend can be exercised without a running backend. Enabled only when the
@@ -66,10 +67,10 @@ function score(m: MockModel): number {
   return base * m.headroom * m.rateLimit
 }
 
-function readBody(req: any): Promise<any> {
+function readBody(req: IncomingMessage): Promise<unknown> {
   return new Promise(resolve => {
     let data = ''
-    req.on('data', (c: any) => { data += c })
+    req.on('data', (c: Buffer | string) => { data += typeof c === 'string' ? c : c.toString() })
     req.on('end', () => { try { resolve(JSON.parse(data || '{}')) } catch { resolve({}) } })
   })
 }
@@ -78,10 +79,10 @@ export function mockApiPlugin(): Plugin {
   return {
     name: 'srouter-dev-mock',
     configureServer(server) {
-      server.middlewares.use(async (req: any, res: any, next: any) => {
+      server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => {
         const url = (req.url || '').split('?')[0]
         if (!url.startsWith('/api/')) return next()
-        const send = (obj: any, status = 200) => {
+        const send = (obj: unknown, status = 200) => {
           res.statusCode = status
           res.setHeader('Content-Type', 'application/json')
           res.end(JSON.stringify(obj))
@@ -106,7 +107,7 @@ export function mockApiPlugin(): Plugin {
 
         if (url === '/api/fallback' && req.method === 'PUT') {
           const body = await readBody(req)
-          for (const e of body as any[]) {
+          for (const e of body as Array<{ modelDbId: number; priority: number; enabled: boolean }>) {
             const m = models.find(x => x.modelDbId === e.modelDbId)
             if (m) { m.priority = e.priority; m.enabled = e.enabled }
           }
@@ -125,7 +126,10 @@ export function mockApiPlugin(): Plugin {
         }
 
         if (url === '/api/fallback/routing' && req.method === 'PUT') {
-          const body = await readBody(req)
+          const body = (await readBody(req)) as {
+            strategy?: unknown
+            weights?: { reliability?: number; speed?: number; intelligence?: number }
+          }
           if (typeof body.strategy === 'string') strategy = body.strategy
           if (body.weights && typeof body.weights === 'object') {
             const { reliability = 0, speed = 0, intelligence = 0 } = body.weights
