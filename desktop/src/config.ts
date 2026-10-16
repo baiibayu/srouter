@@ -23,6 +23,13 @@ export interface DesktopConfig {
   // Windows user the app is running; the tray icon starts out hidden in the
   // overflow flyout there (#1353).
   launchDashboardShown?: boolean;
+  // Timestamp of the last *successful* auto-update feed lookup. Keeps the
+  // GitHub releases feed at one request per 24h across restarts as well.
+  lastUpdateCheckAt?: number;
+  // Version whose "update downloaded" prompt was already shown. Each release
+  // explains itself exactly once — same once-per-version shape as
+  // trayHiddenNoticeVersion above.
+  updateNotifiedVersion?: string;
 }
 
 function configPath(): string {
