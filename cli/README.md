@@ -129,4 +129,4 @@ Node.js >= 20.18. A running SRouter gateway (`srouter` starts one, or see the
 - [Clients & coding agents guide](https://github.com/baiibayu/srouter/blob/main/docs/en/clients/01-agent-clients.md)
 - [Issue tracker](https://github.com/baiibayu/srouter/issues)
 
-MIT © Tashfeen Ahmed
+MIT © baiibayu
