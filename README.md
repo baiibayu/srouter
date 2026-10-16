@@ -113,12 +113,12 @@ Choose your preferred way to run SRouter:
 Run SRouter anywhere Node 20+ is installed without cloning the repository:
 
 ```bash
-# Run directly with npx
-npx @baiibayu/srouter
-
-# Or install globally
+# Install once
 npm install -g @baiibayu/srouter
 srouter
+
+# Or run directly with npx — no install needed
+npx @baiibayu/srouter
 ```
 
 The Web Dashboard opens automatically at `http://localhost:20268`.
@@ -214,19 +214,21 @@ SRouter includes automated configuration generators (`setup-*`) that inspect you
 
 ```bash
 # Automatic setup with your SRouter instance
-npx srouter setup-claude --url http://localhost:20268 --api-key <your-unified-key>
+srouter setup-claude --url http://localhost:20268 --api-key <your-unified-key>
 ```
+
+_Not installed? Run the same command with `npx @baiibayu/srouter` in place of `srouter`._
 
 | Coding Tool | Setup Command | Target Base URL | Native Wire Support |
 | :--- | :--- | :--- | :--- |
-| **Claude Code** | `npx srouter setup-claude` or `srouter launch` | `http://localhost:20268` | Native `/v1/messages` Anthropic format |
-| **Cursor / Windsurf** | `npx srouter setup-cursor` (or manual) | `http://localhost:20268/v1` | OpenAI Chat Completions |
-| **Cline** | `npx srouter setup-cline` | `http://localhost:20268/v1` | OpenAI / Anthropic format |
-| **Roo Code / Kilo** | `npx srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat Completions |
-| **Codex CLI** | `npx srouter setup-codex` or `srouter launch-codex` | `http://localhost:20268/v1` | Native `/v1/responses` format |
-| **Aider** | `npx srouter setup-aider` | `http://localhost:20268/v1` | OpenAI Chat Completions |
-| **Continue.dev** | `npx srouter setup-continue` | `http://localhost:20268/v1` | Chat + Ghost-text completions |
-| **OpenCode** | `npx srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions |
+| **Claude Code** | `srouter setup-claude` or `srouter launch` | `http://localhost:20268` | Native `/v1/messages` Anthropic format |
+| **Cursor / Windsurf** | `srouter setup-cursor` (or manual) | `http://localhost:20268/v1` | OpenAI Chat Completions |
+| **Cline** | `srouter setup-cline` | `http://localhost:20268/v1` | OpenAI / Anthropic format |
+| **Roo Code / Kilo** | `srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat Completions |
+| **Codex CLI** | `srouter setup-codex` or `srouter launch-codex` | `http://localhost:20268/v1` | Native `/v1/responses` format |
+| **Aider** | `srouter setup-aider` | `http://localhost:20268/v1` | OpenAI Chat Completions |
+| **Continue.dev** | `srouter setup-continue` | `http://localhost:20268/v1` | Chat + Ghost-text completions |
+| **OpenCode** | `srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions |
 | **Gemini CLI** | Native `/v1beta` | `http://localhost:20268` | Native `generateContent` format |
 | **Zed / JetBrains AI** | Ollama Emulation | `http://localhost:20268` | Native NDJSON Ollama API |
 
@@ -236,7 +238,7 @@ npx srouter setup-claude --url http://localhost:20268 --api-key <your-unified-ke
 ### Claude Code Zero-Persistence Launch
 ```bash
 # Injects credentials directly into child process without writing keys to disk
-npx srouter launch
+srouter launch
 ```
 
 ### Cursor / Windsurf Settings

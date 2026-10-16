@@ -25,13 +25,15 @@ Any client that can target an OpenAI-compatible base URL can use SRouter:
 
 ## Coding agents
 
-Use the generator instead of hand-editing a client configuration:
+Use the generator instead of hand-editing a client configuration — install once
+with `npm install -g @baiibayu/srouter` so `srouter` is on your PATH, or skip the
+install and prefix every command with `npx @baiibayu/srouter` instead:
 
 ```bash
 export SROUTER_API_KEY=<unified-key>   # or pass --api-key on each command
-npx srouter setup-claude --url http://localhost:20268 --dry-run
-npx srouter setup-claude --url http://localhost:20268
-npx srouter setup-dsh --url http://localhost:20268 --api-key <unified-key>
+srouter setup-claude --url http://localhost:20268 --dry-run
+srouter setup-claude --url http://localhost:20268
+srouter setup-dsh --url http://localhost:20268 --api-key <unified-key>
 ```
 
 `--dry-run` prints a diff. Real writes merge with the existing configuration
@@ -83,7 +85,7 @@ own, so nothing needs exporting. Both writes are structural merges: other
 routes, comments, and settings in the file are left as they were.
 
 ```bash
-npx srouter setup-dsh --url http://localhost:20268 --api-key <unified-key>
+srouter setup-dsh --url http://localhost:20268 --api-key <unified-key>
 npx @deepseek-ai/dsh web
 ```
 
@@ -110,7 +112,7 @@ generated file is the weakest layer and anything you hand-write in
 providers and settings already in `config.json` are left as they were.
 
 ```bash
-npx srouter setup-mimo --url http://localhost:20268
+srouter setup-mimo --url http://localhost:20268
 export SROUTER_API_KEY=<unified-key>
 mimo
 ```
@@ -136,7 +138,7 @@ a named `--profile` only adds its own provider without changing the default
 model — run `omp` and pick it in `/model`.
 
 ```bash
-npx srouter setup-omp --url http://localhost:20268 --api-key <unified-key>
+srouter setup-omp --url http://localhost:20268 --api-key <unified-key>
 omp
 ```
 
@@ -161,7 +163,7 @@ providers, `fallbacks` on the default model, and every other setting in the
 file are left as they were.
 
 ```bash
-npx srouter setup-openclaw --url http://localhost:20268 --api-key <unified-key>
+srouter setup-openclaw --url http://localhost:20268 --api-key <unified-key>
 npm install -g openclaw@latest --allow-scripts=openclaw
 openclaw agent exec --model SRouter/auto "Say hello"   # no gateway daemon needed
 ```
@@ -194,7 +196,7 @@ exactly what `hermes setup` would do, and it is what lets a headless first
 run skip the wizard. Every other key in the file is left as it was.
 
 ```bash
-npx srouter setup-hermes --url http://localhost:20268 --api-key <unified-key>
+srouter setup-hermes --url http://localhost:20268 --api-key <unified-key>
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup
 hermes -z "Say hello"
 ```
@@ -221,7 +223,7 @@ created with mode 0600. Other providers and settings in both files are left
 as they were.
 
 ```bash
-npx srouter setup-pi --url http://localhost:20268 --api-key <unified-key>
+srouter setup-pi --url http://localhost:20268 --api-key <unified-key>
 npm install -g @earendil-works/pi-coding-agent
 pi -p "Say hello"
 ```
@@ -247,7 +249,7 @@ entry, and a running `droid` session notices the file change on its own —
 `settings.json` is watched, so there is no restart.
 
 ```bash
-npx srouter setup-droid --url http://localhost:20268 --api-key <unified-key>
+srouter setup-droid --url http://localhost:20268 --api-key <unified-key>
 droid
 ```
 

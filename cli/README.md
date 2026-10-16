@@ -5,7 +5,7 @@ gateway in one command. The generators read the models your server is actually
 serving and write the config file each tool expects.
 
 ```bash
-npx srouter setup-claude --url http://localhost:20268 --api-key <your-key>
+npx @baiibayu/srouter setup-claude --url http://localhost:20268 --api-key <your-key>
 ```
 
 No install step, no account. The unified API key comes from your SRouter
@@ -25,7 +25,7 @@ srouter serve --port 3000 --no-browser    # headless / custom port
 
 Upgrades are the usual `npm install -g @baiibayu/srouter@latest`; your data directory
 survives updates. Then point agents at it with the `setup-*` commands below
-(`npx` still works for those without installing).
+(`npx @baiibayu/srouter setup-*` works without installing).
 
 ## Commands
 
@@ -81,12 +81,12 @@ The CLI does not log in or persist the dashboard token.
 export SROUTER_URL=http://localhost:20268
 export SROUTER_DASHBOARD_TOKEN='<dashboard-session-token>'
 
-npx srouter keys add groq                 # hidden provider-key prompt
-npx srouter keys add groq --key '<key>'   # non-interactive alternative
-npx srouter keys list
-npx srouter keys test groq                # check every stored Groq key
-npx srouter keys test groq --id 7         # check one key
-npx srouter keys remove groq --id 7
+srouter keys add groq                 # hidden provider-key prompt
+srouter keys add groq --key '<key>'   # non-interactive alternative
+srouter keys list
+srouter keys test groq                # check every stored Groq key
+srouter keys test groq --id 7         # check one key
+srouter keys remove groq --id 7
 ```
 
 `keys list` prints each key's ID, platform, enabled chat model count,

@@ -4,15 +4,17 @@
 
 ## 用法
 
+安装一次：`npm install -g @baiibayu/srouter`（下文命令直接用 `srouter`）；未安装时，任意命令前加 `npx @baiibayu/srouter` 前缀。
+
 ```bash
-npx srouter setup-claude        # 接入 Claude Code
-npx srouter setup-codex         # 接入 Codex CLI
-npx srouter setup-dsh           # 接入 DeepSeek Harness
-npx srouter setup-mimo          # 接入 MiMo Code
-npx srouter setup-omp           # 接入 Oh My Pi
-npx srouter setup-droid         # 接入 Factory Droid
-npx srouter --dry-run setup-claude  # 预览而不写入
-npx srouter setup-claude --model gpt-4o  # 固定模型
+srouter setup-claude        # 接入 Claude Code
+srouter setup-codex         # 接入 Codex CLI
+srouter setup-dsh           # 接入 DeepSeek Harness
+srouter setup-mimo          # 接入 MiMo Code
+srouter setup-omp           # 接入 Oh My Pi
+srouter setup-droid         # 接入 Factory Droid
+srouter --dry-run setup-claude  # 预览而不写入
+srouter setup-claude --model gpt-4o  # 固定模型
 ```
 
 每个生成器（`cli/src/tools.ts:52-622`）都会拉取实时目录、对照未过滤目录解析 `--model`（`c942352`）、对已有配置做带时间戳的备份、在不覆盖无关键的前提下合并，并以 `0600` 权限写入。
@@ -42,8 +44,8 @@ npx srouter setup-claude --model gpt-4o  # 固定模型
 ## 零持久化启动器
 
 ```bash
-npx srouter launch            # 仅在 env 中注入 SROUTER_API_KEY + model 并启动 `claude`
-npx srouter launch-codex      # 注入到 `codex --profile NAME`
+srouter launch            # 仅在 env 中注入 SROUTER_API_KEY + model 并启动 `claude`
+srouter launch-codex      # 注入到 `codex --profile NAME`
 ```
 
 这些命令不会写入配置文件；它们仅在子进程的环境变量中注入 `SROUTER_API_KEY`/`SROUTER_MODEL`。适用于临时或共享机器。
@@ -51,7 +53,7 @@ npx srouter launch-codex      # 注入到 `codex --profile NAME`
 ## `srouter doctor`
 
 ```bash
-npx srouter doctor
+srouter doctor
 ```
 
 验证客户端请求是否到达本网关（检查已路由的 `Authorization` 头、目录、实时探针）。

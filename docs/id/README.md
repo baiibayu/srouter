@@ -34,12 +34,12 @@ Pilih metode yang paling tepat untuk lingkungan kerja Anda:
 ### A. Global CLI / NPX (Instan)
 Metode tercepat untuk komputer lokal tanpa perlu clone repositori git:
 ```bash
-# Langsung jalankan via npx (tanpa install permanen)
-npx @baiibayu/srouter
-
-# Atau install global
+# Install global (sekali install)
 npm install -g @baiibayu/srouter
 srouter
+
+# Atau jalankan langsung via npx (tanpa install permanen)
+npx @baiibayu/srouter
 ```
 Dashboard akan otomatis terbuka di browser pada `http://localhost:20268`.
 
@@ -71,10 +71,10 @@ SRouter menyertakan generator konfigurasi sekali klik (`setup-*`):
 ### Claude Code
 ```bash
 # Konfigurasi otomatis Claude Code
-npx srouter setup-claude --url http://localhost:20268 --api-key <unified-key-anda>
+srouter setup-claude --url http://localhost:20268 --api-key <unified-key-anda>
 
 # Atau jalankan langsung tanpa menulis kunci ke file disk (Zero-Persistence Launcher)
-npx srouter launch
+srouter launch
 ```
 
 ### Cursor & Windsurf
@@ -85,16 +85,16 @@ npx srouter launch
 
 ### Cline & Roo Code (VS Code Extension)
 ```bash
-npx srouter setup-cline
+srouter setup-cline
 # Atau untuk Roo Code:
-npx srouter setup-roo
+srouter setup-roo
 ```
 
 ### Codex CLI
 ```bash
-npx srouter setup-codex
+srouter setup-codex
 # Atau launcher instan:
-npx srouter launch-codex
+srouter launch-codex
 ```
 
 *Panduan lengkap agent: [docs/en/clients/01-agent-clients.md](../en/clients/01-agent-clients.md)*

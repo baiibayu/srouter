@@ -4,7 +4,7 @@
 
 ## Scope
 
-This domain documents the srouter setup CLI (`cli/`) — the `npx srouter` generators that wire coding agents to the local gateway in one command. Each generator (`setup-claude`, `setup-codex`, …) fetches the live catalog, backs up existing config, never clobbers unrelated keys, and records `tools.json` metadata for `srouter launch` / `launch-codex` zero-persistence launchers and `srouter doctor`.
+This domain documents the srouter setup CLI (`cli/`) — the `srouter setup-*` generators that wire coding agents to the local gateway in one command. Each generator (`setup-claude`, `setup-codex`, …) fetches the live catalog, backs up existing config, never clobbers unrelated keys, and records `tools.json` metadata for `srouter launch` / `launch-codex` zero-persistence launchers and `srouter doctor`.
 
 Authoritative sources: [`cli/src/tools.ts`](../../../cli/src/tools.ts) (all `Xxx()` generator functions), [`cli/tools.json`](../../../cli/tools.json) (registry), [`cli/src/config-files.ts`](../../../cli/src/config-files.ts) (merge + `0600` + timestamped backup), [`cli/README.md`](../../../cli/README.md), [`client/src/data/agent-tools.json`](../../../client/src/data/agent-tools.json).
 

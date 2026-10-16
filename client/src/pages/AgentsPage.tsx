@@ -96,10 +96,10 @@ export default function AgentsPage() {
         <p className="mt-0.5 max-w-prose text-xs text-muted-foreground">{t('agents.quickstart')}</p>
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
           <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs">
-            npx srouter setup-claude --url {origin}
+            npx @baiibayu/srouter setup-claude --url {origin}
           </code>
           <CopyButton
-            text={`npx srouter setup-claude --url ${origin}`}
+            text={`npx @baiibayu/srouter setup-claude --url ${origin}`}
             className="size-7 shrink-0"
             label={t('common.copy')}
           />
@@ -113,7 +113,7 @@ export default function AgentsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {toolCatalog.map(tool => {
           const traffic = seen.get(analyticsIds[tool.id] ?? tool.id)
-          const command = `npx srouter ${tool.command} --url ${origin}`
+          const command = `npx @baiibayu/srouter ${tool.command} --url ${origin}`
           const endpoint = tool.baseUrlSupport === 'root' ? origin : `${origin}/v1`
           // The copied snippet is pasted into config files — keep it
           // locale-independent.
