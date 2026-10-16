@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Beslut",
+    "pageDesc": "Beslutsmodeller besvarar en fråga om din text med ett val, ett ja eller nej, eller ett betyg, och anger hur säkra de är. De körs på dina Cloudflare- och OpenRouter-nycklar.",
+    "endpointHint": "Anropa via",
+    "notRoutingHint": "— separat från chatten. Chattroutningen använder aldrig dessa modeller.",
+    "empty": "Inga beslutsmodeller än. De synkar från katalogen.",
+    "thisMonth": "{count} denna månad",
+    "tryTitle": "Prova",
+    "tryText": "Text",
+    "tryTextPlaceholder": "min react useEffect körs två gånger, varför?",
+    "tryQuestion": "Fråga",
+    "tryQuestionPlaceholder": "Vilken typ av modell borde svara på detta?",
+    "tryOptions": "Alternativ, separerade med kommatecken",
+    "tryOptionsPlaceholder": "chatt, kod, resonemang, skrivande",
+    "tryModel": "Modell",
+    "tryAuto": "Auto",
+    "tryRun": "Besluta",
+    "tryRunning": "Beslutar…",
+    "tryNeedOptions": "Lägg till minst två alternativ.",
+    "tryAnswer": "Svar: {choice}",
+    "tryConfidence": "{value} % säker",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Exempelförfrågan"
   }
 }

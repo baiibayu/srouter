@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Döntés",
+    "pageDesc": "A döntési modellek a szövegedre vonatkozó kérdésre választással, igennel vagy nemmel, illetve pontszámmal felelnek, és megadják, mennyire biztosak. A Cloudflare- és OpenRouter-kulcsaidon futnak.",
+    "endpointHint": "Hívás ezen keresztül:",
+    "notRoutingHint": "— a chattől elkülönítve. A chat útválasztása soha nem használja ezeket a modelleket.",
+    "empty": "Még nincsenek döntési modellek. Szinkronizálódnak a katalógusból.",
+    "thisMonth": "{count} ebben a hónapban",
+    "tryTitle": "Próbáld ki",
+    "tryText": "Szöveg",
+    "tryTextPlaceholder": "a react useEffect kétszer fut le, miért?",
+    "tryQuestion": "Kérdés",
+    "tryQuestionPlaceholder": "Milyen típusú modellnek kellene ezt megválaszolnia?",
+    "tryOptions": "Lehetőségek, vesszővel elválasztva",
+    "tryOptionsPlaceholder": "chat, kód, érvelés, írás",
+    "tryModel": "Modell",
+    "tryAuto": "Automatikus",
+    "tryRun": "Döntés",
+    "tryRunning": "Döntés folyamatban…",
+    "tryNeedOptions": "Adj meg legalább két lehetőséget.",
+    "tryAnswer": "Válasz: {choice}",
+    "tryConfidence": "{value}%-os biztonság",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Példakérés"
   }
 }

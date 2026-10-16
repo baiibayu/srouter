@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "გადაწყვეტილება",
+    "pageDesc": "გადაწყვეტილების მოდელები თქვენს ტექსტზე დასმულ კითხვას პასუხობენ არჩევანით, დიახ/არა პასუხით ან შეფასებით და აღნიშნავენ, რამდენად დარწმუნებულები არიან. ისინი მუშაობენ თქვენი Cloudflare და OpenRouter გასაღებებით.",
+    "endpointHint": "გამოძახება მეშვეობით",
+    "notRoutingHint": "— ჩატისგან განცალკევებით. ჩატის მარშრუტიზაცია ამ მოდელებს არასოდეს იყენებს.",
+    "empty": "გადაწყვეტილების მოდელები ჯერ არ არის. ისინი სინქრონიზებულია კატალოგიდან.",
+    "thisMonth": "{count} ამ თვეში",
+    "tryTitle": "სცადეთ",
+    "tryText": "ტექსტი",
+    "tryTextPlaceholder": "ჩემი react useEffect ორჯერ ეშვება, რატომ?",
+    "tryQuestion": "კითხვა",
+    "tryQuestionPlaceholder": "რა ტიპის მოდელმა უნდა უპასუხოს ამას?",
+    "tryOptions": "ვარიანტები, მძიმით გამოყოფილი",
+    "tryOptionsPlaceholder": "ჩატი, კოდი, მსჯელობა, წერა",
+    "tryModel": "მოდელი",
+    "tryAuto": "ავტომატური",
+    "tryRun": "გადაწყვეტა",
+    "tryRunning": "მიმდინარეობს გადაწყვეტა…",
+    "tryNeedOptions": "დაამატეთ მინიმუმ ორი ვარიანტი.",
+    "tryAnswer": "პასუხი: {choice}",
+    "tryConfidence": "{value}% დარწმუნებით",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "მოთხოვნის მაგალითი"
   }
 }

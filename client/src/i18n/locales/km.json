@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "ការសម្រេចចិត្ត",
+    "pageDesc": "ម៉ូដែលសម្រេចចិត្តឆ្លើយសំណួរអំពីអត្ថបទរបស់អ្នកដោយជម្រើស បាទ/ចាស ឬទេ ឬពិន្ទុ ហើយប្រាប់ពីកម្រិតទំនុកចិត្ត។ វាដំណើរការលើសោ Cloudflare និង OpenRouter របស់អ្នក។",
+    "endpointHint": "ហៅតាមរយៈ",
+    "notRoutingHint": "— ដាច់ដោយឡែកពីការជជែក។ ការបញ្ជូនការជជែកមិនដែលប្រើម៉ូដែលទាំងនេះទេ។",
+    "empty": "មិនទាន់មានម៉ូដែលសម្រេចចិត្តទេ។ វាធ្វើសមកាលកម្មពីកាតាឡុក។",
+    "thisMonth": "{count} ខែនេះ",
+    "tryTitle": "សាកល្បង",
+    "tryText": "អត្ថបទ",
+    "tryTextPlaceholder": "react useEffect របស់ខ្ញុំដំណើរការពីរដង ហេតុអ្វី?",
+    "tryQuestion": "សំណួរ",
+    "tryQuestionPlaceholder": "តើម៉ូដែលប្រភេទណាគួរឆ្លើយសំណួរនេះ?",
+    "tryOptions": "ជម្រើស ដោយបំបែកដោយសញ្ញាក្បៀស",
+    "tryOptionsPlaceholder": "ជជែក, កូដ, ការវែកញែក, ការសរសេរ",
+    "tryModel": "ម៉ូដែល",
+    "tryAuto": "ស្វ័យប្រវត្តិ",
+    "tryRun": "សម្រេចចិត្ត",
+    "tryRunning": "កំពុងសម្រេចចិត្ត…",
+    "tryNeedOptions": "បន្ថែមជម្រើសយ៉ាងហោចណាស់ពីរ។",
+    "tryAnswer": "ចម្លើយ៖ {choice}",
+    "tryConfidence": "ទំនុកចិត្ត {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "ឧទាហរណ៍សំណើ"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Beslissing",
+    "pageDesc": "Beslissingsmodellen beantwoorden een vraag over je tekst met een keuze, een ja of nee, of een score, en geven aan hoe zeker ze zijn. Ze draaien op je Cloudflare- en OpenRouter-sleutels.",
+    "endpointHint": "Aanroepen via",
+    "notRoutingHint": "— los van chat. Chatroutering gebruikt deze modellen nooit.",
+    "empty": "Nog geen beslissingsmodellen. Ze synchroniseren vanuit de catalogus.",
+    "thisMonth": "{count} deze maand",
+    "tryTitle": "Probeer het",
+    "tryText": "Tekst",
+    "tryTextPlaceholder": "mijn react useEffect draait twee keer, waarom?",
+    "tryQuestion": "Vraag",
+    "tryQuestionPlaceholder": "Welk soort model moet dit beantwoorden?",
+    "tryOptions": "Opties, gescheiden door komma's",
+    "tryOptionsPlaceholder": "chat, code, redeneren, schrijven",
+    "tryModel": "Model",
+    "tryAuto": "Automatisch",
+    "tryRun": "Beslissen",
+    "tryRunning": "Bezig met beslissen…",
+    "tryNeedOptions": "Voeg minstens twee opties toe.",
+    "tryAnswer": "Antwoord: {choice}",
+    "tryConfidence": "{value}% zeker",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Voorbeeldverzoek"
   }
 }

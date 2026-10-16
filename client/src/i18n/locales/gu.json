@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "નિર્ણય",
+    "pageDesc": "નિર્ણય મોડલ્સ તમારા લખાણ વિશેના પ્રશ્નનો જવાબ એક વિકલ્પ, હા કે ના, અથવા સ્કોર સાથે આપે છે અને તેઓ કેટલા ખાતરીપૂર્વક છે તે જણાવે છે. તે તમારી Cloudflare અને OpenRouter કીઓ પર ચાલે છે.",
+    "endpointHint": "દ્વારા કૉલ કરો",
+    "notRoutingHint": "— ચેટથી અલગ. ચેટ રાઉટિંગ ક્યારેય આ મોડલ્સનો ઉપયોગ કરતું નથી.",
+    "empty": "હજુ સુધી કોઈ નિર્ણય મોડલ નથી. તેઓ કેટલોગમાંથી સમન્વયિત થાય છે.",
+    "thisMonth": "આ મહિને {count}",
+    "tryTitle": "અજમાવી જુઓ",
+    "tryText": "લખાણ",
+    "tryTextPlaceholder": "મારો react useEffect બે વાર ચાલે છે, કેમ?",
+    "tryQuestion": "પ્રશ્ન",
+    "tryQuestionPlaceholder": "આનો જવાબ કયા પ્રકારના મોડલે આપવો જોઈએ?",
+    "tryOptions": "વિકલ્પો, અલ્પવિરામથી અલગ કરો",
+    "tryOptionsPlaceholder": "ચેટ, કોડ, તર્ક, લેખન",
+    "tryModel": "મોડલ",
+    "tryAuto": "સ્વચાલિત",
+    "tryRun": "નિર્ણય લો",
+    "tryRunning": "નિર્ણય લેવાઈ રહ્યો છે…",
+    "tryNeedOptions": "ઓછામાં ઓછા બે વિકલ્પો ઉમેરો.",
+    "tryAnswer": "જવાબ: {choice}",
+    "tryConfidence": "{value}% ખાતરી",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "ઉદાહરણ વિનંતી"
   }
 }

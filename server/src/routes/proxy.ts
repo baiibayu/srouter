@@ -9,6 +9,7 @@ import { classifyComplexity } from '../services/complexity-gate.js';
 import { runEmbeddings, EmbeddingsError } from '../services/embeddings.js';
 import { runRerank, RerankError, rerankRetryAfterSec } from '../services/rerank.js';
 import { runSearch, SearchError, searchRetryAfterSec, listSearchEngines } from '../services/search.js';
+import { runDecision, DecisionError, decisionRetryAfterSec, listDecisionModels, DECISION_QUESTION_TYPES } from '../services/decision.js';
 import { retryAfterSeconds } from '../lib/retry-hint.js';
 import { runImageGeneration, runVideoGeneration, runSpeech, runTranscription, MediaError, MAX_TRANSCRIPTION_BYTES } from '../services/media.js';
 import multer from 'multer';
@@ -835,6 +836,88 @@ proxyRouter.get('/search/engines', (req: Request, res: Response) => {
         provider: e.platform,
         name: e.displayName,
         available: e.healthyKeyCount > 0,
+      })),
+  });
+});
+
+// Decision models over the key pool. A decision model answers typed questions
+// about `state` (pick one option, yes/no, or a score) with probabilities
+// instead of generated text. Request shape is "System One":
+//   { model?, state, questions: { <id>: { type, instructions, criteria? } } }
+// Catalog rows only (Cloudflare Clef, OpenRouter Mercury Decide), on the keys
+// the user already has for those platforms. Never used by chat routing.
+// See services/decision.ts. /v1/systemone is an alias for System One clients.
+const DecisionQuestionBody = z.object({
+  type: z.enum(DECISION_QUESTION_TYPES),
+  instructions: z.unknown().refine(v => v !== undefined && v !== null && v !== '', { message: 'instructions is required' }),
+  criteria: z.unknown().optional(),
+}).passthrough();
+
+const DecisionBody = z.object({
+  model: z.string().min(1).optional(),
+  state: z.unknown().refine(v => v !== undefined && v !== null && v !== '', { message: 'state is required' }),
+  questions: z.record(z.string().min(1).max(100), DecisionQuestionBody)
+    .refine(q => Object.keys(q).length >= 1 && Object.keys(q).length <= 64, { message: 'questions must hold 1 to 64 entries' }),
+});
+
+async function handleDecision(req: Request, res: Response): Promise<void> {
+  if (!requireInferenceAuth(req, res)) return;
+  const parsed = DecisionBody.safeParse(req.body);
+  if (!parsed.success) {
+    const detail = parsed.error.errors.map(e => `${e.path.join('.') || 'body'}: ${e.message}`).join('; ');
+    res.status(400).json({ error: { message: `Invalid request: ${detail}`, type: 'invalid_request_error' } });
+    return;
+  }
+  const abort = new AbortController();
+  res.on('close', () => { if (!res.writableFinished) abort.abort(); });
+  try {
+    const { model, state, questions } = parsed.data;
+    const result = await runDecision(
+      { state, questions: questions as Parameters<typeof runDecision>[0]['questions'] },
+      { model, signal: abort.signal },
+    );
+    res.json({
+      object: 'decision',
+      model: result.model,
+      provider: result.provider,
+      answers: result.answers,
+      usage: result.usage,
+    });
+  } catch (err: any) {
+    if (res.headersSent || abort.signal.aborted) return;
+    const status = err instanceof DecisionError ? err.status : 502;
+    if (err instanceof DecisionError) {
+      const retryAfter = decisionRetryAfterSec(err);
+      if (retryAfter !== undefined) res.setHeader('Retry-After', String(retryAfter));
+    }
+    const type = status === 400 ? 'invalid_request_error' : status === 429 ? 'rate_limit_error' : 'server_error';
+    res.status(status).json({
+      error: {
+        message: `decision error: ${err?.message ?? 'unknown'}`,
+        type,
+        ...(err instanceof DecisionError && err.code ? { code: err.code } : {}),
+      },
+    });
+  }
+}
+
+proxyRouter.post('/decisions', handleDecision);
+proxyRouter.post('/systemone', handleDecision);
+
+// The decision models a caller can pin with `model` on POST /v1/decisions.
+proxyRouter.get('/decisions/models', (req: Request, res: Response) => {
+  if (!requireInferenceAuth(req, res)) return;
+  res.json({
+    object: 'list',
+    data: listDecisionModels()
+      .filter(m => m.enabled)
+      .map(m => ({
+        id: m.modelId,
+        object: 'decision_model',
+        provider: m.platform,
+        name: m.displayName,
+        context_window: m.contextWindow,
+        available: m.healthyKeyCount > 0,
       })),
   });
 });

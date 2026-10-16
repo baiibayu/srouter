@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "تصمیم",
+    "pageDesc": "مدل های تصمیم به پرسشی درباره متن شما با یک گزینه، بله یا خیر، یا یک امتیاز پاسخ می دهند و میزان اطمینان خود را اعلام می کنند. آنها با کلیدهای Cloudflare و OpenRouter شما اجرا می شوند.",
+    "endpointHint": "فراخوانی از طریق",
+    "notRoutingHint": "— جدا از چت. مسیریابی چت هرگز از این مدل ها استفاده نمی کند.",
+    "empty": "هنوز مدل تصمیمی وجود ندارد. آنها از کاتالوگ همگام می شوند.",
+    "thisMonth": "{count} در این ماه",
+    "tryTitle": "امتحان کنید",
+    "tryText": "متن",
+    "tryTextPlaceholder": "react useEffect من دو بار اجرا می شود، چرا؟",
+    "tryQuestion": "پرسش",
+    "tryQuestionPlaceholder": "چه نوع مدلی باید به این پاسخ دهد؟",
+    "tryOptions": "گزینه ها، جدا شده با کاما",
+    "tryOptionsPlaceholder": "چت, کد, استدلال, نوشتن",
+    "tryModel": "مدل",
+    "tryAuto": "خودکار",
+    "tryRun": "تصمیم بگیر",
+    "tryRunning": "در حال تصمیم گیری…",
+    "tryNeedOptions": "دست کم دو گزینه اضافه کنید.",
+    "tryAnswer": "پاسخ: {choice}",
+    "tryConfidence": "{value}% اطمینان",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "نمونه درخواست"
   }
 }

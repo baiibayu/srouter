@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Mkpebi",
+    "pageDesc": "Ụdị mkpebi na-aza ajụjụ gbasara ederede gị site na nhọrọ, ee ma ọ bụ mba, ma ọ bụ akara, ma na-ekwu otú o si doo ha anya. Ha na-arụ ọrụ na igodo Cloudflare na OpenRouter gị.",
+    "endpointHint": "Kpọọ site na",
+    "notRoutingHint": "— dị iche na nkata. Nduzi nkata anaghị eji ụdị ndị a mgbe ọ bụla.",
+    "empty": "Ọnweghị ụdị mkpebi ugbu a. Ha na-emekọrịta site na katalọgụ.",
+    "thisMonth": "{count} n'ọnwa a",
+    "tryTitle": "Nwalee ya",
+    "tryText": "Ederede",
+    "tryTextPlaceholder": "react useEffect m na-agba ugboro abụọ, gịnị kpatara?",
+    "tryQuestion": "Ajụjụ",
+    "tryQuestionPlaceholder": "Kedu ụdị ụdị kwesịrị ịza nke a?",
+    "tryOptions": "Nhọrọ, kewaa ha na rịkọm",
+    "tryOptionsPlaceholder": "nkata, koodu, ntụgharị uche, ide ihe",
+    "tryModel": "Ụdị",
+    "tryAuto": "Akpaaka",
+    "tryRun": "Kpebie",
+    "tryRunning": "Na-ekpebi…",
+    "tryNeedOptions": "Tinye opekata mpe nhọrọ abụọ.",
+    "tryAnswer": "Azịza: {choice}",
+    "tryConfidence": "O doro anya {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Ihe atụ arịrịọ"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "ဆုံးဖြတ်ချက်",
+    "pageDesc": "ဆုံးဖြတ်ချက် မော်ဒယ်များသည် သင့်စာသားနှင့်ပတ်သက်သော မေးခွန်းကို ရွေးချယ်မှုတစ်ခု၊ ဟုတ်/မဟုတ် သို့မဟုတ် ရမှတ်ဖြင့် ဖြေကြားပြီး မည်မျှ ယုံကြည်ကြောင်း ပြောပြပါသည်။ ၎င်းတို့သည် သင့် Cloudflare နှင့် OpenRouter သော့များဖြင့် လည်ပတ်ပါသည်။",
+    "endpointHint": "ခေါ်ဆိုရန်",
+    "notRoutingHint": "— Chat နှင့် သီးခြားဖြစ်သည်။ Chat routing သည် ဤမော်ဒယ်များကို ဘယ်တော့မှ မသုံးပါ။",
+    "empty": "ဆုံးဖြတ်ချက် မော်ဒယ် မရှိသေးပါ။ Catalog ကနေ sync လုပ်ကြပါတယ်။",
+    "thisMonth": "ဤလ {count}",
+    "tryTitle": "စမ်းကြည့်ပါ",
+    "tryText": "စာသား",
+    "tryTextPlaceholder": "ကျွန်တော့် react useEffect နှစ်ကြိမ် run နေတယ်၊ ဘာကြောင့်လဲ?",
+    "tryQuestion": "မေးခွန်း",
+    "tryQuestionPlaceholder": "ဒါကို ဘယ်လို မော်ဒယ်မျိုးက ဖြေသင့်သလဲ?",
+    "tryOptions": "ရွေးချယ်စရာများ၊ ကော်မာဖြင့် ခွဲပါ",
+    "tryOptionsPlaceholder": "chat, ကုဒ်, ကျိုးကြောင်းဆင်ခြင်ခြင်း, စာရေးခြင်း",
+    "tryModel": "မော်ဒယ်",
+    "tryAuto": "အလိုအလျောက်",
+    "tryRun": "ဆုံးဖြတ်ပါ",
+    "tryRunning": "ဆုံးဖြတ်နေသည်…",
+    "tryNeedOptions": "ရွေးချယ်စရာ အနည်းဆုံး နှစ်ခု ထည့်ပါ။",
+    "tryAnswer": "အဖြေ: {choice}",
+    "tryConfidence": "{value}% ယုံကြည်",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "တောင်းဆိုမှု ဥပမာ"
   }
 }

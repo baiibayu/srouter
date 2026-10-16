@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "การตัดสินใจ",
+    "pageDesc": "โมเดลการตัดสินใจจะตอบคำถามเกี่ยวกับข้อความของคุณด้วยตัวเลือก ใช่หรือไม่ หรือคะแนน พร้อมบอกระดับความมั่นใจ โดยทำงานด้วยคีย์ Cloudflare และ OpenRouter ของคุณ",
+    "endpointHint": "เรียกผ่าน",
+    "notRoutingHint": "— แยกจากแชท การกำหนดเส้นทางแชทจะไม่ใช้โมเดลเหล่านี้",
+    "empty": "ยังไม่มีโมเดลการตัดสินใจ ระบบจะซิงค์จากแคตตาล็อก",
+    "thisMonth": "{count} ในเดือนนี้",
+    "tryTitle": "ลองใช้",
+    "tryText": "ข้อความ",
+    "tryTextPlaceholder": "react useEffect ของฉันทำงานสองครั้ง ทำไม?",
+    "tryQuestion": "คำถาม",
+    "tryQuestionPlaceholder": "โมเดลประเภทใดควรตอบคำถามนี้?",
+    "tryOptions": "ตัวเลือก คั่นด้วยเครื่องหมายจุลภาค",
+    "tryOptionsPlaceholder": "แชท, โค้ด, การให้เหตุผล, การเขียน",
+    "tryModel": "โมเดล",
+    "tryAuto": "อัตโนมัติ",
+    "tryRun": "ตัดสินใจ",
+    "tryRunning": "กำลังตัดสินใจ…",
+    "tryNeedOptions": "เพิ่มตัวเลือกอย่างน้อยสองรายการ",
+    "tryAnswer": "คำตอบ: {choice}",
+    "tryConfidence": "มั่นใจ {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "ตัวอย่างคำขอ"
   }
 }

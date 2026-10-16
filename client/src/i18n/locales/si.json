@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "තීරණය",
+    "pageDesc": "තීරණ ආකෘති ඔබේ පෙළ පිළිබඳ ප්‍රශ්නයකට තේරීමක්, ඔව් හෝ නැත, හෝ ලකුණක් මඟින් පිළිතුරු දී ඒවා කෙතරම් විශ්වාසද යන්න පවසයි. ඒවා ඔබේ Cloudflare සහ OpenRouter යතුරු මත ධාවනය වේ.",
+    "endpointHint": "හරහා අමතන්න",
+    "notRoutingHint": "— කතාබසින් වෙන්ව. කතාබස් මාර්ගගත කිරීම කිසිවිටෙක මෙම ආකෘති භාවිත නොකරයි.",
+    "empty": "තවමත් තීරණ ආකෘති නොමැත. ඒවා නාමාවලියෙන් සමමුහුර්ත වේ.",
+    "thisMonth": "මෙම මාසයේ {count}",
+    "tryTitle": "උත්සාහ කරන්න",
+    "tryText": "පෙළ",
+    "tryTextPlaceholder": "මගේ react useEffect දෙවරක් ධාවනය වේ, ඇයි?",
+    "tryQuestion": "ප්‍රශ්නය",
+    "tryQuestionPlaceholder": "මෙයට පිළිතුරු දිය යුත්තේ කුමන වර්ගයේ ආකෘතියක්ද?",
+    "tryOptions": "විකල්ප, කොමා මඟින් වෙන් කරන්න",
+    "tryOptionsPlaceholder": "කතාබස්, කේතය, තර්කනය, ලිවීම",
+    "tryModel": "ආකෘතිය",
+    "tryAuto": "ස්වයංක්‍රීය",
+    "tryRun": "තීරණය කරන්න",
+    "tryRunning": "තීරණය කරමින්…",
+    "tryNeedOptions": "අවම වශයෙන් විකල්ප දෙකක් එක් කරන්න.",
+    "tryAnswer": "පිළිතුර: {choice}",
+    "tryConfidence": "{value}% විශ්වාසයි",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "උදාහරණ ඉල්ලීම"
   }
 }

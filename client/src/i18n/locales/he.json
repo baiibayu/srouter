@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "החלטה",
+    "pageDesc": "מודלי החלטה עונים על שאלה לגבי הטקסט שלך בבחירה, בכן או לא, או בציון, ומציינים עד כמה הם בטוחים. הם פועלים עם מפתחות Cloudflare ו-OpenRouter שלך.",
+    "endpointHint": "קריאה דרך",
+    "notRoutingHint": "— בנפרד מהצ'אט. ניתוב הצ'אט אף פעם לא משתמש במודלים אלה.",
+    "empty": "עדיין אין מודלי החלטה. הם מסונכרנים מהקטלוג.",
+    "thisMonth": "{count} החודש",
+    "tryTitle": "נסו את זה",
+    "tryText": "טקסט",
+    "tryTextPlaceholder": "ה-react useEffect שלי רץ פעמיים, למה?",
+    "tryQuestion": "שאלה",
+    "tryQuestionPlaceholder": "איזה סוג מודל צריך לענות על זה?",
+    "tryOptions": "אפשרויות, מופרדות בפסיקים",
+    "tryOptionsPlaceholder": "צ'אט, קוד, הסקה, כתיבה",
+    "tryModel": "מודל",
+    "tryAuto": "אוטומטי",
+    "tryRun": "החלט",
+    "tryRunning": "מחליט…",
+    "tryNeedOptions": "הוסיפו לפחות שתי אפשרויות.",
+    "tryAnswer": "תשובה: {choice}",
+    "tryConfidence": "ביטחון של {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "בקשה לדוגמה"
   }
 }

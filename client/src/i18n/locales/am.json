@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "ውሳኔ",
+    "pageDesc": "የውሳኔ ሞዴሎች ስለ ጽሑፍዎ ለሚቀርብ ጥያቄ በምርጫ፣ በአዎ ወይም በአይ፣ ወይም በነጥብ ይመልሳሉ፣ ምን ያህል እርግጠኛ እንደሆኑም ይናገራሉ። በእርስዎ የCloudflare እና OpenRouter ቁልፎች ላይ ይሰራሉ።",
+    "endpointHint": "በዚህ በኩል ይደውሉ",
+    "notRoutingHint": "— ከውይይት የተለየ። የውይይት ማዘዋወር እነዚህን ሞዴሎች በጭራሽ አይጠቀምም።",
+    "empty": "እስካሁን ምንም የውሳኔ ሞዴሎች የሉም። ከካታሎግ ይመሳሰላሉ።",
+    "thisMonth": "በዚህ ወር {count}",
+    "tryTitle": "ይሞክሩት",
+    "tryText": "ጽሑፍ",
+    "tryTextPlaceholder": "የእኔ react useEffect ሁለት ጊዜ ይሰራል፣ ለምን?",
+    "tryQuestion": "ጥያቄ",
+    "tryQuestionPlaceholder": "ይህንን ምን ዓይነት ሞዴል ሊመልስ ይገባል?",
+    "tryOptions": "አማራጮች፣ በኮማ የተለዩ",
+    "tryOptionsPlaceholder": "ውይይት, ኮድ, ምክንያታዊነት, መጻፍ",
+    "tryModel": "ሞዴል",
+    "tryAuto": "ራስ-ሰር",
+    "tryRun": "ወስን",
+    "tryRunning": "በመወሰን ላይ…",
+    "tryNeedOptions": "ቢያንስ ሁለት አማራጮችን ያክሉ።",
+    "tryAnswer": "መልስ፦ {choice}",
+    "tryConfidence": "{value}% እርግጠኛ",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "የጥያቄ ምሳሌ"
   }
 }

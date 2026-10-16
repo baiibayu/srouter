@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Uamuzi",
+    "pageDesc": "Mifano ya uamuzi hujibu swali kuhusu maandishi yako kwa chaguo, ndiyo au hapana, au alama, na kueleza jinsi ilivyo na uhakika. Inaendeshwa kwa funguo zako za Cloudflare na OpenRouter.",
+    "endpointHint": "Piga kupitia",
+    "notRoutingHint": "— tofauti na gumzo. Uelekezaji wa gumzo hautumii kamwe mifano hii.",
+    "empty": "Hakuna mifano ya uamuzi bado. Inasawazishwa kutoka kwa katalogi.",
+    "thisMonth": "{count} mwezi huu",
+    "tryTitle": "Ijaribu",
+    "tryText": "Maandishi",
+    "tryTextPlaceholder": "react useEffect yangu inaendeshwa mara mbili, kwa nini?",
+    "tryQuestion": "Swali",
+    "tryQuestionPlaceholder": "Ni aina gani ya mfano inapaswa kujibu hili?",
+    "tryOptions": "Chaguo, zilizotenganishwa kwa koma",
+    "tryOptionsPlaceholder": "gumzo, msimbo, hoja, uandishi",
+    "tryModel": "Mfano",
+    "tryAuto": "Otomatiki",
+    "tryRun": "Amua",
+    "tryRunning": "Inaamua…",
+    "tryNeedOptions": "Ongeza angalau chaguo mbili.",
+    "tryAnswer": "Jibu: {choice}",
+    "tryConfidence": "Uhakika wa {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Mfano wa ombi"
   }
 }

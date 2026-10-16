@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Keputusan",
+    "pageDesc": "Model keputusan menjawab pertanyaan tentang teks Anda dengan pilihan, ya atau tidak, atau skor, dan menyebutkan seberapa yakin mereka. Model ini berjalan dengan kunci Cloudflare dan OpenRouter Anda.",
+    "endpointHint": "Panggil melalui",
+    "notRoutingHint": "— terpisah dari obrolan. Perutean obrolan tidak pernah menggunakan model ini.",
+    "empty": "Belum ada model keputusan. Model disinkronkan dari katalog.",
+    "thisMonth": "{count} bulan ini",
+    "tryTitle": "Coba",
+    "tryText": "Teks",
+    "tryTextPlaceholder": "react useEffect saya berjalan dua kali, kenapa?",
+    "tryQuestion": "Pertanyaan",
+    "tryQuestionPlaceholder": "Jenis model apa yang sebaiknya menjawab ini?",
+    "tryOptions": "Opsi, dipisahkan koma",
+    "tryOptionsPlaceholder": "obrolan, kode, penalaran, menulis",
+    "tryModel": "Model",
+    "tryAuto": "Otomatis",
+    "tryRun": "Putuskan",
+    "tryRunning": "Memutuskan…",
+    "tryNeedOptions": "Tambahkan minimal dua opsi.",
+    "tryAnswer": "Jawaban: {choice}",
+    "tryConfidence": "Yakin {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Contoh permintaan"
   }
 }

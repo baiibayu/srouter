@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "فیصلہ",
+    "pageDesc": "فیصلہ ماڈلز آپ کے متن کے بارے میں سوال کا جواب کسی انتخاب، ہاں یا نہیں، یا اسکور سے دیتے ہیں اور بتاتے ہیں کہ وہ کتنے پراعتماد ہیں۔ یہ آپ کی Cloudflare اور OpenRouter چابیوں پر چلتے ہیں۔",
+    "endpointHint": "کے ذریعے کال کریں",
+    "notRoutingHint": "— چیٹ سے الگ۔ چیٹ روٹنگ کبھی ان ماڈلز کو استعمال نہیں کرتی۔",
+    "empty": "ابھی تک کوئی فیصلہ ماڈل نہیں۔ وہ کیٹلاگ سے مطابقت پذیر ہوتے ہیں۔",
+    "thisMonth": "اس مہینے {count}",
+    "tryTitle": "آزمائیں",
+    "tryText": "متن",
+    "tryTextPlaceholder": "میرا react useEffect دو بار چلتا ہے، کیوں؟",
+    "tryQuestion": "سوال",
+    "tryQuestionPlaceholder": "اس کا جواب کس قسم کے ماڈل کو دینا چاہیے؟",
+    "tryOptions": "اختیارات، کوما سے الگ کریں",
+    "tryOptionsPlaceholder": "چیٹ, کوڈ, استدلال, تحریر",
+    "tryModel": "ماڈل",
+    "tryAuto": "خودکار",
+    "tryRun": "فیصلہ کریں",
+    "tryRunning": "فیصلہ ہو رہا ہے…",
+    "tryNeedOptions": "کم از کم دو اختیارات شامل کریں۔",
+    "tryAnswer": "جواب: {choice}",
+    "tryConfidence": "{value}% اعتماد",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "مثالی درخواست"
   }
 }

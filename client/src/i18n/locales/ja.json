@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "判定",
+    "pageDesc": "判定モデルは、テキストに関する質問に選択肢、はい/いいえ、またはスコアで答え、その確信度を示します。Cloudflare と OpenRouter のキーで動作します。",
+    "endpointHint": "呼び出し先",
+    "notRoutingHint": "— チャットとは別です。チャットのルーティングでこれらのモデルが使われることはありません。",
+    "empty": "判定モデルはまだありません。カタログから同期します。",
+    "thisMonth": "今月 {count} 回",
+    "tryTitle": "試してみる",
+    "tryText": "テキスト",
+    "tryTextPlaceholder": "react useEffect が2回実行されるのはなぜ？",
+    "tryQuestion": "質問",
+    "tryQuestionPlaceholder": "これにはどの種類のモデルが答えるべき？",
+    "tryOptions": "選択肢（カンマ区切り）",
+    "tryOptionsPlaceholder": "チャット, コード, 推論, 文章作成",
+    "tryModel": "モデル",
+    "tryAuto": "自動",
+    "tryRun": "判定する",
+    "tryRunning": "判定中…",
+    "tryNeedOptions": "選択肢を2つ以上追加してください。",
+    "tryAnswer": "回答: {choice}",
+    "tryConfidence": "確信度 {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "リクエスト例"
   }
 }

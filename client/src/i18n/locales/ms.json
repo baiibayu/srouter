@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Keputusan",
+    "pageDesc": "Model keputusan menjawab soalan tentang teks anda dengan pilihan, ya atau tidak, atau skor, dan menyatakan tahap keyakinannya. Ia berjalan menggunakan kunci Cloudflare dan OpenRouter anda.",
+    "endpointHint": "Panggil melalui",
+    "notRoutingHint": "— berasingan daripada sembang. Penghalaan sembang tidak pernah menggunakan model ini.",
+    "empty": "Belum ada model keputusan. Ia diselaraskan dari katalog.",
+    "thisMonth": "{count} bulan ini",
+    "tryTitle": "Cuba",
+    "tryText": "Teks",
+    "tryTextPlaceholder": "react useEffect saya berjalan dua kali, kenapa?",
+    "tryQuestion": "Soalan",
+    "tryQuestionPlaceholder": "Jenis model apakah yang patut menjawab ini?",
+    "tryOptions": "Pilihan, dipisahkan dengan koma",
+    "tryOptionsPlaceholder": "sembang, kod, penaakulan, penulisan",
+    "tryModel": "Model",
+    "tryAuto": "Auto",
+    "tryRun": "Putuskan",
+    "tryRunning": "Sedang memutuskan…",
+    "tryNeedOptions": "Tambah sekurang-kurangnya dua pilihan.",
+    "tryAnswer": "Jawapan: {choice}",
+    "tryConfidence": "{value}% yakin",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Contoh permintaan"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "القرار",
+    "pageDesc": "تجيب نماذج القرار عن سؤال حول نصك باختيار أو بنعم أو لا أو بدرجة، وتوضح مدى ثقتها. تعمل باستخدام مفاتيح Cloudflare وOpenRouter الخاصة بك.",
+    "endpointHint": "استدعاء عبر",
+    "notRoutingHint": "— منفصلة عن الدردشة. لا يستخدم توجيه الدردشة هذه النماذج أبدًا.",
+    "empty": "لا توجد نماذج قرار حتى الآن. تتم مزامنتها من الكتالوج.",
+    "thisMonth": "{count} هذا الشهر",
+    "tryTitle": "جرّبه",
+    "tryText": "النص",
+    "tryTextPlaceholder": "react useEffect لدي يعمل مرتين، لماذا؟",
+    "tryQuestion": "السؤال",
+    "tryQuestionPlaceholder": "ما نوع النموذج الذي يجب أن يجيب عن هذا؟",
+    "tryOptions": "الخيارات، مفصولة بفواصل",
+    "tryOptionsPlaceholder": "دردشة, برمجة, استدلال, كتابة",
+    "tryModel": "النموذج",
+    "tryAuto": "تلقائي",
+    "tryRun": "قرّر",
+    "tryRunning": "جارٍ اتخاذ القرار…",
+    "tryNeedOptions": "أضف خيارين على الأقل.",
+    "tryAnswer": "الإجابة: {choice}",
+    "tryConfidence": "ثقة {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "مثال على الطلب"
   }
 }

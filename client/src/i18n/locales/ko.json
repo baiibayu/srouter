@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "결정",
+    "pageDesc": "결정 모델은 텍스트에 대한 질문에 선택지, 예 또는 아니요, 또는 점수로 답하고 얼마나 확신하는지 알려 줍니다. Cloudflare 및 OpenRouter 키로 실행됩니다.",
+    "endpointHint": "호출 경로",
+    "notRoutingHint": "— 채팅과는 별개입니다. 채팅 라우팅은 이 모델을 절대 사용하지 않습니다.",
+    "empty": "아직 결정 모델이 없습니다. 카탈로그에서 동기화됩니다.",
+    "thisMonth": "이번 달 {count}회",
+    "tryTitle": "사용해 보기",
+    "tryText": "텍스트",
+    "tryTextPlaceholder": "react useEffect가 두 번 실행돼요, 왜 그런가요?",
+    "tryQuestion": "질문",
+    "tryQuestionPlaceholder": "어떤 종류의 모델이 이 질문에 답해야 할까요?",
+    "tryOptions": "옵션(쉼표로 구분)",
+    "tryOptionsPlaceholder": "채팅, 코드, 추론, 글쓰기",
+    "tryModel": "모델",
+    "tryAuto": "자동",
+    "tryRun": "결정하기",
+    "tryRunning": "결정 중…",
+    "tryNeedOptions": "옵션을 두 개 이상 추가하세요.",
+    "tryAnswer": "답변: {choice}",
+    "tryConfidence": "확신도 {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "요청 예시"
   }
 }

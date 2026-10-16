@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Decisão",
+    "pageDesc": "Modelos de decisão respondem a uma pergunta sobre o seu texto com uma escolha, um sim ou não, ou uma pontuação, e dizem o quanto estão confiantes. Eles rodam com suas chaves do Cloudflare e do OpenRouter.",
+    "endpointHint": "Chamar via",
+    "notRoutingHint": "— separado do chat. O roteamento do chat nunca usa esses modelos.",
+    "empty": "Ainda sem modelos de decisão. Eles sincronizam do catálogo.",
+    "thisMonth": "{count} este mês",
+    "tryTitle": "Experimente",
+    "tryText": "Texto",
+    "tryTextPlaceholder": "meu react useEffect roda duas vezes, por quê?",
+    "tryQuestion": "Pergunta",
+    "tryQuestionPlaceholder": "Que tipo de modelo deveria responder isto?",
+    "tryOptions": "Opções, separadas por vírgulas",
+    "tryOptionsPlaceholder": "chat, código, raciocínio, escrita",
+    "tryModel": "Modelo",
+    "tryAuto": "Automático",
+    "tryRun": "Decidir",
+    "tryRunning": "Decidindo…",
+    "tryNeedOptions": "Adicione pelo menos duas opções.",
+    "tryAnswer": "Resposta: {choice}",
+    "tryConfidence": "{value}% de confiança",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Exemplo de requisição"
   }
 }

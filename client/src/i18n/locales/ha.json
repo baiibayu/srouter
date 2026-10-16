@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Hukunci",
+    "pageDesc": "Samfuran hukunci suna amsa tambaya game da rubutunka da zaɓi, e ko a'a, ko maki, kuma suna faɗin yadda suke da tabbaci. Suna aiki da maɓallan Cloudflare da OpenRouter naka.",
+    "endpointHint": "Kira ta hanyar",
+    "notRoutingHint": "— daban da taɗi. Hanyar taɗi ba ta taɓa amfani da waɗannan samfuran ba.",
+    "empty": "Babu samfuran hukunci tukuna. Suna daidaitawa daga kasidar.",
+    "thisMonth": "{count} a wannan watan",
+    "tryTitle": "Gwada shi",
+    "tryText": "Rubutu",
+    "tryTextPlaceholder": "react useEffect dina yana gudana sau biyu, me yasa?",
+    "tryQuestion": "Tambaya",
+    "tryQuestionPlaceholder": "Wane irin samfuri ya kamata ya amsa wannan?",
+    "tryOptions": "Zaɓuɓɓuka, a raba da waƙafi",
+    "tryOptionsPlaceholder": "taɗi, lamba, tunani, rubutu",
+    "tryModel": "Samfuri",
+    "tryAuto": "Ta atomatik",
+    "tryRun": "Yanke hukunci",
+    "tryRunning": "Ana yanke hukunci…",
+    "tryNeedOptions": "Ƙara aƙalla zaɓuɓɓuka biyu.",
+    "tryAnswer": "Amsa: {choice}",
+    "tryConfidence": "Tabbaci {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Misalin buƙata"
   }
 }

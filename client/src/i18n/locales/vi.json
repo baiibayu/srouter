@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Quyết định",
+    "pageDesc": "Mô hình quyết định trả lời một câu hỏi về văn bản của bạn bằng một lựa chọn, có hoặc không, hoặc một điểm số, và cho biết mức độ tự tin. Chúng chạy bằng khóa Cloudflare và OpenRouter của bạn.",
+    "endpointHint": "Gọi qua",
+    "notRoutingHint": "— tách biệt với trò chuyện. Định tuyến trò chuyện không bao giờ dùng các mô hình này.",
+    "empty": "Chưa có mô hình quyết định nào. Chúng được đồng bộ từ danh mục.",
+    "thisMonth": "{count} tháng này",
+    "tryTitle": "Dùng thử",
+    "tryText": "Văn bản",
+    "tryTextPlaceholder": "react useEffect của tôi chạy hai lần, tại sao?",
+    "tryQuestion": "Câu hỏi",
+    "tryQuestionPlaceholder": "Loại mô hình nào nên trả lời câu này?",
+    "tryOptions": "Tùy chọn, phân tách bằng dấu phẩy",
+    "tryOptionsPlaceholder": "trò chuyện, mã, suy luận, viết",
+    "tryModel": "Mô hình",
+    "tryAuto": "Tự động",
+    "tryRun": "Quyết định",
+    "tryRunning": "Đang quyết định…",
+    "tryNeedOptions": "Hãy thêm ít nhất hai tùy chọn.",
+    "tryAnswer": "Câu trả lời: {choice}",
+    "tryConfidence": "Tự tin {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Yêu cầu mẫu"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Odluka",
+    "pageDesc": "Modeli odluke odgovaraju na pitanje o vašem tekstu izborom, s da ili ne, ili ocjenom te navode koliko su sigurni. Rade na vašim Cloudflare i OpenRouter ključevima.",
+    "endpointHint": "Pozovite putem",
+    "notRoutingHint": "— odvojeno od chata. Usmjeravanje chata nikada ne koristi ove modele.",
+    "empty": "Još nema modela odluke. Sinkroniziraju se iz kataloga.",
+    "thisMonth": "{count} ovaj mjesec",
+    "tryTitle": "Isprobajte",
+    "tryText": "Tekst",
+    "tryTextPlaceholder": "moj react useEffect pokreće se dvaput, zašto?",
+    "tryQuestion": "Pitanje",
+    "tryQuestionPlaceholder": "Koja bi vrsta modela trebala odgovoriti na ovo?",
+    "tryOptions": "Opcije, odvojene zarezima",
+    "tryOptionsPlaceholder": "chat, kod, rezoniranje, pisanje",
+    "tryModel": "Model",
+    "tryAuto": "Automatski",
+    "tryRun": "Odluči",
+    "tryRunning": "Odlučivanje…",
+    "tryNeedOptions": "Dodajte barem dvije opcije.",
+    "tryAnswer": "Odgovor: {choice}",
+    "tryConfidence": "Sigurnost {value} %",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Primjer zahtjeva"
   }
 }

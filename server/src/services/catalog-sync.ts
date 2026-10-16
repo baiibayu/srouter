@@ -4,6 +4,7 @@ import { getDb, getSetting, setSetting } from '../db/index.js';
 import { hasProvider } from '../providers/index.js';
 import { MEDIA_PLATFORMS, TRANSCRIPTION_PLATFORMS, VIDEO_PLATFORMS } from './media.js';
 import { SEARCH_ENGINE_PLATFORMS, SEARCH_MODALITY } from './search.js';
+import { DECISION_MODALITY, DECISION_PLATFORMS } from './decision.js';
 import { EMBEDDING_PLATFORMS } from './embeddings.js';
 import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import type { Scheduler } from '../lib/scheduler.js';
@@ -302,6 +303,22 @@ interface CatalogSearchEngine {
   premiumSince?: string;
 }
 
+interface CatalogDecisionModel {
+  platform: string;
+  /** Provider model id, stored as media_models.model_id
+   *  (e.g. '@cf/cloudflare/clef-flash', 'inception/mercury-decide:free'). */
+  modelId: string;
+  displayName: string;
+  /** Order within the decision chain for model 'auto', lower first. */
+  priority: number;
+  enabled: boolean;
+  /** Short display note, mirrored into media_models.quota_label. */
+  quotaLabel?: string;
+  contextWindow?: number;
+  /** When the model entered the live (Premium) tier. */
+  premiumSince?: string;
+}
+
 interface Catalog {
   version: string;
   generatedAt: string;
@@ -323,6 +340,10 @@ interface Catalog {
    *  modality='search'. A separate optional key for the same reason as
    *  videoModels: binaries that predate search ignore it. */
   searchEngines?: CatalogSearchEngine[];
+  /** Decision model registry, landing in media_models with
+   *  modality='decision'. Its own optional key, like searchEngines, so
+   *  binaries that predate decision models ignore it. */
+  decisionModels?: CatalogDecisionModel[];
   /** Platforms the catalog service manages even when this tier ships no rows
    *  for them (#1348): a provider still inside its Premium window, or one the
    *  audit deliberately keeps at zero rows. Names only, never model rows, so
@@ -423,6 +444,19 @@ function isCatalog(value: unknown): value is Catalog {
             (e.features === undefined || (typeof e.features === 'object' && e.features !== null)) &&
             (e.premiumSince === undefined || typeof e.premiumSince === 'string'),
         ))) &&
+    (c.decisionModels === undefined ||
+      (Array.isArray(c.decisionModels) &&
+        c.decisionModels.every(
+          (m) =>
+            typeof m?.platform === 'string' &&
+            typeof m?.modelId === 'string' &&
+            typeof m?.displayName === 'string' &&
+            typeof m?.priority === 'number' &&
+            typeof m?.enabled === 'boolean' &&
+            (m.quotaLabel === undefined || typeof m.quotaLabel === 'string') &&
+            (m.contextWindow === undefined || typeof m.contextWindow === 'number') &&
+            (m.premiumSince === undefined || typeof m.premiumSince === 'string'),
+        ))) &&
     (c.managedPlatforms === undefined ||
       (Array.isArray(c.managedPlatforms) && c.managedPlatforms.every((p) => typeof p === 'string'))) &&
     c.quirks.every((q) => typeof q?.slug === 'string' && Array.isArray(q?.targets))
@@ -464,6 +498,7 @@ function catalogPlatforms(catalog: Catalog): Set<string> {
   for (const m of catalog.transcriptionModels ?? []) platforms.add(m.platform);
   for (const m of catalog.videoModels ?? []) platforms.add(m.platform);
   for (const e of catalog.searchEngines ?? []) platforms.add(e.platform);
+  for (const m of catalog.decisionModels ?? []) platforms.add(m.platform);
   for (const p of catalog.managedPlatforms ?? []) platforms.add(p);
   return platforms;
 }
@@ -604,6 +639,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
     const inTranscriptionCatalog = new Set<string>();
     const inVideoCatalog = new Set<string>();
     const inSearchCatalog = new Set<string>();
+    const inDecisionCatalog = new Set<string>();
 
     for (const m of catalog.models) {
       // Media modalities are gated on MEDIA_PLATFORMS (decoupled from the chat
@@ -773,6 +809,38 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
           counts.updated++;
         } else {
           insertMedia.run({ ...fields, platform: e.platform, modelId: e.engineId, enabled: e.enabled ? 1 : 0 });
+          counts.inserted++;
+        }
+      }
+    }
+
+    // Decision models: their own optional full snapshot, like search engines.
+    // They ride on the platform's existing keys and never enter chat routing.
+    if (catalog.decisionModels) {
+      for (const m of catalog.decisionModels) {
+        if (!DECISION_PLATFORMS.has(m.platform)) {
+          counts.skippedUnknownPlatform++;
+          continue;
+        }
+        if (isCatalogModelTombstoned(db, 'media', m.platform, m.modelId)) continue;
+        inDecisionCatalog.add(`${m.platform}:${m.modelId}`);
+        const meta: Record<string, unknown> = {};
+        if (typeof m.contextWindow === 'number') meta.contextWindow = m.contextWindow;
+        if (typeof m.premiumSince === 'string') meta.premiumSince = m.premiumSince;
+        const fields = {
+          displayName: m.displayName,
+          modality: DECISION_MODALITY,
+          priority: m.priority,
+          quotaLabel: m.quotaLabel ?? '',
+          metaJson: JSON.stringify(meta),
+        };
+        const row = selectMedia.get(m.platform, m.modelId) as { id: number; enabled: number } | undefined;
+        if (row) {
+          const enabled = m.enabled ? row.enabled : 0;
+          updateMedia.run({ ...fields, id: row.id, enabled });
+          counts.updated++;
+        } else {
+          insertMedia.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
           counts.inserted++;
         }
       }
@@ -978,6 +1046,21 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
       for (const c of searchCandidates) {
         if (!SEARCH_ENGINE_PLATFORMS.has(c.platform)) continue;
         if (!inSearchCatalog.has(`${c.platform}:${c.model_id}`)) {
+          deleteMedia.run(c.id);
+          counts.removed++;
+        }
+      }
+    }
+
+    // Prune decision models only when the catalog carries the decisionModels
+    // snapshot (same rule as search engines).
+    if (catalog.decisionModels) {
+      const decisionCandidates = db
+        .prepare('SELECT id, platform, model_id FROM media_models WHERE modality = ?')
+        .all(DECISION_MODALITY) as { id: number; platform: string; model_id: string }[];
+      for (const c of decisionCandidates) {
+        if (!DECISION_PLATFORMS.has(c.platform)) continue;
+        if (!inDecisionCatalog.has(`${c.platform}:${c.model_id}`)) {
           deleteMedia.run(c.id);
           counts.removed++;
         }

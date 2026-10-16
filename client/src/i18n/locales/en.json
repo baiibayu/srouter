@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Decision",
+    "pageDesc": "Decision models answer a question about your text with a choice, a yes or no, or a score, and say how confident they are. They run on your Cloudflare and OpenRouter keys.",
+    "endpointHint": "Call via",
+    "notRoutingHint": "— separate from chat. Chat routing never uses these models.",
+    "empty": "No decision models yet. They sync from the catalog.",
+    "thisMonth": "{count} this month",
+    "tryTitle": "Try it",
+    "tryText": "Text",
+    "tryTextPlaceholder": "my react useEffect runs twice, why?",
+    "tryQuestion": "Question",
+    "tryQuestionPlaceholder": "Which kind of model should answer this?",
+    "tryOptions": "Options, separated by commas",
+    "tryOptionsPlaceholder": "chat, code, reasoning, writing",
+    "tryModel": "Model",
+    "tryAuto": "Auto",
+    "tryRun": "Decide",
+    "tryRunning": "Deciding…",
+    "tryNeedOptions": "Add at least two options.",
+    "tryAnswer": "Answer: {choice}",
+    "tryConfidence": "{value}% confident",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Example request"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Рішення",
+    "pageDesc": "Моделі рішень відповідають на запитання про ваш текст вибором, відповіддю «так» чи «ні» або оцінкою та повідомляють, наскільки вони впевнені. Вони працюють на ваших ключах Cloudflare і OpenRouter.",
+    "endpointHint": "Виклик через",
+    "notRoutingHint": "— окремо від чату. Маршрутизація чату ніколи не використовує ці моделі.",
+    "empty": "Моделей рішень ще немає. Вони синхронізуються з каталогу.",
+    "thisMonth": "{count} цього місяця",
+    "tryTitle": "Спробувати",
+    "tryText": "Текст",
+    "tryTextPlaceholder": "мій react useEffect запускається двічі, чому?",
+    "tryQuestion": "Запитання",
+    "tryQuestionPlaceholder": "Яка модель має відповісти на це?",
+    "tryOptions": "Варіанти через кому",
+    "tryOptionsPlaceholder": "чат, код, міркування, письмо",
+    "tryModel": "Модель",
+    "tryAuto": "Авто",
+    "tryRun": "Вирішити",
+    "tryRunning": "Вирішуємо…",
+    "tryNeedOptions": "Додайте щонайменше два варіанти.",
+    "tryAnswer": "Відповідь: {choice}",
+    "tryConfidence": "Впевненість {value}%",
+    "tryServedBy": "{model} · {latency} мс",
+    "exampleTitle": "Приклад запиту"
   }
 }

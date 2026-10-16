@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "निर्णय",
+    "pageDesc": "निर्णय मॉडल आपके टेक्स्ट के बारे में किसी प्रश्न का उत्तर एक विकल्प, हाँ या नहीं, या स्कोर के रूप में देते हैं और बताते हैं कि वे कितने आश्वस्त हैं। ये आपकी Cloudflare और OpenRouter चाबियों पर चलते हैं।",
+    "endpointHint": "के माध्यम से कॉल करें",
+    "notRoutingHint": "— चैट से अलग। चैट रूटिंग इन मॉडलों का कभी उपयोग नहीं करती।",
+    "empty": "अभी तक कोई निर्णय मॉडल नहीं. वे कैटलॉग से सिंक होते हैं।",
+    "thisMonth": "इस महीने {count}",
+    "tryTitle": "आज़माएँ",
+    "tryText": "टेक्स्ट",
+    "tryTextPlaceholder": "मेरा react useEffect दो बार चलता है, क्यों?",
+    "tryQuestion": "प्रश्न",
+    "tryQuestionPlaceholder": "इसका उत्तर किस तरह के मॉडल को देना चाहिए?",
+    "tryOptions": "विकल्प, अल्पविराम से अलग करें",
+    "tryOptionsPlaceholder": "चैट, कोड, तर्क, लेखन",
+    "tryModel": "मॉडल",
+    "tryAuto": "स्वचालित",
+    "tryRun": "निर्णय लें",
+    "tryRunning": "निर्णय लिया जा रहा है…",
+    "tryNeedOptions": "कम से कम दो विकल्प जोड़ें।",
+    "tryAnswer": "उत्तर: {choice}",
+    "tryConfidence": "{value}% आश्वस्त",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "उदाहरण अनुरोध"
   }
 }

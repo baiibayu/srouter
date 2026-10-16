@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Sprendimas",
+    "pageDesc": "Sprendimų modeliai atsako į klausimą apie jūsų tekstą pasirinkimu, „taip“ arba „ne“ arba įvertinimu ir nurodo, kiek yra tikri. Jie veikia jūsų Cloudflare ir OpenRouter raktais.",
+    "endpointHint": "Kvieskite per",
+    "notRoutingHint": "— atskirai nuo pokalbių. Pokalbių maršrutizavimas niekada nenaudoja šių modelių.",
+    "empty": "Sprendimų modelių dar nėra. Jie sinchronizuojami iš katalogo.",
+    "thisMonth": "{count} šį mėnesį",
+    "tryTitle": "Išbandykite",
+    "tryText": "Tekstas",
+    "tryTextPlaceholder": "mano react useEffect paleidžiamas du kartus, kodėl?",
+    "tryQuestion": "Klausimas",
+    "tryQuestionPlaceholder": "Koks modelis turėtų į tai atsakyti?",
+    "tryOptions": "Parinktys, atskirtos kableliais",
+    "tryOptionsPlaceholder": "pokalbis, kodas, samprotavimas, rašymas",
+    "tryModel": "Modelis",
+    "tryAuto": "Automatiškai",
+    "tryRun": "Spręsti",
+    "tryRunning": "Sprendžiama…",
+    "tryNeedOptions": "Pridėkite bent dvi parinktis.",
+    "tryAnswer": "Atsakymas: {choice}",
+    "tryConfidence": "Tikrumas {value} %",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Užklausos pavyzdys"
   }
 }

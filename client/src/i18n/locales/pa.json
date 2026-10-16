@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "ਫ਼ੈਸਲਾ",
+    "pageDesc": "ਫ਼ੈਸਲਾ ਮਾਡਲ ਤੁਹਾਡੇ ਟੈਕਸਟ ਬਾਰੇ ਸਵਾਲ ਦਾ ਜਵਾਬ ਇੱਕ ਚੋਣ, ਹਾਂ ਜਾਂ ਨਾਂਹ, ਜਾਂ ਸਕੋਰ ਨਾਲ ਦਿੰਦੇ ਹਨ ਅਤੇ ਦੱਸਦੇ ਹਨ ਕਿ ਉਹ ਕਿੰਨੇ ਯਕੀਨੀ ਹਨ। ਇਹ ਤੁਹਾਡੀਆਂ Cloudflare ਅਤੇ OpenRouter ਕੁੰਜੀਆਂ 'ਤੇ ਚੱਲਦੇ ਹਨ।",
+    "endpointHint": "ਰਾਹੀਂ ਕਾਲ ਕਰੋ",
+    "notRoutingHint": "— ਚੈਟ ਤੋਂ ਵੱਖਰਾ। ਚੈਟ ਰੂਟਿੰਗ ਕਦੇ ਵੀ ਇਹ ਮਾਡਲ ਨਹੀਂ ਵਰਤਦੀ।",
+    "empty": "ਅਜੇ ਤੱਕ ਕੋਈ ਫ਼ੈਸਲਾ ਮਾਡਲ ਨਹੀਂ ਹਨ। ਉਹ ਕੈਟਾਲਾਗ ਤੋਂ ਸਿੰਕ ਹੁੰਦੇ ਹਨ।",
+    "thisMonth": "ਇਸ ਮਹੀਨੇ {count}",
+    "tryTitle": "ਅਜ਼ਮਾਓ",
+    "tryText": "ਟੈਕਸਟ",
+    "tryTextPlaceholder": "ਮੇਰਾ react useEffect ਦੋ ਵਾਰ ਚੱਲਦਾ ਹੈ, ਕਿਉਂ?",
+    "tryQuestion": "ਸਵਾਲ",
+    "tryQuestionPlaceholder": "ਇਸ ਦਾ ਜਵਾਬ ਕਿਸ ਕਿਸਮ ਦੇ ਮਾਡਲ ਨੂੰ ਦੇਣਾ ਚਾਹੀਦਾ ਹੈ?",
+    "tryOptions": "ਵਿਕਲਪ, ਕੌਮਿਆਂ ਨਾਲ ਵੱਖ ਕਰੋ",
+    "tryOptionsPlaceholder": "ਚੈਟ, ਕੋਡ, ਤਰਕ, ਲਿਖਣਾ",
+    "tryModel": "ਮਾਡਲ",
+    "tryAuto": "ਆਟੋ",
+    "tryRun": "ਫ਼ੈਸਲਾ ਕਰੋ",
+    "tryRunning": "ਫ਼ੈਸਲਾ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…",
+    "tryNeedOptions": "ਘੱਟੋ-ਘੱਟ ਦੋ ਵਿਕਲਪ ਸ਼ਾਮਲ ਕਰੋ।",
+    "tryAnswer": "ਜਵਾਬ: {choice}",
+    "tryConfidence": "{value}% ਯਕੀਨੀ",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "ਉਦਾਹਰਨ ਬੇਨਤੀ"
   }
 }

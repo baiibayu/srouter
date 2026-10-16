@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "ନିଷ୍ପତ୍ତି",
+    "pageDesc": "ନିଷ୍ପତ୍ତି ମଡେଲଗୁଡିକ ଆପଣଙ୍କ ପାଠ୍ୟ ବିଷୟରେ ଏକ ପ୍ରଶ୍ନର ଉତ୍ତର ଏକ ବିକଳ୍ପ, ହଁ କିମ୍ବା ନା, କିମ୍ବା ସ୍କୋର ସହିତ ଦିଅନ୍ତି ଏବଂ ସେମାନେ କେତେ ନିଶ୍ଚିତ ତାହା କହନ୍ତି। ସେଗୁଡିକ ଆପଣଙ୍କ Cloudflare ଏବଂ OpenRouter ଚାବିରେ ଚାଲେ।",
+    "endpointHint": "ମାଧ୍ୟମରେ କଲ୍ କରନ୍ତୁ",
+    "notRoutingHint": "— ଚାଟ୍ ଠାରୁ ଅଲଗା। ଚାଟ୍ ରାଉଟିଂ କେବେ ବି ଏହି ମଡେଲଗୁଡିକ ବ୍ୟବହାର କରେ ନାହିଁ।",
+    "empty": "ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ନିଷ୍ପତ୍ତି ମଡେଲ୍ ନାହିଁ। ସେଗୁଡିକ କ୍ୟାଟଲଗ୍ ରୁ ସିଙ୍କ୍ ହୁଏ।",
+    "thisMonth": "ଏହି ମାସରେ {count}",
+    "tryTitle": "ଚେଷ୍ଟା କରନ୍ତୁ",
+    "tryText": "ପାଠ୍ୟ",
+    "tryTextPlaceholder": "ମୋର react useEffect ଦୁଇଥର ଚାଲୁଛି, କାହିଁକି?",
+    "tryQuestion": "ପ୍ରଶ୍ନ",
+    "tryQuestionPlaceholder": "ଏହାର ଉତ୍ତର କେଉଁ ପ୍ରକାରର ମଡେଲ୍ ଦେବା ଉଚିତ?",
+    "tryOptions": "ବିକଳ୍ପଗୁଡିକ, କମା ଦ୍ୱାରା ଅଲଗା କରନ୍ତୁ",
+    "tryOptionsPlaceholder": "ଚାଟ୍, କୋଡ୍, ଯୁକ୍ତି, ଲେଖା",
+    "tryModel": "ମଡେଲ୍",
+    "tryAuto": "ସ୍ୱୟଂଚାଳିତ",
+    "tryRun": "ନିଷ୍ପତ୍ତି ନିଅନ୍ତୁ",
+    "tryRunning": "ନିଷ୍ପତ୍ତି ନିଆଯାଉଛି…",
+    "tryNeedOptions": "ଅତି କମରେ ଦୁଇଟି ବିକଳ୍ପ ଯୋଡନ୍ତୁ।",
+    "tryAnswer": "ଉତ୍ତର: {choice}",
+    "tryConfidence": "{value}% ନିଶ୍ଚିତ",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "ଉଦାହରଣ ଅନୁରୋଧ"
   }
 }

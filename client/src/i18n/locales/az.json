@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Qərar",
+    "pageDesc": "Qərar modelləri mətniniz haqqında suala seçim, bəli və ya xeyr, yaxud bal ilə cavab verir və nə qədər əmin olduqlarını bildirir. Onlar Cloudflare və OpenRouter açarlarınızla işləyir.",
+    "endpointHint": "Çağırış vasitəsilə",
+    "notRoutingHint": "— chatdan ayrıdır. Chat marşrutlaşdırması bu modellərdən heç vaxt istifadə etmir.",
+    "empty": "Hələ qərar modeli yoxdur. Onlar kataloqdan sinxronlaşır.",
+    "thisMonth": "Bu ay {count}",
+    "tryTitle": "Sınayın",
+    "tryText": "Mətn",
+    "tryTextPlaceholder": "react useEffect-im iki dəfə işləyir, niyə?",
+    "tryQuestion": "Sual",
+    "tryQuestionPlaceholder": "Bunu hansı növ model cavablandırmalıdır?",
+    "tryOptions": "Vergüllə ayrılmış seçimlər",
+    "tryOptionsPlaceholder": "chat, kod, düşünmə, yazı",
+    "tryModel": "Model",
+    "tryAuto": "Avtomatik",
+    "tryRun": "Qərar ver",
+    "tryRunning": "Qərar verilir…",
+    "tryNeedOptions": "Ən azı iki seçim əlavə edin.",
+    "tryAnswer": "Cavab: {choice}",
+    "tryConfidence": "{value}% əmin",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Nümunə sorğu"
   }
 }

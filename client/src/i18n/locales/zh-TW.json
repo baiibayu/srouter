@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "決策",
+    "pageDesc": "決策模型針對你的文字回答一個問題，給出一個選項、是或否，或一個分數，並說明其信心程度。它們使用你的 Cloudflare 和 OpenRouter 金鑰執行。",
+    "endpointHint": "呼叫端點",
+    "notRoutingHint": "— 與對話分開。對話路由從不使用這些模型。",
+    "empty": "尚無決策模型，將從目錄同步。",
+    "thisMonth": "本月 {count} 次",
+    "tryTitle": "試試看",
+    "tryText": "文字",
+    "tryTextPlaceholder": "我的 react useEffect 執行了兩次，為什麼？",
+    "tryQuestion": "問題",
+    "tryQuestionPlaceholder": "應該由哪類模型來回答這個問題？",
+    "tryOptions": "選項，以逗號分隔",
+    "tryOptionsPlaceholder": "對話, 程式碼, 推理, 寫作",
+    "tryModel": "模型",
+    "tryAuto": "自動",
+    "tryRun": "決策",
+    "tryRunning": "決策中…",
+    "tryNeedOptions": "請至少新增兩個選項。",
+    "tryAnswer": "答案：{choice}",
+    "tryConfidence": "信心 {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "請求範例"
   }
 }

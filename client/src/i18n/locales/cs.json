@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Rozhodnutí",
+    "pageDesc": "Rozhodovací modely odpovídají na otázku k vašemu textu volbou, ano či ne nebo skóre a uvádějí, jak jsou si jisté. Běží na vašich klíčích Cloudflare a OpenRouter.",
+    "endpointHint": "Volejte přes",
+    "notRoutingHint": "— odděleně od chatu. Směrování chatu tyto modely nikdy nepoužívá.",
+    "empty": "Rozhodovací modely zatím nejsou. Synchronizují se z katalogu.",
+    "thisMonth": "{count} tento měsíc",
+    "tryTitle": "Vyzkoušet",
+    "tryText": "Text",
+    "tryTextPlaceholder": "můj react useEffect se spouští dvakrát, proč?",
+    "tryQuestion": "Otázka",
+    "tryQuestionPlaceholder": "Jaký typ modelu by na to měl odpovědět?",
+    "tryOptions": "Možnosti oddělené čárkami",
+    "tryOptionsPlaceholder": "chat, kód, uvažování, psaní",
+    "tryModel": "Model",
+    "tryAuto": "Automaticky",
+    "tryRun": "Rozhodnout",
+    "tryRunning": "Rozhoduji…",
+    "tryNeedOptions": "Přidejte alespoň dvě možnosti.",
+    "tryAnswer": "Odpověď: {choice}",
+    "tryConfidence": "Jistota {value} %",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Ukázkový požadavek"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Ìpinnu",
+    "pageDesc": "Àwọn àwòṣe ìpinnu máa ń dáhùn ìbéèrè nípa ọ̀rọ̀ rẹ pẹ̀lú àṣàyàn kan, bẹ́ẹ̀ni tàbí bẹ́ẹ̀kọ́, tàbí máàkì, wọ́n sì máa ń sọ bí ó ti dá wọn lójú tó. Wọ́n ń ṣiṣẹ́ lórí àwọn bọtini Cloudflare àti OpenRouter rẹ.",
+    "endpointHint": "Pè nípasẹ̀",
+    "notRoutingHint": "— yàtọ̀ sí iwiregbe. Ìdarí iwiregbe kì í lo àwọn àwòṣe wọ̀nyí rárá.",
+    "empty": "Kò sí àwọn àwòṣe ìpinnu síbẹ̀síbẹ̀. Wọ́n ń muṣiṣẹpọ láti katalogi.",
+    "thisMonth": "{count} ní oṣù yìí",
+    "tryTitle": "Gbìyànjú rẹ̀",
+    "tryText": "Ọ̀rọ̀",
+    "tryTextPlaceholder": "react useEffect mi ń ṣiṣẹ́ lẹ́ẹ̀mejì, kí ló dé?",
+    "tryQuestion": "Ìbéèrè",
+    "tryQuestionPlaceholder": "Irú àwòṣe wo ló yẹ kó dáhùn èyí?",
+    "tryOptions": "Àwọn àṣàyàn, tí a fi kọ́mà yà sọ́tọ̀",
+    "tryOptionsPlaceholder": "iwiregbe, kóòdù, ìrònú, kíkọ",
+    "tryModel": "Àwòṣe",
+    "tryAuto": "Aládàáṣe",
+    "tryRun": "Pinnu",
+    "tryRunning": "Ó ń pinnu…",
+    "tryNeedOptions": "Ṣàfikún ó kéré tán àṣàyàn méjì.",
+    "tryAnswer": "Ìdáhùn: {choice}",
+    "tryConfidence": "Ó dá a lójú {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Àpẹẹrẹ ìbéèrè"
   }
 }

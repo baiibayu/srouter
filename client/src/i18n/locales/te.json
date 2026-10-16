@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "నిర్ణయం",
+    "pageDesc": "నిర్ణయ మోడల్స్ మీ టెక్స్ట్ గురించిన ప్రశ్నకు ఒక ఎంపిక, అవును లేదా కాదు, లేదా స్కోరుతో సమాధానం ఇస్తాయి మరియు అవి ఎంత నమ్మకంగా ఉన్నాయో చెబుతాయి. ఇవి మీ Cloudflare మరియు OpenRouter కీలపై నడుస్తాయి.",
+    "endpointHint": "దీని ద్వారా కాల్ చేయండి",
+    "notRoutingHint": "— చాట్ నుండి వేరు. చాట్ రూటింగ్ ఈ మోడల్స్‌ను ఎప్పుడూ ఉపయోగించదు.",
+    "empty": "ఇంకా నిర్ణయ మోడల్స్ లేవు. అవి కేటలాగ్ నుండి సమకాలీకరించబడతాయి.",
+    "thisMonth": "ఈ నెల {count}",
+    "tryTitle": "ప్రయత్నించండి",
+    "tryText": "టెక్స్ట్",
+    "tryTextPlaceholder": "నా react useEffect రెండుసార్లు నడుస్తోంది, ఎందుకు?",
+    "tryQuestion": "ప్రశ్న",
+    "tryQuestionPlaceholder": "దీనికి ఏ రకమైన మోడల్ సమాధానం ఇవ్వాలి?",
+    "tryOptions": "ఎంపికలు, కామాలతో వేరు చేయండి",
+    "tryOptionsPlaceholder": "చాట్, కోడ్, తార్కికం, రచన",
+    "tryModel": "మోడల్",
+    "tryAuto": "ఆటో",
+    "tryRun": "నిర్ణయించు",
+    "tryRunning": "నిర్ణయిస్తోంది…",
+    "tryNeedOptions": "కనీసం రెండు ఎంపికలను జోడించండి.",
+    "tryAnswer": "సమాధానం: {choice}",
+    "tryConfidence": "{value}% నమ్మకం",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "ఉదాహరణ అభ్యర్థన"
   }
 }

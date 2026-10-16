@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Решения",
+    "pageDesc": "Моделите за решения отговарят на въпрос за вашия текст с избор, „да“ или „не“ или оценка и казват колко са сигурни. Работят с вашите ключове за Cloudflare и OpenRouter.",
+    "endpointHint": "Извикване чрез",
+    "notRoutingHint": "— отделно от чата. Маршрутизирането на чата никога не използва тези модели.",
+    "empty": "Все още няма модели за решения. Синхронизират се от каталога.",
+    "thisMonth": "{count} този месец",
+    "tryTitle": "Опитайте",
+    "tryText": "Текст",
+    "tryTextPlaceholder": "моят react useEffect се изпълнява два пъти, защо?",
+    "tryQuestion": "Въпрос",
+    "tryQuestionPlaceholder": "Какъв тип модел трябва да отговори на това?",
+    "tryOptions": "Опции, разделени със запетаи",
+    "tryOptionsPlaceholder": "чат, код, разсъждение, писане",
+    "tryModel": "Модел",
+    "tryAuto": "Автоматично",
+    "tryRun": "Реши",
+    "tryRunning": "Решава се…",
+    "tryNeedOptions": "Добавете поне две опции.",
+    "tryAnswer": "Отговор: {choice}",
+    "tryConfidence": "Увереност {value}%",
+    "tryServedBy": "{model} · {latency} мс",
+    "exampleTitle": "Примерна заявка"
   }
 }

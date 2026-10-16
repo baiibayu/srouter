@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Decizie",
+    "pageDesc": "Modelele de decizie răspund la o întrebare despre textul tău cu o alegere, un da sau nu, ori un scor și spun cât de sigure sunt. Rulează pe cheile tale Cloudflare și OpenRouter.",
+    "endpointHint": "Apelează prin",
+    "notRoutingHint": "— separat de chat. Rutarea chatului nu folosește niciodată aceste modele.",
+    "empty": "Încă nu există modele de decizie. Se sincronizează din catalog.",
+    "thisMonth": "{count} luna aceasta",
+    "tryTitle": "Încearcă",
+    "tryText": "Text",
+    "tryTextPlaceholder": "react useEffect-ul meu rulează de două ori, de ce?",
+    "tryQuestion": "Întrebare",
+    "tryQuestionPlaceholder": "Ce tip de model ar trebui să răspundă la asta?",
+    "tryOptions": "Opțiuni, separate prin virgule",
+    "tryOptionsPlaceholder": "chat, cod, raționament, scriere",
+    "tryModel": "Model",
+    "tryAuto": "Automat",
+    "tryRun": "Decide",
+    "tryRunning": "Se decide…",
+    "tryNeedOptions": "Adaugă cel puțin două opțiuni.",
+    "tryAnswer": "Răspuns: {choice}",
+    "tryConfidence": "Încredere {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Exemplu de cerere"
   }
 }

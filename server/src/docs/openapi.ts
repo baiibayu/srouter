@@ -38,6 +38,7 @@ export const openapiSpec = {
     { name: 'Chat', description: 'OpenAI-compatible chat and completion endpoints' },
     { name: 'Media', description: 'Image generation and text-to-speech' },
     { name: 'Search', description: 'Web search over Parallel (keyless) and your Tavily, Exa, Firecrawl and Linkup keys' },
+    { name: 'Decisions', description: 'Decision models (choice, yes/no, score) over your Cloudflare and OpenRouter keys' },
     { name: 'Responses', description: 'OpenAI Responses API (Codex CLI wire format)' },
     { name: 'Anthropic', description: 'Anthropic Messages API (Claude Code and the Anthropic SDKs)' },
     { name: 'Models', description: 'Model discovery' },
@@ -262,6 +263,117 @@ export const openapiSpec = {
                           object: { type: 'string', example: 'search_engine' },
                           provider: { type: 'string', example: 'tavily' },
                           name: { type: 'string' },
+                          available: { type: 'boolean' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+        },
+      },
+    },
+    '/v1/decisions': {
+      post: {
+        tags: ['Decisions'],
+        operationId: 'createDecision',
+        summary: 'Ask a decision model',
+        description:
+          'Ask typed questions about `state` and get probabilities back instead of generated text: pick one option ' +
+          '(`choice`), yes/no (`noul`) or a rating on a rubric (`score`). Served by the decision models in the catalog ' +
+          '(Cloudflare Clef Flash, OpenRouter Mercury Decide) on your Cloudflare and OpenRouter keys. Omit `model` (or set ' +
+          '`auto`) to fail over across models that have a key. `POST /v1/systemone` is an alias. Chat routing never uses these models.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['state', 'questions'],
+                properties: {
+                  model: { type: 'string', description: 'A model id from GET /v1/decisions/models, or `auto`.' },
+                  state: { description: 'The text or structured data (object/array) to decide about.', example: 'my react useEffect runs twice, why?' },
+                  questions: {
+                    type: 'object',
+                    description: '1 to 64 questions keyed by your own id; answers come back under the same ids.',
+                    additionalProperties: {
+                      type: 'object',
+                      required: ['type', 'instructions'],
+                      properties: {
+                        type: { type: 'string', enum: ['choice', 'noul', 'score'] },
+                        instructions: { description: 'The question to answer.' },
+                        criteria: {
+                          description: 'choice: a map of option id to description. score: an ordered array of levels, lowest first. noul: optional { true, false } descriptions.',
+                        },
+                      },
+                    },
+                    example: { tier: { type: 'choice', instructions: 'Which model tier should answer this?', criteria: { light: 'Casual chat', code: 'Coding' } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Answers from the first decision model that responded.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    object: { type: 'string', example: 'decision' },
+                    model: { type: 'string', example: '@cf/cloudflare/clef-flash' },
+                    provider: { type: 'string', example: 'cloudflare' },
+                    answers: {
+                      type: 'object',
+                      additionalProperties: { type: 'object' },
+                      example: { tier: { type: 'choice', choice: 'code', probabilities: { light: 0.01, code: 0.99 }, confidence: 0.95 } },
+                    },
+                    usage: {
+                      type: 'object',
+                      properties: { input_tokens: { type: 'integer' }, output_tokens: { type: 'integer' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '429': { $ref: '#/components/responses/RateLimited' },
+          '502': { $ref: '#/components/responses/UpstreamError' },
+        },
+      },
+    },
+    '/v1/decisions/models': {
+      get: {
+        tags: ['Decisions'],
+        operationId: 'listDecisionModels',
+        summary: 'List decision models',
+        description: 'The enabled decision models, in failover order, and whether each has a usable key.',
+        responses: {
+          '200': {
+            description: 'Decision models.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    object: { type: 'string', example: 'list' },
+                    data: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', example: '@cf/cloudflare/clef-flash' },
+                          object: { type: 'string', example: 'decision_model' },
+                          provider: { type: 'string', example: 'cloudflare' },
+                          name: { type: 'string' },
+                          context_window: { type: 'integer', nullable: true },
                           available: { type: 'boolean' },
                         },
                       },

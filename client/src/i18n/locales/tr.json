@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Karar",
+    "pageDesc": "Karar modelleri metninizle ilgili bir soruyu bir seçimle, evet ya da hayırla veya bir puanla yanıtlar ve ne kadar emin olduklarını söyler. Cloudflare ve OpenRouter anahtarlarınızla çalışırlar.",
+    "endpointHint": "Şununla çağır:",
+    "notRoutingHint": "— sohbetten ayrı. Sohbet yönlendirmesi bu modelleri asla kullanmaz.",
+    "empty": "Henüz karar modeli yok. Katalogdan senkronize edilirler.",
+    "thisMonth": "Bu ay {count}",
+    "tryTitle": "Deneyin",
+    "tryText": "Metin",
+    "tryTextPlaceholder": "react useEffect'im iki kez çalışıyor, neden?",
+    "tryQuestion": "Soru",
+    "tryQuestionPlaceholder": "Bunu hangi tür model yanıtlamalı?",
+    "tryOptions": "Virgülle ayrılmış seçenekler",
+    "tryOptionsPlaceholder": "sohbet, kod, akıl yürütme, yazma",
+    "tryModel": "Model",
+    "tryAuto": "Otomatik",
+    "tryRun": "Karar ver",
+    "tryRunning": "Karar veriliyor…",
+    "tryNeedOptions": "En az iki seçenek ekleyin.",
+    "tryAnswer": "Yanıt: {choice}",
+    "tryConfidence": "%{value} emin",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Örnek istek"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "തീരുമാനം",
+    "pageDesc": "തീരുമാന മോഡലുകൾ നിങ്ങളുടെ ടെക്സ്റ്റിനെക്കുറിച്ചുള്ള ചോദ്യത്തിന് ഒരു തിരഞ്ഞെടുപ്പ്, അതെ അല്ലെങ്കിൽ അല്ല, അല്ലെങ്കിൽ ഒരു സ്കോർ ഉപയോഗിച്ച് ഉത്തരം നൽകുകയും എത്രത്തോളം ഉറപ്പുണ്ടെന്ന് പറയുകയും ചെയ്യുന്നു. ഇവ നിങ്ങളുടെ Cloudflare, OpenRouter കീകളിൽ പ്രവർത്തിക്കുന്നു.",
+    "endpointHint": "ഇതുവഴി വിളിക്കുക",
+    "notRoutingHint": "— ചാറ്റിൽ നിന്ന് വേറിട്ടത്. ചാറ്റ് റൂട്ടിംഗ് ഈ മോഡലുകൾ ഒരിക്കലും ഉപയോഗിക്കില്ല.",
+    "empty": "ഇതുവരെ തീരുമാന മോഡലുകളൊന്നുമില്ല. കാറ്റലോഗിൽ നിന്ന് അവ സമന്വയിപ്പിക്കുന്നു.",
+    "thisMonth": "ഈ മാസം {count}",
+    "tryTitle": "പരീക്ഷിക്കുക",
+    "tryText": "ടെക്സ്റ്റ്",
+    "tryTextPlaceholder": "എന്റെ react useEffect രണ്ടുതവണ പ്രവർത്തിക്കുന്നു, എന്തുകൊണ്ട്?",
+    "tryQuestion": "ചോദ്യം",
+    "tryQuestionPlaceholder": "ഏതുതരം മോഡലാണ് ഇതിന് ഉത്തരം നൽകേണ്ടത്?",
+    "tryOptions": "ഓപ്ഷനുകൾ, കോമ ഉപയോഗിച്ച് വേർതിരിക്കുക",
+    "tryOptionsPlaceholder": "ചാറ്റ്, കോഡ്, യുക്തി, എഴുത്ത്",
+    "tryModel": "മോഡൽ",
+    "tryAuto": "ഓട്ടോ",
+    "tryRun": "തീരുമാനിക്കുക",
+    "tryRunning": "തീരുമാനിക്കുന്നു…",
+    "tryNeedOptions": "കുറഞ്ഞത് രണ്ട് ഓപ്ഷനുകൾ ചേർക്കുക.",
+    "tryAnswer": "ഉത്തരം: {choice}",
+    "tryConfidence": "{value}% ഉറപ്പ്",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "ഉദാഹരണ അഭ്യർത്ഥന"
   }
 }

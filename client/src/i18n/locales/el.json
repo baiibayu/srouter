@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Απόφαση",
+    "pageDesc": "Τα μοντέλα απόφασης απαντούν σε μια ερώτηση για το κείμενό σας με μια επιλογή, ένα ναι ή όχι ή μια βαθμολογία και λένε πόσο σίγουρα είναι. Λειτουργούν με τα κλειδιά σας Cloudflare και OpenRouter.",
+    "endpointHint": "Κλήση μέσω",
+    "notRoutingHint": "— ξεχωριστά από τη συνομιλία. Η δρομολόγηση της συνομιλίας δεν χρησιμοποιεί ποτέ αυτά τα μοντέλα.",
+    "empty": "Δεν υπάρχουν ακόμη μοντέλα απόφασης. Συγχρονίζονται από τον κατάλογο.",
+    "thisMonth": "{count} αυτόν τον μήνα",
+    "tryTitle": "Δοκιμάστε το",
+    "tryText": "Κείμενο",
+    "tryTextPlaceholder": "το react useEffect μου τρέχει δύο φορές, γιατί;",
+    "tryQuestion": "Ερώτηση",
+    "tryQuestionPlaceholder": "Τι είδους μοντέλο πρέπει να απαντήσει σε αυτό;",
+    "tryOptions": "Επιλογές, χωρισμένες με κόμματα",
+    "tryOptionsPlaceholder": "συνομιλία, κώδικας, συλλογισμός, γραφή",
+    "tryModel": "Μοντέλο",
+    "tryAuto": "Αυτόματο",
+    "tryRun": "Απόφαση",
+    "tryRunning": "Λήψη απόφασης…",
+    "tryNeedOptions": "Προσθέστε τουλάχιστον δύο επιλογές.",
+    "tryAnswer": "Απάντηση: {choice}",
+    "tryConfidence": "Βεβαιότητα {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Παράδειγμα αιτήματος"
   }
 }

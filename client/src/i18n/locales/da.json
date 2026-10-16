@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Beslutning",
+    "pageDesc": "Beslutningsmodeller besvarer et spørgsmål om din tekst med et valg, et ja eller nej eller en score og fortæller, hvor sikre de er. De kører på dine Cloudflare- og OpenRouter-nøgler.",
+    "endpointHint": "Kald via",
+    "notRoutingHint": "— adskilt fra chat. Chat-routing bruger aldrig disse modeller.",
+    "empty": "Ingen beslutningsmodeller endnu. De synkroniserer fra kataloget.",
+    "thisMonth": "{count} denne måned",
+    "tryTitle": "Prøv det",
+    "tryText": "Tekst",
+    "tryTextPlaceholder": "min react useEffect kører to gange, hvorfor?",
+    "tryQuestion": "Spørgsmål",
+    "tryQuestionPlaceholder": "Hvilken slags model bør besvare dette?",
+    "tryOptions": "Valgmuligheder, adskilt med kommaer",
+    "tryOptionsPlaceholder": "chat, kode, ræsonnement, skrivning",
+    "tryModel": "Model",
+    "tryAuto": "Auto",
+    "tryRun": "Beslut",
+    "tryRunning": "Beslutter…",
+    "tryNeedOptions": "Tilføj mindst to valgmuligheder.",
+    "tryAnswer": "Svar: {choice}",
+    "tryConfidence": "{value} % sikker",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Eksempel på anmodning"
   }
 }

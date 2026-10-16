@@ -815,3 +815,85 @@ describe('applyCatalog: searchEngines', () => {
     expect(reapplyCachedCatalog().reapplied).toBe(false);
   });
 });
+
+// Decision models ride their own optional registry into media_models with
+// modality 'decision', on the same rules as search engines.
+describe('applyCatalog: decisionModels', () => {
+  type CatalogDecision = NonNullable<AnyCatalog['decisionModels']>[number];
+
+  beforeAll(() => {
+    process.env.ENCRYPTION_KEY = '0'.repeat(64);
+    initDb(':memory:');
+  });
+
+  function decisionRoster(): CatalogDecision[] {
+    return [
+      {
+        platform: 'cloudflare', modelId: '@cf/cloudflare/clef-flash', displayName: 'Clef Flash', priority: 0, enabled: true,
+        quotaLabel: 'Workers AI free daily neurons', contextWindow: 24576, premiumSince: '2026-09-15T00:00:00.000Z',
+      },
+      {
+        platform: 'openrouter', modelId: 'inception/mercury-decide:free', displayName: 'Mercury Decide (free)', priority: 1, enabled: true,
+      },
+    ];
+  }
+
+  function decisionCatalog(entries?: CatalogDecision[]): AnyCatalog {
+    const catalog = catalogOf(existingAsCatalogModels());
+    if (entries) catalog.decisionModels = entries;
+    return catalog;
+  }
+
+  function decisionRows(): Array<{ platform: string; model_id: string; enabled: number; quota_label: string; meta_json: string | null }> {
+    return getDb().prepare(`
+      SELECT platform, model_id, enabled, quota_label, meta_json
+        FROM media_models WHERE modality = 'decision' ORDER BY priority, id
+    `).all() as any;
+  }
+
+  it('ships no decision models until a catalog carries the registry', () => {
+    expect(decisionRows()).toEqual([]);
+  });
+
+  it('applies the registry as a full snapshot with metadata in meta_json', () => {
+    applyCatalog(getDb(), decisionCatalog(decisionRoster()));
+    expect(decisionRows().map(r => `${r.platform}:${r.model_id}`))
+      .toEqual(['cloudflare:@cf/cloudflare/clef-flash', 'openrouter:inception/mercury-decide:free']);
+    expect(JSON.parse(decisionRows()[0].meta_json!)).toEqual({ contextWindow: 24576, premiumSince: '2026-09-15T00:00:00.000Z' });
+  });
+
+  it('never adds decision models to the chat models table', () => {
+    const chat = getDb().prepare("SELECT COUNT(*) AS n FROM models WHERE model_id IN ('@cf/cloudflare/clef-flash', 'inception/mercury-decide:free')").get() as { n: number };
+    expect(chat.n).toBe(0);
+  });
+
+  it('keeps existing rows when a catalog omits the registry, prunes on an empty one', () => {
+    applyCatalog(getDb(), decisionCatalog(undefined));
+    expect(decisionRows()).toHaveLength(2);
+    applyCatalog(getDb(), decisionCatalog([]));
+    expect(decisionRows()).toEqual([]);
+    applyCatalog(getDb(), decisionCatalog(decisionRoster()));
+    expect(decisionRows()).toHaveLength(2);
+  });
+
+  it('keeps a local disable across catalog applies', () => {
+    getDb().prepare("UPDATE media_models SET enabled = 0 WHERE model_id = 'inception/mercury-decide:free'").run();
+    applyCatalog(getDb(), decisionCatalog(decisionRoster()));
+    expect(decisionRows().find(r => r.platform === 'openrouter')!.enabled).toBe(0);
+  });
+
+  it('skips a model whose platform has no decision adapter in this binary', () => {
+    const roster = decisionRoster();
+    roster.push({ platform: 'groq', modelId: 'some-decider', displayName: 'Nope', priority: 5, enabled: true });
+    const counts = applyCatalog(getDb(), decisionCatalog(roster));
+    expect(counts.skippedUnknownPlatform).toBeGreaterThanOrEqual(1);
+    expect(decisionRows().map(r => r.model_id)).not.toContain('some-decider');
+  });
+
+  it('rejects a malformed decisionModels entry before applying the cached catalog', () => {
+    const catalog = decisionCatalog(decisionRoster());
+    (catalog.decisionModels![0] as any).enabled = 'yes';
+    setSetting('catalog_applied_json', JSON.stringify(catalog));
+    expect(reapplyCachedCatalog().reapplied).toBe(false);
+  });
+});

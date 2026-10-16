@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Решения",
+    "pageDesc": "Модели решений отвечают на вопрос о вашем тексте выбором, ответом «да» или «нет» либо оценкой и сообщают, насколько они уверены. Они работают на ваших ключах Cloudflare и OpenRouter.",
+    "endpointHint": "Вызов через",
+    "notRoutingHint": "— отдельно от чата. Маршрутизация чата никогда не использует эти модели.",
+    "empty": "Моделей решений пока нет. Они синхронизируются из каталога.",
+    "thisMonth": "{count} в этом месяце",
+    "tryTitle": "Попробовать",
+    "tryText": "Текст",
+    "tryTextPlaceholder": "мой react useEffect запускается дважды, почему?",
+    "tryQuestion": "Вопрос",
+    "tryQuestionPlaceholder": "Какая модель должна ответить на это?",
+    "tryOptions": "Варианты через запятую",
+    "tryOptionsPlaceholder": "чат, код, рассуждение, письмо",
+    "tryModel": "Модель",
+    "tryAuto": "Авто",
+    "tryRun": "Решить",
+    "tryRunning": "Принимаем решение…",
+    "tryNeedOptions": "Добавьте как минимум два варианта.",
+    "tryAnswer": "Ответ: {choice}",
+    "tryConfidence": "Уверенность {value}%",
+    "tryServedBy": "{model} · {latency} мс",
+    "exampleTitle": "Пример запроса"
   }
 }

@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Päätös",
+    "pageDesc": "Päätösmallit vastaavat tekstiäsi koskevaan kysymykseen valinnalla, kyllä- tai ei-vastauksella tai pisteillä ja kertovat, kuinka varmoja ne ovat. Ne toimivat Cloudflare- ja OpenRouter-avaimillasi.",
+    "endpointHint": "Kutsu osoitteessa",
+    "notRoutingHint": "— erillään chatista. Chatin reititys ei koskaan käytä näitä malleja.",
+    "empty": "Ei vielä päätösmalleja. Ne synkronoituvat katalogista.",
+    "thisMonth": "{count} tässä kuussa",
+    "tryTitle": "Kokeile",
+    "tryText": "Teksti",
+    "tryTextPlaceholder": "react useEffect ajetaan kahdesti, miksi?",
+    "tryQuestion": "Kysymys",
+    "tryQuestionPlaceholder": "Minkä tyyppisen mallin pitäisi vastata tähän?",
+    "tryOptions": "Vaihtoehdot pilkuilla erotettuina",
+    "tryOptionsPlaceholder": "chat, koodi, päättely, kirjoittaminen",
+    "tryModel": "Malli",
+    "tryAuto": "Automaattinen",
+    "tryRun": "Päätä",
+    "tryRunning": "Päätetään…",
+    "tryNeedOptions": "Lisää vähintään kaksi vaihtoehtoa.",
+    "tryAnswer": "Vastaus: {choice}",
+    "tryConfidence": "{value} % varma",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Esimerkkipyyntö"
   }
 }

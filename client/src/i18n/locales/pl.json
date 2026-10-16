@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Decyzja",
+    "pageDesc": "Modele decyzyjne odpowiadają na pytanie o Twój tekst wyborem, odpowiedzią tak lub nie albo oceną i podają, jak bardzo są pewne. Działają na Twoich kluczach Cloudflare i OpenRouter.",
+    "endpointHint": "Wywołaj przez",
+    "notRoutingHint": "— oddzielnie od czatu. Routing czatu nigdy nie używa tych modeli.",
+    "empty": "Nie ma jeszcze modeli decyzyjnych. Synchronizują się z katalogiem.",
+    "thisMonth": "{count} w tym miesiącu",
+    "tryTitle": "Wypróbuj",
+    "tryText": "Tekst",
+    "tryTextPlaceholder": "mój react useEffect uruchamia się dwa razy, dlaczego?",
+    "tryQuestion": "Pytanie",
+    "tryQuestionPlaceholder": "Jaki rodzaj modelu powinien na to odpowiedzieć?",
+    "tryOptions": "Opcje oddzielone przecinkami",
+    "tryOptionsPlaceholder": "czat, kod, rozumowanie, pisanie",
+    "tryModel": "Model",
+    "tryAuto": "Automatycznie",
+    "tryRun": "Zdecyduj",
+    "tryRunning": "Decydowanie…",
+    "tryNeedOptions": "Dodaj co najmniej dwie opcje.",
+    "tryAnswer": "Odpowiedź: {choice}",
+    "tryConfidence": "Pewność: {value}%",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Przykładowe żądanie"
   }
 }

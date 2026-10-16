@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "সিদ্ধান্ত",
+    "pageDesc": "সিদ্ধান্ত মডেল আপনার লেখা নিয়ে একটি প্রশ্নের উত্তর একটি বিকল্প, হ্যাঁ বা না, অথবা একটি স্কোর দিয়ে দেয় এবং জানায় তারা কতটা নিশ্চিত। এগুলো আপনার Cloudflare ও OpenRouter চাবি দিয়ে চলে।",
+    "endpointHint": "এর মাধ্যমে কল করুন",
+    "notRoutingHint": "— চ্যাট থেকে আলাদা। চ্যাট রাউটিং কখনো এই মডেলগুলো ব্যবহার করে না।",
+    "empty": "এখনো কোনো সিদ্ধান্ত মডেল নেই। এগুলো ক্যাটালগ থেকে সিঙ্ক হয়।",
+    "thisMonth": "এই মাসে {count}",
+    "tryTitle": "চেষ্টা করুন",
+    "tryText": "টেক্সট",
+    "tryTextPlaceholder": "আমার react useEffect দুইবার চলে, কেন?",
+    "tryQuestion": "প্রশ্ন",
+    "tryQuestionPlaceholder": "কোন ধরনের মডেলের এর উত্তর দেওয়া উচিত?",
+    "tryOptions": "বিকল্প, কমা দিয়ে আলাদা করুন",
+    "tryOptionsPlaceholder": "চ্যাট, কোড, যুক্তি, লেখা",
+    "tryModel": "মডেল",
+    "tryAuto": "স্বয়ংক্রিয়",
+    "tryRun": "সিদ্ধান্ত নিন",
+    "tryRunning": "সিদ্ধান্ত নেওয়া হচ্ছে…",
+    "tryNeedOptions": "অন্তত দুটি বিকল্প যোগ করুন।",
+    "tryAnswer": "উত্তর: {choice}",
+    "tryConfidence": "{value}% নিশ্চিত",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "উদাহরণ অনুরোধ"
   }
 }

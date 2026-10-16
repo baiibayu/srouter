@@ -1377,5 +1377,29 @@
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
     "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+  },
+  "decision": {
+    "tab": "Beslutning",
+    "pageDesc": "Beslutningsmodeller svarer på et spørsmål om teksten din med et valg, et ja eller nei eller en poengsum, og sier hvor sikre de er. De kjører på Cloudflare- og OpenRouter-nøklene dine.",
+    "endpointHint": "Kall via",
+    "notRoutingHint": "— atskilt fra chat. Chat-ruting bruker aldri disse modellene.",
+    "empty": "Ingen beslutningsmodeller ennå. De synkroniserer fra katalogen.",
+    "thisMonth": "{count} denne måneden",
+    "tryTitle": "Prøv det",
+    "tryText": "Tekst",
+    "tryTextPlaceholder": "react useEffect-en min kjører to ganger, hvorfor?",
+    "tryQuestion": "Spørsmål",
+    "tryQuestionPlaceholder": "Hva slags modell bør svare på dette?",
+    "tryOptions": "Alternativer, adskilt med komma",
+    "tryOptionsPlaceholder": "chat, kode, resonnering, skriving",
+    "tryModel": "Modell",
+    "tryAuto": "Auto",
+    "tryRun": "Bestem",
+    "tryRunning": "Bestemmer…",
+    "tryNeedOptions": "Legg til minst to alternativer.",
+    "tryAnswer": "Svar: {choice}",
+    "tryConfidence": "{value} % sikker",
+    "tryServedBy": "{model} · {latency} ms",
+    "exampleTitle": "Eksempelforespørsel"
   }
 }
