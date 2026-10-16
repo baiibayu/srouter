@@ -187,7 +187,7 @@ SRouter includes automated configuration generators (`setup-*`) that inspect you
 <td align="center"><img src="repo-assets/agents/aider.png" width="64" alt="Aider"><br/><b>Aider</b></td>
 </tr>
 <tr>
-<td align="center"><img src="repo-assets/agents/opencode.png" width="64" alt="OpenCode"><br/><b>Buka OpenCode</b></td>
+<td align="center"><img src="repo-assets/agents/opencode.png" width="64" alt="OpenCode"><br/><b>OpenCode</b></td>
 <td align="center"><img src="repo-assets/agents/gemini-cli.png" width="64" alt="Gemini CLI"><br/><b>Gemini CLI</b></td>
 <td align="center"><img src="repo-assets/agents/roo-code.png" width="64" alt="Roo Code"><br/><b>Roo Code</b></td>
 <td align="center"><img src="repo-assets/agents/kilo-code.png" width="64" alt="Kilo Code"><br/><b>Kilo Code</b></td>
@@ -195,7 +195,7 @@ SRouter includes automated configuration generators (`setup-*`) that inspect you
 <td align="center"><img src="repo-assets/agents/jetbrains.png" width="64" alt="JetBrains"><br/><b>JetBrains</b></td>
 </tr>
 <tr>
-<td align="center"><img src="repo-assets/agents/goose.png" width="64" alt="Goose"><br/><b>Buka Goose</b></td>
+<td align="center"><img src="repo-assets/agents/goose.png" width="64" alt="Goose"><br/><b>Goose</b></td>
 <td align="center"><img src="repo-assets/agents/qwen-code.png" width="64" alt="Qwen Code"><br/><b>Qwen Code</b></td>
 <td align="center"><img src="repo-assets/agents/crush.png" width="64" alt="Crush"><br/><b>Crush</b></td>
 <td align="center"><img src="repo-assets/agents/factory-droid.png" width="64" alt="Factory Droid"><br/><b>Factory Droid</b></td>
@@ -226,7 +226,7 @@ npx srouter setup-claude --url http://localhost:20268 --api-key <your-unified-ke
 | **Codex CLI** | `npx srouter setup-codex` or `srouter launch-codex` | `http://localhost:20268/v1` | Native `/v1/responses` format |
 | **Aider** | `npx srouter setup-aider` | `http://localhost:20268/v1` | OpenAI Chat Completions |
 | **Continue.dev** | `npx srouter setup-continue` | `http://localhost:20268/v1` | Chat + Ghost-text completions |
-**OpenCode** | `npx srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions | Buka OpenCode
+| **OpenCode** | `npx srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions |
 | **Gemini CLI** | Native `/v1beta` | `http://localhost:20268` | Native `generateContent` format |
 | **Zed / JetBrains AI** | Ollama Emulation | `http://localhost:20268` | Native NDJSON Ollama API |
 
