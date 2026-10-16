@@ -218,5 +218,49 @@
     "command": "setup-generic",
     "docsUrl": "https://platform.openai.com/docs/api-reference/chat",
     "modelBehavior": "default"
+  },
+  {
+    "id": "zed",
+    "name": "Zed",
+    "category": "code",
+    "configType": "guide",
+    "protocol": "OpenAI Chat",
+    "baseUrlSupport": "/v1",
+    "command": "setup-zed",
+    "docsUrl": "https://zed.dev/docs",
+    "modelBehavior": "default"
+  },
+  {
+    "id": "jetbrains",
+    "name": "JetBrains",
+    "category": "code",
+    "configType": "guide",
+    "protocol": "OpenAI Chat",
+    "baseUrlSupport": "/v1",
+    "command": "setup-jetbrains",
+    "docsUrl": "https://www.jetbrains.com/help/ai/ai-assistant.html",
+    "modelBehavior": "default"
+  },
+  {
+    "id": "openclaude",
+    "name": "OpenClaude",
+    "category": "code",
+    "configType": "file",
+    "protocol": "Anthropic Messages",
+    "baseUrlSupport": "root",
+    "command": "setup-openclaude",
+    "docsUrl": "https://github.com/baiibayu/openclaude",
+    "modelBehavior": "default"
+  },
+  {
+    "id": "atomcode",
+    "name": "AtomCode",
+    "category": "code",
+    "configType": "file",
+    "protocol": "OpenAI Chat",
+    "baseUrlSupport": "/v1",
+    "command": "setup-atomcode",
+    "docsUrl": "https://atom.io",
+    "modelBehavior": "default"
   }
 ]

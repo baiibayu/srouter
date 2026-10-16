@@ -1,3 +1,9 @@
+## 2026-10-15 — 0.1.2
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `pending` | 2026-10-15 | feat(agents): add Zed, JetBrains, OpenClaude and AtomCode to the coding-agent catalog (20 -> 24). README already carried the logos for zed, jetbrains and atomcode; openclaude has no published mark and renders as a lettermark for now. |
+
 ## 2026-10-15 — 0.1.1
 
 | Commit | Date | Summary |

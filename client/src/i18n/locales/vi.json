@@ -1227,7 +1227,11 @@
       "hermes": "Tác nhân tự cải thiện của Nous Research với bộ nhớ lâu dài và kỹ năng, trong dòng lệnh hoặc trên các ứng dụng chat.",
       "pi": "Một tác nhân dòng lệnh tối giản mà bạn định hình bằng tiện ích mở rộng, kỹ năng và mẫu prompt của riêng mình.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
-      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
+      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
+      "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
+      "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
+      "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
     },
     "modelNoteFull": "Thiết lập đưa vào tất cả các mô hình (auto, auto:*, fusion)",
     "modelNoteDefault": "Thiết lập chỉ đưa vào auto — chọn mô hình khác qua giao diện agent"

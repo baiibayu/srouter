@@ -1227,7 +1227,11 @@
       "hermes": "Самосовершенствующийся агент от Nous Research с постоянной памятью и навыками — в терминале или в чат-приложениях.",
       "pi": "Минималистичный терминальный агент, который вы настраиваете своими расширениями, навыками и шаблонами промптов.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
-      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
+      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
+      "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
+      "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
+      "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
     },
     "modelNoteFull": "Настройка добавляет все модели (auto, auto:*, fusion)",
     "modelNoteDefault": "Настройка добавляет только auto — остальные модели выбирайте в интерфейсе агента"

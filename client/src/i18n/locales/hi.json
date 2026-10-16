@@ -1227,7 +1227,11 @@
       "hermes": "Nous Research का खुद को बेहतर बनाने वाला एजेंट, स्थायी मेमोरी और स्किल्स के साथ, टर्मिनल में या चैट ऐप्स पर।",
       "pi": "एक न्यूनतम टर्मिनल एजेंट, जिसे आप अपने एक्सटेंशन, स्किल्स और प्रॉम्प्ट टेम्पलेट से ढालते हैं।",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
-      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
+      "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
+      "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
+      "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
+      "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
+      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways."
     },
     "modelNoteFull": "सेटअप सभी मॉडल लाता है (auto, auto:*, fusion)",
     "modelNoteDefault": "सेटअप केवल auto लाता है — अन्य मॉडल एजेंट UI से चुनें"

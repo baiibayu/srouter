@@ -931,6 +931,52 @@ function cursor(_ctx: GenerateContext): Generation {
   };
 }
 
+function zed(_ctx: GenerateContext): Generation {
+  return {
+    files: [],
+    notes: [
+      'Zed is a high-performance editor built in Rust with real-time multi-agent collaboration.',
+      'Zed speaks the OpenAI chat API directly, so connect it as an OpenAI-compatible assistant provider.',
+      `Set the base URL to ${v1Url('http://localhost:20268')}/v1 and the API key to your unified key.`,
+      'Zed reads models from the endpoint on connect, so the catalog appears in its model picker automatically.',
+    ],
+  };
+}
+
+function jetbrains(_ctx: GenerateContext): Generation {
+  return {
+    files: [],
+    notes: [
+      'JetBrains AI Assistant works across IntelliJ IDEA, Rider, WebStorm, PyCharm and the rest of the family.',
+      'Point the assistant at this gateway as an OpenAI-compatible custom endpoint.',
+      `Set the base URL to ${v1Url('http://localhost:20268')}/v1 and the API key to your unified key.`,
+      'The IDE fetches the model list from the endpoint, so your catalog shows up in the model dropdown.',
+    ],
+  };
+}
+
+function openclaude(_ctx: GenerateContext): Generation {
+  return {
+    files: [],
+    notes: [
+      'OpenClaude is a Claude-compatible CLI that routes through an OpenAI-compatible gateway.',
+      `Set OPENAI_BASE_URL=${v1Url('http://localhost:20268')}/v1 and OPENAI_API_KEY to your unified key.`,
+      'OpenClaude then speaks Claude-style tool calls through the gateway, which translates them to the upstream provider.',
+    ],
+  };
+}
+
+function atomcode(_ctx: GenerateContext): Generation {
+  return {
+    files: [],
+    notes: [
+      'AtomCode is an extension for Atom IDE that integrates with OpenAI-compatible gateways.',
+      `Set the base URL to ${v1Url('http://localhost:20268')}/v1 and the API key to your unified key.`,
+      'AtomCode fetches models from the gateway automatically.',
+    ],
+  };
+}
+
 function ohMyPi(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   const dir = posixPath(ctx.homeDir, '.omp', 'agent');
@@ -1033,6 +1079,10 @@ const metadata = [
   ['pi', 'Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-pi', 'https://pi.dev/docs/latest/models', pi],
   ['droid', 'Factory Droid', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-droid', 'https://docs.factory.ai/droid-cli/quickstart', factoryDroid],
   ['cursor', 'Cursor', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-cursor', 'https://docs.cursor.com', cursor],
+  ['zed', 'Zed', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-zed', 'https://zed.dev/docs', zed],
+  ['jetbrains', 'JetBrains', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-jetbrains', 'https://www.jetbrains.com/help/ai/ai-assistant.html', jetbrains],
+  ['openclaude', 'OpenClaude', 'code', 'file', 'Anthropic Messages', 'root', 'setup-openclaude', 'https://github.com/baiibayu/openclaude', openclaude],
+  ['atomcode', 'AtomCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atom.io', atomcode],
   ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://platform.openai.com/docs/api-reference/chat', generic],
 ] as const;
 
