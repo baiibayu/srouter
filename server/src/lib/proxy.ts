@@ -177,11 +177,11 @@ export function detectSystemProxy(): { url: string; source: string } {
     if (process.platform === 'win32') {
       const enable = execFileSync(
         'reg', ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', '/v', 'ProxyEnable'],
-        { encoding: 'utf8', timeout: 2000 },
+        { encoding: 'utf8', timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'] },
       );
       const server = execFileSync(
         'reg', ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', '/v', 'ProxyServer'],
-        { encoding: 'utf8', timeout: 2000 },
+        { encoding: 'utf8', timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'] },
       );
       return parseRegProxy(enable, server);
     }
