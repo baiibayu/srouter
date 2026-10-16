@@ -68,12 +68,12 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           # `npm view` exits non-zero for an unpublished name/version; an empty
           # result is the signal to publish, not an error.
-          PUBLISHED=$(npm view "srouter@$VERSION" version 2>/dev/null || true)
+          PUBLISHED=$(npm view "@baiibayu/srouter@$VERSION" version 2>/dev/null || true)
           if [ -n "$PUBLISHED" ]; then
-            echo "srouter@$VERSION is already on the registry — nothing to do."
+            echo "@baiibayu/srouter@$VERSION is already on the registry — nothing to do."
             echo "should-publish=false" >> "$GITHUB_OUTPUT"
           else
-            echo "srouter@$VERSION is not published yet."
+            echo "@baiibayu/srouter@$VERSION is not published yet."
             echo "should-publish=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -110,7 +110,7 @@ jobs:
         run: |
           V="${{ steps.version.outputs.version }}"
           if [ "${{ steps.version.outputs.should-publish }}" = "true" ]; then
-            echo "Published srouter@$V" >> "$GITHUB_STEP_SUMMARY"
+            echo "Published @baiibayu/srouter@$V" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "srouter@$V is already on the registry — skipped." >> "$GITHUB_STEP_SUMMARY"
+            echo "@baiibayu/srouter@$V is already on the registry — skipped." >> "$GITHUB_STEP_SUMMARY"
           fi
