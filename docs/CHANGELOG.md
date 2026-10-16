@@ -2,22 +2,22 @@
 
 | Commit | Date | Summary |
 | --- | --- | --- |
-| `pending` | 2026-10-15 | feat(agents): add Zed, JetBrains, OpenClaude and AtomCode to the coding-agent catalog (20 -> 24). README already carried the logos for zed, jetbrains and atomcode; openclaude has no published mark and renders as a lettermark for now. |
-| `pending` | 2026-10-15 | feat(agents): add logos for Zed, JetBrains, OpenClaude and AtomCode on the `/agents` page; move Generic OpenAI client to the last position in the catalog. |
-| `pending` | 2026-10-15 | fix(agents): replace OpenCode and Goose placeholder icons with their official published logos (OpenCode mark from `packages/identity/mark.svg`; Goose logo from `aaif-goose/goose`). |
-| `pending` | 2026-10-15 | fix(agents): OpenClaude — official logo from `Twigpine/openclaude` (`web/public/openclaude.png`), docs URL `https://openclaude.twigpine.com/docs/quickstart/`, protocol OpenAI Chat (was incorrectly Anthropic Messages), base URL `/v1`. |
-| `pending` | 2026-10-15 | fix(cli): `setup-zed`, `setup-jetbrains`, `setup-openclaude`, `setup-atomcode` — use `ctx.url` instead of hardcoded `localhost:20268`, and drop the duplicate `/v1` suffix that produced `/v1/v1` in the printed base URL. |
-| `pending` | 2026-10-15 | fix(cli): add `modelBehavior` to `ToolDefinition`, `tools.json` and the tool metadata catalog so the dashboard-metadata sync test passes again (the field was introduced in 0.1.1 on the client side only). |
-| `pending` | 2026-10-15 | fix(readme): revert incorrect branding introduced by an external tool — "OpenCode" and "Goose" names were mistranslated to "Buka OpenCode"/"Buka Goose" and a table row was corrupted; restore correct brand names. |
+| `1743272e` | 2026-10-15 | feat(agents): add Zed, JetBrains, OpenClaude and AtomCode to the coding-agent catalog (20 -> 24). README already carried the logos for zed, jetbrains and atomcode; openclaude has no published mark and renders as a lettermark for now. |
+| `3b1f9c44` | 2026-10-15 | feat(agents): add logos for Zed, JetBrains, OpenClaude and AtomCode on the `/agents` page; move Generic OpenAI client to the last position in the catalog. |
+| `ae19ec24` | 2026-10-15 | fix(agents): replace OpenCode and Goose placeholder icons with their official published logos (OpenCode mark from `packages/identity/mark.svg`; Goose logo from `aaif-goose/goose`). |
+| `30c4d209` | 2026-10-15 | fix(agents): OpenClaude — official logo from `Twigpine/openclaude` (`web/public/openclaude.png`), docs URL `https://openclaude.twigpine.com/docs/quickstart/`, protocol OpenAI Chat (was incorrectly Anthropic Messages), base URL `/v1`. |
+| `4d09d2c2` | 2026-10-15 | fix(cli): `setup-zed`, `setup-jetbrains`, `setup-openclaude`, `setup-atomcode` — use `ctx.url` instead of hardcoded `localhost:20268`, and drop the duplicate `/v1` suffix that produced `/v1/v1` in the printed base URL. |
+| `4d09d2c2` | 2026-10-15 | fix(cli): add `modelBehavior` to `ToolDefinition`, `tools.json` and the tool metadata catalog so the dashboard-metadata sync test passes again (the field was introduced in 0.1.1 on the client side only). |
+| `f7396c0b` | 2026-10-15 | fix(readme): revert incorrect branding introduced by an external tool — "OpenCode" and "Goose" names were mistranslated to "Buka OpenCode"/"Buka Goose" and a table row was corrupted; restore correct brand names. |
 
 ## 2026-10-15 — 0.1.1
 
 | Commit | Date | Summary |
 | --- | --- | --- |
-| `pending` | 2026-10-15 | feat(routing): expose built-in `auto:balanced/auto:smart/auto:fast/auto:reliable` chains in `GET /v1/models` so setup and the model picker offer them without going through the dashboard. `auto` still follows the Routing strategy; the `auto:<axis>` entries force a preset and bypass it. `auto:cheap` is deliberately omitted — it is an alias for `balanced`. |
-| `pending` | 2026-10-15 | refactor(i18n): shorten virtual model labels — "Auto (router picks the best available model)" → "Auto", "Fusion (panel of models...)" → "Fusion", "Auto: Default (named fallback chain)" → "Auto: Default". |
-| `pending` | 2026-10-15 | feat(agents): `/agents` cards now note whether `npx srouter setup-*` brings in every model (OpenCode, Hermes, Goose, Qwen, DeepSeek Harness, MiMo) or only `auto` (Claude Code, Codex, Cline, Continue, Aider, Roo, Kilo, Crush, Oh My Pi, OpenClaw, Pi, Factory Droid, Cursor, Generic). |
-| `pending` | 2026-10-15 | fix(client): silence TS6 deprecation for `baseUrl` (`ignoreDeprecations: "6.0"`). |
+| `975e4a87` | 2026-10-15 | feat(routing): expose built-in `auto:balanced/auto:smart/auto:fast/auto:reliable` chains in `GET /v1/models` so setup and the model picker offer them without going through the dashboard. `auto` still follows the Routing strategy; the `auto:<axis>` entries force a preset and bypass it. `auto:cheap` is deliberately omitted — it is an alias for `balanced`. |
+| `975e4a87` | 2026-10-15 | refactor(i18n): shorten virtual model labels — "Auto (router picks the best available model)" → "Auto", "Fusion (panel of models...)" → "Fusion", "Auto: Default (named fallback chain)" → "Auto: Default". |
+| `975e4a87` | 2026-10-15 | feat(agents): `/agents` cards now note whether `npx srouter setup-*` brings in every model (OpenCode, Hermes, Goose, Qwen, DeepSeek Harness, MiMo) or only `auto` (Claude Code, Codex, Cline, Continue, Aider, Roo, Kilo, Crush, Oh My Pi, OpenClaw, Pi, Factory Droid, Cursor, Generic). |
+| `975e4a87` | 2026-10-15 | fix(client): silence TS6 deprecation for `baseUrl` (`ignoreDeprecations: "6.0"`). |
 
 # Changelog
 
