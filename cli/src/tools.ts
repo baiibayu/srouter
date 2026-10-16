@@ -931,47 +931,47 @@ function cursor(_ctx: GenerateContext): Generation {
   };
 }
 
-function zed(_ctx: GenerateContext): Generation {
+function zed(ctx: GenerateContext): Generation {
   return {
     files: [],
     notes: [
       'Zed is a high-performance editor built in Rust with real-time multi-agent collaboration.',
       'Zed speaks the OpenAI chat API directly, so connect it as an OpenAI-compatible assistant provider.',
-      `Set the base URL to ${v1Url('http://localhost:20268')}/v1 and the API key to your unified key.`,
+      `Set the base URL to ${v1Url(ctx.url)} and the API key to your unified key.`,
       'Zed reads models from the endpoint on connect, so the catalog appears in its model picker automatically.',
     ],
   };
 }
 
-function jetbrains(_ctx: GenerateContext): Generation {
+function jetbrains(ctx: GenerateContext): Generation {
   return {
     files: [],
     notes: [
       'JetBrains AI Assistant works across IntelliJ IDEA, Rider, WebStorm, PyCharm and the rest of the family.',
       'Point the assistant at this gateway as an OpenAI-compatible custom endpoint.',
-      `Set the base URL to ${v1Url('http://localhost:20268')}/v1 and the API key to your unified key.`,
+      `Set the base URL to ${v1Url(ctx.url)} and the API key to your unified key.`,
       'The IDE fetches the model list from the endpoint, so your catalog shows up in the model dropdown.',
     ],
   };
 }
 
-function openclaude(_ctx: GenerateContext): Generation {
+function openclaude(ctx: GenerateContext): Generation {
   return {
     files: [],
     notes: [
       'OpenClaude is a Claude-compatible CLI that routes through an OpenAI-compatible gateway.',
-      `Set OPENAI_BASE_URL=${v1Url('http://localhost:20268')}/v1 and OPENAI_API_KEY to your unified key.`,
+      `Set OPENAI_BASE_URL=${v1Url(ctx.url)} and OPENAI_API_KEY to your unified key.`,
       'OpenClaude then speaks Claude-style tool calls through the gateway, which translates them to the upstream provider.',
     ],
   };
 }
 
-function atomcode(_ctx: GenerateContext): Generation {
+function atomcode(ctx: GenerateContext): Generation {
   return {
     files: [],
     notes: [
       'AtomCode is an extension for Atom IDE that integrates with OpenAI-compatible gateways.',
-      `Set the base URL to ${v1Url('http://localhost:20268')}/v1 and the API key to your unified key.`,
+      `Set the base URL to ${v1Url(ctx.url)} and the API key to your unified key.`,
       'AtomCode fetches models from the gateway automatically.',
     ],
   };
@@ -1060,30 +1060,30 @@ function generic(ctx: GenerateContext): Generation {
 }
 
 const metadata = [
-  ['claude', 'Claude Code', 'code', 'file', 'Anthropic Messages', 'root', 'setup-claude', 'https://docs.anthropic.com/en/docs/claude-code', claude],
-  ['codex', 'Codex CLI', 'code', 'file', 'OpenAI Responses', '/v1', 'setup-codex', 'https://developers.openai.com/codex', codex],
-  ['cline', 'Cline', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-cline', 'https://docs.cline.bot', cline],
-  ['continue', 'Continue', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-continue', 'https://docs.continue.dev', continueDev],
-  ['aider', 'Aider', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-aider', 'https://aider.chat/docs', aider],
-  ['opencode', 'OpenCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-opencode', 'https://opencode.ai/docs', opencode],
-  ['goose', 'Goose', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-goose', 'https://block.github.io/goose', goose],
-  ['qwen', 'Qwen Code', 'code', 'file', 'OpenAI or Gemini', '/v1', 'setup-qwen', 'https://qwenlm.github.io/qwen-code-docs', qwen],
-  ['roo', 'Roo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-roo', 'https://docs.roocode.com', roo],
-  ['kilo', 'Kilo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-kilo', 'https://kilocode.ai/docs', kilo],
-  ['crush', 'Crush', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-crush', 'https://github.com/charmbracelet/crush', crush],
-  ['dsh', 'DeepSeek Harness', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-dsh', 'https://github.com/deepseek-ai/deepseek-harness', dsh],
-  ['mimo', 'MiMo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-mimo', 'https://mimo.xiaomi.com/mimocode', mimo],
-  ['omp', 'Oh My Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-omp', 'https://omp.sh/docs/providers', ohMyPi],
-  ['openclaw', 'OpenClaw', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-openclaw', 'https://docs.openclaw.ai/gateway/config-tools/custom-providers', openclaw],
-  ['hermes', 'Hermes Agent', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-hermes', 'https://hermes-agent.nousresearch.com/docs/', hermes],
-  ['pi', 'Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-pi', 'https://pi.dev/docs/latest/models', pi],
-  ['droid', 'Factory Droid', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-droid', 'https://docs.factory.ai/droid-cli/quickstart', factoryDroid],
-  ['cursor', 'Cursor', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-cursor', 'https://docs.cursor.com', cursor],
-  ['zed', 'Zed', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-zed', 'https://zed.dev/docs', zed],
-  ['jetbrains', 'JetBrains', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-jetbrains', 'https://www.jetbrains.com/help/ai/ai-assistant.html', jetbrains],
-  ['openclaude', 'OpenClaude', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-openclaude', 'https://openclaude.twigpine.com/docs/quickstart/', openclaude],
-  ['atomcode', 'AtomCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atom.io', atomcode],
-  ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://platform.openai.com/docs/api-reference/chat', generic],
+  ['claude', 'Claude Code', 'code', 'file', 'Anthropic Messages', 'root', 'setup-claude', 'https://docs.anthropic.com/en/docs/claude-code', 'default', claude],
+  ['codex', 'Codex CLI', 'code', 'file', 'OpenAI Responses', '/v1', 'setup-codex', 'https://developers.openai.com/codex', 'default', codex],
+  ['cline', 'Cline', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-cline', 'https://docs.cline.bot', 'default', cline],
+  ['continue', 'Continue', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-continue', 'https://docs.continue.dev', 'default', continueDev],
+  ['aider', 'Aider', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-aider', 'https://aider.chat/docs', 'default', aider],
+  ['opencode', 'OpenCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-opencode', 'https://opencode.ai/docs', 'full', opencode],
+  ['goose', 'Goose', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-goose', 'https://block.github.io/goose', 'full', goose],
+  ['qwen', 'Qwen Code', 'code', 'file', 'OpenAI or Gemini', '/v1', 'setup-qwen', 'https://qwenlm.github.io/qwen-code-docs', 'full', qwen],
+  ['roo', 'Roo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-roo', 'https://docs.roocode.com', 'default', roo],
+  ['kilo', 'Kilo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-kilo', 'https://kilocode.ai/docs', 'default', kilo],
+  ['crush', 'Crush', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-crush', 'https://github.com/charmbracelet/crush', 'default', crush],
+  ['dsh', 'DeepSeek Harness', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-dsh', 'https://github.com/deepseek-ai/deepseek-harness', 'full', dsh],
+  ['mimo', 'MiMo Code', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-mimo', 'https://mimo.xiaomi.com/mimocode', 'full', mimo],
+  ['omp', 'Oh My Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-omp', 'https://omp.sh/docs/providers', 'default', ohMyPi],
+  ['openclaw', 'OpenClaw', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-openclaw', 'https://docs.openclaw.ai/gateway/config-tools/custom-providers', 'default', openclaw],
+  ['hermes', 'Hermes Agent', 'agent', 'file', 'OpenAI Chat', '/v1', 'setup-hermes', 'https://hermes-agent.nousresearch.com/docs/', 'full', hermes],
+  ['pi', 'Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-pi', 'https://pi.dev/docs/latest/models', 'default', pi],
+  ['droid', 'Factory Droid', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-droid', 'https://docs.factory.ai/droid-cli/quickstart', 'default', factoryDroid],
+  ['cursor', 'Cursor', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-cursor', 'https://docs.cursor.com', 'default', cursor],
+  ['zed', 'Zed', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-zed', 'https://zed.dev/docs', 'default', zed],
+  ['jetbrains', 'JetBrains', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-jetbrains', 'https://www.jetbrains.com/help/ai/ai-assistant.html', 'default', jetbrains],
+  ['openclaude', 'OpenClaude', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-openclaude', 'https://openclaude.twigpine.com/docs/quickstart/', 'default', openclaude],
+  ['atomcode', 'AtomCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atom.io', 'default', atomcode],
+  ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://platform.openai.com/docs/api-reference/chat', 'default', generic],
 ] as const;
 
 export const tools: ToolDefinition[] = metadata.map(([
@@ -1095,6 +1095,7 @@ export const tools: ToolDefinition[] = metadata.map(([
   baseUrlSupport,
   command,
   docsUrl,
+  modelBehavior,
   generate,
 ]) => ({
   id,
@@ -1105,6 +1106,7 @@ export const tools: ToolDefinition[] = metadata.map(([
   baseUrlSupport,
   command,
   docsUrl,
+  modelBehavior,
   generate,
 }));
 

@@ -21,6 +21,17 @@ model: "openai/fast-coder"
 }
 `;
 
+exports[`tool generators > setup-atomcode has stable golden output 1`] = `
+{
+  "files": [],
+  "notes": [
+    "AtomCode is an extension for Atom IDE that integrates with OpenAI-compatible gateways.",
+    "Set the base URL to http://localhost:3000/v1 and the API key to your unified key.",
+    "AtomCode fetches models from the gateway automatically.",
+  ],
+}
+`;
+
 exports[`tool generators > setup-claude has stable golden output 1`] = `
 {
   "files": [
@@ -438,6 +449,18 @@ exports[`tool generators > setup-hermes has stable golden output 1`] = `
 }
 `;
 
+exports[`tool generators > setup-jetbrains has stable golden output 1`] = `
+{
+  "files": [],
+  "notes": [
+    "JetBrains AI Assistant works across IntelliJ IDEA, Rider, WebStorm, PyCharm and the rest of the family.",
+    "Point the assistant at this gateway as an OpenAI-compatible custom endpoint.",
+    "Set the base URL to http://localhost:3000/v1 and the API key to your unified key.",
+    "The IDE fetches the model list from the endpoint, so your catalog shows up in the model dropdown.",
+  ],
+}
+`;
+
 exports[`tool generators > setup-kilo has stable golden output 1`] = `
 {
   "files": [
@@ -565,6 +588,17 @@ exports[`tool generators > setup-omp has stable golden output 1`] = `
     "~/.omp/agent/models.yml gains a srouter provider; other providers in it are kept.",
     "modelRoles.default points at srouter/fast-coder; run omp — discovery fills /model with every gateway model.",
     "One-shot check: omp -p "Say hello".",
+  ],
+}
+`;
+
+exports[`tool generators > setup-openclaude has stable golden output 1`] = `
+{
+  "files": [],
+  "notes": [
+    "OpenClaude is a Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
+    "Set OPENAI_BASE_URL=http://localhost:3000/v1 and OPENAI_API_KEY to your unified key.",
+    "OpenClaude then speaks Claude-style tool calls through the gateway, which translates them to the upstream provider.",
   ],
 }
 `;
@@ -889,6 +923,18 @@ exports[`tool generators > setup-roo has stable golden output 1`] = `
     "Roo CLI: merge {"roo-cline.autoImportSettingsPath": "/home/tester/.roo/srouter-cli.json"} into ~/.vscode-mock/global-storage/global-state.json (create it if missing), then:",
     "  export OPENROUTER_API_KEY=<unified-key>   # the CLI refuses to start without it, even with the key in the profile",
     "  roo -m fast-coder "Say hello"            # -m is required: the CLI's built-in default model shadows cli-settings.json",
+  ],
+}
+`;
+
+exports[`tool generators > setup-zed has stable golden output 1`] = `
+{
+  "files": [],
+  "notes": [
+    "Zed is a high-performance editor built in Rust with real-time multi-agent collaboration.",
+    "Zed speaks the OpenAI chat API directly, so connect it as an OpenAI-compatible assistant provider.",
+    "Set the base URL to http://localhost:3000/v1 and the API key to your unified key.",
+    "Zed reads models from the endpoint on connect, so the catalog appears in its model picker automatically.",
   ],
 }
 `;

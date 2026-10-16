@@ -41,5 +41,8 @@ export interface ToolDefinition {
   baseUrlSupport: 'root' | '/v1';
   command: string;
   docsUrl: string;
+  /** Dashboard hint: 'full' setup brings in every model (auto, auto:*, fusion);
+   *  'default' setup brings in only auto. Mirrors what the generator does. */
+  modelBehavior: 'default' | 'full';
   generate(ctx: GenerateContext): Generation;
 }
