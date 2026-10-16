@@ -64,7 +64,7 @@ function modelShape(model: NormalizedModel | null, autoContextWindow: number | n
   const context = model?.contextWindow ?? autoContextWindow ?? 128_000;
   return {
     name: `models/${model?.id ?? id}`,
-    displayName: model?.name ?? 'Auto (router picks the best available model)',
+    displayName: model?.name ?? 'Auto',
     description: model
       ? `srouter catalog model served by ${model.ownedBy}`
       : 'srouter automatically selects the best available model',

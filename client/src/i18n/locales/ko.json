@@ -1228,7 +1228,9 @@
       "pi": "직접 만든 확장, 스킬, 프롬프트 템플릿으로 다듬어 쓰는 미니멀한 터미널 에이전트.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
       "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
-    }
+    },
+    "modelNoteFull": "설정이 모든 모델을 가져옵니다 (auto, auto:*, fusion)",
+    "modelNoteDefault": "설정은 auto만 가져옵니다 — 다른 모델은 에이전트 UI에서 선택하세요"
   },
   "update": {
     "available": "New version available",

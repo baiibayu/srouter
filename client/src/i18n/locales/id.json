@@ -1228,7 +1228,9 @@
       "pi": "Agen terminal minimalis yang Anda bentuk dengan ekstensi, keterampilan, dan templat prompt Anda sendiri.",
       "droid": "Droid CLI dari Factory, yang menambahkan model kustom dari endpoint OpenAI-compatible apa pun ke ~/.factory/settings.json.",
       "omp": "Agen terminal Oh My Pi, fork Pi dengan IDE yang menyatu, yang menerima endpoint OpenAI-compatible apa pun."
-    }
+    },
+    "modelNoteFull": "Setup membawa semua model (auto, auto:*, fusion)",
+    "modelNoteDefault": "Setup hanya membawa auto — pilih model lain via UI agent"
   },
   "update": {
     "available": "New version available",

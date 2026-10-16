@@ -1228,7 +1228,9 @@
       "pi": "एक न्यूनतम टर्मिनल एजेन्ट, जसलाई तपाईं आफ्नै एक्सटेन्सन, सीप र प्रम्प्ट टेम्प्लेटले आकार दिनुहुन्छ।",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
       "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
-    }
+    },
+    "modelNoteFull": "Setup brings in every model (auto, auto:*, fusion)",
+    "modelNoteDefault": "Setup brings in only auto — pick other models in the agent UI"
   },
   "update": {
     "available": "New version available",

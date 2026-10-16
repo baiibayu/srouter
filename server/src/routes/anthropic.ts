@@ -1131,7 +1131,7 @@ anthropicRouter.get('/models', (req: Request, res: Response, next: NextFunction)
   const available = models.filter(m => m.available === 1);
   const aliasesEnabled = getSetting('expose_cc_discovery_aliases') === '1';
   const data = [
-    { type: 'model' as const, id: 'auto', display_name: 'Auto (router picks the best available model)', created_at: MODEL_CREATED_AT },
+    { type: 'model' as const, id: 'auto', display_name: 'Auto', created_at: MODEL_CREATED_AT },
     // Only when something can actually serve them: advertising a Sonnet slot
     // backed by an empty pool would trade "0 models" for a model that 503s.
     ...(available.length > 0

@@ -150,6 +150,10 @@ export default function AgentsPage() {
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {tool.configType === 'guide' ? t('agents.setupGuideHint') : t('agents.setupHint')}
                   </p>
+                  {tool.modelBehavior === 'full'
+                    ? <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400">⚡ {t('agents.modelNoteFull')}</p>
+                    : <p className="mt-1 text-[11px] text-muted-foreground">{t('agents.modelNoteDefault')}</p>
+                  }
                   <div className="mt-2 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
                     <code className="min-w-0 flex-1 truncate font-mono text-[11px]">{command}</code>
                     <CopyButton text={command} className="size-7 shrink-0" label={t('common.copy')} />

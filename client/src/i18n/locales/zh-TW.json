@@ -1228,7 +1228,9 @@
       "pi": "一個極簡的終端機代理，用你自己的擴充功能、技能與提示詞範本來塑造它。",
       "droid": "Factory 的 Droid CLI，可將任意 OpenAI 相容端點的自訂模型加入 ~/.factory/settings.json。",
       "omp": "Oh My Pi 的終端代理，基於 Pi 分支並與 IDE 深度整合，可接任意 OpenAI 相容端點。"
-    }
+    },
+    "modelNoteFull": "設定會載入所有模型（auto、auto:*、fusion）",
+    "modelNoteDefault": "設定只載入 auto — 其他模型請在代理介面選擇"
   },
   "update": {
     "available": "发现新版本",
