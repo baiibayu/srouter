@@ -3,6 +3,12 @@
 | Commit | Date | Summary |
 | --- | --- | --- |
 | `pending` | 2026-10-15 | feat(agents): add Zed, JetBrains, OpenClaude and AtomCode to the coding-agent catalog (20 -> 24). README already carried the logos for zed, jetbrains and atomcode; openclaude has no published mark and renders as a lettermark for now. |
+| `pending` | 2026-10-15 | feat(agents): add logos for Zed, JetBrains, OpenClaude and AtomCode on the `/agents` page; move Generic OpenAI client to the last position in the catalog. |
+| `pending` | 2026-10-15 | fix(agents): replace OpenCode and Goose placeholder icons with their official published logos (OpenCode mark from `packages/identity/mark.svg`; Goose logo from `aaif-goose/goose`). |
+| `pending` | 2026-10-15 | fix(agents): OpenClaude — official logo from `Twigpine/openclaude` (`web/public/openclaude.png`), docs URL `https://openclaude.twigpine.com/docs/quickstart/`, protocol OpenAI Chat (was incorrectly Anthropic Messages), base URL `/v1`. |
+| `pending` | 2026-10-15 | fix(cli): `setup-zed`, `setup-jetbrains`, `setup-openclaude`, `setup-atomcode` — use `ctx.url` instead of hardcoded `localhost:20268`, and drop the duplicate `/v1` suffix that produced `/v1/v1` in the printed base URL. |
+| `pending` | 2026-10-15 | fix(cli): add `modelBehavior` to `ToolDefinition`, `tools.json` and the tool metadata catalog so the dashboard-metadata sync test passes again (the field was introduced in 0.1.1 on the client side only). |
+| `pending` | 2026-10-15 | fix(readme): revert incorrect branding introduced by an external tool — "OpenCode" and "Goose" names were mistranslated to "Buka OpenCode"/"Buka Goose" and a table row was corrupted; restore correct brand names. |
 
 ## 2026-10-15 — 0.1.1
 
