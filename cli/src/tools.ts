@@ -1081,7 +1081,7 @@ const metadata = [
   ['cursor', 'Cursor', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-cursor', 'https://docs.cursor.com', cursor],
   ['zed', 'Zed', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-zed', 'https://zed.dev/docs', zed],
   ['jetbrains', 'JetBrains', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-jetbrains', 'https://www.jetbrains.com/help/ai/ai-assistant.html', jetbrains],
-  ['openclaude', 'OpenClaude', 'code', 'file', 'Anthropic Messages', 'root', 'setup-openclaude', 'https://github.com/baiibayu/openclaude', openclaude],
+  ['openclaude', 'OpenClaude', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-openclaude', 'https://openclaude.twigpine.com/docs/quickstart/', openclaude],
   ['atomcode', 'AtomCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atom.io', atomcode],
   ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://platform.openai.com/docs/api-reference/chat', generic],
 ] as const;

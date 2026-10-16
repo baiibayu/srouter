@@ -9,6 +9,7 @@ import ohMyPiImg from '@/assets/agents/oh-my-pi.png'
 import zedImg from '@/assets/agents/zed.png'
 import jetbrainsImg from '@/assets/agents/jetbrains.png'
 import atomcodeImg from '@/assets/agents/atomcode.png'
+import openclaudeImg from '@/assets/agents/openclaude.png'
 
 // Brand marks for the tools listed on the Agents page. Every mark below is the
 // tool's own published logo, taken verbatim from the source in the table and
@@ -331,15 +332,7 @@ const brands: Record<string, Brand> = {
     img: jetbrainsImg,
   },
   openclaude: {
-    // No published logo available; using the generic terminal glyph
-    tint: '',
-    art: (
-      <g fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2.8" y="4.3" width="18.4" height="15.4" rx="3.6" />
-        <path d="M7.6 10.4 10.1 12.9 7.6 15.4" />
-        <path d="M12.6 15.4h4.4" />
-      </g>
-    ),
+    img: openclaudeImg,
   },
   atomcode: {
     img: atomcodeImg,

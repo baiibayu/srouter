@@ -235,10 +235,10 @@
     "name": "OpenClaude",
     "category": "code",
     "configType": "file",
-    "protocol": "Anthropic Messages",
-    "baseUrlSupport": "root",
+    "protocol": "OpenAI Chat",
+    "baseUrlSupport": "/v1",
     "command": "setup-openclaude",
-    "docsUrl": "https://github.com/baiibayu/openclaude",
+    "docsUrl": "https://openclaude.twigpine.com/docs/quickstart/",
     "modelBehavior": "default"
   },
   {
