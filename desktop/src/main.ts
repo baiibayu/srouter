@@ -10,6 +10,7 @@ import { shouldOpenDashboardOnLaunch } from './tray-platform.js';
 import { openDashboard } from './window.js';
 import { todayStats, hourlyRequests, successRateToday } from './stats.js';
 import { normalizeLocale, nativeStrings, type NativeLocale } from './i18n.js';
+import { initUpdater } from './updater.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_PORT = 31415;
@@ -302,6 +303,12 @@ if (!app.requestSingleInstanceLock()) {
         const built = tray;
         setTimeout(() => reportHiddenTray(built, port), TRAY_PROBE_DELAY_MS);
       }
+
+      // Auto-update: every build ships the GitHub release feeds (latest*.yml +
+      // publish config), and this is the consumer — 30s after boot, at most
+      // once per 24h, prompt once per version, silent offline. No-op in dev
+      // and on deb/rpm Linux installs; see update-policy.ts.
+      initUpdater();
 
       const welcomedBefore = loadConfig().launchDashboardShown ?? false;
       if (
