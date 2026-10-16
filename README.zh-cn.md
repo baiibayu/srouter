@@ -113,12 +113,12 @@
 无需克隆仓库，只要安装了 Node.js 20+ 即可随时启动：
 
 ```bash
-# 使用 npx 直接运行
-npx @baiibayu/srouter
-
-# 或全局安装为系统命令
+# 全局安装（仅需一次）
 npm install -g @baiibayu/srouter
 srouter
+
+# 或使用 npx 直接运行（无需安装）
+npx @baiibayu/srouter
 ```
 
 浏览器将自动打开管理面板：`http://localhost:20268`。
@@ -214,19 +214,21 @@ SRouter 提供了自动化配置生成器（`setup-*`），能够自动读取您
 
 ```bash
 # 为 Claude Code 自动配置
-npx srouter setup-claude --url http://localhost:20268 --api-key <您的统一密钥>
+srouter setup-claude --url http://localhost:20268 --api-key <您的统一密钥>
 ```
+
+_未安装时，用 `npx @baiibayu/srouter` 替代 `srouter` 即可。_
 
 | 编程工具 | 自动配置命令 | 目标 Base URL | 协议适配说明 |
 | :--- | :--- | :--- | :--- |
-| **Claude Code** | `npx srouter setup-claude` 或 `srouter launch` | `http://localhost:20268` | 原生 Anthropic `/v1/messages` 格式 |
-| **Cursor / Windsurf** | `npx srouter setup-cursor`（或手动设置） | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
-| **Cline** | `npx srouter setup-cline` | `http://localhost:20268/v1` | OpenAI / Anthropic 双格式 |
-| **Roo Code / Kilo** | `npx srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
-| **Codex CLI** | `npx srouter setup-codex` 或 `srouter launch-codex` | `http://localhost:20268/v1` | 原生 `/v1/responses` 格式 |
-| **Aider** | `npx srouter setup-aider` | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
-| **Continue.dev** | `npx srouter setup-continue` | `http://localhost:20268/v1` | 对话与代码补全双支持 |
-| **OpenCode** | `npx srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
+| **Claude Code** | `srouter setup-claude` 或 `srouter launch` | `http://localhost:20268` | 原生 Anthropic `/v1/messages` 格式 |
+| **Cursor / Windsurf** | `srouter setup-cursor`（或手动设置） | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
+| **Cline** | `srouter setup-cline` | `http://localhost:20268/v1` | OpenAI / Anthropic 双格式 |
+| **Roo Code / Kilo** | `srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
+| **Codex CLI** | `srouter setup-codex` 或 `srouter launch-codex` | `http://localhost:20268/v1` | 原生 `/v1/responses` 格式 |
+| **Aider** | `srouter setup-aider` | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
+| **Continue.dev** | `srouter setup-continue` | `http://localhost:20268/v1` | 对话与代码补全双支持 |
+| **OpenCode** | `srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions 协议 |
 | **Gemini CLI** | 原生 `/v1beta` | `http://localhost:20268` | 原生 `generateContent` 格式 |
 | **Zed / JetBrains AI** | Ollama 仿真 | `http://localhost:20268` | 原生 NDJSON Ollama 协议 |
 
@@ -236,7 +238,7 @@ npx srouter setup-claude --url http://localhost:20268 --api-key <您的统一密
 ### Claude Code 无凭据持久化启动
 ```bash
 # 直接注入临时凭据到子进程，绝不向磁盘写入明文 Key
-npx srouter launch
+srouter launch
 ```
 
 ### Cursor / Windsurf 偏好设置

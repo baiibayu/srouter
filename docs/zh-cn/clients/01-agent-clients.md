@@ -24,13 +24,13 @@
 
 ## 编程智能体
 
-用生成器代替手改客户端配置：
+用生成器代替手改客户端配置 —— 安装一次 `npm install -g @baiibayu/srouter` 后直接使用 `srouter`；或跳过安装，每条命令改用 `npx @baiibayu/srouter` 前缀：
 
 ```bash
 export SROUTER_API_KEY=<统一密钥>   # 或每条命令传 --api-key
-npx srouter setup-claude --url http://localhost:20268 --dry-run
-npx srouter setup-claude --url http://localhost:20268
-npx srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
+srouter setup-claude --url http://localhost:20268 --dry-run
+srouter setup-claude --url http://localhost:20268
+srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
 ```
 
 `--dry-run` 打印差异。真实写入会与现有配置合并，并先创建带时间戳的备份。`--profile <name>` 创建一个命名的 Claude/Codex 配置档。实时 `/v1/models` 目录提供模型 id 和上下文窗口。
@@ -67,7 +67,7 @@ npx srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
 `setup-dsh` 在那里添加一条 `SRouter` 路由——`api: openai-completions`、网关的 `/v1` base URL、以及实时目录作为该路由的 `models` 列表（DSH 要求提供方在其自带目录里没有的模型也得列出来）——并把 `SRouter/auto` 设为默认模型。密钥写进 `$DSH_HOME/.env`（权限 0600）作为 `SROUTER_API_KEY`，这是 DSH 自己读取的环境层，所以无需导出。两次写入都是结构化合并：文件里其他的路由、注释、设置保持原样。
 
 ```bash
-npx srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
+srouter setup-dsh --url http://localhost:20268 --api-key <统一密钥>
 npx @deepseek-ai/dsh web
 ```
 
@@ -78,7 +78,7 @@ npx @deepseek-ai/dsh web
 [Oh My Pi](https://omp.sh/) 是 Stencil Labs 的终端编码智能体，Pi 的分支，与 IDE 深度集成。它读取 `~/.omp/agent/models.yml`，其中 `providers` 下的每个键都是一个 OpenAI 兼容端点：`api: openai-completions` 决定协议，`baseUrl` 指向网关的 `/v1`，`discovery: openai-models-list` 会从 `GET /v1/models` 拉取选择器里的模型列表。`setup-omp` 将其写为 `srouter` 提供方，并在 `~/.omp/agent/config.yml` 中把 `modelRoles.default` 设为 `srouter/<模型>`。写入是结构化合并：`models.yml` 里的其他提供方保持原样；带 `--profile <name>` 时只添加各自的提供方、不改动默认模型——运行 `omp` 后在 `/model` 中选择即可。
 
 ```bash
-npx srouter setup-omp --url http://localhost:20268 --api-key <统一密钥>
+srouter setup-omp --url http://localhost:20268 --api-key <统一密钥>
 omp
 ```
 
@@ -89,7 +89,7 @@ omp
 [OpenClaw](https://docs.openclaw.ai/) 是常驻运行的个人助理，通过其网关接入 WhatsApp、Telegram、Discord 等渠道。它只读取一份 JSON5 文档 `~/.openclaw/openclaw.json`，每个模型端点都是 `models.providers` 下的一个条目；其自带目录不认识的提供方必须写明 `baseUrl`、`api` 和非空的 `models` 列表。`setup-openclaw` 在那里写入一个 `SRouter` 提供方——`api: openai-completions`、网关的 `/v1` base URL、以及实时目录作为 `models` 列表——并把 `SRouter/auto` 设为 `agents.defaults.model.primary` 的默认模型。密钥以 OpenClaw 自己的替换语法 `${SROUTER_API_KEY}` 引用，值写进 `~/.openclaw/.env`（权限 0600），这是 OpenClaw 自行加载的全局环境文件，所以无需导出。两次写入都是结构化合并：其他提供方、默认模型上的 `fallbacks`、以及文件里的其他设置保持原样。
 
 ```bash
-npx srouter setup-openclaw --url http://localhost:20268 --api-key <统一密钥>
+srouter setup-openclaw --url http://localhost:20268 --api-key <统一密钥>
 npm install -g openclaw@latest --allow-scripts=openclaw
 openclaw agent exec --model SRouter/auto "Say hello"   # 无需启动网关守护进程
 ```
@@ -101,7 +101,7 @@ openclaw agent exec --model SRouter/auto "Say hello"   # 无需启动网关守�
 [Hermes Agent](https://hermes-agent.nousresearch.com/docs/) 是 Nous Research 的自我进化智能体，可在终端使用，也可通过其网关接入 Telegram、Discord 等聊天软件。`~/.hermes/config.yaml` 是端点的唯一事实来源：`OPENAI_BASE_URL` 只对 api.openai.com 生效，`OPENAI_API_KEY` 也只会发给 OpenAI 的主机，所以自定义端点必须写在 `model` 块里。`setup-hermes` 写入这个块——`provider: custom`、`api_mode: chat_completions`、网关的 `/v1` 作为 `base_url`、所选模型作为 `default` 并附上来自实时目录的 `context_length`——并以 Hermes 自己的替换语法 `api_key: "${SROUTER_API_KEY}"` 引用密钥，值写进 `~/.hermes/.env`（权限 0600），Hermes 会自行加载。全新安装自带 `model: ""`（"尚未配置"的哨兵值）；替换它正是 `hermes setup` 会做的事，也正是无人值守首次运行能跳过向导的原因。文件里的其他键保持原样。
 
 ```bash
-npx srouter setup-hermes --url http://localhost:20268 --api-key <统一密钥>
+srouter setup-hermes --url http://localhost:20268 --api-key <统一密钥>
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup
 hermes -z "Say hello"
 ```
@@ -113,7 +113,7 @@ hermes -z "Say hello"
 [Pi](https://pi.dev) 是一个极简的终端智能体框架，可用你自己的扩展、技能和提示词模板来定制。Pi 未内置的端点写在 `~/.pi/agent/models.json` 的 provider 条目里。`setup-pi` 在其中添加 `srouter` provider——`api: openai-completions`、网关的 `/v1` 作为 `baseUrl`，并列出实时目录中的全部模型及其上下文窗口（所选模型排在最前）——再在 `~/.pi/agent/settings.json` 中设置 `defaultProvider` 和 `defaultModel`，让全新启动的 `pi` 直接使用它。Pi 不会自行加载 `.env` 文件，所以密钥直接写入 `models.json`（以 0600 权限创建）。两个文件中的其他 provider 和设置保持原样。
 
 ```bash
-npx srouter setup-pi --url http://localhost:20268 --api-key <统一密钥>
+srouter setup-pi --url http://localhost:20268 --api-key <统一密钥>
 npm install -g @earendil-works/pi-coding-agent
 pi -p "Say hello"
 ```
@@ -125,7 +125,7 @@ pi -p "Say hello"
 [Factory Droid](https://docs.factory.ai/droid-cli/quickstart) 是 Factory 的终端智能体。它的 BYOK 自定义模型位于 `~/.factory/settings.json` 的 `customModels` 数组中，每个条目用 `provider: "generic-chat-completion-api"` 走 OpenAI Chat 协议：`baseUrl` 指向网关的 `/v1`、统一密钥作为 `apiKey`、以及所选模型。`setup-droid` 写入该条目；正在运行的 `droid` 会话会自行察觉文件变化——`settings.json` 被监视，无需重启。
 
 ```bash
-npx srouter setup-droid --url http://localhost:20268 --api-key <统一密钥>
+srouter setup-droid --url http://localhost:20268 --api-key <统一密钥>
 droid
 ```
 

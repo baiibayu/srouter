@@ -113,12 +113,12 @@ AI コーディングツール（Claude Code、Cursor、Windsurf、Cline）で�
 Node.js 20+ がインストールされている環境であれば、リポジトリの clone なしで即座に起動できます：
 
 ```bash
-# npx で直接実行
-npx @baiibayu/srouter
-
-# またはグローバルインストール
+# グローバルインストール（1 回だけ）
 npm install -g @baiibayu/srouter
 srouter
+
+# または npx で直接実行（インストール不要）
+npx @baiibayu/srouter
 ```
 
 自動的にブラウザでダッシュボード（`http://localhost:20268`）が開きます。
@@ -214,19 +214,21 @@ SRouter には自動設定ジェネレーター（`setup-*`）が備わってお
 
 ```bash
 # Claude Code の自動設定
-npx srouter setup-claude --url http://localhost:20268 --api-key <統合APIキー>
+srouter setup-claude --url http://localhost:20268 --api-key <統合APIキー>
 ```
+
+_未インストールの場合、`srouter` の代わりに `npx @baiibayu/srouter` を先頭に付けてください。_
 
 | ツール | 自動設定コマンド | 接続先 Base URL | プロトコル対応 |
 | :--- | :--- | :--- | :--- |
-| **Claude Code** | `npx srouter setup-claude` または `srouter launch` | `http://localhost:20268` | ネイティブ Anthropic `/v1/messages` 形式 |
-| **Cursor / Windsurf** | `npx srouter setup-cursor`（または手動設定） | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
-| **Cline** | `npx srouter setup-cline` | `http://localhost:20268/v1` | OpenAI / Anthropic 形式 |
-| **Roo Code / Kilo** | `npx srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
-| **Codex CLI** | `npx srouter setup-codex` または `srouter launch-codex` | `http://localhost:20268/v1` | ネイティブ `/v1/responses` 形式 |
-| **Aider** | `npx srouter setup-aider` | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
-| **Continue.dev** | `npx srouter setup-continue` | `http://localhost:20268/v1` | チャット & ゴーストテキスト補完 |
-| **OpenCode** | `npx srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
+| **Claude Code** | `srouter setup-claude` または `srouter launch` | `http://localhost:20268` | ネイティブ Anthropic `/v1/messages` 形式 |
+| **Cursor / Windsurf** | `srouter setup-cursor`（または手動設定） | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
+| **Cline** | `srouter setup-cline` | `http://localhost:20268/v1` | OpenAI / Anthropic 形式 |
+| **Roo Code / Kilo** | `srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
+| **Codex CLI** | `srouter setup-codex` または `srouter launch-codex` | `http://localhost:20268/v1` | ネイティブ `/v1/responses` 形式 |
+| **Aider** | `srouter setup-aider` | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
+| **Continue.dev** | `srouter setup-continue` | `http://localhost:20268/v1` | チャット & ゴーストテキスト補完 |
+| **OpenCode** | `srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions 形式 |
 | **Gemini CLI** | ネイティブ `/v1beta` | `http://localhost:20268` | ネイティブ `generateContent` 形式 |
 | **Zed / JetBrains AI** | Ollama エミュレーション | `http://localhost:20268` | ネイティブ NDJSON Ollama 形式 |
 
@@ -236,7 +238,7 @@ npx srouter setup-claude --url http://localhost:20268 --api-key <統合APIキー
 ### Claude Code のセキュア起動（ディスクにキー保存なし）
 ```bash
 # 子プロセスにのみ認証情報を一時注入
-npx srouter launch
+srouter launch
 ```
 
 ### Cursor / Windsurf の設定

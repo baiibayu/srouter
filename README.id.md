@@ -113,12 +113,12 @@ Pilih metode instalasi yang paling sesuai dengan lingkungan kerja Anda:
 Jalankan SRouter di mana saja selama Node.js versi 20+ terpasang, tanpa perlu clone repositori:
 
 ```bash
-# Langsung jalankan via npx (tanpa instalasi permanen)
-npx @baiibayu/srouter
-
-# Atau pasang secara global
+# Pasang sekali secara global
 npm install -g @baiibayu/srouter
 srouter
+
+# Atau jalankan langsung via npx (tanpa instalasi permanen)
+npx @baiibayu/srouter
 ```
 
 Dashboard web akan otomatis terbuka di browser pada alamat `http://localhost:20268`.
@@ -214,19 +214,21 @@ SRouter menyediakan generator otomatis (`setup-*`) yang langsung memeriksa model
 
 ```bash
 # Konfigurasi otomatis untuk Claude Code
-npx srouter setup-claude --url http://localhost:20268 --api-key <unified-key-anda>
+srouter setup-claude --url http://localhost:20268 --api-key <unified-key-anda>
 ```
+
+_Belum install? Jalankan perintah yang sama dengan `npx @baiibayu/srouter` menggantikan `srouter`._
 
 | Alat / Agent | Perintah Setup Otomatis | Target Base URL | Dukungan Format Protokol |
 | :--- | :--- | :--- | :--- |
-| **Claude Code** | `npx srouter setup-claude` atau `srouter launch` | `http://localhost:20268` | Asli format `/v1/messages` Anthropic |
-| **Cursor / Windsurf** | `npx srouter setup-cursor` (atau manual) | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
-| **Cline** | `npx srouter setup-cline` | `http://localhost:20268/v1` | Format OpenAI / Anthropic |
-| **Roo Code / Kilo** | `npx srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
-| **Codex CLI** | `npx srouter setup-codex` atau `srouter launch-codex` | `http://localhost:20268/v1` | Asli format `/v1/responses` |
-| **Aider** | `npx srouter setup-aider` | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
-| **Continue.dev** | `npx srouter setup-continue` | `http://localhost:20268/v1` | Chat + Ghost-text autocomplete |
-| **OpenCode** | `npx srouter setup-opencode` | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
+| **Claude Code** | `srouter setup-claude` atau `srouter launch` | `http://localhost:20268` | Asli format `/v1/messages` Anthropic |
+| **Cursor / Windsurf** | `srouter setup-cursor` (atau manual) | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
+| **Cline** | `srouter setup-cline` | `http://localhost:20268/v1` | Format OpenAI / Anthropic |
+| **Roo Code / Kilo** | `srouter setup-roo` / `setup-kilo` | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
+| **Codex CLI** | `srouter setup-codex` atau `srouter launch-codex` | `http://localhost:20268/v1` | Asli format `/v1/responses` |
+| **Aider** | `srouter setup-aider` | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
+| **Continue.dev** | `srouter setup-continue` | `http://localhost:20268/v1` | Chat + Ghost-text autocomplete |
+| **OpenCode** | `srouter setup-opencode` | `http://localhost:20268/v1` | Format OpenAI Chat Completions |
 | **Gemini CLI** | Asli `/v1beta` | `http://localhost:20268` | Asli format `generateContent` Gemini |
 | **Zed / JetBrains AI** | Emulasi Ollama | `http://localhost:20268` | Asli format NDJSON Ollama API |
 
@@ -236,7 +238,7 @@ npx srouter setup-claude --url http://localhost:20268 --api-key <unified-key-and
 ### Menjalankan Claude Code Tanpa Simpan Key di Disk
 ```bash
 # Menyuntikkan kredensial sementara langsung ke child process
-npx srouter launch
+srouter launch
 ```
 
 ### Konfigurasi Cursor / Windsurf
