@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { bootNotice, currentVersion } from './update-check.js';
 
 export interface ServeOptions {
   port?: number;
@@ -144,6 +145,13 @@ export async function runServe(options: ServeOptions): Promise<number> {
   if (await pingUntilReady(url, 30_000)) {
     process.stdout.write(`[srouter] dashboard ready at ${url}\n`);
     if (options.openBrowser) openBrowser(url);
+    // One-line availability notice: throttled and once-per-version by the
+    // cache inside update-check, silent on any failure, and fully detached —
+    // the entrypoint only sets exitCode (no process.exit), so this pending
+    // fetch resolves on its own while the gateway server keeps the loop alive.
+    void bootNotice(dataDir, currentVersion())
+      .then(line => { if (line) process.stdout.write(`${line}\n`); })
+      .catch(() => {});
     return 0;
   }
   process.stderr.write(

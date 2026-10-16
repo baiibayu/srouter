@@ -12,12 +12,15 @@ import { resolveLaunchModel, type ResolvedModel } from './models.js';
 import { DOCTOR_TOOLS, diagnose, exitCodeFor, formatReport, type ToolReport } from './doctor.js';
 import { keysHelp, runKeys, type KeyCommandOptions } from './keys.js';
 import { resolveServe, runServe } from './serve.js';
+import { runUpdate } from './update.js';
 import type { CatalogModel, GenerateContext } from './types.js';
 
 interface CliOptions extends KeyCommandOptions {
   apiKey?: string;
   profile: string;
   model?: string;
+  /** `update --check`: report a newer release without installing it. */
+  check?: boolean;
 }
 
 function rootUrl(url: string): string {
@@ -73,6 +76,10 @@ export function parseArgs(argv: string[]): { command?: string; options: CliOptio
     }
     if (arg === '--dry-run') {
       options.dryRun = true;
+      continue;
+    }
+    if (arg === '--check') {
+      options.check = true;
       continue;
     }
     const equals = arg.indexOf('=');
@@ -280,6 +287,7 @@ function help(): string {
     '                    (--timeout MS raises the probe wait on a slow link)',
     '  launch            Run Claude Code with credentials injected into the child environment',
     '  launch-codex      Run Codex with provider overrides and injected credentials',
+    '  update [--check]  Install the newest published CLI via npm -g; --check only reports',
     '  list              List supported coding agents',
     '  keys              Add, list, remove, or test provider keys (keys --help)',
     '',
@@ -475,6 +483,9 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     if (command !== 'keys' && ['--token', '--key', '--id'].includes(flag)) {
       throw new Error(`${flag} is only supported by keys`);
     }
+    if (command !== 'update' && flag === '--check') {
+      throw new Error('--check is only supported by update');
+    }
     if (command === 'keys' && ['--api-key', '--profile', '--model'].includes(flag)) {
       throw new Error(`${flag} is not supported by keys; use keys --help for available options`);
     }
@@ -498,6 +509,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     return 0;
   }
   if (command === 'doctor') return runDoctor(options);
+  if (command === 'update') return runUpdate({ check: options.check });
   if (command === 'launch') return launchClaude(options);
   if (command === 'launch-codex') return launchCodex(options);
   throw new Error(`Unknown command '${command}'\n\n${help()}`);
