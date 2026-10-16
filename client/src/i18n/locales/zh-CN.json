@@ -1228,7 +1228,9 @@
       "pi": "一个极简的终端智能体，用你自己的扩展、技能和提示词模板来塑造它。",
       "droid": "Factory 的 Droid CLI，可将任意 OpenAI 兼容端点的自定义模型加入 ~/.factory/settings.json。",
       "omp": "Oh My Pi 的终端智能体，基于 Pi 分支并与 IDE 深度集成，可接任意 OpenAI 兼容端点。"
-    }
+    },
+    "modelNoteFull": "设置会载入所有模型（auto、auto:*、fusion）",
+    "modelNoteDefault": "设置只载入 auto — 其他模型请在代理界面选择"
   },
   "update": {
     "available": "发现新版本",

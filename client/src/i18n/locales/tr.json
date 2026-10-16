@@ -1228,7 +1228,9 @@
       "pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
       "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
-    }
+    },
+    "modelNoteFull": "Kurulum tüm modelleri ekler (auto, auto:*, fusion)",
+    "modelNoteDefault": "Kurulum yalnızca auto ekler — diğer modelleri arayüzden seçin"
   },
   "update": {
     "available": "New version available",

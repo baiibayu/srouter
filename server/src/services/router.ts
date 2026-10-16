@@ -1170,13 +1170,27 @@ export interface ResolvedChain {
   strategyKey: string;
 }
 
-const GLOBAL_SORT_ALIASES: Record<string, string> = {
+export const GLOBAL_SORT_ALIASES: Record<string, string> = {
   smart: 'smart', smartest: 'smart', intelligence: 'smart',
   fast: 'fast', fastest: 'fast', speed: 'fast',
   cheap: 'cheap', cheapest: 'cheap', price: 'cheap', budget: 'cheap',
   reliable: 'reliable', reliability: 'reliable',
   balanced: 'balanced',
 };
+
+/**
+ * The built-in global-sort axes advertised to clients as `auto:<axis>` models.
+ * Each ranks the whole catalog under one bandit preset instead of following
+ * the active chain's order — a way to force a routing mode that bypasses the
+ * operator's Routing strategy. `cheap` is deliberately absent: it is an alias
+ * for `balanced` and would only duplicate it in the model picker.
+ */
+export const GLOBAL_SORT_AXIS_ENTRIES: { axis: string; display: string }[] = [
+  { axis: 'balanced', display: 'balanced' },
+  { axis: 'smart', display: 'smart' },
+  { axis: 'fast', display: 'fast' },
+  { axis: 'reliable', display: 'reliable' },
+];
 
 /**
  * The chain auto-routing walks.

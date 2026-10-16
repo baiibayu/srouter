@@ -1,3 +1,12 @@
+## 2026-10-15 — 0.1.1
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `pending` | 2026-10-15 | feat(routing): expose built-in `auto:balanced/auto:smart/auto:fast/auto:reliable` chains in `GET /v1/models` so setup and the model picker offer them without going through the dashboard. `auto` still follows the Routing strategy; the `auto:<axis>` entries force a preset and bypass it. `auto:cheap` is deliberately omitted — it is an alias for `balanced`. |
+| `pending` | 2026-10-15 | refactor(i18n): shorten virtual model labels — "Auto (router picks the best available model)" → "Auto", "Fusion (panel of models...)" → "Fusion", "Auto: Default (named fallback chain)" → "Auto: Default". |
+| `pending` | 2026-10-15 | feat(agents): `/agents` cards now note whether `npx srouter setup-*` brings in every model (OpenCode, Hermes, Goose, Qwen, DeepSeek Harness, MiMo) or only `auto` (Claude Code, Codex, Cline, Continue, Aider, Roo, Kilo, Crush, Oh My Pi, OpenClaw, Pi, Factory Droid, Cursor, Generic). |
+| `pending` | 2026-10-15 | fix(client): silence TS6 deprecation for `baseUrl` (`ignoreDeprecations: "6.0"`). |
+
 # Changelog
 
 Revision history for `docs/`, derived from git commits touching this directory. Most recent first. Rows marked "landed via #N" describe work done on a contributor branch and squash-merged; the commit shown is the squash on `main`.

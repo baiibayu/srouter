@@ -1228,7 +1228,9 @@
       "pi": "Un agent de terminal minimaliste que vous façonnez avec vos propres extensions, compétences et modèles de prompts.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
       "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint."
-    }
+    },
+    "modelNoteFull": "La configuration importe tous les modèles (auto, auto:*, fusion)",
+    "modelNoteDefault": "La configuration n'importe qu'auto — choisissez les autres modèles dans l'interface de l'agent"
   },
   "update": {
     "available": "Nouvelle version disponible",

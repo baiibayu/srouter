@@ -87,7 +87,7 @@ function listModels(args: Record<string, unknown>): unknown {
     supported_parameters: supportedParametersForPlatforms(m.platforms, { tools: m.supportsTools }),
   }));
   return {
-    auto: { id: 'auto', description: 'router picks the best available model', context_window: autoContextWindow },
+    auto: { id: 'auto', description: 'Auto-route using current chain', context_window: autoContextWindow },
     count: rows.length,
     models: rows,
   };

@@ -3,7 +3,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import type { ChatMessage, ChatToolCall, TokenUsage } from '@baiibayu/srouter-shared/types.js';
-import { type RouteResult, type ResolvedChain, type ChainRow, routeRequest, resolveRoutingChain, resolveModelGroupCandidates, resolveStickyPreference, hasEnabledVisionModel, hasEnabledToolsModel, routingReserveTokens } from '../services/router.js';
+import { type RouteResult, type ResolvedChain, type ChainRow, routeRequest, resolveRoutingChain, resolveModelGroupCandidates, resolveStickyPreference, hasEnabledVisionModel, hasEnabledToolsModel, routingReserveTokens, GLOBAL_SORT_AXIS_ENTRIES } from '../services/router.js';
 import { secondsUntilNextMonth } from '../services/key-budget.js';
 import { classifyComplexity } from '../services/complexity-gate.js';
 import { runEmbeddings, EmbeddingsError } from '../services/embeddings.js';
@@ -416,7 +416,7 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         object: 'model',
         created: 0,
         owned_by: 'srouter',
-        name: 'Auto (router picks the best available model)',
+        name: 'Auto',
         context_window: autoContextWindow,
         // `context_length` is OpenRouter's field name and the one most
         // OpenAI-compatible clients read; emit both so whichever a client
@@ -430,7 +430,7 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         object: 'model',
         created: 0,
         owned_by: 'srouter',
-        name: 'Fusion (panel of models answer in parallel, a judge synthesizes one answer)',
+        name: 'Fusion',
         context_window: autoContextWindow,
         context_length: autoContextWindow,
         // Available whenever auto is — fusion needs at least one routable model.
@@ -443,12 +443,34 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         object: 'model',
         created: 0,
         owned_by: 'srouter',
-        name: `Auto: ${p.name} (named fallback chain)`,
+        name: `Auto: ${p.name}`,
         context_window: p.max_ctx,
         context_length: p.max_ctx,
         available: p.usable === 1,
         unavailable_reason: p.usable === 1 ? null : 'no_models',
       })),
+      // Built-in global-sort axes (#router). Each forces a routing mode that
+      // bypasses the operator's Routing strategy — the opposite of plain `auto`,
+      // which follows whatever strategy is set in the web UI. `cheap` is skipped:
+      // it is an alias for `balanced` and would only duplicate it in the picker.
+      ...GLOBAL_SORT_AXIS_ENTRIES.map(a => {
+        // resolveRoutingChain throws when the catalog is empty; listing must not
+        // crash the whole /v1/models response over one axis.
+        let available = false;
+        try { available = resolveRoutingChain(`auto:${a.axis}`).chain.length > 0; }
+        catch { available = false; }
+        return {
+          id: `auto:${a.axis}`,
+          object: 'model',
+          created: 0,
+          owned_by: 'srouter',
+          name: `Auto: ${a.display}`,
+          context_window: autoContextWindow,
+          context_length: autoContextWindow,
+          available,
+          unavailable_reason: available ? null : 'no_models',
+        };
+      }),
       ...esFiltered.map(m => ({
         id: m.id,
         object: 'model',
