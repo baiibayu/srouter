@@ -25,7 +25,7 @@ const staged = [
 
 if (process.argv.includes('--clean')) {
   for (const target of staged) fs.rmSync(target, { recursive: true, force: true });
-  console.log('[pack] cleaned cli staging');
+  console.error('[pack] cleaned cli staging');
   process.exit(0);
 }
 
@@ -61,4 +61,5 @@ for (const probe of [
     process.exit(1);
   }
 }
-console.log('[pack] staged cli/server/dist, cli/client/dist, cli/desktop/package.json');
+// stderr: `npm pack --silent` callers capture stdout as the tarball filename.
+console.error('[pack] staged cli/server/dist, cli/client/dist, cli/desktop/package.json');
