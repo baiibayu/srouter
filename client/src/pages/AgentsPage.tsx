@@ -67,8 +67,10 @@ export default function AgentsPage() {
     queryFn: () => apiFetch('/api/analytics/by-client?range=30d'),
   })
   // "Seen recently" means traffic within the last 7 days, not merely any row
-  // in the fetched 30-day window.
-  const seenCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
+  // in the fetched 30-day window. Read once at mount via lazy state init —
+  // react-hooks/purity disallows Date.now() directly in render, and a cutoff
+  // that froze per re-render would only make the answer less stable anyway.
+  const [seenCutoff] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000)
   const seen = new Map(byClient
     .filter(row => row.lastSeenAt && Date.parse(row.lastSeenAt) >= seenCutoff)
     .map(row => [row.clientAgent, row]))

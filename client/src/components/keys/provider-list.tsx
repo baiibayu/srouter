@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { ConfirmButton } from '@/components/confirm-button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -27,11 +28,13 @@ import {
   PLATFORMS,
   CUSTOM_GROUP,
   CUSTOM_MODEL_KIND_LABEL,
+} from './shared'
+import {
   customModelDeleteKey,
   customModelDeletePath,
   statusDot,
   statusLabelKey,
-} from './shared'
+} from './shared-constants'
 import type { HealthData } from './shared'
 import { DiscoverModelsDialog } from './discover-models-dialog'
 import { AddEndpointKeyDialog } from './add-endpoint-key-dialog'

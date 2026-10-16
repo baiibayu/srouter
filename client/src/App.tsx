@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
 import { MutationCache, QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell, ChevronDown, KeyRound, LogOut, Menu, MoreHorizontal, Search, Settings } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import {
   DropdownMenu,
   DropdownMenuContent,

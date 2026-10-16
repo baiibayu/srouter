@@ -7,7 +7,8 @@ import { CopyButton } from '@/components/copy-button'
 import { PageHeader } from '@/components/page-header'
 import { ModelsTabs } from '@/components/models-tabs'
 import { Switch } from '@/components/ui/switch'
-import { apiBaseUrl, ApiUsageBlock } from '@/components/api-usage'
+import { ApiUsageBlock } from '@/components/api-usage'
+import { apiBaseUrl } from '@/lib/api-base-url'
 import type { MediaModel } from '@/components/media-models'
 
 // One generative-media model's page: every provider that serves this logical

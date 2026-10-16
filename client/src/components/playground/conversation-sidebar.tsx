@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronsLeft, ChevronsRight, MoreHorizontal, Pencil, SquarePen, Trash2 } from 'lucide-react'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import {
   DropdownMenu,
   DropdownMenuContent,

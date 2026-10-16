@@ -6,7 +6,8 @@ import { apiFetch } from '@/lib/api'
 import { CopyButton } from '@/components/copy-button'
 import { PageHeader } from '@/components/page-header'
 import { ModelsTabs } from '@/components/models-tabs'
-import { apiBaseUrl, ApiUsageBlock } from '@/components/api-usage'
+import { ApiUsageBlock } from '@/components/api-usage'
+import { apiBaseUrl } from '@/lib/api-base-url'
 
 interface ProviderEntry {
   id: number
