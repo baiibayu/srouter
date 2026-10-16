@@ -23,9 +23,11 @@ srouter                                   # start + open the dashboard
 srouter serve --port 3000 --no-browser    # headless / custom port
 ```
 
-Upgrades are the usual `npm install -g @baiibayu/srouter@latest`; your data directory
-survives updates. Then point agents at it with the `setup-*` commands below
-(`npx @baiibayu/srouter setup-*` works without installing).
+Upgrades are the usual `npm install -g @baiibayu/srouter@latest` — or just
+`srouter update` (`--check` only reports whether a newer version exists).
+Your data directory survives updates. Then point agents at it with the
+`setup-*` commands below (`npx @baiibayu/srouter setup-*` works without
+installing).
 
 ## Commands
 
@@ -54,6 +56,7 @@ survives updates. Then point agents at it with the `setup-*` commands below
 | `launch` | Run Claude Code with credentials injected into the child process |
 | `launch-codex` | Run Codex the same way |
 | `list` | Print the supported tools and their base URLs |
+| `update [--check]` | Install the newest published CLI (`--check` reports only) |
 | `keys` | Add, list, remove, or test provider keys (`keys --help`) |
 
 ## Options
