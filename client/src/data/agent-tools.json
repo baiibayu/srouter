@@ -209,17 +209,6 @@
     "modelBehavior": "default"
   },
   {
-    "id": "generic",
-    "name": "Generic OpenAI client",
-    "category": "agent",
-    "configType": "guide",
-    "protocol": "OpenAI Chat",
-    "baseUrlSupport": "/v1",
-    "command": "setup-generic",
-    "docsUrl": "https://platform.openai.com/docs/api-reference/chat",
-    "modelBehavior": "default"
-  },
-  {
     "id": "zed",
     "name": "Zed",
     "category": "code",
@@ -261,6 +250,17 @@
     "baseUrlSupport": "/v1",
     "command": "setup-atomcode",
     "docsUrl": "https://atom.io",
+    "modelBehavior": "default"
+  },
+  {
+    "id": "generic",
+    "name": "Generic OpenAI client",
+    "category": "agent",
+    "configType": "guide",
+    "protocol": "OpenAI Chat",
+    "baseUrlSupport": "/v1",
+    "command": "setup-generic",
+    "docsUrl": "https://platform.openai.com/docs/api-reference/chat",
     "modelBehavior": "default"
   }
 ]
