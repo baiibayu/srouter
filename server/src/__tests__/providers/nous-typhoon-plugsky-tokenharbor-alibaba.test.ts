@@ -21,7 +21,10 @@ const BASE: Record<(typeof PLATFORMS)[number], string> = {
 describe('Nous Portal, OpenTyphoon, Plugsky, Token Harbor and Alibaba Model Studio adapters', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it.each(PLATFORMS.filter(p => p !== 'typhoon'))('%s validates on the authenticated /models endpoint', async platform => {
+  // plugsky (like typhoon) validates on its own authenticated usage endpoint —
+  // see plugsky.test.ts — and treats a non-OK status as inconclusive, so it does
+  // not share this /models contract.
+  it.each(PLATFORMS.filter(p => p !== 'typhoon' && p !== 'plugsky'))('%s validates on the authenticated /models endpoint', async platform => {
     expect(hasProvider(platform)).toBe(true);
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({ data: [] }));
     await expect(getProvider(platform)!.validateKey('test-key')).resolves.toBe(true);
