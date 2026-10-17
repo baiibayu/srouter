@@ -785,7 +785,7 @@ function UpdateChecker({ active }: { active: boolean }) {
               </button>
             )}
             {status === 'current' && !desktopUpdate && <Check className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />}
-            {error && (
+            {error && statusInfo?.releasesUrl && (
               <a
                 href={statusInfo.releasesUrl}
                 target="_blank"
@@ -926,9 +926,9 @@ function UpdateChecker({ active }: { active: boolean }) {
                     <p className="text-[11px] text-muted-foreground">{t('settings.restartAfterUpdate')}</p>
                   </div>
                 )}
-                {(info.installation === 'desktop' || info.installation === 'unknown') && !desktopUpdater && (
+                {(info.installation === 'desktop' || info.installation === 'unknown') && statusInfo && !desktopUpdater && (
                   <a
-                    href={statusInfo.releasesUrl}
+                    href={statusInfo.releasesUrl ?? undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-medium underline underline-offset-4"
