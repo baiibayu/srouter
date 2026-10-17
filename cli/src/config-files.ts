@@ -171,7 +171,7 @@ function mergeContinueYaml(existing: string, generated: string): string {
   const entryStart = lines.findIndex(
     (line, index) => index > modelsIndex
       && index < modelsEnd
-      && /^\s{2}-\s+name:\s+["']?(?:SRouter|FreeLLMAPI)["']?\s*$/i.test(line),
+      && /^\s{2}-\s+name:\s+["']?SRouter["']?\s*$/i.test(line),
   );
   if (entryStart >= 0) {
     let entryEnd = entryStart + 1;
