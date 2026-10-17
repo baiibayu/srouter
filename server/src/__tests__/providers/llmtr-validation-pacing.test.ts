@@ -209,7 +209,7 @@ describe('LLMTR key-validation probe pacing', () => {
       const body = JSON.parse(String(init?.body));
       bodies.push(body);
       // The probe names the validation model; chat names a real route.
-      return body.model === '__freellmapi_key_validation__'
+      return body.model === '__srouter_key_validation__'
         ? modelNotFound()
         : new Response(JSON.stringify({
           id: 'c', object: 'chat.completion', created: 1, model: body.model,
@@ -226,6 +226,6 @@ describe('LLMTR key-validation probe pacing', () => {
     // The chat request went out without waiting out the 2s floor a second probe
     // would have owed: only the probe is paced, never real traffic.
     expect(clock.at()).toBe(afterProbe);
-    expect(bodies.map(b => b.model)).toEqual(['__freellmapi_key_validation__', 'qwen/qwen3.8-27b-free']);
+    expect(bodies.map(b => b.model)).toEqual(['__srouter_key_validation__', 'qwen/qwen3.8-27b-free']);
   });
 });
