@@ -134,7 +134,7 @@ describe('Response cache (proxy integration)', () => {
   ])('rejects idempotent retries with changed generation options: %j', async (extra) => {
     getDb().prepare('DELETE FROM idempotency_claims').run();
     const counter = mockGroq('plain text');
-    const headers = { 'Idempotency-Key': 'generation-options', 'X-FreeLLM-Cache': 'off' };
+    const headers = { 'Idempotency-Key': 'generation-options', 'X-SRouter-Cache': 'off' };
     const first = await chat({}, headers);
     expect(first.status).toBe(200);
     const replay = await chat({}, headers);
