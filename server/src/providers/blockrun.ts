@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@baiibayu/srouter-shared/types.js';
-=======
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@baiibayu/srouter-shared/types.js';
->>>>>>> 716948f2 (feat(providers): add Gizmo and BlockRun adapters for v0.13.4 (#1396))
 import { providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import { OpenAICompatProvider } from './openai-compat.js';
 import type { QuotaObservationContext } from '../services/provider-quota.js';
