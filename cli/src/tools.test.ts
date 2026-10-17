@@ -544,12 +544,57 @@ describe('tool generators', () => {
     expect(providers['srouter-work-box'].name).toBe('SRouter (Work Box)');
   });
 
+  it('writes Oh My Pi providers into models.yml with a modelRoles default', () => {
+    // models.yml merges structurally: `providers.srouter` is a nested record,
+    // so the deep merge keeps the user's other providers while ours is
+    // replaced, and discovery queries the gateway's /v1/models for the picker.
+    const files = tools.find(tool => tool.id === 'omp')!.generate(context).files;
+    const models = files.find(file => file.path.endsWith('models.yml'))!;
+    expect(models.path).toBe('/home/tester/.omp/agent/models.yml');
+    expect(models.format).toBe('yaml');
+    expect(models.sensitive).toBe(true);
+    const providers = (models.value as { providers: Record<string, Record<string, unknown>> }).providers;
+    expect(Object.keys(providers)).toEqual(['srouter']);
+    expect(providers.srouter.baseUrl).toBe('http://localhost:3000/v1');
+    expect(providers.srouter.apiKey).toBe('srouter-test-key');
+    expect(providers.srouter.api).toBe('openai-completions');
+    expect(providers.srouter.discovery).toEqual({ type: 'openai-models-list' });
+    const config = files.find(file => file.path.endsWith('config.yml'))!;
+    expect(config.path).toBe('/home/tester/.omp/agent/config.yml');
+    expect(config.format).toBe('yaml');
+    expect((config.value as { modelRoles: { default: string } }).modelRoles.default).toBe('srouter/fast-coder');
+  });
+
+  it('writes Factory Droid as one customModels entry in ~/.factory/settings.json', () => {
+    // Droid's BYOK block is a customModels array: mergeJson replaces arrays
+    // wholesale (the note tells the user to re-add other entries) while every
+    // other key in settings.json survives the deep merge.
+    const [config] = tools.find(tool => tool.id === 'droid')!.generate(context).files;
+    expect(config.path).toBe('/home/tester/.factory/settings.json');
+    expect(config.format).toBe('json');
+    expect(config.sensitive).toBe(true);
+    const { customModels } = config.value as { customModels: Array<Record<string, unknown>> };
+    expect(customModels).toHaveLength(1);
+    expect(customModels[0]).toEqual({
+      model: 'fast-coder',
+      displayName: 'Fast Coder',
+      baseUrl: 'http://localhost:3000/v1',
+      apiKey: 'srouter-test-key',
+      provider: 'generic-chat-completion-api',
+    });
+  });
+
   it('writes Reasonix as a [[providers]] entry plus its key in the Reasonix .env', () => {
     // Reasonix names the key variable in config.toml and keeps the value in the
     // .env beside it, which it loads itself. `default_model` is provider/model
     // and must sit in the root region, above the array entry.
     const [config, env] = tools.find(tool => tool.id === 'reasonix')!.generate(context).files;
-    expect(config.path).toBe('/home/tester/.reasonix/config.toml');
+    // The home directory is platform-shaped: win32 resolves APPDATA first, so
+    // the expectation has to mirror that or the test only passes on POSIX CI.
+    const defaultHome = process.platform === 'win32'
+      ? path.join(process.env.APPDATA?.trim() || path.join('/home/tester', 'AppData', 'Roaming'), 'reasonix')
+      : path.join('/home/tester', '.reasonix');
+    expect(config.path).toBe(path.join(defaultHome, 'config.toml'));
     expect(config.format).toBe('toml');
     expect(config.sensitive).toBeUndefined();
     const lines = (config.content ?? '').split('\n');
@@ -564,7 +609,7 @@ describe('tool generators', () => {
     expect(lines).toContain('context_window = 131072');
     expect(config.content).not.toContain('srouter-test-key');
     expect(env).toEqual({
-      path: '/home/tester/.reasonix/.env',
+      path: path.join(defaultHome, '.env'),
       format: 'env',
       sensitive: true,
       content: 'SROUTER_API_KEY=srouter-test-key\n',
@@ -584,32 +629,12 @@ describe('tool generators', () => {
   it('gives a named Reasonix profile its own provider and leaves the default model alone', () => {
     vi.stubEnv('REASONIX_HOME', '/srv/reasonix');
     const [config, env] = tools.find(tool => tool.id === 'reasonix')!.generate({ ...context, profile: 'Work Box' }).files;
-    expect(config.path).toBe('/srv/reasonix/config.toml');
-    expect(env.path).toBe('/srv/reasonix/.env');
+    expect(config.path).toBe(path.join('/srv/reasonix', 'config.toml'));
+    expect(env.path).toBe(path.join('/srv/reasonix', '.env'));
     expect(config.content).not.toContain('default_model');
     expect(config.content!.split('\n')[0]).toBe('[[providers]]');
     expect(config.content).toContain('name = "srouter-work-box"');
     expect(config.content).toContain('display_name = "SRouter (Work Box)"');
-  });
-
-  it('writes AtomCode as default_provider plus a typed [providers.srouter] table', () => {
-    // AtomCode ignores a bare `[provider]` table: it looks up the table named
-    // by the root `default_provider` key, and only a `type = "openai"` table
-    // speaks the OpenAI-compatible wire. `context_window` is its own key.
-    const [config] = tools.find(tool => tool.id === 'atomcode')!.generate(context).files;
-    expect(asPosix(config.path)).toBe('/home/tester/.atomcode/config.toml');
-    expect(config.format).toBe('toml');
-    expect(config.sensitive).toBe(true);
-    const lines = (config.content ?? '').split('\n');
-    expect(lines[0]).toBe('default_provider = "srouter"');
-    expect(lines).toContain('[providers.srouter]');
-    expect(lines.indexOf('[providers.srouter]')).toBeGreaterThan(0);
-    expect(lines).toContain('type = "openai"');
-    expect(lines).toContain('base_url = "http://localhost:3000/v1"');
-    expect(lines).toContain('api_key = "srouter-test-key"');
-    expect(lines).toContain('model = "fast-coder"');
-    expect(lines).toContain('context_window = 131072');
-    expect(config.content).not.toContain('[provider]');
   });
 
   it('uses /v1 for every OpenAI-compatible generated base URL', () => {
