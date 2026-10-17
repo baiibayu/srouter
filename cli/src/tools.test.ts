@@ -62,10 +62,28 @@ describe('tool generators', () => {
   });
 
   for (const tool of tools) {
+    // Reasonix resolves its home per-platform (APPDATA on win32), so its
+    // golden is generated under a pinned posix platform below instead.
+    if (tool.id === 'reasonix') continue;
     it(`${tool.command} has stable golden output`, () => {
       expect(tool.generate(context)).toMatchSnapshot();
     });
   }
+
+  it('setup-reasonix has stable golden output', () => {
+    // process.platform is a data property; pin it to linux so the golden
+    // records the POSIX home regardless of the machine running the tests,
+    // and normalize path separators (path.join still uses the host sep).
+    const original = Object.getOwnPropertyDescriptor(process, 'platform');
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    try {
+      const generation = tools.find(tool => tool.id === 'reasonix')!.generate(context);
+      for (const file of generation.files) file.path = file.path.split(path.sep).join('/');
+      expect(generation).toMatchSnapshot();
+    } finally {
+      if (original) Object.defineProperty(process, 'platform', original);
+    }
+  });
 
   it('honours an explicit --model instead of the default-model heuristic', () => {
     // `--model` was parsed into CliOptions and then dropped: it never reached
@@ -565,7 +583,12 @@ describe('tool generators', () => {
     // .env beside it, which it loads itself. `default_model` is provider/model
     // and must sit in the root region, above the array entry.
     const [config, env] = tools.find(tool => tool.id === 'reasonix')!.generate(context).files;
-    expect(config.path).toBe('/home/tester/.reasonix/config.toml');
+    // The home directory is platform-shaped: win32 resolves APPDATA first, so
+    // the expectation has to mirror that or the test only passes on POSIX CI.
+    const defaultHome = process.platform === 'win32'
+      ? path.join(process.env.APPDATA?.trim() || path.join('/home/tester', 'AppData', 'Roaming'), 'reasonix')
+      : path.join('/home/tester', '.reasonix');
+    expect(config.path).toBe(path.join(defaultHome, 'config.toml'));
     expect(config.format).toBe('toml');
     expect(config.sensitive).toBeUndefined();
     const lines = (config.content ?? '').split('\n');
@@ -580,7 +603,7 @@ describe('tool generators', () => {
     expect(lines).toContain('context_window = 131072');
     expect(config.content).not.toContain('srouter-test-key');
     expect(env).toEqual({
-      path: '/home/tester/.reasonix/.env',
+      path: path.join(defaultHome, '.env'),
       format: 'env',
       sensitive: true,
       content: 'SROUTER_API_KEY=srouter-test-key\n',
@@ -600,8 +623,8 @@ describe('tool generators', () => {
   it('gives a named Reasonix profile its own provider and leaves the default model alone', () => {
     vi.stubEnv('REASONIX_HOME', '/srv/reasonix');
     const [config, env] = tools.find(tool => tool.id === 'reasonix')!.generate({ ...context, profile: 'Work Box' }).files;
-    expect(config.path).toBe('/srv/reasonix/config.toml');
-    expect(env.path).toBe('/srv/reasonix/.env');
+    expect(config.path).toBe(path.join('/srv/reasonix', 'config.toml'));
+    expect(env.path).toBe(path.join('/srv/reasonix', '.env'));
     expect(config.content).not.toContain('default_model');
     expect(config.content!.split('\n')[0]).toBe('[[providers]]');
     expect(config.content).toContain('name = "srouter-work-box"');
