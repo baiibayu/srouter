@@ -74,6 +74,8 @@ export interface ImportSelectedResponse {
 export type Platform =
   | 'google'
   | 'groq'
+  | 'cerebras'
+  | 'experiential'
   // Sail Research — native Responses API provider. $5 in free credits refreshes
   // monthly when a payment method is attached; usage beyond the grant is
   // pay-as-you-go. Background polling is required for its flex-only models.
@@ -102,6 +104,7 @@ export type Platform =
   | 'clod'
   | 'speechify'
   | 'blaze'
+  | 'freeai'
   // Lucidity Composite, Api.Airforce and DreamPrompting expose daily free
   // allowances; Waterfall and Logfare publish community / fair-use tiers.
   | 'lucidity'
@@ -125,6 +128,7 @@ export type Platform =
   | 'mistral'
   | 'sambanova'
   | 'openrouter'
+  | 'github'
   | 'cohere'
   // Web search APIs (#1174), not chat providers. Their keys serve POST
   // /v1/search (and the agents' web_search tools) through the catalog's
@@ -413,6 +417,9 @@ export interface ApiKey {
   monthlyUsage?: { requests: number; tokens: number; resetsAt: string };
   /** The per-key proxy override with its password masked (#590); '' = none. */
   maskedProxyUrl?: string;
+  /** Optional custom-endpoint group label (#1176); null = legacy single
+   *  "Custom" group. Only set on platform='custom' rows. */
+  groupLabel?: string | null;
   models?: ApiKeyModel[];
   cooldowns?: ApiKeyCooldown[];
   /** True for a built-in provider key whose platform the catalog carries no

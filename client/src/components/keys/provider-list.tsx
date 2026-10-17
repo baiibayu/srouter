@@ -45,8 +45,9 @@ import { EditModelsDialog } from './edit-models-dialog'
 import { ModelScopeDialog } from './model-scope-dialog'
 import { TestModelsDialog } from './test-models-dialog'
 import { AddModelDialog } from './add-model-dialog'
-mport { groupHandle } from '@/lib/endpoint-groups'
+import { groupHandle } from '@/lib/endpoint-groups'
 import { SEARCH_PROVIDERS, isSearchPlatform } from '@/lib/search'
+import { copyText } from '@/lib/clipboard'
 
 type StatusFilter = 'all' | 'healthy' | 'issues' | 'disabled'
 
@@ -64,7 +65,6 @@ interface ProviderGroup {
   keys: ApiKey[]
 }
 
- (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
 // #787: what the batch bar can do to the selected keys of one group.
 type BulkAction = 'enable' | 'disable' | 'delete'
 
@@ -293,6 +293,14 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proxy-url'] }),
   })
 
+  function copyGroupHandle(label: string) {
+    const handle = `#${groupHandle(label)}`
+    void copyText(handle).then(ok => {
+      if (ok) toast.success(t('keys.groupHandleCopied', { handle }))
+      else toast.error(t('keys.groupHandleCopyFailed'))
+    })
+  }
+
   function startEditing(key: ApiKey) {
     setEditingKeyId(key.id)
   }
@@ -342,7 +350,6 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
     ...[...customGroups.values()].sort((a, b) =>
       a.customGroup === null ? -1 : b.customGroup === null ? 1 : a.label.localeCompare(b.label)),
   ].filter(p => p.keys.length > 0)
- (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
 
   const totalProviders = grouped.length
   const totalKeys = grouped.reduce((n, g) => n + g.keys.length, 0)
@@ -509,7 +516,6 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                             (custom endpoints test per key from the row instead). */}
                        {group.platform !== 'custom' && !group.search && (
                           <DropdownMenuItem onClick={() => setTestTarget({ platform: group.platform, label: group.label })}>
- (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
                             {t('keys.testModels')}
                             <FlaskConical className="ml-auto size-3.5" />
                           </DropdownMenuItem>
@@ -526,7 +532,6 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                             <Sparkles className="ml-auto size-3.5" />
                           </DropdownMenuItem>
                         )}
- (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
                         {group.url && (
                           <DropdownMenuItem onClick={() => window.open(group.url, '_blank', 'noopener,noreferrer')}>
                             {t('keys.getApiKey')}

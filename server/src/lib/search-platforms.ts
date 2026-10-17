@@ -1,7 +1,7 @@
-import type { SearchPlatform } from '@freellmapi/shared/types.js';
+import type { SearchPlatform } from '@baiibayu/srouter-shared/types.js';
 
 // Runtime copy of shared/types.ts SEARCH_PLATFORMS. The server only ever
-// imports types from @freellmapi/shared (it is not compiled into dist), so the
+// imports types from @baiibayu/srouter-shared (it is not compiled into dist), so the
 // list lives here too; a test pins the two together.
 export const SEARCH_PLATFORMS: readonly SearchPlatform[] = ['tavily', 'exa', 'firecrawl', 'linkup'];
 

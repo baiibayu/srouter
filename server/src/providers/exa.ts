@@ -1,4 +1,4 @@
-import type { Platform } from '@freellmapi/shared/types.js';
+import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import type { KeyValidationResult } from './base.js';
 import { SearchOnlyProvider } from './search-only.js';
 

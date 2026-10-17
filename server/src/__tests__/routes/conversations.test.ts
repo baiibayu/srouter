@@ -42,7 +42,7 @@ const ASSISTANT_TURN = {
     fallbackAttempts: 1,
     fusionPanel: [{ platform: 'groq', model: 'a', status: 'ok', content: 'A' }],
    fusionJudge: { platform: 'cerebras', model: 'j' },
-    webSearch: { engine: 'tavily-search', latency: 420, sources: [{ title: 'T', url: 'https://t' }] }, (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
+    webSearch: { engine: 'tavily-search', latency: 420, sources: [{ title: 'T', url: 'https://t' }] },
   },
 };
 

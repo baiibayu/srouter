@@ -51,8 +51,8 @@ const PURE_MODULES = [
   'route-live.ts',
 
  // Search platform list; the provider list, keys route and search service import it.
-  'search-platforms.ts', (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
-  'structured-output.ts',
+ 'search-platforms.ts',
+ 'structured-output.ts',
   'tool-args.ts',
   'tool-call-rescue.ts',
   // Type-only imports today; listed so they stay that way.

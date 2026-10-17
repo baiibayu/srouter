@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { BaseProvider, type CompletionOptions, type KeyValidationResult } from './base.js';
 import { proxyFetch } from '../lib/proxy.js';
 

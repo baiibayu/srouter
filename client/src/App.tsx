@@ -592,7 +592,7 @@ function App() {
                       <Route path="/models/system-one" element={<SystemOnePage />} />
                       <Route path="/models/web-search" element={<WebSearchPage />} />
                       <Route path="/models/web-fetch" element={<Navigate to="/models/web-search" replace />} />
-                      <Route path="/models/search" element={<SearchPage />} /> (feat(search): web search engines from the catalog, agent web search and dashboard (#1458))
+                      <Route path="/models/search" element={<SearchPage />} />
                       <Route path="/playground" element={<PlaygroundPage />} />
                       <Route path="/keys" element={<KeysPage />} />
                       <Route path="/agents" element={<AgentsPage />} />
@@ -620,10 +620,3 @@ function App() {
 }
 
 export default App
-                      <Route path="/models/audio/:id" element={<MediaDetailPage modality="audio" />} />
-                      <Route path="/models/transcription/:id" element={<MediaDetailPage modality="transcription" />} />
-                      <Route path="/models/tools" element={<Navigate to="/models/web-search" replace />} />
-                      <Route path="/models/system-one" element={<SystemOnePage />} />
-                      <Route path="/models/web-search" element={<WebSearchPage />} />
-                      <Route path="/models/web-fetch" element={<Navigate to="/models/web-search" replace />} />
-                      <Route path="/models/search" element={<SearchPage />} />
