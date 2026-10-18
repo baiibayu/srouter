@@ -42,6 +42,8 @@ import * as unifiedKeySrPrefix from '../migrations/20261004_000001_unified_key_s
 import * as keyBudgetPeriod from '../migrations/20261005_000001_key_budget_period.js';
 import * as keyBudgetPeriodAuto from '../migrations/20261005_000002_key_budget_period_auto.js';
 import * as removeDeadPlatforms from '../migrations/20261009_000001_remove_dead_platforms.js';
+import * as searchEngines from '../migrations/20261013_000001_search_engines.js';
+import * as decisionRequests from '../migrations/20261016_000001_decision_requests.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -92,10 +94,13 @@ export const REQUEST_MODEL_ATTRIBUTION_FILENAME = '20260913_000001_request_model
 export const CUSTOM_ENDPOINT_GROUP_LABEL_FILENAME = '20260930_000001_custom_endpoint_group_label.ts';
 export const KEY_MONTHLY_USAGE_FILENAME = '20260914_000001_key_monthly_usage.ts';
 export const QUOTA_SNAPSHOT_FRESHNESS_FILENAME = '20260915_000001_quota_snapshot_freshness.ts';
+export const CUSTOM_ENDPOINT_GROUP_LABEL_FILENAME = '20260930_000001_custom_endpoint_group_label.ts';
 export const UNIFIED_KEY_SR_PREFIX_FILENAME = '20261004_000001_unified_key_sr_prefix.ts';
 export const KEY_BUDGET_PERIOD_FILENAME = '20261005_000001_key_budget_period.ts';
 export const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_period_auto.ts';
 export const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts';
+export const SEARCH_ENGINES_FILENAME = '20261013_000001_search_engines.ts';
+export const DECISION_REQUESTS_FILENAME = '20261016_000001_decision_requests.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -141,4 +146,6 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: KEY_BUDGET_PERIOD_FILENAME, module: keyBudgetPeriod },
   { filename: KEY_BUDGET_PERIOD_AUTO_FILENAME, module: keyBudgetPeriodAuto },
   { filename: REMOVE_DEAD_PLATFORMS_FILENAME, module: removeDeadPlatforms },
+  { filename: SEARCH_ENGINES_FILENAME, module: searchEngines },
+  { filename: DECISION_REQUESTS_FILENAME, module: decisionRequests },
 ];

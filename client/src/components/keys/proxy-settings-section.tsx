@@ -92,6 +92,22 @@ export function ProxySettingsSection() {
 
   const enabled = data?.enabled ?? true
   const active = data?.active ?? false
+  // Bulk actions cover the complete provider catalog, not just keys already added.
+  // This also prevents newly added keys from silently inheriting a proxy route.
+  const allProxyPlatforms = [...PLATFORMS, CUSTOM_GROUP]
+  const configuredProxyPlatforms = allProxyPlatforms.filter(p => keys.some(k => k.platform === p.value))
+  const bypassed = new Set(data?.bypassPlatforms ?? [])
+  const everyPlatformBypassed = allProxyPlatforms.every(p => bypassed.has(p.value))
+  const everyPlatformRouted = allProxyPlatforms.every(p => !bypassed.has(p.value))
+
+  const setAllProxyRoutes = (routed: boolean) => {
+    const next = new Set(data?.bypassPlatforms ?? [])
+    for (const platform of allProxyPlatforms) {
+      if (routed) next.delete(platform.value)
+      else next.add(platform.value)
+    }
+    saveProxy.mutate({ bypassPlatforms: [...next] })
+  }
 
   return (
     <section className="rounded-3xl border bg-card p-5">
@@ -205,29 +221,50 @@ export function ProxySettingsSection() {
           list), matching the semantic of the old Providers-tab dropdown item. */}
       {!isError && enabled && keys.length > 0 && (
         <div className="mt-4 border-t pt-3">
-          <p className="text-xs font-medium mb-2">{t('keys.routeViaProxy')}</p>
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            {[...PLATFORMS, CUSTOM_GROUP]
-              .filter(p => keys.some(k => k.platform === p.value))
-              .map(p => {
-                const routed = !(data?.bypassPlatforms ?? []).includes(p.value)
-                return (
-                  <label key={p.value} className="flex items-center justify-between gap-2 text-xs">
-                    <span className="min-w-0 truncate">{p.label}</span>
-                    <Switch
-                      size="sm"
-                      checked={routed}
-                      disabled={saveProxy.isPending || !data}
-                      onCheckedChange={(checked) => {
-                        const next = checked
-                          ? (data?.bypassPlatforms ?? []).filter(x => x !== p.value)
-                          : [...(data?.bypassPlatforms ?? []), p.value]
-                        saveProxy.mutate({ bypassPlatforms: next })
-                      }}
-                    />
-                  </label>
-                )
-              })}
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium">{t('keys.routeViaProxy')}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={saveProxy.isPending || !data || everyPlatformBypassed}
+                onClick={() => setAllProxyRoutes(false)}
+              >
+                {t('keys.bulkDisable')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={saveProxy.isPending || !data || everyPlatformRouted}
+                onClick={() => setAllProxyRoutes(true)}
+              >
+                {t('keys.bulkEnable')}
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+            {configuredProxyPlatforms.map(p => {
+              const routed = !bypassed.has(p.value)
+              return (
+                <label key={p.value} className="flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1.5 text-xs hover:bg-muted/50">
+                  <Switch
+                    size="sm"
+                    className="shrink-0"
+                    checked={routed}
+                    disabled={saveProxy.isPending || !data}
+                    onCheckedChange={(checked) => {
+                      const next = checked
+                        ? (data?.bypassPlatforms ?? []).filter(x => x !== p.value)
+                        : [...(data?.bypassPlatforms ?? []), p.value]
+                      saveProxy.mutate({ bypassPlatforms: next })
+                    }}
+                  />
+                  <span className="min-w-0 truncate">{p.label}</span>
+                </label>
+              )
+            })}
           </div>
         </div>
       )}

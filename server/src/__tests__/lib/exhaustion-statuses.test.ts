@@ -111,6 +111,26 @@ describe('isContextTooLargeError', () => {
     ))).toBe('context_too_large');
   });
 
+  it('flags Agnes AI / aggregator ContextWindowExceededError shapes (truncated OpenAIException body)', () => {
+    // Agnes AI returns "API error 400: …ContextWindowExceededError…" whose
+    // nested OpenAIException body is truncated ("The input (2250074 tokens) is
+    // longer than the mo…") before "maximum context length" ever appears, so the
+    // old marker list fell through to provider_bad_request instead of
+    // context_too_large.
+    const agnes = Object.assign(
+      new Error('Agnes AI API error 400: ***.ContextWindowExceededError: ***.BadRequestError: ContextWindowExceededError: OpenAIException - {"message":"The input (2250074 tokens) is longer than the mo..."}'),
+      { status: 400 },
+    );
+    expect(isContextTooLargeError(agnes)).toBe(true);
+    expect(classifyAttemptError(agnes)).toBe('context_too_large');
+  });
+
+  it('flags "input … longer than the max/maximum" wordings', () => {
+    expect(isContextTooLargeError(new Error('Input is longer than the maximum allowed'))).toBe(true);
+    expect(isContextTooLargeError(new Error('The input is longer than the max token limit'))).toBe(true);
+    expect(isContextTooLargeError(new Error('input (2250074 tokens) is longer than maximum'))).toBe(true);
+  });
+
   it('flags literal HTTP 413s, including Groq TPM-ceiling 413s (Requested > Limit can never fit)', () => {
     expect(isContextTooLargeError(Object.assign(
       new Error('Groq API error 413: Request too large for model `llama-3.3-70b-versatile` in organization `org_x` on tokens per minute (TPM): Limit 30000, Requested 33476'),

@@ -5,6 +5,7 @@ import { FALLBACK_INPUT_PER_M, FALLBACK_OUTPUT_PER_M } from '../db/model-pricing
 import { providerIdFor, providerDisplayName } from '../lib/provider-identity.js';
 import { getLiveRoutes } from '../lib/route-live.js';
 import { normalizeBaseUrl } from '../lib/endpoint-scope.js';
+import { searchAnalytics, type SearchAnalyticsRange } from '../services/search.js';
 
 export const analyticsRouter = Router();
 
@@ -92,7 +93,16 @@ function readLifetimeSettings() {
 }
 
 // Summary stats
-//
+// Web searches (#1174) live in their own log (search_requests), so they never
+// show up in the chat totals above; the dashboard's search cards read this.
+const SEARCH_RANGES: readonly SearchAnalyticsRange[] = ['24h', '7d', '30d', '90d', 'all'];
+
+analyticsRouter.get('/search', (req: Request, res: Response) => {
+  const raw = typeof req.query.range === 'string' ? req.query.range : '7d';
+  const range = (SEARCH_RANGES as readonly string[]).includes(raw) ? raw as SearchAnalyticsRange : '7d';
+  res.json(searchAnalytics(range));
+});
+
 // Optional `since`/`until` (SQLite 'YYYY-MM-DD HH:MM:SS' UTC) pin an explicit
 // window instead of the rolling one derived from `range`. The dashboard's
 // "vs previous period" stat fetches the twin window this way; absent or

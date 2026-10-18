@@ -48,6 +48,16 @@ async function post(app: Express, path: string, body?: unknown) {
   return { status: res.status, body: data };
 }
 
+async function get(app: Express, path: string, token: string) {
+  const server = app.listen(0, '127.0.0.1');
+  if (!server.listening) await new Promise<void>(resolve => server.once('listening', () => resolve()));
+  const addr = server.address() as { port: number };
+  const res = await fetch(`http://127.0.0.1:${addr.port}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json().catch(() => null);
+  server.close();
+  return { status: res.status, body: data };
+}
+
 /** Step past the cooldown first, so a test never fails for a reason it isn't about. */
 async function forgot(app: Express) {
   jump(COOLDOWN_MS + 1_000);
@@ -119,6 +129,40 @@ describe('password reset by log code', () => {
     expect((await post(app, '/api/auth/reset-password', { resetCode: code, newPassword: 'brand-new-password' })).status).toBe(200);
     expect((await post(app, '/api/auth/login', { email: EMAIL, password: 'brand-new-password' })).status).toBe(200);
     expect((await post(app, '/api/auth/login', { email: EMAIL, password: PASSWORD })).status).toBe(401);
+  });
+
+  it('signs the operator in and names the account, so a forgotten email is no dead end (#1477)', async () => {
+    await forgot(app);
+    const code = getResetCode() as string;
+    const reset = await post(app, '/api/auth/reset-password', { resetCode: code, newPassword: 'brand-new-password' });
+
+    expect(reset.status).toBe(200);
+    expect(reset.body.email).toBe(EMAIL);
+    expect(typeof reset.body.token).toBe('string');
+    const me = await get(app, '/api/auth/me', reset.body.token);
+    expect(me.status).toBe(200);
+    expect(me.body.email).toBe(EMAIL);
+  });
+
+  it('returns no session for a wrong code', async () => {
+    await forgot(app);
+    const bad = await post(app, '/api/auth/reset-password', { resetCode: 'NOTTHECODE', newPassword: 'attacker-chosen-pw' });
+    expect(bad.status).toBe(403);
+    expect(bad.body.token).toBeUndefined();
+    expect(bad.body.email).toBeUndefined();
+  });
+
+  it('logs the account email beside the reset code, never over HTTP', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const { body } = await forgot(app);
+      const printed = log.mock.calls.map(c => String(c[0])).join('\n');
+      expect(printed).toContain(`Password-reset code: ${getResetCode()}`);
+      expect(printed).toContain(`Account email: ${EMAIL}`);
+      expect(JSON.stringify(body)).not.toContain(EMAIL);
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it('burns the code after one use', async () => {

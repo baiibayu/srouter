@@ -47,6 +47,8 @@ import { ModelScopeDialog } from './model-scope-dialog'
 import { TestModelsDialog } from './test-models-dialog'
 import { AddModelDialog } from './add-model-dialog'
 import { groupHandle } from '@/lib/endpoint-groups'
+import { SEARCH_PROVIDERS, isSearchPlatform } from '@/lib/search'
+import { copyText } from '@/lib/clipboard'
 
 type StatusFilter = 'all' | 'healthy' | 'issues' | 'disabled'
 
@@ -59,6 +61,8 @@ interface ProviderGroup {
   platform: string
   /** Custom endpoints only: the group label, or null for the default group. */
   customGroup?: string | null
+  /** A web search provider (#1174): listed in its own section, never chat. */
+  search?: boolean
   keys: ApiKey[]
 }
 
@@ -340,7 +344,10 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
     }
     group.keys.push(k)
   }
+  // Search providers (#1174) come first, in their own section: their keys
+  // serve /v1/search and agent web search, never a chat completion.
   const grouped: ProviderGroup[] = [
+    ...SEARCH_PROVIDERS.map(p => ({ ...p, platform: p.value, search: true, keys: keys.filter(k => k.platform === p.value) })),
     ...PLATFORMS.map(p => ({ ...p, platform: p.value, keys: keys.filter(k => k.platform === p.value) })),
     ...[...customGroups.values()].sort((a, b) =>
       a.customGroup === null ? -1 : b.customGroup === null ? 1 : a.label.localeCompare(b.label)),
@@ -442,8 +449,12 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
         <EmptyState title={t('keys.noFilterMatch')} />
       ) : (
         <div className="space-y-4">
-          {visibleGroups.map(group => {
+          {visibleGroups.map((group, i) => {
             const expanded = isGroupExpanded(group)
+            // Section headings appear only when search keys are on screen;
+            // a Keys page without any reads exactly as it always has.
+            const showSections = visibleGroups.some(g => g.search)
+            const sectionStart = showSections && (i === 0 || !!visibleGroups[i - 1].search !== !!group.search)
             const healthyCount = group.keys.filter(k => statusOf(k) === 'healthy').length
             const issueCount = group.keys.filter(k => statusOf(k) !== 'healthy').length
             // #787: once a selection exists in this group the checkboxes stay
@@ -451,6 +462,14 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
             const groupHasSelection = group.keys.some(k => selectedKeyIds.has(k.id))
             return (
               <div key={group.value}>
+                {sectionStart && (
+                  <div className={`pb-2 ${i === 0 ? '' : 'pt-4'}`}>
+                    <h2 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {group.search ? t('search.keysSection') : t('search.keysModelsSection')}
+                    </h2>
+                    {group.search && <p className="text-xs text-muted-foreground">{t('search.keysSectionHint')}</p>}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 pb-2">
                   <Switch
                     checked={group.keys.some(k => k.enabled)}
@@ -466,6 +485,11 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                     aria-expanded={expanded}
                   >
                     <h3 className="text-sm font-medium">{group.label}</h3>
+                    {group.search && (
+                      <Badge variant="outline" className="border-sky-600/30 text-[10px] text-sky-700 dark:text-sky-300">
+                        {t('search.badge')}
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className="tabular-nums">{group.keys.length}</Badge>
                     {group.customGroup && (
                       <Tooltip text={t('keys.groupHandleHint', { handle: groupHandle(group.customGroup) })}>
@@ -499,7 +523,7 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                       <DropdownMenuContent align="end" className="w-52">
                         {/* Test every model this provider serves, one real ping each
                             (custom endpoints test per key from the row instead). */}
-                        {group.platform !== 'custom' && (
+                        {group.platform !== 'custom' && !group.search && (
                           <DropdownMenuItem onClick={() => setTestTarget({ platform: group.platform, label: group.label })}>
                             {t('keys.testModels')}
                             <FlaskConical className="ml-auto size-3.5" />
@@ -511,10 +535,12 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                             <Copy className="ml-auto size-3.5" />
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => setAddModelTarget({ platform: group.platform })}>
-                          {t('keys.addCustomModel')}
-                          <Sparkles className="ml-auto size-3.5" />
-                        </DropdownMenuItem>
+                        {!group.search && (
+                          <DropdownMenuItem onClick={() => setAddModelTarget({ platform: group.platform })}>
+                            {t('keys.addCustomModel')}
+                            <Sparkles className="ml-auto size-3.5" />
+                          </DropdownMenuItem>
+                        )}
                         {group.url && (
                           <DropdownMenuItem onClick={() => window.open(group.url, '_blank', 'noopener,noreferrer')}>
                             {t('keys.getApiKey')}
@@ -715,7 +741,7 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                               >
                                 <Pencil className="size-3" />
                               </Button>
-                              {!k.keyless && (
+                              {!k.keyless && !isSearchPlatform(k.platform) && (
                                 <Tooltip text={t('keys.editModels')}>
                                   <Button
                                     variant="ghost"

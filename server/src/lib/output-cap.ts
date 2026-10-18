@@ -12,6 +12,14 @@
 // per-route output budget (resolveMaxTokens clamps max_tokens to it). A
 // restart forgets the ceilings; the first request after it pays one failover
 // hop to relearn each one.
+//
+// Keyed per model AND per endpoint (`modelStatsKey`), not per model: every
+// custom relay shares platform 'custom', so a ceiling learned from relay A
+// would silently clamp relay B's replies to relay A's output limit until
+// restart. Same reasoning as lib/tool-capability.ts (#1230) and the
+// endpoint_scope identity migration (#651): output ceilings are a property of
+// the model behind ONE relay, and sibling relays do not share it.
+import { modelStatsKey } from './endpoint-scope.js';
 
 const learned = new Map<string, number>();
 
@@ -32,8 +40,8 @@ const CEILING = new RegExp(`\\b(?:max_tokens|max_completion_tokens|max_output_to
 // wrong low cap would truncate every reply on the model until restart.
 export const MIN_LEARNED_OUTPUT_CAP = 1024;
 
-function capKey(platform: string, modelId: string): string {
-  return `${platform}:${modelId}`;
+function capKey(platform: string, modelId: string, endpointScope?: string | null): string {
+  return modelStatsKey(platform, modelId, endpointScope);
 }
 
 /** The output ceiling a provider names when it rejects max_tokens as too
@@ -52,30 +60,30 @@ export function parseMaxTokensCeiling(message: unknown): number | null {
 /** Learn the ceiling from a max_tokens rejection. Returns it, or null when the
  *  error is not one, or when the reading is below MIN_LEARNED_OUTPUT_CAP. The
  *  lowest reading wins. */
-export function learnOutputCapFromError(route: { platform: string; modelId: string }, err: any): number | null {
+export function learnOutputCapFromError(route: { platform: string; modelId: string; endpointScope?: string | null }, err: any): number | null {
   const status = typeof err?.status === 'number' ? err.status : 0;
   if (status !== 0 && status !== 400 && status !== 422) return null;
   const ceiling = parseMaxTokensCeiling(err?.message);
   if (ceiling == null || ceiling < MIN_LEARNED_OUTPUT_CAP) return null;
-  const key = capKey(route.platform, route.modelId);
+  const key = capKey(route.platform, route.modelId, route.endpointScope);
   const current = learned.get(key);
   learned.set(key, current == null ? ceiling : Math.min(current, ceiling));
   return ceiling;
 }
 
-export function learnedOutputCap(platform: string, modelId: string): number | undefined {
-  return learned.get(capKey(platform, modelId));
+export function learnedOutputCap(platform: string, modelId: string, endpointScope?: string | null): number | undefined {
+  return learned.get(capKey(platform, modelId, endpointScope));
 }
 
 /** The output budget for one route: what is left of its context window after
  *  the input, lowered to any learned output ceiling. Adapters pass it to
  *  resolveMaxTokens as `contextBudget`. */
 export function routeOutputBudget(
-  route: { platform: string; modelId: string; contextWindow?: number | null },
+  route: { platform: string; modelId: string; contextWindow?: number | null; endpointScope?: string | null },
   estimatedInputTokens: number,
 ): number | undefined {
   const windowLeft = route.contextWindow != null ? route.contextWindow - estimatedInputTokens : undefined;
-  const cap = learnedOutputCap(route.platform, route.modelId);
+  const cap = learnedOutputCap(route.platform, route.modelId, route.endpointScope);
   if (cap == null) return windowLeft;
   return windowLeft == null ? cap : Math.min(windowLeft, cap);
 }

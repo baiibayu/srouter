@@ -55,6 +55,18 @@ export function verifyCredentials(email: string, password: string): SessionUser 
   return { userId: row.id, email: row.email };
 }
 
+/** Desktop app only: a session for the install's account, creating the hidden
+ *  machine account (`desktop@localhost`, random password nobody knows) on first
+ *  run. The desktop window gets this over IPC; a browser tab on the same
+ *  machine gets it from POST /api/auth/desktop-session (routes/auth.ts). */
+export function desktopSessionToken(): string {
+  if (userCount() === 0) {
+    createUser('desktop@localhost', crypto.randomBytes(24).toString('hex'));
+  }
+  const first = getDb().prepare('SELECT id FROM users ORDER BY id ASC LIMIT 1').get() as { id: number };
+  return createSession(first.id);
+}
+
 /** Mint a session and return the raw token (only the hash is persisted). */
 export function createSession(userId: number): string {
   const token = crypto.randomBytes(32).toString('hex');
@@ -117,16 +129,22 @@ export function updatePassword(userId: number, currentPassword: string, newPassw
   return true;
 }
 
+/** The single account's email, or null before first-run setup. */
+export function accountEmail(): string | null {
+  const row = getDb().prepare('SELECT email FROM users LIMIT 1').get() as { email: string } | undefined;
+  return row?.email ?? null;
+}
+
 /**
  * Reset the password for the single existing user and invalidate all
  * sessions.
- * Returns false if no user exists.
+ * Returns the user, or null if no user exists.
  */
-export function resetUserPassword(newPassword: string): boolean {
+export function resetUserPassword(newPassword: string): SessionUser | null {
   const db = getDb();
-  const row = db.prepare('SELECT id FROM users LIMIT 1').get() as { id: number } | undefined;
-  if (!row) return false;
+  const row = db.prepare('SELECT id, email FROM users LIMIT 1').get() as { id: number; email: string } | undefined;
+  if (!row) return null;
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPassword), row.id);
   db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id);
-  return true;
+  return { userId: row.id, email: row.email };
 }

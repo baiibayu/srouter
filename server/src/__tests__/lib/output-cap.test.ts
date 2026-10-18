@@ -72,3 +72,38 @@ describe('learned output caps', () => {
     expect(routeOutputBudget({ ...route, contextWindow: null }, 20000)).toBe(65536);
   });
 });
+
+describe('learned caps are per endpoint (#651 identity, #1230 precedent)', () => {
+  // Two custom relays serving the same model id share platform 'custom'; only
+  // endpoint_scope tells them apart. A ceiling learned from relay A must not
+  // clamp relay B's replies (and a catalog platform must never be clamped by
+  // anything a relay learned).
+  const relayA = { platform: 'custom', modelId: 'deepseek-v3.1', contextWindow: 131072, endpointScope: 'https://relay-a.example.com/v1' };
+  const relayB = { platform: 'custom', modelId: 'deepseek-v3.1', contextWindow: 131072, endpointScope: 'https://relay-b.example.com/v1' };
+  const rejection = (ceiling: number) => Object.assign(
+    new Error(`max_tokens (128000) exceeds model's maximum output tokens (${ceiling})`),
+    { status: 400 },
+  );
+
+  it('keeps one relay ceiling out of a sibling relay on the same model id', () => {
+    expect(learnOutputCapFromError(relayA, rejection(32768))).toBe(32768);
+    expect(routeOutputBudget(relayA, 1000)).toBe(32768);
+    // Relay B serves the same model id but never rejected anything.
+    expect(learnedOutputCap(relayB.platform, relayB.modelId, relayB.endpointScope)).toBeUndefined();
+    expect(routeOutputBudget(relayB, 1000)).toBe(130072);
+  });
+
+  it('keeps a relay ceiling out of the catalog row for the same model id', () => {
+    learnOutputCapFromError(relayA, rejection(32768));
+    expect(learnedOutputCap('custom', 'deepseek-v3.1')).toBeUndefined();
+    expect(routeOutputBudget({ platform: 'custom', modelId: 'deepseek-v3.1', contextWindow: 131072 }, 1000)).toBe(130072);
+  });
+
+  it('treats a missing scope and an empty scope as the same identity', () => {
+    learnOutputCapFromError({ platform: 'custom', modelId: 'm', endpointScope: '' }, rejection(8192));
+    expect(learnedOutputCap('custom', 'm', undefined)).toBe(8192);
+    expect(learnedOutputCap('custom', 'm', null)).toBe(8192);
+    // And a scoped reading never leaks into the un-scoped identity either.
+    expect(learnedOutputCap('custom', 'm', 'https://relay-x.example.com')).toBeUndefined();
+  });
+});

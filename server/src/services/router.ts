@@ -1859,9 +1859,24 @@ export function routePinnedModel(modelDbId: number, estimatedTokens = 1000, skip
   // pre-margin behavior was one dispatch attempt (a mid-chain context_too_large
   // 400 is classified and retried downstream). Nothing is multiplied here —
   // estimatedTokens already carries the exact capped output reserve (#470).
-  if (!fitsContextWindowStrict(entry.context_window, estimatedTokens)) return null;
-  if (entry.tpm_limit != null && estimatedTokens > entry.tpm_limit) return null;
+  if (!rowFitsRequestSize(entry, estimatedTokens)) return null;
   return selectKeyForModel(entry, estimatedTokens, skipKeys);
+}
+
+function rowFitsRequestSize(entry: ChainRow, estimatedTokens: number): boolean {
+  if (!fitsContextWindowStrict(entry.context_window, estimatedTokens)) return false;
+  return entry.tpm_limit == null || estimatedTokens <= entry.tpm_limit;
+}
+
+/**
+ * Whether a pinned model's known context window and TPM ceiling can hold a
+ * request this size. Lets a caller tell "routePinnedModel returned null because
+ * the request is too big" (permanent for this request) from "no key is free
+ * right now" (transient). An unknown model is not a size problem.
+ */
+export function pinnedModelFitsRequestSize(modelDbId: number, estimatedTokens: number): boolean {
+  const entry = getModelChainRow(getDb(), modelDbId);
+  return !entry || rowFitsRequestSize(entry, estimatedTokens);
 }
 
 /**

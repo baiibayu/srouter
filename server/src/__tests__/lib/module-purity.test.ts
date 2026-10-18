@@ -41,15 +41,16 @@ const PURE_MODULES = [
   // HTML entity/tag helpers shared by the web-search parser and the fetch
   // route; string functions over their arguments, no I/O by design.
   'html.ts',
-  // Learned output ceilings; the fallback loop and every route import it.
-  'output-cap.ts',
   'provider-identity.ts',
   'provider-size-parser.ts',
   'retry-hint.ts',
-  // In-memory tracker for the dashboard's live routing strip: no imports by
+ // In-memory tracker for the dashboard's live routing strip: no imports by
   // design, so the strip's data source cannot drag the request path around.
   'route-live.ts',
-  'structured-output.ts',
+
+ // Search platform list; the provider list, keys route and search service import it.
+ 'search-platforms.ts',
+ 'structured-output.ts',
   'tool-args.ts',
   'tool-call-rescue.ts',
   // Type-only imports today; listed so they stay that way.

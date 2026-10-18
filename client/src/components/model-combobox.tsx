@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { ChevronsUpDown, Check, Search } from 'lucide-react'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Tooltip } from '@/components/tooltip'
@@ -21,6 +21,12 @@ export interface ModelComboOption {
    * "no image support" while the Playground has an image attached).
    */
   note?: string
+  /**
+   * Section heading. Consecutive options sharing a group are listed under one
+   * heading, drawn when the group changes (the Add key picker's Search vs
+   * Models split). Options without one get no heading.
+   */
+  group?: string
 }
 
 export function ModelCombobox({
@@ -125,35 +131,41 @@ export function ModelCombobox({
             <div className="px-2 py-6 text-center text-xs text-muted-foreground">{emptyText}</div>
           ) : (
             filtered.map((o, i) => (
-              <button
-                key={o.value}
-                type="button"
-                onMouseEnter={() => setActive(i)}
-                onClick={() => pick(o.value)}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                  o.value === value ? 'bg-accent/50' : i === active ? 'bg-muted' : ''
-                }`}
-              >
-                <Check className={`size-4 shrink-0 ${o.value === value ? 'opacity-100' : 'opacity-0'}`} />
-                <span className={`min-w-0 flex-1 truncate ${o.note ? 'opacity-50' : ''}`} title={o.label}>{o.label}</span>
-                {o.note && (
-                  <span className="rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                    {o.note}
-                  </span>
+              <Fragment key={o.value}>
+                {o.group && o.group !== filtered[i - 1]?.group && (
+                  <div className="px-2 pt-2 pb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {o.group}
+                  </div>
                 )}
-                {o.isNew && (
-                  <span className="rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                    {t('models.newBadge')}
-                  </span>
-                )}
-                {o.sub && ((o.platforms?.length ?? 0) > 1 ? (
-                  <Tooltip text={t('models.servedBy', { providers: (o.platforms ?? []).join('\n') })}>
-                    <span className="shrink-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-2">{o.sub}</span>
-                  </Tooltip>
-                ) : (
-                  <span className="shrink-0 text-xs text-muted-foreground">{o.sub}</span>
-                ))}
-              </button>
+                <button
+                  type="button"
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => pick(o.value)}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
+                    o.value === value ? 'bg-accent/50' : i === active ? 'bg-muted' : ''
+                  }`}
+                >
+                  <Check className={`size-4 shrink-0 ${o.value === value ? 'opacity-100' : 'opacity-0'}`} />
+                  <span className={`min-w-0 flex-1 truncate ${o.note ? 'opacity-50' : ''}`} title={o.label}>{o.label}</span>
+                  {o.note && (
+                    <span className="rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                      {o.note}
+                    </span>
+                  )}
+                  {o.isNew && (
+                    <span className="rounded px-1 py-0.5 text-[9px] font-semibold uppercase leading-none tracking-wide bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                      {t('models.newBadge')}
+                    </span>
+                  )}
+                  {o.sub && ((o.platforms?.length ?? 0) > 1 ? (
+                    <Tooltip text={t('models.servedBy', { providers: (o.platforms ?? []).join('\n') })}>
+                      <span className="shrink-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-2">{o.sub}</span>
+                    </Tooltip>
+                  ) : (
+                    <span className="shrink-0 text-xs text-muted-foreground">{o.sub}</span>
+                  ))}
+                </button>
+              </Fragment>
             ))
           )}
           {footer}

@@ -271,6 +271,40 @@ describe('Keys API', () => {
     expect(status).toBe(404);
   });
 
+  it('DELETE /api/keys/:id sweeps key-bound rows on standard platforms (#1516)', async () => {
+    const { body: created } = await request(app, 'POST', '/api/keys', {
+      platform: 'groq',
+      key: 'gsk_test123456789',
+    });
+    const db = getDb();
+    // A key-bound chat row plus its fallback row, embedding row and media row.
+    // Shared catalog rows (key_id NULL) must survive the delete.
+    const chat = db.prepare(`
+      INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, size_label, key_id, enabled, source)
+      VALUES ('groq', 'orphan-chat-1516', 'Orphan Chat', 50, 50, 'Large', ?, 1, 'user')
+    `).run(created.id);
+    db.prepare('INSERT INTO fallback_config (model_db_id, priority, enabled) VALUES (?, 9999, 1)').run(chat.lastInsertRowid);
+    db.prepare(`
+      INSERT INTO embedding_models (family, platform, model_id, display_name, dimensions, priority, enabled, quota_label, key_id)
+      VALUES ('fam-1516', 'groq', 'orphan-embed-1516', 'Orphan Embed', 768, 1, 1, 'test', ?)
+    `).run(created.id);
+    db.prepare(`
+      INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, key_id)
+      VALUES ('groq', 'orphan-tts-1516', 'Orphan TTS', 'audio', 1, 1, 'test', ?)
+    `).run(created.id);
+    const sharedBefore = (db.prepare("SELECT COUNT(*) AS n FROM models WHERE platform = 'groq' AND key_id IS NULL").get() as { n: number }).n;
+
+    const { status } = await request(app, 'DELETE', `/api/keys/${created.id}`);
+    expect(status).toBe(200);
+
+    expect(db.prepare('SELECT COUNT(*) AS n FROM models WHERE key_id = ?').get(created.id)).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM embedding_models WHERE key_id = ?').get(created.id)).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM media_models WHERE key_id = ?').get(created.id)).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM fallback_config WHERE model_db_id = ?').get(chat.lastInsertRowid)).toEqual({ n: 0 });
+    // Shared catalog rows are untouched.
+    expect(db.prepare("SELECT COUNT(*) AS n FROM models WHERE platform = 'groq' AND key_id IS NULL").get()).toEqual({ n: sharedBefore });
+  });
+
   it('PATCH /api/keys/:id updates label', async () => {
     const { body: created } = await request(app, 'POST', '/api/keys', {
       platform: 'groq',
@@ -397,7 +431,7 @@ describe('Keys API', () => {
     expect(storedKey(created.id)).toBe('kilo-real-secret');
   });
 
-  it.each(['kilo', 'ovh', 'aihorde'])('POST /api/keys without a key stores one anonymous %s row', async (platform) => {
+  it.each(['kilo', 'ovh', 'aihorde', 'parallel'])('POST /api/keys without a key stores one anonymous %s row', async (platform) => {
     const first = await request(app, 'POST', '/api/keys', { platform });
     const second = await request(app, 'POST', '/api/keys', { platform, key: '   ' });
 
@@ -410,7 +444,7 @@ describe('Keys API', () => {
     expect(keys[0]).toMatchObject({ platform, keyless: true, keyOptional: true, exportable: false });
   });
 
-  it.each(['kilo', 'ovh', 'aihorde'])('POST /api/keys stores a real %s key encrypted', async (platform) => {
+  it.each(['kilo', 'ovh', 'aihorde', 'parallel'])('POST /api/keys stores a real %s key encrypted', async (platform) => {
     const { status, body } = await request(app, 'POST', '/api/keys', { platform, key: ` ${platform}-secret-123 `, label: 'mine' });
 
     expect(status).toBe(201);

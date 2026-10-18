@@ -8,7 +8,9 @@ import { customEndpointKeyIds } from './custom-endpoint.js';
 // through the SAME upsert, exactly like custom-model-register.ts does for chat
 // models. This used to live inline in routes/media.ts.
 
-export type CustomMediaModality = 'image' | 'audio' | 'transcription';
+// 'search' registers a custom web search relay speaking Tavily's wire shape at
+// POST {base_url}/search (#1174); services/search.ts routes it first.
+export type CustomMediaModality = 'image' | 'audio' | 'transcription' | 'search';
 
 export interface CustomMediaEntry {
   modelId: string;

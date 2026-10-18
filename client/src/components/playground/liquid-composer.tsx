@@ -1,7 +1,9 @@
 import { useEffect, useState, type ClipboardEvent, type KeyboardEvent, type RefObject } from 'react'
 import { Liquid } from 'liquid-gooey'
-import { ArrowUp, Paperclip } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowUp, Globe, Paperclip, Plus } from 'lucide-react'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Switch } from '@/components/ui/switch'
 import { DictationButton, type DictationPhase } from './dictation-button'
 import { DictationWave } from './dictation-wave'
 import {
@@ -41,13 +43,16 @@ export interface LiquidComposerProps {
   loading: boolean
   onSend: () => void
   onAttach: () => void
-  labels: { attach: string; send: string; sending: string }
+  labels: { add: string; attach: string; send: string; sending: string }
   /** Speech to text for the mic; the transcript is appended to `value`. */
   dictation: { available: boolean; model: string; apiKey: string | null | undefined; onText: (text: string) => void }
+  /** The web search switch in the + menu (#1174). While it is on, the + turns
+   *  blue with a small dot instead of a chip in the field, so the input stays clear. */
+  webSearch?: { enabled: boolean; available: boolean; label: string; unavailableHint: string; onToggle: (on: boolean) => void }
 }
 
 export function LiquidComposer({
-  inputRef, value, onChange, onKeyDown, onPaste, placeholder, hasContent, loading, onSend, onAttach, labels, dictation,
+  inputRef, value, onChange, onKeyDown, onPaste, placeholder, hasContent, loading, onSend, onAttach, labels, dictation, webSearch,
 }: LiquidComposerProps) {
   // Set from input events; an empty value never counts as grown, so a
   // programmatic clear (send, new chat) drops back to one line by itself.
@@ -85,17 +90,56 @@ export function LiquidComposer({
           className={`flex gap-1 ps-1 pe-2 py-1 ${grown ? 'items-end' : 'items-center'}`}
           style={{ borderRadius: COMPOSER_CORNER_PX }}
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-            onClick={onAttach}
-            disabled={loading}
-            aria-label={labels.attach}
-            title={labels.attach}
-          >
-            <Paperclip className="size-4" />
-          </Button>
+          {/* One + for everything that goes with the message: files, and the
+              web search switch (which the settings rail also carries). */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={`${buttonVariants({ variant: 'ghost', size: 'icon' })} relative shrink-0 rounded-full text-muted-foreground hover:text-foreground data-popup-open:text-foreground ${grown ? 'mb-0.5' : ''}`}
+              disabled={loading}
+              aria-label={webSearch?.enabled ? `${labels.add} · ${webSearch.label}` : labels.add}
+              title={webSearch?.enabled ? `${labels.add} · ${webSearch.label}` : labels.add}
+            >
+              <Plus className={`size-4 ${webSearch?.enabled ? 'text-sky-600 dark:text-sky-300' : ''}`} />
+              {webSearch?.enabled && (
+                <span
+                  data-testid="web-search-indicator"
+                  className="pointer-events-none absolute top-1.5 right-1.5 size-1.5 rounded-full bg-sky-500"
+                />
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-56">
+              <DropdownMenuItem onClick={onAttach}>
+                <Paperclip />
+                {labels.attach}
+              </DropdownMenuItem>
+              {webSearch && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    closeOnClick={false}
+                    disabled={!webSearch.available}
+                    onClick={() => webSearch.onToggle(!webSearch.enabled)}
+                    title={webSearch.available ? undefined : webSearch.unavailableHint}
+                    aria-checked={webSearch.enabled}
+                    role="menuitemcheckbox"
+                  >
+                    <Globe />
+                    <span className="flex-1">{webSearch.label}</span>
+                    <Switch
+                      size="sm"
+                      checked={webSearch.enabled}
+                      tabIndex={-1}
+                      aria-hidden
+                      className="pointer-events-none"
+                    />
+                  </DropdownMenuItem>
+                  {!webSearch.available && (
+                    <p className="px-1.5 pt-0.5 pb-1 text-[11px] leading-snug text-muted-foreground">{webSearch.unavailableHint}</p>
+                  )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {/* While the mic is open the field shows the voice, not the text:
               the textarea keeps its value and size, the wave paints over it. */}
           {/* A flex wrapper: an inline textarea inside a block div gets a

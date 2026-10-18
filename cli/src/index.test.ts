@@ -87,6 +87,38 @@ describe('CLI arguments and launchers', () => {
     }
   });
 
+  it.skipIf(process.platform !== 'win32')('launches Windows command shims for both agents', async () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-launch-'));
+    temporary.push(directory);
+    for (const command of ['codex', 'claude']) {
+      fs.writeFileSync(path.join(directory, `${command}.cmd`),
+        `@echo off\r\necho ${command} > "%FREELLMAPI_TEST_MARKER%"\r\nexit /b 17\r\n`);
+    }
+    const previousPath = process.env.PATH;
+    const previousMarker = process.env.FREELLMAPI_TEST_MARKER;
+    const previousFetch = globalThis.fetch;
+    const marker = path.join(directory, 'launched.txt');
+    process.env.PATH = `${directory};${process.env.SystemRoot}\\System32`;
+    process.env.FREELLMAPI_TEST_MARKER = marker;
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      data: [{ id: 'test-model', available: true }],
+    }), { headers: { 'Content-Type': 'application/json' } });
+    try {
+      for (const [command, agent] of [['launch-codex', 'codex'], ['launch', 'claude']]) {
+        fs.rmSync(marker, { force: true });
+        expect(await main([command, '--url', 'http://127.0.0.1:3001', '--api-key', 'test-key']))
+          .toBe(17);
+        expect(fs.readFileSync(marker, 'utf8').trim()).toBe(agent);
+      }
+    } finally {
+      globalThis.fetch = previousFetch;
+      if (previousPath === undefined) delete process.env.PATH;
+      else process.env.PATH = previousPath;
+      if (previousMarker === undefined) delete process.env.FREELLMAPI_TEST_MARKER;
+      else process.env.FREELLMAPI_TEST_MARKER = previousMarker;
+    }
+  });
+
   it('uses --model for ANTHROPIC_MODEL and defaults to the first available model', () => {
     const explicit = claudeLaunchEnv(
       { ...baseOptions, model: 'reasoning-model' },

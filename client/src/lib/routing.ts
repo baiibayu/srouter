@@ -404,6 +404,7 @@ export const platformColors: Record<string, string> = {
   sail:        '#0ea5e9',
   aclide:      '#6366f1',
   speka:       '#0d9488',
+auray:       '#635bff',
   typhoon:     '#e11d48',
   plugsky:     '#0284c7',
   inferbase:   '#2563eb',
@@ -458,6 +459,12 @@ export const platformColors: Record<string, string> = {
   volcengine:  '#00b8d9',
   longcat:     '#ffd100',
   xfyun:       '#1f6fd0',
+  // Web search providers (#1174).
+  tavily:      '#f97316',
+  exa:         '#2563eb',
+  firecrawl:   '#ef4444',
+  linkup:      '#10b981',
+  parallel:    '#0ea5e9',
 }
 
 // ── Grouped (unified) rendering ──────────────────────────────────────────────

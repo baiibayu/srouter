@@ -11,7 +11,9 @@ import {
   updateEmail,
   updatePassword,
   resetUserPassword,
+  accountEmail,
   normalizeEmail,
+  desktopSessionToken,
 } from '../services/auth.js';
 import { setupCodeMatches, clearSetupCode } from '../lib/setup-code.js';
 import { generateResetCode, resetCodeMatches, clearResetCode } from '../lib/reset-code.js';
@@ -130,14 +132,77 @@ function isLoopbackRemote(req: Request): boolean {
   return !firstForwarded || isLoopbackAddress(firstForwarded);
 }
 
+// ── Desktop sign-in (#1399) ───────────────────────────────────────────────
+// The desktop app's account is a hidden machine user with a random password
+// nobody knows. Its own window gets sessions over IPC, but the same dashboard
+// opened in a normal browser tab (the tray's "Open in browser", a bookmark,
+// http://127.0.0.1:31415) used to land on a Sign In form nobody could pass.
+// On a desktop install, a request from this machine gets the session the
+// window would have got, so the form never shows.
+//
+// Guards, all required:
+//  - SROUTER_DESKTOP=1: only the desktop embedder sets it; web/Docker installs
+//    keep their login.
+//  - Loopback socket with no remote forwarded hop (isLoopbackRemote), so LAN
+//    access mode and a local reverse proxy never hand out sessions.
+//  - A localhost Host header: a DNS-rebinding page (evil.example resolving to
+//    127.0.0.1) is same-origin to the browser but still sends its own name.
+//  - Not cross-site: another site's page can fire a request at 127.0.0.1, and
+//    Sec-Fetch-Site / Origin say so.
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+
+function hostnameOf(hostHeader: string | undefined): string | null {
+  if (!hostHeader) return null;
+  try {
+    return new URL(`http://${hostHeader}`).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isCrossSite(req: Request): boolean {
+  const site = req.headers['sec-fetch-site'];
+  if (typeof site === 'string' && site !== 'same-origin' && site !== 'none') return true;
+  const origin = req.headers.origin;
+  if (typeof origin === 'string' && origin !== 'null') {
+    let originHost: string;
+    try {
+      originHost = new URL(origin).hostname.toLowerCase();
+    } catch {
+      return true;
+    }
+    if (!LOCAL_HOSTNAMES.has(originHost)) return true;
+  }
+  return false;
+}
+
+export function desktopSignInAllowed(req: Request): boolean {
+  if (process.env.SROUTER_DESKTOP !== '1') return false;
+  if (!isLoopbackRemote(req)) return false;
+  const host = hostnameOf(req.headers.host);
+  if (!host || !LOCAL_HOSTNAMES.has(host)) return false;
+  return !isCrossSite(req);
+}
+
 // Has the dashboard been set up yet, and is this caller authenticated?
+// `desktop` tells the dashboard it can fetch a session instead of showing the
+// sign-in form.
 authRouter.get('/status', (req: Request, res: Response) => {
   const session = validateSession(bearer(req));
   res.json({
     needsSetup: userCount() === 0,
     authenticated: !!session,
     email: session?.email ?? null,
+    desktop: desktopSignInAllowed(req),
   });
+});
+
+authRouter.post('/desktop-session', (req: Request, res: Response) => {
+  if (!desktopSignInAllowed(req)) {
+    res.status(403).json({ error: { message: 'Desktop sign-in is only available on this computer.', type: 'desktop_signin_forbidden' } });
+    return;
+  }
+  res.json({ token: desktopSessionToken() });
 });
 
 // First-run account creation. Only allowed while there are zero users, so it
@@ -311,7 +376,7 @@ authRouter.post('/forgot-password', (_req: Request, res: Response) => {
     return;
   }
   lastResetCodeAt = now;
-  generateResetCode();
+  generateResetCode(accountEmail());
   res.json({ success: true });
 });
 
@@ -331,11 +396,15 @@ authRouter.post('/reset-password', (req: Request, res: Response) => {
     res.status(403).json({ error: { message: 'Invalid or expired reset code', type: 'authentication_error' } });
     return;
   }
-  const ok = resetUserPassword(parsed.data.newPassword);
-  if (!ok) {
+  const user = resetUserPassword(parsed.data.newPassword);
+  if (!user) {
     res.status(404).json({ error: { message: 'No account found', type: 'not_found' } });
     return;
   }
   clearResetCode();
-  res.json({ success: true });
+  // Sign the operator straight in: the code already proved they control the
+  // install, and sending them back to a login form that needs an email they
+  // may not remember left them locked out after a successful reset (#1477).
+  const token = createSession(user.userId);
+  res.json({ success: true, token, email: user.email });
 });

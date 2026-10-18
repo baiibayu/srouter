@@ -2,12 +2,14 @@ import { Router } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import { getDb, getUnifiedApiKey, getSetting } from '../db/index.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';
+import { runSearch } from '../services/search.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { supportedParametersForPlatforms } from '../lib/sampling-params.js';
 import { getRoutingScores, getRoutingStrategy, setRoutingStrategy } from '../services/router.js';
 import type { RoutingStrategy } from '../services/scoring.js';
-import { getCacheStats } from '../services/cache.js';
+import { getCacheStats, clearCache } from '../services/cache.js';
 import { getCompressionStats } from '../services/compression/stats.js';
+import { getQuotaOutlook } from '../services/quota-outlook.js';
 import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
 import { z } from 'zod';
 
@@ -127,6 +129,39 @@ function providerHealth(): unknown {
   for (const c of cooldowns) entry(c.platform).active_cooldowns = c.n;
   for (const m of availableModels) entry(m.platform).available_models = m.n;
   return Object.fromEntries([...byPlatform.entries()].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+function providerList(): unknown {
+  const db = getDb();
+  const keys = db.prepare(`
+    SELECT platform, COUNT(*) AS n,
+      SUM(CASE WHEN status = 'healthy' THEN 1 ELSE 0 END) AS healthy,
+      SUM(CASE WHEN status = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+      SUM(CASE WHEN status = 'invalid' THEN 1 ELSE 0 END) AS invalid,
+      SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) AS error
+    FROM api_keys WHERE enabled = 1
+    GROUP BY platform
+    ORDER BY platform
+  `).all() as Array<{ platform: string; n: number; healthy: number; rate_limited: number; invalid: number; error: number }>;
+  return keys.map(k => ({
+    platform: k.platform,
+    total_keys: k.n,
+    healthy: k.healthy,
+    rate_limited: k.rate_limited,
+    invalid: k.invalid,
+    error: k.error,
+  }));
+}
+
+function clearCacheTool(): unknown {
+  const n = clearCache();
+  return { cleared_entries: n };
+}
+
+// Forecasting which free pools are about to run dry is the single most useful
+// thing an agent can ask before committing to a long task on the free tier.
+function quotaOutlook(): unknown {
+  return getQuotaOutlook();
 }
 
 const USAGE_RANGES: Record<string, number> = { '24h': 24, '7d': 24 * 7, '30d': 24 * 30 };
@@ -355,6 +390,23 @@ function healthcheck(): unknown {
   };
 }
 
+async function webSearch(args: Record<string, unknown>): Promise<unknown> {
+  const query = typeof args.query === 'string' ? args.query.trim() : '';
+  if (!query) throw new Error('query is required');
+  const maxResults = typeof args.max_results === 'number' && Number.isFinite(args.max_results)
+    ? Math.min(Math.max(Math.floor(args.max_results), 1), 20)
+    : 5;
+  const topic = args.topic === 'news' ? 'news' : 'general';
+  const result = await runSearch(query, { maxResults, topic });
+  return {
+    query: result.query,
+    provider: result.provider,
+    ...((result as { engine?: unknown }).engine ? { engine: (result as { engine?: unknown }).engine } : {}),
+    ...(result.answer ? { answer: result.answer } : {}),
+    results: result.results.map(r => ({ title: r.title, url: r.url, content: r.content })),
+  };
+}
+
 // ── Tool registry ────────────────────────────────────────────────────────
 
 interface McpTool {
@@ -474,12 +526,49 @@ const TOOLS: Record<string, McpTool> = {
     annotations: READ_ONLY_LOCAL,
     run: () => getCacheStats(),
   },
+  web_search: {
+    title: 'Search the web',
+    description: 'Search the web through the search providers configured in SRouter (Parallel, Tavily, Exa, Firecrawl, Linkup, or a custom search endpoint). Returns titles, URLs and short extracts. Spends the search provider\'s free quota, not model tokens.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        query: { type: 'string', minLength: 1, maxLength: 400, description: 'The search query.' },
+        max_results: { type: 'integer', minimum: 1, maximum: 20, default: 5 },
+        topic: { type: 'string', enum: ['general', 'news'], default: 'general' },
+      },
+      required: ['query'],
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    run: webSearch,
+  },
   compression_stats: {
     title: 'Inspect prompt-compression savings',
     description: 'Prompt-compression statistics: requests compressed, estimated tokens saved, fidelity-gate discards, and per-engine savings.',
     inputSchema: { type: 'object', properties: {} },
     annotations: READ_ONLY_LOCAL,
     run: () => getCompressionStats(),
+  },
+  provider_list: {
+    title: 'List providers and key status',
+    description: 'All platforms with enabled API keys, showing total keys and per-status breakdown (healthy/rate_limited/invalid/error).',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: READ_ONLY_LOCAL,
+    run: () => providerList(),
+  },
+  clear_cache: {
+    title: 'Clear response cache',
+    description: 'Flush all cached responses. Returns the number of entries removed.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+    run: () => clearCacheTool(),
+  },
+  quota_outlook: {
+    title: 'Forecast free-tier quota',
+    description: 'Per-pool free-tier quota: remaining requests, observed burn rate, estimated exhaustion time, and warnings (exhausting_soon/low_balance). Use before long or token-heavy tasks to see which providers may run dry.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: READ_ONLY_LOCAL,
+    run: () => quotaOutlook(),
   },
 };
 
@@ -504,7 +593,7 @@ async function dispatchRpc(msg: JsonRpcRequest, id: number | string | null, req:
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
         serverInfo: { name: 'srouter', version: '1.0.0' },
-        instructions: 'Use ask_srouter when the user explicitly asks srouter or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, usage_summary, cache_stats, compression_stats, and routing_info for diagnostics. set_routing_strategy changes server state.',
+        instructions: 'Use ask_srouter when the user explicitly asks srouter or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, provider_list, usage_summary, cache_stats, compression_stats, quota_outlook, and routing_info for diagnostics. set_routing_strategy changes server state. web_search searches the web through the configured search providers. clear_cache flushes cached responses.',
       });
     }
     case 'ping':

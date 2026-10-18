@@ -200,6 +200,29 @@ describe('isDailyQuotaExhaustedError + midnight benching (drift: 90s cooldown on
   });
 });
 
+describe('recordRetryableFailure context-length rejection (#1479)', () => {
+  it('learns the reported window and rules the model out without a cooldown or penalty', () => {
+    const modelDbId = getDb().prepare(
+      `INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, context_window)
+       VALUES ('fake', ?, 'Fake', 50, 50, 1000000)`,
+    ).run(`ctx-${keySeq}`).lastInsertRowid as number;
+    const route = fakeRoute({ modelDbId });
+    const state = newFallbackState();
+    const err = Object.assign(
+      new Error("OpenRouter API error 400: This endpoint's maximum context length is 262144 tokens. However, you requested about 404225 tokens (396033 of text input, 8192 in the output)."),
+      { status: 400 },
+    );
+    recordRetryableFailure(route, err, state);
+
+    expect(state.skipModels.has(modelDbId)).toBe(true);
+    const window = (getDb().prepare('SELECT context_window FROM models WHERE id = ?').get(modelDbId) as { context_window: number }).context_window;
+    expect(window).toBe(262144);
+    const cooldown = getDb().prepare('SELECT 1 FROM rate_limit_cooldowns WHERE platform = ? AND key_id = ?').get('fake', route.keyId);
+    expect(cooldown).toBeUndefined();
+    expect(getAllPenalties().some(p => p.modelDbId === modelDbId)).toBe(false);
+  });
+});
+
 describe('recordRetryableFailure skipBench exemption (reasoning truncation)', () => {
   it('skips cooldown + penalty but still rules the key out for this request', () => {
     const route = fakeRoute();

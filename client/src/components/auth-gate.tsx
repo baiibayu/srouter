@@ -32,10 +32,20 @@ function desktopSessionBridge(): (() => Promise<string>) | null {
     : null
 }
 
+// The same dashboard opened in a normal browser tab on a desktop install has no
+// preload bridge, so the server mints the session instead (#1399). It only
+// does so for a request from this computer, and says so through `desktop` on
+// /api/auth/status; web and Docker installs never set it and keep their login.
+async function browserDesktopSession(): Promise<string> {
+  const res = await apiFetch<{ token: string }>('/api/auth/desktop-session', { method: 'POST' })
+  return res.token
+}
+
 interface AuthStatus {
   needsSetup: boolean
   authenticated: boolean
   email: string | null
+  desktop?: boolean
 }
 
 function Centered({ children }: { children: ReactNode }) {
@@ -115,7 +125,7 @@ function AuthForm({ mode, onAuthed }: { mode: 'setup' | 'login'; onAuthed: () =>
   }
 
   if (showForgot && !isSetup) {
-    return <ForgotPasswordForm onBack={() => setShowForgot(false)} />
+    return <ForgotPasswordForm onBack={() => setShowForgot(false)} onAuthed={onAuthed} />
   }
 
   return (
@@ -206,7 +216,7 @@ function AuthForm({ mode, onAuthed }: { mode: 'setup' | 'login'; onAuthed: () =>
 
 type ForgotStep = 'request' | 'reset' | 'done'
 
-function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
+function ForgotPasswordForm({ onBack, onAuthed }: { onBack: () => void; onAuthed: () => void }) {
   const { t } = useI18n()
   const [step, setStep] = useState<ForgotStep>('request')
   const [resetCode, setResetCode] = useState('')
@@ -244,10 +254,17 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
     setBusy(true)
     setError('')
     try {
-      await apiFetch('/api/auth/reset-password', {
+      const res = await apiFetch<{ token?: string }>('/api/auth/reset-password', {
         method: 'POST',
         body: JSON.stringify({ resetCode: resetCode.trim(), newPassword }),
       })
+      // The server signs the operator in after a reset, so nobody has to
+      // remember which email the account uses (#1477).
+      if (res.token) {
+        setToken(res.token)
+        onAuthed()
+        return
+      }
       setStep('done')
     } catch (err) {
       setError((err as Error).message)
@@ -469,7 +486,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // Desktop self-repair: one attempt at a time, and none after the shell has
   // handed back a session the server still rejects — a broken install shows a
   // message instead of looping.
-  const desktopSession = desktopSessionBridge()
+  const desktopSession = desktopSessionBridge() ?? (data?.desktop ? browserDesktopSession : null)
   const desktopNeedsSession = !!desktopSession && !!data && (data.needsSetup || !data.authenticated)
   const repairing = useRef(false)
   const [repairFailed, setRepairFailed] = useState(false)

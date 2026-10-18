@@ -556,6 +556,27 @@ describe('media service', () => {
       expect(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName).toBe('Schedar');
     });
 
+    it.each(['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts'])('Gemini TTS: passes through existing WAV bytes for %s', async model => {
+      addMedia('google', model, 'audio');
+      addKey('google');
+      const wav = Buffer.alloc(48);
+      wav.write('RIFF', 0); wav.writeUInt32LE(40, 4); wav.write('WAVE', 8);
+      wav.write('fmt ', 12); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20);
+      wav.writeUInt16LE(1, 22); wav.writeUInt32LE(24000, 24); wav.writeUInt32LE(48000, 28);
+      wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(4, 40);
+      globalThis.fetch = vi.fn(async () => jsonResponse({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/wav', data: wav.toString('base64') } }] } }] }));
+      const result = await runSpeech(model, { input: 'hello' });
+      expect(result.audio).toEqual(wav);
+      expect(result.contentType).toBe('audio/wav');
+    });
+
+    it('Gemini TTS: rejects an invalid declared WAV rather than wrapping it as PCM', async () => {
+      addMedia('google', 'gemini-3.8-flash-tts', 'audio');
+      addKey('google');
+      globalThis.fetch = vi.fn(async () => jsonResponse({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/wav', data: Buffer.from('not audio').toString('base64') } }] } }] }));
+      await expect(runSpeech('gemini-3.8-flash-tts', { input: 'hello' })).rejects.toThrow('malformed WAV');
+    });
+
     it('Gemini TTS: canonicalizes native voices and defaults unknown names', async () => {
       addMedia('google', 'gemini-2.5-flash-preview-tts', 'audio');
       addKey('google');

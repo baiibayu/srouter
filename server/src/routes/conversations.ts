@@ -39,6 +39,13 @@ const metaSchema = z.object({
     error: z.string().optional(),
   })).optional(),
   fusionJudge: z.object({ platform: z.string(), model: z.string() }).nullable().optional(),
+  // Playground "Search the web" (#1174): the engine that ran and the sources
+  // shown under the answer, so a reloaded chat keeps its citations.
+  webSearch: z.object({
+    engine: z.string().max(200).optional(),
+    latency: z.number().optional(),
+    sources: z.array(z.object({ title: z.string().max(1000), url: z.string().max(4000) })).max(50).optional(),
+  }).optional(),
 });
 
 const messageSchema = z.object({

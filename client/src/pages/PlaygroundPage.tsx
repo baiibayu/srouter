@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, CircleAlert, FileText, X } from 'lucide-react'
+import { ChevronRight, CircleAlert, FileText, Globe, X } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { buildModelOptions } from '@/lib/model-groups'
 import type { Chain } from '@/components/chain-manager'
@@ -32,6 +32,8 @@ import { readChatStream } from '@/lib/playground-stream'
 import { ConversationSidebar } from '@/components/playground/conversation-sidebar'
 import { SettingsRail } from '@/components/playground/settings-rail'
 import { LiquidComposer } from '@/components/playground/liquid-composer'
+import { SearchSources } from '@/components/playground/search-sources'
+import { engineChain, searchContextMessage, searchProviderName, type SearchEngine, type SearchResult } from '@/lib/search'
 import { ModelMakerIcon } from '@/components/model-maker-icon'
 import { composerHasContent } from '@/lib/composer-geometry'
 import {
@@ -61,6 +63,7 @@ import {
   updateConversation,
   writeActiveConversationId,
   type ChatMessage,
+  type WebSearchMeta,
   type ConversationSummary,
   type FusionPanelEntry,
 } from '@/lib/playground-conversations'
@@ -91,6 +94,23 @@ function fusionRouteLabel(p: { platform: string; model: string }): string {
   return p.model.startsWith(`${p.platform}/`) ? p.model : `${p.platform}/${p.model}`
 }
 
+// Smooth show/hide for the Playground's tucked-away detail (thinking, web
+// sources, the fusion panel). The content stays mounted and the row animates
+// from 0fr to 1fr, so it opens to its natural height without measuring;
+// `inert` keeps a closed panel's links out of the tab order.
+function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div
+      data-open={open}
+      className="grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none data-[open=false]:opacity-0"
+      style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+      inert={!open}
+    >
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </div>
+  )
+}
+
 // Collapsible, minimal-font trace shown OUTSIDE the main answer bubble: each
 // panel model's raw answer as it streamed in, plus the judge that synthesized
 // the final answer. Default-open so you can watch it work; collapse to tuck away.
@@ -119,7 +139,7 @@ function FusionTrace({ panel, judge, streaming, answerStarted }: {
         <ChevronRight className={`size-3 transition-transform ${open ? 'rotate-90' : ''}`} />
         {t('playground.fusionTrace', { count: panel.length })}{streaming ? ' …' : ''}
       </button>
-      {open && (
+      <Collapse open={open}>
         <div className="mt-1 space-y-2 border-l border-border/60 pl-2.5">
           {panel.map((p, i) => (
             <div key={i} className="space-y-0.5">
@@ -138,7 +158,7 @@ function FusionTrace({ panel, judge, streaming, answerStarted }: {
             </div>
           )}
         </div>
-      )}
+      </Collapse>
     </div>
   )
 }
@@ -147,29 +167,49 @@ function FusionTrace({ panel, judge, streaming, answerStarted }: {
 // visual language as FusionTrace (minimal font, muted, hanging rule, chevron
 // toggle) and the same behaviour: open while it streams so you can watch the
 // model work, auto-collapsing once the answer itself starts.
-function ReasoningTrace({ text, answerStarted }: { text: string; answerStarted?: boolean }) {
+function ReplyTrace({ reasoning, search, answerStarted }: {
+  reasoning?: string
+  search?: WebSearchMeta
+  answerStarted?: boolean
+}) {
   const { t } = useI18n()
-  const [open, setOpen] = useState(true)
+  // Thinking opens while it streams and tucks away once the answer starts.
+  // Web sources never open on their own: they are there for the curious, so a
+  // searched reply with no thinking starts closed.
+  const [open, setOpen] = useState(() => !!reasoning && !answerStarted)
   const touched = useRef(false)
   useEffect(() => {
     if (answerStarted && !touched.current) setOpen(false)
   }, [answerStarted])
+  useEffect(() => {
+    if (reasoning && !answerStarted && !touched.current) setOpen(true)
+  }, [reasoning, answerStarted])
+  const sourceCount = search?.sources.length ?? 0
   return (
     <div className="mb-2 text-muted-foreground/80">
       <button
         type="button"
         onClick={() => { touched.current = true; setOpen(o => !o) }}
+        aria-expanded={open}
         className="inline-flex items-center gap-1 font-mono text-[10px] leading-snug hover:text-foreground transition-colors"
       >
-        <ChevronRight className={`size-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+        <ChevronRight className={`size-3 transition-transform duration-300 ${open ? 'rotate-90' : ''}`} />
         {open ? t('common.hide') : t('common.show')}
+        {sourceCount > 0 && (
+          <span className="inline-flex items-center gap-1 opacity-80">
+            · <Globe className="size-2.5" /> {t('search.traceSources', { count: sourceCount })}
+          </span>
+        )}
       </button>
-      {open && (
-        // Same type as the answer beneath it, size and leading, only quieter.
-        <div className="mt-1 whitespace-pre-wrap border-l border-border/60 pl-2.5 text-sm leading-relaxed text-muted-foreground">
-          {text}
-        </div>
-      )}
+      <Collapse open={open}>
+        {search && sourceCount > 0 && <SearchSources search={search} />}
+        {reasoning && (
+          // Same type as the answer beneath it, size and leading, only quieter.
+          <div className="mt-1 whitespace-pre-wrap border-l border-border/60 pl-2.5 text-sm leading-relaxed text-muted-foreground">
+            {reasoning}
+          </div>
+        )}
+      </Collapse>
     </div>
   )
 }
@@ -216,6 +256,16 @@ export default function PlaygroundPage() {
   const updateSampling = (next: SamplingSettings) => {
     setSampling(next)
     writeSampling(next)
+  }
+  // "Search the web" (#1174): look the question up with POST /v1/search first
+  // and hand the model numbered sources to cite. A preference like the
+  // sampling knobs, so it is remembered here rather than per conversation.
+  const [webSearch, setWebSearch] = useState<boolean>(
+    () => localStorage.getItem('playground.webSearch') === '1',
+  )
+  const updateWebSearch = (enabled: boolean) => {
+    setWebSearch(enabled)
+    localStorage.setItem('playground.webSearch', enabled ? '1' : '0')
   }
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -276,6 +326,17 @@ export default function PlaygroundPage() {
     queryFn: () => apiFetch('/api/media'),
   })
   const mediaModels = mediaData?.models ?? []
+
+  // Engines that can actually run a search: enabled, with a key behind them.
+  // An older server without the endpoint just leaves the switch unavailable.
+  const { data: searchEngines = [] } = useQuery<SearchEngine[]>({
+    queryKey: ['search-engines'],
+    queryFn: () => apiFetch('/api/search/engines'),
+    retry: false,
+  })
+  const usableEngines = engineChain(searchEngines).filter(e => e.keyCount > 0)
+  const webSearchAvailable = usableEngines.length > 0
+  const webSearchOn = webSearch && webSearchAvailable
   const transcriptionAvailable = hasTranscription(mediaModels)
   const [dictationChoice, setDictationChoice] = useState<string>(
     () => localStorage.getItem(DICTATION_MODEL_STORAGE_KEY) ?? DICTATION_AUTO,
@@ -666,6 +727,7 @@ export default function PlaygroundPage() {
     start: number,
     routedVia: string | null,
     fallbackAttempts: string | null,
+    webSearchMeta?: WebSearchMeta,
   ) => {
     const via = routedVia
       ? { platform: routedVia.split('/')[0], model: routedVia.split('/').slice(1).join('/') }
@@ -691,6 +753,7 @@ export default function PlaygroundPage() {
             model: via?.model,
             latency: Date.now() - start,
             fallbackAttempts: fallbackAttempts ? parseInt(fallbackAttempts) : undefined,
+            ...(webSearchMeta ? { webSearch: webSearchMeta } : {}),
           },
         })
       }
@@ -784,12 +847,44 @@ export default function PlaygroundPage() {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (keyData?.apiKey) headers['Authorization'] = `Bearer ${keyData.apiKey}`
+      const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+      // Web search first, when it is on and there is a question to look up. A
+      // failed search is reported and the question is answered without it.
+      let searchContext: string | null = null
+      let webSearchMeta: WebSearchMeta | undefined
+      if (webSearchOn && text) {
+        const searchStart = Date.now()
+        try {
+          const res = await fetch(`${base}/v1/search`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ query: text, max_results: 5 }),
+          })
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}` } }))
+            throw new Error(err.error?.message ?? err.message ?? `HTTP ${res.status}`)
+          }
+          const found = await res.json() as SearchResult
+          if (found.results.length > 0) {
+            searchContext = searchContextMessage(found)
+            webSearchMeta = {
+              engine: searchProviderName(found.provider),
+              latency: Date.now() - searchStart,
+              sources: found.results.map(r => ({ title: r.title, url: r.url })),
+            }
+          }
+        } catch (err) {
+          toast.error(t('search.playgroundFailed', { reason: err instanceof Error ? err.message : String(err) }))
+        }
+      }
 
       const isFusion = selectedModel === 'fusion'
       const sysPrompt = systemPrompt.trim()
       const body: Record<string, unknown> = {
         messages: [
           ...(sysPrompt ? [{ role: 'system', content: sysPrompt }] : []),
+          ...(searchContext ? [{ role: 'system', content: searchContext }] : []),
           ...newMessages.map(m => ({ role: m.role, content: toMessageContent(m.content, m.images) })),
         ],
         // Only the knobs switched on in the settings rail: temperature, top_p
@@ -807,7 +902,6 @@ export default function PlaygroundPage() {
       const controller = new AbortController()
       abortRef.current = controller
 
-      const base = import.meta.env.BASE_URL.replace(/\/$/, '')
       const start = Date.now()
       const res = await fetch(`${base}/v1/chat/completions`, {
         method: 'POST',
@@ -844,7 +938,7 @@ export default function PlaygroundPage() {
       // fall back to the buffered path rather than trusting that: a proxy in
       // front of us, or a future non-streaming route, can still hand back JSON.
       if (!isFusion && res.body && (res.headers.get('Content-Type') ?? '').includes('text/event-stream')) {
-        await streamChat(res.body, newMessages, start, routedVia, fallbackAttempts)
+        await streamChat(res.body, newMessages, start, routedVia, fallbackAttempts, webSearchMeta)
         return
       }
 
@@ -872,6 +966,7 @@ export default function PlaygroundPage() {
           fallbackAttempts: fallbackAttempts ? parseInt(fallbackAttempts) : undefined,
           fusionPanel: fusion?.panel,
           fusionJudge: fusion?.judge,
+          ...(webSearchMeta ? { webSearch: webSearchMeta } : {}),
         },
       }]
       setMessages(answered)
@@ -1026,8 +1121,12 @@ export default function PlaygroundPage() {
                             </div>
                           ) : msg.role === 'assistant' ? (
                             <>
-                              {msg.reasoning && (
-                                <ReasoningTrace text={msg.reasoning} answerStarted={msg.content.length > 0} />
+                              {(msg.reasoning || (msg.meta?.webSearch && msg.meta.webSearch.sources.length > 0)) && (
+                                <ReplyTrace
+                                  reasoning={msg.reasoning}
+                                  search={msg.meta?.webSearch}
+                                  answerStarted={msg.content.length > 0}
+                                />
                               )}
                               <ArtifactHostContext.Provider value={artifactHost}>
                                 <Markdown>{msg.content}</Markdown>
@@ -1188,7 +1287,7 @@ export default function PlaygroundPage() {
             loading={loading}
             onSend={handleSend}
             onAttach={() => fileInputRef.current?.click()}
-            labels={{ attach: t('playground.attach'), send: t('playground.send'), sending: t('playground.sending') }}
+            labels={{ add: t('playground.addMenu'), attach: t('playground.attach'), send: t('playground.send'), sending: t('playground.sending') }}
             dictation={{
               available: transcriptionAvailable,
               model: dictationModel,
@@ -1197,6 +1296,13 @@ export default function PlaygroundPage() {
                 setInput(prev => appendDictation(prev, text))
                 inputRef.current?.focus()
               },
+            }}
+            webSearch={{
+              enabled: webSearchOn,
+              available: webSearchAvailable,
+              label: t('search.playgroundToggle'),
+              unavailableHint: t('search.playgroundNoKeys'),
+              onToggle: updateWebSearch,
             }}
           />
         </div>
@@ -1232,6 +1338,10 @@ export default function PlaygroundPage() {
         onSystemPromptChange={updateSystemPrompt}
         sampling={sampling}
         onSamplingChange={updateSampling}
+        webSearch={webSearch}
+        onWebSearchChange={updateWebSearch}
+        webSearchAvailable={webSearchAvailable}
+        webSearchChain={usableEngines.map(e => e.displayName).join(' → ')}
       />
       )}
     </div>

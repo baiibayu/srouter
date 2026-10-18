@@ -3,6 +3,11 @@ import type { BaseProvider } from './base.js';
 import { GoogleProvider } from './google.js';
 import { OpenAICompatProvider } from './openai-compat.js';
 import { CohereProvider } from './cohere.js';
+import { TavilyProvider } from './tavily.js';
+import { ExaProvider } from './exa.js';
+import { FirecrawlProvider } from './firecrawl.js';
+import { LinkupProvider } from './linkup.js';
+import { ParallelProvider } from './parallel.js';
 import { CloudflareProvider } from './cloudflare.js';
 import { AIHordeProvider } from './aihorde.js';
 import { ModelScopeProvider } from './modelscope.js';
@@ -31,8 +36,10 @@ import { AirforceProvider } from './airforce.js';
 import { DreamPromptingProvider } from './dreamprompting.js';
 import { WaterfallProvider } from './waterfall.js';
 import { LogfareProvider } from './logfare.js';
-import { XKiroProvider } from './xkiro.js';
+import { AurayProvider } from './auray.js';
 import { OpenCodeFreeProvider } from './opencode-free.js';
+import { XKiroProvider } from './xkiro.js';
+
 
 const providers = new Map<Platform, BaseProvider>();
 
@@ -76,6 +83,7 @@ register(new LlmtrProvider());
 register(new GizmoProvider());
 register(new BlockRunProvider());
 register(new MoondreamProvider());
+register(new AurayProvider());
 
 // Free-plan grants are shared wallets, not free credits per model. Eligibility
 // and tested model rows belong in Oracle, never in bundled DB migrations.
@@ -191,6 +199,15 @@ register(new OpenAICompatProvider({
 
 // Cohere - OpenAI-compatible via Cohere compatibility endpoint
 register(new CohereProvider());
+// Web search APIs (#1174). They serve /v1/search and the agents' web_search
+// tools, never chat (see providers/search-only.ts); they are registered so
+// their keys can be added and health-checked like every platform.
+register(new TavilyProvider());
+register(new ExaProvider());
+register(new FirecrawlProvider());
+register(new LinkupProvider());
+// Keyless: anonymous Search MCP by default, REST API with a real key.
+register(new ParallelProvider());
 
 // Cloudflare Workers AI - OpenAI-compatible endpoint (key = "account_id:token")
 register(new CloudflareProvider());

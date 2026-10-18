@@ -29,7 +29,7 @@ export function PageHeader({
         )}
       </div>
       {tabs && (
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-3 max-w-full overflow-x-auto">
           {tabs}
         </div>
       )}

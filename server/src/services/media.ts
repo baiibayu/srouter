@@ -213,10 +213,13 @@ export function listMediaModels(modality: MediaModality): MediaModelRow[] {
     .all(modality) as MediaModelRow[];
 }
 
-/** All media models (both modalities, including disabled) for the dashboard. */
+/** All media models (every media modality, including disabled) for the
+ *  dashboard. Search engines and decision models share the table (modality
+ *  'search' / 'decision') but have their own pages and APIs, so they are left
+ *  out here. */
 export function listAllMediaModels(): MediaModelRow[] {
   return getDb()
-    .prepare('SELECT * FROM media_models ORDER BY modality, priority, id')
+    .prepare("SELECT * FROM media_models WHERE modality NOT IN ('search', 'decision') ORDER BY modality, priority, id")
     .all() as MediaModelRow[];
 }
 
@@ -754,8 +757,8 @@ async function callSpeechProvider(
       return { audio: Buffer.from(b64, 'base64'), contentType: contentTypeFor(p.format ?? 'mp3') };
     }
     case 'google': {
-      // Gemini TTS via generateContent (AUDIO modality) returns base64 PCM
-      // (L16, mono, ~24kHz); wrap it in a WAV header so clients can play it.
+      // Older Gemini TTS returns PCM; newer models return an entire WAV file.
+      // Preserve WAV bytes instead of wrapping the container a second time.
       const r = await mediaFetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${row.model_id}:generateContent`,
         'google',
@@ -778,8 +781,14 @@ async function callSpeechProvider(
       const part = j.candidates?.[0]?.content?.parts?.find(pt => pt.inlineData?.data);
       const b64 = part?.inlineData?.data;
       if (!b64) throw new MediaError('gemini returned no audio', 502);
+      const audio = Buffer.from(b64, 'base64');
+      const isWav = audio.length >= 44 && audio.subarray(0, 4).toString() === 'RIFF' && audio.subarray(8, 12).toString() === 'WAVE';
+      if (isWav) return { audio, contentType: 'audio/wav' };
+      if (/^audio\/(?:x-)?wav(?:;|$)/i.test(part?.inlineData?.mimeType ?? '')) {
+        throw new MediaError('gemini returned malformed WAV audio', 502);
+      }
       const rate = parseRate(part?.inlineData?.mimeType) ?? 24000;
-      return { audio: wrapPcmAsWav(Buffer.from(b64, 'base64'), rate), contentType: 'audio/wav' };
+      return { audio: wrapPcmAsWav(audio, rate), contentType: 'audio/wav' };
     }
     default:
       throw new MediaError(`no speech adapter for platform '${row.platform}'`, 500);

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 
 // Inbound image normalization. Vision payloads ride inline as base64 data
@@ -45,11 +46,48 @@ const DEFAULT_QUALITY = 90;
 // prebuild, so load it on first use instead and degrade to pass-through when
 // it isn't there: images ride through at original size, exactly as they did
 // before this module existed.
+//
+// A mismatched binary is not always a catchable import error, though (#1469).
+// sharp's prebuilt linux-x64 libvips needs SSE4.2 (x86-64-v2); on an older CPU
+// (Intel Atom D2700 in a Synology DS1512+, pre-Nehalem Core 2) loading it hits
+// an illegal instruction and the kernel kills the whole process with SIGILL,
+// which no try/catch sees. So on linux-x64 we check the CPU flags first and
+// treat sharp as unavailable when SSE4.2 is missing.
 type Sharp = typeof import('sharp').default;
 let sharpModule: Sharp | null | undefined;   // undefined = not yet attempted
 
+/**
+ * False when this machine is known to be unable to run sharp's prebuilt
+ * libvips: linux-x64 whose /proc/cpuinfo flags lack sse4_2. Anything we cannot
+ * read or recognise counts as capable, which keeps today's behaviour.
+ */
+export function cpuCanRunSharp(
+  platform: string = process.platform,
+  arch: string = process.arch,
+  readCpuinfo: () => string = () => readFileSync('/proc/cpuinfo', 'utf8'),
+): boolean {
+  if (platform !== 'linux' || arch !== 'x64') return true;
+  let cpuinfo: string;
+  try {
+    cpuinfo = readCpuinfo();
+  } catch {
+    return true;
+  }
+  const flags = cpuinfo.split('\n').find(line => /^flags\s*:/.test(line));
+  if (!flags) return true;
+  return /\bsse4_2\b/.test(flags);
+}
+
 async function loadSharp(): Promise<Sharp | null> {
   if (sharpModule !== undefined) return sharpModule;
+  if (!cpuCanRunSharp()) {
+    sharpModule = null;
+    console.warn(
+      '[ImageNormalize] this CPU lacks SSE4.2, which the bundled image library (sharp) needs; ' +
+      'inbound images will not be resized (set IMAGE_NORMALIZE=off to silence this)',
+    );
+    return sharpModule;
+  }
   try {
     sharpModule = (await import('sharp')).default;
   } catch (err: any) {
@@ -130,9 +168,17 @@ function imageSlots(message: ChatMessage): ImageSlot[] {
   return slots;
 }
 
-// Transcode one data URL; returns null when the image should ride along
-// unchanged (under threshold, already compact, http URL, or any failure).
-async function normalizeDataUrl(sharp: Sharp, url: string, opts: ResolvedOptions): Promise<{ url: string; before: number; after: number } | null> {
+interface Candidate {
+  mime: string;
+  payload: string;
+  rawBytes: number;
+  alreadyCompact: boolean;
+}
+
+// The sharp-free half of the decision: is this data URL an image worth
+// decoding at all? Kept apart so a request with nothing to transcode never
+// loads sharp (#1469).
+function candidateOf(url: string, opts: ResolvedOptions): Candidate | null {
   const match = DATA_URL_RE.exec(url);
   if (!match) return null;
   const mime = (match[1] ?? '').toLowerCase();
@@ -148,6 +194,13 @@ async function normalizeDataUrl(sharp: Sharp, url: string, opts: ResolvedOptions
   // images under the threshold are rare enough (pixels ≈ bytes) that this
   // trade stays worth it.
   if (rawBytes < opts.thresholdBytes && alreadyCompact) return null;
+  return { mime, payload, rawBytes, alreadyCompact };
+}
+
+// Transcode one candidate; returns null when the image should ride along
+// unchanged (already compact or any failure).
+async function normalizeDataUrl(sharp: Sharp, candidate: Candidate, opts: ResolvedOptions): Promise<{ url: string; before: number; after: number } | null> {
+  const { payload, rawBytes, alreadyCompact } = candidate;
 
   let buffer: Buffer;
   try {
@@ -234,21 +287,29 @@ export async function normalizeMessageImages(
   const summary: ImageNormalizeSummary = { messages, normalized: 0, bytesBefore: 0, bytesAfter: 0 };
   if (!opts.enabled) return summary;
 
-  // No sharp (missing prebuild, unsupported platform): pass everything through
-  // untouched rather than failing the request.
-  const sharp = await loadSharp();
-  if (!sharp) return summary;
-
+  const work: { slot: ImageSlot; candidate: Candidate }[] = [];
   for (const message of messages) {
     for (const slot of imageSlots(message)) {
       if (!slot.url.startsWith('data:')) continue;
-      const result = await normalizeDataUrl(sharp, slot.url, opts);
-      if (!result) continue;
-      slot.set(result.url);
-      summary.normalized += 1;
-      summary.bytesBefore += result.before;
-      summary.bytesAfter += result.after;
+      const candidate = candidateOf(slot.url, opts);
+      if (candidate) work.push({ slot, candidate });
     }
+  }
+  // Text-only and small-image requests never load the native module (#1469).
+  if (work.length === 0) return summary;
+
+  // No sharp (missing prebuild, unsupported platform or CPU): pass everything
+  // through untouched rather than failing the request.
+  const sharp = await loadSharp();
+  if (!sharp) return summary;
+
+  for (const { slot, candidate } of work) {
+    const result = await normalizeDataUrl(sharp, candidate, opts);
+    if (!result) continue;
+    slot.set(result.url);
+    summary.normalized += 1;
+    summary.bytesBefore += result.before;
+    summary.bytesAfter += result.after;
   }
 
   if (summary.normalized > 0) {
