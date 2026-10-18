@@ -52,7 +52,7 @@ function UpdatesContent() {
   const desktop = useDesktopUpdater()
   const docker = useDockerUpdate()
   const shellVersion = typeof window !== 'undefined'
-    ? (window as { __FREEAPI_VERSION__?: string | null }).__FREEAPI_VERSION__ ?? null
+    ? (window as { __SROUTER_VERSION__?: string | null }).__SROUTER_VERSION__ ?? null
     : null
   const [result, setResult] = useState<CheckResult | null>(null)
   const [checking, setChecking] = useState(true)

@@ -17,7 +17,7 @@ import {
 
 const temporary: string[] = [];
 function tempHome(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-doctor-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-doctor-'));
   temporary.push(dir);
   return dir;
 }
@@ -183,12 +183,12 @@ describe('codex precedence', () => {
     // base_url would report a provider the user is not selecting.
     const home = tempHome();
     writeCodexConfig(home, [
-      'model_provider = "freellmapi"',
+      'model_provider = "srouter"',
       '',
       '[model_providers.other]',
       'base_url = "http://not-this-one:9999/v1"',
       '',
-      '[model_providers.freellmapi]',
+      '[model_providers.srouter]',
       'base_url = "http://localhost:3000/v1"',
     ].join('\n'));
 
@@ -201,8 +201,8 @@ describe('codex precedence', () => {
   it('reads the dotted-key spelling too', () => {
     const home = tempHome();
     writeCodexConfig(home, [
-      'model_provider = "freellmapi"',
-      'model_providers.freellmapi.base_url = "http://localhost:3000/v1"',
+      'model_provider = "srouter"',
+      'model_providers.srouter.base_url = "http://localhost:3000/v1"',
     ].join('\n'));
     expect(codexLayers({}, home)[0]?.value).toBe('http://localhost:3000/v1');
   });
@@ -219,7 +219,7 @@ describe('codex precedence', () => {
 
   it('records a selected provider that names no base_url instead of skipping it', () => {
     const home = tempHome();
-    writeCodexConfig(home, 'model_provider = "freellmapi"\n');
+    writeCodexConfig(home, 'model_provider = "srouter"\n');
     const layer = codexLayers({}, home)[0];
     expect(layer.effective).toBe(true);
     expect(layer.value).toBeUndefined();
