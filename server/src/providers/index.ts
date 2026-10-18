@@ -12,6 +12,9 @@ import { SailProvider } from './sail.js';
 import { AclideProvider } from './aclide.js';
 import { SpekaProvider } from './speka.js';
 import { TyphoonProvider } from './typhoon.js';
+import { PlugskyProvider } from './plugsky.js';
+import { InferbaseProvider } from './inferbase.js';
+import { SimpleLLMProvider } from './simplellm.js';
 import { LlmtrProvider } from './llmtr.js';
 import { GizmoProvider } from './gizmo.js';
 import { BlockRunProvider } from './blockrun.js';
@@ -21,6 +24,7 @@ import { Router9Provider } from './router9.js';
 import { SeptorProvider } from './septor.js';
 import { ClodProvider } from './clod.js';
 import { SpeechifyProvider } from './speechify.js';
+import { FreeAiProvider } from './freeai.js';
 import { BlazeProvider } from './blaze.js';
 import { LucidityProvider } from './lucidity.js';
 import { AirforceProvider } from './airforce.js';
@@ -65,6 +69,9 @@ register(new SailProvider());
 register(new AclideProvider());
 register(new SpekaProvider());
 register(new TyphoonProvider());
+register(new PlugskyProvider());
+register(new InferbaseProvider());
+register(new SimpleLLMProvider());
 register(new LlmtrProvider());
 register(new GizmoProvider());
 register(new BlockRunProvider());
@@ -80,6 +87,7 @@ register(new Router9Provider());
 register(new SeptorProvider());
 register(new ClodProvider());
 register(new SpeechifyProvider());
+register(new FreeAiProvider());
 register(new BlazeProvider());
 // Five more OpenAI-compatible gateways. Each pins the response model to the
 // requested route (502 on substitution); rows stay in the hosted catalog.
@@ -602,11 +610,7 @@ register(new OpenAICompatProvider({
 
 // Plugsky — no-card free gateway (plugsky.com/v1); smoke-tested against
 // /v1/models 2026-10-08.
-register(new OpenAICompatProvider({
-  platform: 'plugsky',
-  name: 'Plugsky',
-  baseUrl: 'https://plugsky.com/v1',
-}));
+register(new PlugskyProvider());
 
 // Token Harbor — no-card gateway (tokenharbor.ai/v1). `:free` model ids ride
 // a rolling 7-day value-based allowance (60 RPM account-wide) and rotate as

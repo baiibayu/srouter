@@ -64,6 +64,36 @@ function positiveIntEnv(raw: string | undefined, fallback: number): number {
 // Track consecutive failures per key
 const failureCount = new Map<number, number>();
 
+// A key whose last validation was rate-limited (429) is skipped by the
+// scheduled pass until the skip window passes: re-asking a provider that just
+// told us to slow down is how validation traffic becomes a ban. LLMTR's
+// validator is a POST to /chat/completions with a nonexistent model —
+// shaped exactly like the bot traffic their abuse system hunts — so an
+// unpaced re-ask every 5 minutes per key kept accounts flagged (#1369).
+// Forced passes (dashboard check-all, wake re-probe) still probe: explicit
+// operator intent wins over pacing. A later successful validation clears the
+// mark; validation that never ran leaves no mark.
+const validationRateLimitedAt = new Map<number, number>();
+
+const DEFAULT_VALIDATION_RATE_LIMIT_SKIP_MS = 60 * 60 * 1000;
+
+/** How long a 429ed key stays out of the scheduled pass. Tunable like the
+ *  other pacing knobs; 0 or a bad value falls back to the default. */
+function getValidationRateLimitSkipMs(): number {
+  return positiveIntEnv(process.env.HEALTH_CHECK_RATE_LIMIT_SKIP_MS, DEFAULT_VALIDATION_RATE_LIMIT_SKIP_MS);
+}
+
+/** Record that validating this key was just rate-limited. Exported for tests;
+ *  production calls it from checkKeyHealth's 429 path. */
+export function recordValidationRateLimited(keyId: number, atMs = Date.now()): void {
+  validationRateLimitedAt.set(keyId, atMs);
+}
+
+/** Test seam: drop all validation-429 pacing state. */
+export function clearValidationRateLimitState(): void {
+  validationRateLimitedAt.clear();
+}
+
 function recordInvalidFailure(keyId: number, platform?: string): void {
   const count = (failureCount.get(keyId) ?? 0) + 1;
   failureCount.set(keyId, count);
@@ -156,6 +186,16 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
   const provider = resolveProvider(row.platform as Platform, row.base_url);
   if (!provider) return 'error';
 
+  // #1459: a provider that forbids automated key checks gets no probe. Its
+  // status is left to real traffic (markKeyHealthyFromRequest), and any reason
+  // an older probe stored is cleared so the dashboard stops showing it.
+  if (provider.supportsKeyValidation === false) {
+    if (row.last_health_error != null) {
+      db.prepare('UPDATE api_keys SET last_health_error = NULL WHERE id = ?').run(keyId);
+    }
+    return row.status as KeyStatus;
+  }
+
   try {
     const apiKey = decrypt(row.encrypted_key, row.iv, row.auth_tag);
     // #590: probe the key from the same exit its traffic uses. A key that is
@@ -185,6 +225,9 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
 
     if (isValid) {
       failureCount.delete(keyId);
+      // The provider answered again: whatever rate-limit told us to back off
+      // is over, so the key rejoins the normal cadence.
+      validationRateLimitedAt.delete(keyId);
       // #1348: a healthy key on a built-in platform the catalog does not carry
       // serves nothing until its models are discovered. Fire-and-forget; the
       // trigger is a no-op for every other platform, and throttled.
@@ -214,6 +257,10 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
     // "[Health] Key N (" prefix is preserved so the 12-hourly crash watchdog
     // (cron bff5ae167d28) that scrapes /tmp/srouter.log for these lines
     // continues to match unchanged.
+    // A 429 here means the provider rate-limited the validation itself:
+    // remember it so the scheduled pass backs off instead of re-asking every
+    // 5 minutes (#1369). Other transport errors carry no such instruction.
+    if (err?.status === 429) recordValidationRateLimited(keyId);
     const lastError = sanitizeProviderErrorMessage(err?.message ?? err);
     console.error(
       `[Health] Key ${keyId} (${row.platform}, base=${row.base_url ?? 'default'}) ` +
@@ -252,6 +299,9 @@ export async function probeKeyValidity(keyId: number): Promise<KeyProbeOutcome> 
 
     const provider = resolveProvider(row.platform as Platform, row.base_url);
     if (!provider) return 'error';
+    // #1459: no probe for a provider that forbids them; the cooldown simply
+    // runs out, as it would after an inconclusive probe.
+    if (provider.supportsKeyValidation === false) return 'error';
 
     const apiKey = decrypt(row.encrypted_key, row.iv, row.auth_tag);
     // Same reasoning as checkKeyHealth: probe through the key's own proxy (#590).
@@ -272,17 +322,20 @@ export async function probeKeyValidity(keyId: number): Promise<KeyProbeOutcome> 
 }
 
 /**
- * Promote a key out of 'error' after it successfully served a live request.
+ * Promote a key out of 'error' or 'unknown' after it successfully served a live
+ * request.
  *
  * Serving traffic is stronger evidence than any probe, so a key stuck at 'error'
  * from an earlier transport blip should not have to wait for the next health pass
- * to become routable again. Deliberately narrow: 'invalid' means a provider
- * confirmed the credential is bad, and only a real validateKey pass clears that.
+ * to become routable again, and a key never probed yet (or one whose provider
+ * forbids probes, #1459) has just proved itself. Deliberately narrow: 'invalid'
+ * means a provider confirmed the credential is bad, and only a real validateKey
+ * pass clears that.
  */
 export function markKeyHealthyFromRequest(keyId: number): void {
   try {
     getDb()
-      .prepare("UPDATE api_keys SET status = 'healthy', last_health_error = NULL WHERE id = ? AND status = 'error'")
+      .prepare("UPDATE api_keys SET status = 'healthy', last_health_error = NULL WHERE id = ? AND status IN ('error', 'unknown')")
       .run(keyId);
     failureCount.delete(keyId);
   } catch {
@@ -389,8 +442,17 @@ async function runHealthPass(opts: HealthPassOptions): Promise<HealthPassResult>
   `).all() as HealthKeyRow[];
 
   const skippedKeyIds: number[] = [];
+  const skipMs = opts.force ? 0 : getValidationRateLimitSkipMs();
   const due = rows.filter(row => {
     if (opts.force) return true;
+    // A key the provider just rate-limited stays out until the skip window
+    // passes — even one parked at 'error'. A 429 is fresher, more specific
+    // evidence than the eagerness to re-ask an errored key (#1369).
+    const limitedAt = validationRateLimitedAt.get(row.id);
+    if (limitedAt !== undefined && now() - limitedAt < skipMs) {
+      skippedKeyIds.push(row.id);
+      return false;
+    }
     // A key parked at 'error' is out of rotation until a probe says otherwise
     // (the router writes that status, and last_checked_at with it), so it is
     // never skipped — it is the one key whose verdict is worth re-asking for.

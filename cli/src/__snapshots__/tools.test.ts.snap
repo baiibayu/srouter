@@ -873,13 +873,13 @@ api_key_env = "SROUTER_API_KEY"
 context_window = 131072
 price = { cache_hit = 0, input = 0, output = 0, currency = "$" }",
       "format": "toml",
-      "path": "/home/tester/.reasonix/config.toml",
+      "path": "C:/Users/Hype AMD/AppData/Roaming/reasonix/config.toml",
     },
     {
       "content": "SROUTER_API_KEY=srouter-test-key
 ",
       "format": "env",
-      "path": "/home/tester/.reasonix/.env",
+      "path": "C:/Users/Hype AMD/AppData/Roaming/reasonix/.env",
       "sensitive": true,
     },
   ],

@@ -76,6 +76,13 @@ export class LlmtrProvider extends OpenAICompatProvider {
    *  overlap easily) share one request instead of sending two identical ones. */
   private readonly inFlightValidations = new Map<string, Promise<KeyValidationResult>>();
 
+  /** #1459: LLMTR refuses automated key checks outright, so the health pass
+   * and the cooldown probe never send one. Keys turn healthy on their first
+   * served request instead. validateKey below stays for explicit callers. */
+  override get supportsKeyValidation(): boolean {
+    return false;
+  }
+
   constructor(opts: LlmtrProviderOptions = {}) {
     super({ platform: 'llmtr', name: 'LLMTR', baseUrl: LLMTR_BASE_URL });
     this.validationMinGapMs = opts.validationMinGapMs ?? validationMinGapMs();

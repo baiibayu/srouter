@@ -11,6 +11,7 @@ import { X } from 'lucide-react'
 import type { ApiKey, BudgetPeriod } from '../../../../shared/types'
 import { useI18n } from '@/i18n'
 import { PLATFORMS } from './shared'
+import { GroupLabelField } from './group-label-field'
 
 function formatBudgetAmount(n: number): string {
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`
@@ -25,6 +26,7 @@ type UpdateBody = {
   monthlyRequestCap?: number
   monthlyTokenCap?: number
   budgetPeriod?: BudgetPeriod
+  groupLabel?: string
 }
 
 /** Parse a budget-cap input: blank or 0 means unlimited (0); otherwise a
@@ -61,6 +63,11 @@ export function EditKeyDialog({
   // Budget caps (#1158): editable here so the cap is settable from the
   // dashboard at all; it shipped API-only. Empty = unlimited. The period
   // picks the UTC window (daily/weekly/monthly) the caps count against.
+  // Custom-endpoint group label (#1176): '' = the single legacy Custom group.
+  const [groupLabel, setGroupLabel] = useState(apiKey.groupLabel ?? '')
+  const isCustom = apiKey.platform === 'custom'
+  // Monthly budget caps (#1158): editable here so the cap is settable from
+  // the dashboard at all; it shipped API-only. Empty = unlimited.
   const [requestCap, setRequestCap] = useState(capToInput(apiKey.monthlyRequestCap))
   const [tokenCap, setTokenCap] = useState(capToInput(apiKey.monthlyTokenCap))
   const [period, setPeriod] = useState<BudgetPeriod>(apiKey.budgetPeriod ?? 'auto')
@@ -83,10 +90,12 @@ export function EditKeyDialog({
   const requestCapValue = parseCap(requestCap)
   const tokenCapValue = parseCap(tokenCap)
   const capError = requestCapValue === null || tokenCapValue === null
+
+  const periodChanged = period !== (apiKey.budgetPeriod ?? 'auto')
+  const groupLabelChanged = isCustom && groupLabel.trim() !== (apiKey.groupLabel ?? '')
   const requestCapChanged = requestCapValue !== (apiKey.monthlyRequestCap || 0)
   const tokenCapChanged = tokenCapValue !== (apiKey.monthlyTokenCap || 0)
-  const periodChanged = period !== (apiKey.budgetPeriod ?? 'auto')
-  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged
+  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged || groupLabelChanged
 
   const updateKey = useMutation({
     mutationFn: (body: UpdateBody) =>
@@ -110,6 +119,7 @@ export function EditKeyDialog({
     if (requestCapChanged && requestCapValue !== null) body.monthlyRequestCap = requestCapValue
     if (tokenCapChanged && tokenCapValue !== null) body.monthlyTokenCap = tokenCapValue
     if (periodChanged) body.budgetPeriod = period
+    if (groupLabelChanged) body.groupLabel = groupLabel.trim()
     if (Object.keys(body).length > 0) updateKey.mutate(body)
     else onOpenChange(false)
   }
@@ -151,6 +161,8 @@ export function EditKeyDialog({
               <Input value={apiKey.baseUrl} readOnly className="bg-muted/30 font-mono text-xs" />
             </div>
           )}
+
+          {isCustom && <GroupLabelField value={groupLabel} onChange={setGroupLabel} />}
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">

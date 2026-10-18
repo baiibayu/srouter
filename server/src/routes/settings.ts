@@ -26,6 +26,7 @@ import {
 import { getHeadroomThresholds, setHeadroomThresholds, getTaskWeightShare, setTaskWeightShare } from '../services/router.js';
 import { getComplexityGate, setComplexityGate } from '../services/complexity-gate.js';
 import { getWebSearchConfig, setWebSearchConfig, getWebSearchUsage } from '../services/web-search.js';
+import { getMinReliabilityFloor, setMinReliabilityFloor } from '../services/router.js';
 import { MCP_ENABLED_SETTING, isMcpServerEnabled } from './mcp.js';
 import { z } from 'zod';
 import { getAppVersion } from '../lib/app-version.js';
@@ -444,6 +445,34 @@ settingsRouter.put('/web-search', (req: Request, res: Response) => {
     res.json(webSearchView());
   } catch (err: any) {
     res.status(400).json({ error: { message: `Invalid web-search config: ${err.message}`, type: 'invalid_request_error' } });
+  }
+});
+
+// Minimum reliability floor (#filter): drop models whose observed success rate
+// falls below this decimal (0.8 = 80%) from routing. Under-observed models stay
+// in the exploration pool, and the floor never empties the whole chain. null =
+// disabled (the default for existing installs).
+settingsRouter.get('/min-reliability-floor', (_req: Request, res: Response) => {
+  res.json({ floor: getMinReliabilityFloor() ?? null });
+});
+
+const minReliabilityFloorPutSchema = z.object({
+  floor: z.number().min(0).max(1).nullable().optional(),
+});
+
+// Update the minimum reliability floor. null clears back to disabled. Takes
+// effect on the next request — no restart needed.
+settingsRouter.put('/min-reliability-floor', (req: Request, res: Response) => {
+  const parsed = minReliabilityFloorPutSchema.safeParse(req.body);
+  if (!parsed.success || parsed.data.floor === undefined) {
+    res.status(400).json({ error: { message: 'Invalid min-reliability-floor: send {"floor": 0..1 | null}', type: 'invalid_request_error' } });
+    return;
+  }
+  try {
+    setMinReliabilityFloor(parsed.data.floor);
+    res.json({ floor: getMinReliabilityFloor() ?? null });
+  } catch (err: any) {
+    res.status(400).json({ error: { message: `Invalid min-reliability-floor: ${err.message}`, type: 'invalid_request_error' } });
   }
 });
 

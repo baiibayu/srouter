@@ -282,7 +282,7 @@
     "catalogModel": "katalog",
     "customModel": "özel",
     "discoveredModel": "keşfedildi",
-    "localOverride": "yerel geçersiz kılma",
+    "localOverride": "yerel özelleştirme",
     "displayName": "Görünen ad",
     "sizeLabel": "Yetenek kademesi",
     "sizeLabelHint": "Frontier/Large/Medium/Small, zekâ eksenini belirler: üst kademe her zaman alt kademeden öndedir ve aynı kademe içinde zekâ sıralaması puanı etkilemeye devam eder. Tanınan bir kademesi olmayan model bu eksende en düşük puanı alır; ancak zekâ üç eksenden yalnızca biridir. Güvenilirliği ve hızı yüksekse yine de yönlendirmede öne çıkabilir.",
@@ -430,7 +430,10 @@
     "weightSpeed": "Hız",
     "weightIntelligence": "Zekâ",
     "weightRequired": "En az bir ağırlık sıfırın üzerinde olmalıdır.",
-    "scoreColumn": "Puan"
+    "scoreColumn": "Puan",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Yönlendirici baskısı",
@@ -800,7 +803,7 @@
     "autoResolvedMonthly": "Detected provider cycle: monthly",
     "autoResolvedFallback": "Provider cycle unknown, defaulting to monthly",
     "capUnlimitedPlaceholder": "Sınırsız",
-    "capEditHint": "Caps reset at the next period boundary, 00:00 UTC. Leave blank for unlimited.",
+    "capEditHint": "Sınırlar her ayın 1'inde 00:00 UTC'de sıfırlanır. Sınırsız için boş bırakın.",
     "monthlyUsageLine": "Bu ay {requests} istek, {tokens} token",
     "monthlyUsageRequests": "{requests} requests",
     "monthlyUsageTokens": "{tokens} tokens",
@@ -814,7 +817,14 @@
     "webSearchGetKey": "Get a free key",
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "{limit} {metric} içinden {remaining} kaldı",
-    "quotaBalanceLeft": "{remaining} kaldı"
+    "quotaBalanceLeft": "{remaining} kaldı",
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
+    "groupHandleHint": "Add #{handle} after a model id to route only to this group, e.g. custom:<model>#{handle}",
+    "copyGroupHandle": "Copy group handle",
+    "groupHandleCopied": "Copied {handle}",
+    "groupHandleCopyFailed": "Couldn't copy to the clipboard"
   },
   "backups": {
     "title": "Yedekler",
@@ -1233,13 +1243,13 @@
       "generic": "OpenAI API'sini konuşan diğer her araç; temel URL ve anahtarla elle kurulur.",
       "openclaw": "Kendi makinenizden WhatsApp, Telegram, Discord ve daha fazlasında yanıt veren, her zaman açık bir kişisel asistan.",
       "hermes": "Nous Research'ün kendini geliştiren ajanı; kalıcı bellek ve becerilerle, terminalde ya da sohbet uygulamalarında.",
-"pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
+      "pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
       "droid": "Factory's Droid CLI, which adds custom models from any OpenAI-compatible endpoint to ~/.factory/settings.json.",
       "omp": "Oh My Pi's terminal agent, a Pi fork with the IDE wired in, that takes any OpenAI-compatible endpoint.",
       "zed": "A high-performance editor written in Rust, with real-time multi-agent collaboration.",
       "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
       "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
-      "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways.",
+      "atomcode": "AtomGit'in terminal ajanı; Rust ile yazılmış, OpenAI uyumlu her uç noktayı kabul eder.",
       "reasonix": "DeepSeek için geliştirilmiş bir terminal kodlama ajanı; uzun oturumlar ucuz kalsın diye önek önbelleği etrafında kurulmuştur."
     },
     "modelNoteFull": "Kurulum tüm modelleri ekler (auto, auto:*, fusion)",
@@ -1342,4 +1352,3 @@
     "offline": "İnternet bağlantınızı kontrol edip tekrar deneyin."
   }
 }
-

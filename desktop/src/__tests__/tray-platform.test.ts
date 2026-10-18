@@ -2,8 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dt, NATIVE_LOCALES } from '../i18n.js';
 import { describe, expect, it } from 'vitest';
-import { shouldOpenDashboardOnLaunch, trayPlatform } from '../tray-platform.js';
+import { shouldOpenDashboardOnLaunch, trayMenuOffersPopover, trayPlatform } from '../tray-platform.js';
 
 // #1353: on Windows the tray failed with "Unable to create status tray icon"
 // because every platform got the macOS template PNG. The Windows branch never
@@ -75,6 +76,30 @@ describe('opening the dashboard at launch (#1353)', () => {
   it('always opens it when the tray could not be built, since nothing else is visible', () => {
     for (const platform of ['win32', 'darwin', 'linux'] as const) {
       expect(shouldOpenDashboardOnLaunch(platform, { trayBuilt: false, welcomedBefore: true })).toBe(true);
+    }
+  });
+});
+
+describe('the compact popover keeps an entry point (#1412)', () => {
+  it('names the panel in the tray menu only where left-click does not toggle it', () => {
+    expect(trayMenuOffersPopover('win32')).toBe(true);
+    for (const platform of ['darwin', 'linux'] as const) {
+      expect(trayMenuOffersPopover(platform)).toBe(false);
+    }
+  });
+
+  // What #1412 broke: Windows gave left-click to the dashboard and nothing else
+  // could open the popover. A platform added later must not slip through, and
+  // dt() falls back to English for a missing key, so each locale is compared
+  // against the English label rather than just checked for a non-empty string.
+  it('leaves every supported platform a route to the popover, in every locale', () => {
+    for (const platform of ['darwin', 'win32', 'linux'] as const) {
+      const reachable = trayPlatform(platform).leftClick === 'popover' || trayMenuOffersPopover(platform);
+      expect(reachable, `${platform}: no way to open the compact panel`).toBe(true);
+    }
+    const english = dt('en', 'showCompactPanel');
+    for (const locale of NATIVE_LOCALES.filter(l => l !== 'en')) {
+      expect(dt(locale, 'showCompactPanel'), `${locale} is untranslated`).not.toBe(english);
     }
   });
 });

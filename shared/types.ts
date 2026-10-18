@@ -84,6 +84,11 @@ export type Platform =
   | 'speka'
   // Ongoing free research API for chat and speech recognition; catalog only.
   | 'typhoon'
+  // Permanent free chat aliases, shared fair-use quota; signed catalog only.
+  | 'plugsky'
+  // Catalog-only free chat gateways; shared monthly/daily account allowances.
+  | 'inferbase'
+  | 'simplellm'
   // Selected zero-priced routes have daily/rolling quotas without a top-up;
   // signed catalog only. The public roster also includes paid/promotional IDs.
   | 'llmtr'
@@ -101,6 +106,9 @@ export type Platform =
   | 'septor'
   | 'clod'
   | 'speechify'
+  // Self-hosted TTS: shared 30K tokens/day and 1K API requests/month, no card.
+  // Model rows arrive only through the signed, freshness-gated catalog.
+  | 'freeai'
   | 'blaze'
   // Lucidity Composite, Api.Airforce and DreamPrompting expose daily free
   // allowances; Waterfall and Logfare publish community / fair-use tiers.
@@ -137,6 +145,8 @@ export type Platform =
   // 2026-10-07, hub-docs PR #2865, but grandfathered accounts still receive
   // the monthly credit — RETAINED.)
   | 'huggingface'
+  // GitHub Models — requires a fine-grained PAT with `models:read` scope.
+  | 'github'
   // OpenCode Zen — OpenAI-compatible gateway. Free promotional models require a
   // free (no-card) account key from opencode.ai/auth; see migrateModelsV18.
   | 'opencode'
@@ -360,6 +370,9 @@ export interface ApiKey {
   label: string;
   maskedKey: string;
   baseUrl: string | null;
+  /** Optional custom-endpoint group label (#1176); null = legacy single
+   *  "Custom" group. Only set on platform='custom' rows. */
+  groupLabel?: string | null;
   status: KeyStatus;
   enabled: boolean;
   /** This row is the anonymous sentinel of a key-optional platform: there is

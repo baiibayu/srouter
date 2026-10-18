@@ -430,7 +430,10 @@
     "weightSpeed": "速度",
     "weightIntelligence": "インテリジェンス",
     "weightRequired": "少なくとも 1 つの重みがゼロより大きくなければなりません。",
-    "scoreColumn": "スコア"
+    "scoreColumn": "スコア",
+    "minReliabilityFloor": "最低信頼性しきい値",
+    "minReliabilityFloorHint": "観測された成功率がこの値を下回ったモデルをルーティングから除外します。0.8 は 80% を意味します。空欄で無効 — 履歴が少なすぎるモデルは常に保持され、新しいモデルも試行され続けます。チェーン全体が空になることはありません。",
+    "minReliabilityFloorOff": "無効"
   },
   "penaltyInspector": {
     "title": "ルーターの圧力",
@@ -815,6 +818,14 @@
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "{limit} {metric}中 残り {remaining}",
     "quotaBalanceLeft": "残り {remaining}"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
+    "groupHandleHint": "Add #{handle} after a model id to route only to this group, e.g. custom:<model>#{handle}",
+    "copyGroupHandle": "Copy group handle",
+    "groupHandleCopied": "Copied {handle}",
+    "groupHandleCopyFailed": "Couldn't copy to the clipboard"
   },
   "backups": {
     "title": "Backups",

@@ -430,7 +430,10 @@
     "weightSpeed": "गति",
     "weightIntelligence": "बुद्धि",
     "weightRequired": "कम से कम एक वज़न शून्य से ऊपर होना चाहिए.",
-    "scoreColumn": "स्कोर"
+    "scoreColumn": "स्कोर",
+    "minReliabilityFloor": "न्यूनतम विश्वसनीयता सीमा",
+    "minReliabilityFloorHint": "जब किसी मॉडल की देखी गई सफलता दर इस मान से नीचे गिर जाए, तो उसे रूटिंग से हटा देता है। 0.8 का अर्थ 80% है। अक्षम करने के लिए खाली छोड़ें — बहुत कम इतिहास वाले मॉडल हमेशा रखे जाते हैं ताकि नए मॉडल आज़माए जा सकें। पूरी श्रृंखला कभी खाली नहीं करता।",
+    "minReliabilityFloorOff": "अक्षम"
   },
   "penaltyInspector": {
     "title": "राउटर का दबाव",
@@ -815,6 +818,14 @@
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "{limit} {metric} में से {remaining} शेष",
     "quotaBalanceLeft": "{remaining} शेष"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
+    "groupHandleHint": "Add #{handle} after a model id to route only to this group, e.g. custom:<model>#{handle}",
+    "copyGroupHandle": "Copy group handle",
+    "groupHandleCopied": "Copied {handle}",
+    "groupHandleCopyFailed": "Couldn't copy to the clipboard"
   },
   "backups": {
     "title": "Backups",

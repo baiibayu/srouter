@@ -1,7 +1,7 @@
 # LLMTR
 
 LLMTR exposes an OpenAI-compatible API at `https://llmtr.com/v1`. Create an account,
-verify email, and create a dashboard API key. Add it under **Keys ΓåÆ LLMTR**, or
+verify email, and create a dashboard API key. Add it under **Keys → LLMTR**, or
 import `LLMTR_API_KEY` from an environment file. Never commit the key.
 
 Selected routes are zero-priced with daily or rolling quotas, not monthly cash
@@ -54,7 +54,6 @@ start of two probes defaults to 2 seconds and is tunable with
 This covers every caller of the probe — the 5-minute health pass, the dashboard's
 "check all" button, the post-wake re-probe, the cooldown-probe job and the
 401-triggered revalidation. Chat and streaming traffic is never paced.
-
 Chat and streaming use the shared OpenAI-compatible transport, preserve usage and
 backoff, and reject mismatched response model IDs rather than silently accepting
 substitutions. No automatic paid fallback is introduced by this adapter.

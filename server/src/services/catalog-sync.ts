@@ -474,12 +474,29 @@ export function applyCatalogDetailed(db: Db, catalog: Catalog): {
   return db.transaction(() => applyCatalogInner(db, catalog))();
 }
 
+/**
+ * True when this document can say anything we have not already acted on.
+ *
+ * `reapplyCachedCatalog` deliberately re-applies the very document that is
+ * already marked applied — its job is to undo the baseline drift that boot
+ * migrations reintroduce. A replay therefore re-presents stale data as if it
+ * were a fresh verdict. The fetched path reaches `applyCatalog` only behind
+ * `syncCatalog`'s own same-as-applied guard, so for that path the check is
+ * always true and nothing changes.
+ */
+function catalogBringsNewEvidence(catalog: Catalog): boolean {
+  return getSetting(SETTING_APPLIED_VERSION) !== catalog.version || getSetting(SETTING_APPLIED_TIER) !== catalog.tier;
+}
+
 function applyCatalogInner(db: Db, catalog: Catalog): {
   counts: NonNullable<SyncResult['counts']>;
   details: CatalogChangeDetails;
 } {
   const counts = { updated: 0, inserted: 0, removed: 0, skippedUnknownPlatform: 0, quirks: 0 };
   const details: CatalogChangeDetails = { added: new Map(), removed: new Map(), updated: new Map() };
+  // Read once: the applied-version settings are only written after this
+  // transaction returns, so they cannot change underneath the loop.
+  const newEvidence = catalogBringsNewEvidence(catalog);
 
   /** Note one model change against its provider. Names use the catalog
  *  display_name where we have it (that is what the user recognises) and fall
@@ -614,7 +631,11 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
       // A model auto-retired from a 410/end-of-life response (#634) is disabled,
       // not deleted. A catalog that STILL lists it — and lists it enabled — is
       // newer evidence than that one provider response, so lift the retirement.
-      if (m.enabled) reinstateUpstreamRetiredCatalogModel(db, m.platform, m.modelId);
+      // Only for a catalog we have not applied yet: `reapplyCachedCatalog`
+      // replays the snapshot the retirement already came after, so replaying it
+      // back would clear every retirement on the next boot, however fresh the
+      // provider's 410 was.
+      if (m.enabled && newEvidence) reinstateUpstreamRetiredCatalogModel(db, m.platform, m.modelId);
       inCatalog.add(`${m.platform}:${m.modelId}`);
 
       const row = selectModel.get(m.platform, m.modelId) as

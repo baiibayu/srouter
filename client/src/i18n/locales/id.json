@@ -430,7 +430,10 @@
     "weightSpeed": "Kecepatan",
     "weightIntelligence": "Intelijen",
     "weightRequired": "Setidaknya satu bobot harus di atas nol.",
-    "scoreColumn": "Skor"
+    "scoreColumn": "Skor",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Tekanan router",
@@ -815,6 +818,14 @@
     "webSearchHelp": "Backend untuk POST /v1/web-search. DuckDuckGo dan SearXNG tanpa kunci; Tavily, Brave, Exa free tier (tanpa kartu); TinyFish gratis (12k pencarian/hari). Jika sebuah backend gagal, permintaan menelusuri rantai jatuh balik (DuckDuckGo lebih dulu).",
     "quotaBalanceHint": "Tersisa {remaining} dari {limit} {metric}",
     "quotaBalanceLeft": "Tersisa {remaining}"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
+    "groupHandleHint": "Add #{handle} after a model id to route only to this group, e.g. custom:<model>#{handle}",
+    "copyGroupHandle": "Copy group handle",
+    "groupHandleCopied": "Copied {handle}",
+    "groupHandleCopyFailed": "Couldn't copy to the clipboard"
   },
   "backups": {
     "title": "Backups",

@@ -31,6 +31,15 @@ export function trayPlatform(platform: NodeJS.Platform): TrayPlatform {
   return { iconFile: 'tray.png', templateImage: false, leftClick: 'popover' };
 }
 
+// #1412: the compact popover has no keyboard shortcut and no window of its own,
+// so the tray is its only entry point. Where left-click is already claimed by
+// the dashboard (Windows, deliberately, since #1353) the tray menu has to offer
+// it or the popover is unreachable. Elsewhere left-click toggles it already and
+// the item would just be a second way to do the same thing.
+export function trayMenuOffersPopover(platform: NodeJS.Platform): boolean {
+  return trayPlatform(platform).leftClick !== 'popover';
+}
+
 // Windows tucks new tray icons into the overflow flyout, so a first launch can
 // look like nothing happened at all (#1353). Open the dashboard once there so
 // the user sees the app is up; after that the tray is the way in. A tray that

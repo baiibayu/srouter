@@ -7,6 +7,17 @@ import { UnknownModelError } from './models.js';
 import type { CatalogModel } from './types.js';
 
 describe('CLI arguments and launchers', () => {
+  it('defaults to the gateway port when no URL is configured', () => {
+    const previous = process.env.SROUTER_URL;
+    delete process.env.SROUTER_URL;
+    try {
+      expect(parseArgs(['setup-generic']).options.url).toBe('http://localhost:20268');
+    } finally {
+      if (previous === undefined) delete process.env.SROUTER_URL;
+      else process.env.SROUTER_URL = previous;
+    }
+  });
+
   it('parses setup options before or after the command', () => {
     expect(parseArgs([
       '--url',

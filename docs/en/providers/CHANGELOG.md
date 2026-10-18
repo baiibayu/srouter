@@ -6,6 +6,7 @@ Revision history for `docs/providers/`, listing the upstream commits that shaped
 
 | Commit | Date | Summary |
 | --- | --- | --- |
+| Unreleased | 2026-10-09 | Custom endpoint groups: per-endpoint group label, group-scoped switch, `custom:<model>#<group>` routing (#1176). |
 | Unreleased | 2026-09-05 | Cooldown ceiling (`routing_cooldown_ceiling_ms`) and Router pressure "Clear all" (#952). |
 | Unreleased | 2026-09-04 | Add AMD Radeon Cloud TokenFactory shared-model adapter and catalog-ready platform wiring. |
 | Unreleased | 2026-09-01 | Add the native Sail Research background Responses adapter and catalog-ready platform wiring. |
