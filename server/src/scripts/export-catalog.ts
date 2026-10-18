@@ -38,6 +38,8 @@ import { getAllProviders } from '../providers/index.js';
 import { resolveQuirksByModel, quirkKey, listQuirkDefinitions } from '../services/quirks.js';
 import { MEDIA_PLATFORMS, TRANSCRIPTION_PLATFORMS, VIDEO_PLATFORMS } from '../services/media.js';
 import { EMBEDDING_PLATFORMS } from '../services/embeddings.js';
+import { SEARCH_ENGINE_PLATFORMS } from '../services/search.js';
+import { DECISION_PLATFORMS } from '../services/decision.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_SRC_ROOT = path.resolve(__dirname, '..'); // server/src
@@ -249,6 +251,45 @@ function main() {
       };
     });
 
+  const searchEngines = mediaAll
+    .filter((m) => m.modality === 'search' && SEARCH_ENGINE_PLATFORMS.has(m.platform))
+    .map((m) => {
+      const meta = m.meta_json
+        ? (JSON.parse(m.meta_json) as {
+            creditsPerQuery?: number;
+            features?: { news?: boolean; answer?: boolean; fullContent?: boolean };
+            premiumSince?: string;
+          })
+        : {};
+      return {
+        platform: m.platform,
+        engineId: m.model_id,
+        displayName: m.display_name,
+        priority: m.priority,
+        enabled: m.enabled === 1,
+        quotaLabel: m.quota_label || undefined,
+        creditsPerQuery: meta.creditsPerQuery,
+        features: meta.features,
+        premiumSince: meta.premiumSince,
+      };
+    });
+
+  const decisionModels = mediaAll
+    .filter((m) => m.modality === 'decision' && DECISION_PLATFORMS.has(m.platform))
+    .map((m) => {
+      const meta = m.meta_json ? (JSON.parse(m.meta_json) as { contextWindow?: number; premiumSince?: string }) : {};
+      return {
+        platform: m.platform,
+        modelId: m.model_id,
+        displayName: m.display_name,
+        priority: m.priority,
+        enabled: m.enabled === 1,
+        quotaLabel: m.quota_label || undefined,
+        contextWindow: meta.contextWindow,
+        premiumSince: meta.premiumSince,
+      };
+    });
+
   const catalog = {
     version,
     generatedAt: new Date().toISOString(),
@@ -260,6 +301,10 @@ function main() {
       embeddings: catalogEmbeddings.length,
       transcriptionModels: transcriptionModels.length,
       videoModels: videoModels.length,
+      searchEngines: searchEngines.length,
+      enabledSearchEngines: searchEngines.filter((e) => e.enabled).length,
+      decisionModels: decisionModels.length,
+      enabledDecisionModels: decisionModels.filter((m) => m.enabled).length,
       quirks: quirkDefs.length,
     },
     platforms,
@@ -267,6 +312,8 @@ function main() {
     embeddings: catalogEmbeddings,
     transcriptionModels,
     videoModels,
+    searchEngines,
+    decisionModels,
     quirks: quirkDefs,
   };
 
