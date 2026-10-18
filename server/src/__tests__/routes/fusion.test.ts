@@ -392,7 +392,7 @@ describe('fusion route (/v1/chat/completions, model: "fusion")', () => {
     });
 
     it('returns 413 without dispatching when the auto-panel has no model large enough', async () => {
-      getDb().prepare("UPDATE models SET context_window = 1000 WHERE platform IN ('groq', 'cerebras', 'openrouter')").run();
+      getDb().prepare("UPDATE models SET context_window = 1000 WHERE platform IN ('groq', 'nvidia', 'openrouter')").run();
       const { calls } = mockUpstreamErrors({});
       const { status, body } = await request(app, 'POST', '/v1/chat/completions', {
         model: 'fusion',
