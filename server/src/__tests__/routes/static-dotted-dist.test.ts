@@ -26,7 +26,7 @@ describe('CLIENT_DIST under a dotted directory (send dotfile regression)', () =>
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
 
-    const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'freeapi-dot-'));
+    const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-dot-'));
     // `.srouter` mirrors the real install folder name.
     dottedRoot = path.join(parent, '.srouter');
     distDir = path.join(dottedRoot, 'client', 'dist');

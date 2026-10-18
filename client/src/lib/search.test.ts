@@ -71,16 +71,16 @@ describe('engineChain', () => {
 describe('searchContextMessage', () => {
   it('numbers the sources and caps long snippets', () => {
     const text = searchContextMessage({
-      query: 'what is freellmapi',
+      query: 'what is srouter',
       provider: 'tavily',
       engine: 'tavily-search',
       results: [
         { title: 'README', url: 'https://github.com/x/y', content: 'a'.repeat(700), score: 0.9 },
-        { title: '', url: 'https://www.freellmapi.co/docs', content: 'docs', score: 0.5 },
+        { title: '', url: 'https://www.srouter.co/docs', content: 'docs', score: 0.5 },
       ],
     })
     expect(text).toContain('[1] README (https://github.com/x/y)')
-    expect(text).toContain('[2] freellmapi.co (https://www.freellmapi.co/docs)')
+    expect(text).toContain('[2] srouter.co (https://www.srouter.co/docs)')
     expect(text).toContain(`${'a'.repeat(600)}…`)
     expect(text).not.toContain('a'.repeat(601))
   })

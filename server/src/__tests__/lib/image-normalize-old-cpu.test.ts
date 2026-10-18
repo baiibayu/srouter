@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterAll } from 'vitest';
-import type { ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 
 // #1469: sharp's prebuilt linux-x64 libvips needs SSE4.2. On an older CPU
 // (Intel Atom D2700 in a Synology DS1512+) loading it is an illegal

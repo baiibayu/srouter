@@ -101,9 +101,9 @@ describe('inline tool-call dialect rescue', () => {
     });
 
     it('does NOT touch ordinary JSON answers that do not name a requested tool', () => {
-      const r = rescueInlineToolCalls('{"name": "Tashfeen", "age": 30}', TOOLS);
+      const r = rescueInlineToolCalls('{"name": "Alice", "age": 30}', TOOLS);
       expect(r.detected).toBe(false);
-      expect(r.cleanText).toBe('{"name": "Tashfeen", "age": 30}');
+      expect(r.cleanText).toBe('{"name": "Alice", "age": 30}');
     });
 
     it('does NOT touch plain prose', () => {
