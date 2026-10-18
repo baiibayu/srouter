@@ -499,6 +499,7 @@ async function runHealthPass(opts: HealthPassOptions): Promise<HealthPassResult>
   `).all() as HealthKeyRow[];
 
   const skippedKeyIds: number[] = [];
+  const rateLimitSkipMs = getValidationRateLimitSkipMs();
   const due = rows.filter(row => {
     if (opts.force) return true;
     // A key parked at 'error' is out of rotation until a probe says otherwise
@@ -508,6 +509,17 @@ async function runHealthPass(opts: HealthPassOptions): Promise<HealthPassResult>
     if (row.age_ms !== null && row.age_ms < RECENT_CHECK_SKIP_MS) {
       skippedKeyIds.push(row.id);
       return false;
+    }
+    // A key whose last validation was rate-limited (429) is skipped by the
+    // scheduled pass until the skip window passes: re-asking a provider that
+    // just told us to slow down is how validation traffic becomes a ban
+    // (#1369). Forced passes still probe — explicit operator intent wins.
+    if (rateLimitSkipMs > 0) {
+      const lastRateLimitedAt = validationRateLimitedAt.get(row.id);
+      if (lastRateLimitedAt !== undefined && now() - lastRateLimitedAt < rateLimitSkipMs) {
+        skippedKeyIds.push(row.id);
+        return false;
+      }
     }
     return true;
   });

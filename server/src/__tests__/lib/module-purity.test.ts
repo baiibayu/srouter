@@ -41,8 +41,6 @@ const PURE_MODULES = [
   // HTML entity/tag helpers shared by the web-search parser and the fetch
   // route; string functions over their arguments, no I/O by design.
   'html.ts',
-  // Learned output ceilings; the fallback loop and every route import it.
-  'output-cap.ts',
   'provider-identity.ts',
   'provider-size-parser.ts',
   'retry-hint.ts',

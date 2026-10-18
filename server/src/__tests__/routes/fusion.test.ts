@@ -292,10 +292,10 @@ describe('fusion route (/v1/chat/completions, model: "fusion")', () => {
     beforeEach(() => {
       const db = getDb();
       saved = db.prepare(
-        "SELECT id, context_window, tpm_limit, tpd_limit FROM models WHERE platform IN ('groq', 'cerebras', 'openrouter')",
+        "SELECT id, context_window, tpm_limit, tpd_limit FROM models WHERE platform IN ('groq', 'nvidia', 'openrouter')",
       ).all() as typeof saved;
       db.prepare(
-        "UPDATE models SET context_window = 1000000, tpm_limit = NULL, tpd_limit = NULL WHERE platform IN ('groq', 'cerebras', 'openrouter')",
+        "UPDATE models SET context_window = 1000000, tpm_limit = NULL, tpd_limit = NULL WHERE platform IN ('groq', 'nvidia', 'openrouter')",
       ).run();
     });
     afterEach(() => {
