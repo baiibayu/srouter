@@ -94,7 +94,6 @@ export const REQUEST_MODEL_ATTRIBUTION_FILENAME = '20260913_000001_request_model
 export const CUSTOM_ENDPOINT_GROUP_LABEL_FILENAME = '20260930_000001_custom_endpoint_group_label.ts';
 export const KEY_MONTHLY_USAGE_FILENAME = '20260914_000001_key_monthly_usage.ts';
 export const QUOTA_SNAPSHOT_FRESHNESS_FILENAME = '20260915_000001_quota_snapshot_freshness.ts';
-export const CUSTOM_ENDPOINT_GROUP_LABEL_FILENAME = '20260930_000001_custom_endpoint_group_label.ts';
 export const UNIFIED_KEY_SR_PREFIX_FILENAME = '20261004_000001_unified_key_sr_prefix.ts';
 export const KEY_BUDGET_PERIOD_FILENAME = '20261005_000001_key_budget_period.ts';
 export const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_period_auto.ts';

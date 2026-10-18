@@ -435,9 +435,6 @@ export interface ApiKey {
   monthlyUsage?: { requests: number; tokens: number; resetsAt: string };
   /** The per-key proxy override with its password masked (#590); '' = none. */
   maskedProxyUrl?: string;
-  /** Optional custom-endpoint group label (#1176); null = legacy single
-   *  "Custom" group. Only set on platform='custom' rows. */
-  groupLabel?: string | null;
   models?: ApiKeyModel[];
   cooldowns?: ApiKeyCooldown[];
   /** True for a built-in provider key whose platform the catalog carries no

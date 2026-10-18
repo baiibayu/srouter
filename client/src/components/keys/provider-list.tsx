@@ -48,7 +48,6 @@ import { TestModelsDialog } from './test-models-dialog'
 import { AddModelDialog } from './add-model-dialog'
 import { groupHandle } from '@/lib/endpoint-groups'
 import { SEARCH_PROVIDERS, isSearchPlatform } from '@/lib/search'
-import { copyText } from '@/lib/clipboard'
 
 type StatusFilter = 'all' | 'healthy' | 'issues' | 'disabled'
 

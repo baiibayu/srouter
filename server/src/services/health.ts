@@ -154,36 +154,6 @@ export function clearValidationRateLimitState(): void {
   validationRateLimitedAt.clear();
 }
 
-// A key whose last validation was rate-limited (429) is skipped by the
-// scheduled pass until the skip window passes: re-asking a provider that just
-// told us to slow down is how validation traffic becomes a ban. LLMTR's
-// validator is a POST to /chat/completions with a nonexistent model —
-// shaped exactly like the bot traffic their abuse system hunts — so an
-// unpaced re-ask every 5 minutes per key kept accounts flagged (#1369).
-// Forced passes (dashboard check-all, wake re-probe) still probe: explicit
-// operator intent wins over pacing. A later successful validation clears the
-// mark; validation that never ran leaves no mark.
-const validationRateLimitedAt = new Map<number, number>();
-
-const DEFAULT_VALIDATION_RATE_LIMIT_SKIP_MS = 60 * 60 * 1000;
-
-/** How long a 429ed key stays out of the scheduled pass. Tunable like the
- *  other pacing knobs; 0 or a bad value falls back to the default. */
-function getValidationRateLimitSkipMs(): number {
-  return positiveIntEnv(process.env.HEALTH_CHECK_RATE_LIMIT_SKIP_MS, DEFAULT_VALIDATION_RATE_LIMIT_SKIP_MS);
-}
-
-/** Record that validating this key was just rate-limited. Exported for tests;
- *  production calls it from checkKeyHealth's 429 path. */
-export function recordValidationRateLimited(keyId: number, atMs = Date.now()): void {
-  validationRateLimitedAt.set(keyId, atMs);
-}
-
-/** Test seam: drop all validation-429 pacing state. */
-export function clearValidationRateLimitState(): void {
-  validationRateLimitedAt.clear();
-}
-
 function recordInvalidFailure(keyId: number, platform?: string): void {
   const count = (failureCount.get(keyId) ?? 0) + 1;
   failureCount.set(keyId, count);
