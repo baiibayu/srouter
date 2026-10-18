@@ -22,10 +22,10 @@ describe('safe config writes', () => {
 
   it('appends a new env key without leaving a blank line before it', () => {
     const merged = renderFile(
-      { path: '/unused/.env', format: 'env', content: 'FREELLMAPI_API_KEY=k\n' },
+      { path: '/unused/.env', format: 'env', content: 'SROUTER_API_KEY=k\n' },
       'DEEPSEEK_API_KEY=sk-keep\n',
     );
-    expect(merged).toBe('DEEPSEEK_API_KEY=sk-keep\nFREELLMAPI_API_KEY=k\n');
+    expect(merged).toBe('DEEPSEEK_API_KEY=sk-keep\nSROUTER_API_KEY=k\n');
   });
 
   it('renders a fresh Continue config idempotently', () => {
