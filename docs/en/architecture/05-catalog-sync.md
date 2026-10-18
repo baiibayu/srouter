@@ -6,7 +6,7 @@
 
 ## 1. Overview
 
-The catalog sync keeps the local model catalog in step with the published catalog at `freellmapi.co`. It runs **twice daily** (and on demand), fetches a **signed catalog**, verifies it against a **pinned Ed25519 public key**, and applies it **transactionally** to the local SQLite database.
+The catalog sync keeps the local model catalog in step with the published upstream catalog. It runs **twice daily** (and on demand), fetches a **signed catalog**, verifies it against a **pinned Ed25519 public key**, and applies it **transactionally** to the local SQLite database.
 
 ### Two Tiers
 
@@ -260,7 +260,7 @@ startCatalogSync(scheduler: Scheduler)
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `CATALOG_BASE_URL` | `https://api.freellmapi.co` | Catalog service endpoint |
+| `CATALOG_BASE_URL` | `''` (bundled) | Catalog service endpoint |
 | `CATALOG_PUBKEY` | Pinned Ed25519 key | Override for self-hosted catalog |
 | `CATALOG_SYNC_DISABLED` | `0` | Kill switch (`1` = disabled) |
 

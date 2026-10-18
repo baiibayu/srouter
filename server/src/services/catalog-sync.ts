@@ -30,7 +30,7 @@ const MEDIA_MODALITIES = new Set(['image', 'audio']);
  * scripts/export-catalog.ts --bundled). On boot the bundled catalog is applied
  * synchronously — no network, no signature, trust equals the installed
  * package. CATALOG_BASE_URL opts back into the remote catalog server (self-
- * hosted or the original freellmapi feed) with Ed25519 verification; when set,
+ * hosted or the original upstream feed) with Ed25519 verification; when set,
  * the remote catalog is fetched twice a day and applied only when newer than
  * the bundled baseline (MIN_CATALOG_VERSION), so a stale remote can never roll
  * back models the binary already ships.
@@ -1206,7 +1206,7 @@ export function getSyncState(): CatalogSyncState {
  * IGNORE baseline models the catalog may have deleted; re-applying the
  * bundled catalog immediately after keeps the catalog authoritative even
  * offline, exactly like the old cached-JSON path but without the stale-cache
- * footgun (a leftover freellmapi cache can no longer resurrect dead
+ * footgun (a leftover legacy cache can no longer resurrect dead
  * platforms, because the cache is never read in bundled mode).
  *
  * REMOTE MODE (CATALOG_BASE_URL set): re-applies the cached (already
