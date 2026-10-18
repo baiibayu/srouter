@@ -18,17 +18,9 @@ import { bearerAuthHeader } from '../lib/credential.js';
 import { customEndpointKeyIds } from './custom-endpoint.js';
 import type { Db } from '../db/types.js';
 import { SPEKA_BASE_URL } from '../providers/speka.js';
-<<<<<<< HEAD
-
-// Inferbase embeddings base URL. Defined inline (no provider module in this
-// fork yet) so the catalog-managed embedding route can reach it without
-// pulling in a chat provider that this binary does not ship.
-export const INFERBASE_BASE_URL = 'https://api.inferbase.ai/v1';
-=======
-import { ELECTRONHUB_BASE_URL } from '../providers/electronhub.js';
-import { INFERBASE_BASE_URL } from '../providers/inferbase.js';
 import { AURAY_BASE_URL } from '../providers/auray.js';
->>>>>>> 5a3abac8 (feat(providers): add Auray and preserve native Gemini TTS WAV (#1518))
+
+export const INFERBASE_BASE_URL = 'https://api.inferbase.ai/v1';
 
 export interface EmbeddingModelRow {
   id: number;
@@ -170,26 +162,16 @@ async function openAiStyleEmbed(
     usage?: { prompt_tokens?: number; total_tokens?: number };
   };
   const data = [...(j.data ?? [])].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
-<<<<<<< HEAD
-  // A successful HTTP response is not enough: wrong model/dimension or
+// A successful HTTP response is not enough: wrong model/dimension or
   // malformed vectors would corrupt the caller's embedding family.
-  if (platform === 'inferbase' && (
-=======
   if (['electronhub', 'inferbase', 'auray'].includes(platform) && (
->>>>>>> 5a3abac8 (feat(providers): add Auray and preserve native Gemini TTS WAV (#1518))
     j.model !== modelId || data.length !== inputs.length ||
     data.some((d, i) => d.index !== i || !Array.isArray(d.embedding) ||
       d.embedding.length !== (dimensions ?? expectedDimensions) ||
       d.embedding.some(value => typeof value !== 'number' || !Number.isFinite(value)))
   )) {
-<<<<<<< HEAD
-    throw new EmbeddingsError('Inferbase returned mismatched or malformed embeddings', 502);
-=======
-    // A successful HTTP response is not enough: wrong model/dimension or
-    // malformed vectors would corrupt the caller's embedding family.
     const provider = platform === 'electronhub' ? 'ElectronHub' : platform === 'auray' ? 'Auray' : 'Inferbase';
     throw new EmbeddingsError(`${provider} returned mismatched or malformed embeddings`, 502);
->>>>>>> 5a3abac8 (feat(providers): add Auray and preserve native Gemini TTS WAV (#1518))
   }
   return {
     vectors: data.map(d => d.embedding),

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ClipboardEvent, type KeyboardEvent, type RefObject } from 'react'
 import { Liquid } from 'liquid-gooey'
 import { ArrowUp, Globe, Paperclip, Plus } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { DictationButton, type DictationPhase } from './dictation-button'

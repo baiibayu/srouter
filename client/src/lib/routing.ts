@@ -404,14 +404,11 @@ export const platformColors: Record<string, string> = {
   sail:        '#0ea5e9',
   aclide:      '#6366f1',
   speka:       '#0d9488',
-<<<<<<< HEAD
-=======
-  auray:       '#635bff',
+auray:       '#635bff',
   typhoon:     '#e11d48',
   plugsky:     '#0284c7',
   inferbase:   '#2563eb',
   simplellm:   '#0d9488',
->>>>>>> 5a3abac8 (feat(providers): add Auray and preserve native Gemini TTS WAV (#1518))
   llmtr:       '#0f766e',
   gizmo:       '#7c3aed',
   blockrun:    '#2563eb',
@@ -452,8 +449,6 @@ export const platformColors: Record<string, string> = {
   unorouter:   '#ec4899',
   xkiro:       '#a855f7',
   nous:        '#d97706',
-  typhoon:     '#059669',
-  plugsky:     '#eab308',
   tokenharbor: '#134e4a',
   alibaba:     '#ff6a00',
   anyapi:      '#0891b2',

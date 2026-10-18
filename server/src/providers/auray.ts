@@ -1,4 +1,4 @@
-import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@freellmapi/shared/types.js';
+import type { ChatCompletionChunk, ChatCompletionResponse, ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { parseStatedRetryMs, providerHttpError, type CompletionOptions, type KeyValidationResult } from './base.js';
 import { OpenAICompatProvider } from './openai-compat.js';
 import type { QuotaObservationContext } from '../services/provider-quota.js';

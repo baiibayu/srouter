@@ -127,6 +127,8 @@ export type Platform =
   // with recurring account-level allowance and request/concurrency controls.
   | 'radeon'
   | 'nvidia'
+  | 'inferbase'
+  | 'simplellm'
   | 'mistral'
   | 'sambanova'
   | 'openrouter'

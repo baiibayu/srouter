@@ -31,11 +31,10 @@ import { AirforceProvider } from './airforce.js';
 import { DreamPromptingProvider } from './dreamprompting.js';
 import { WaterfallProvider } from './waterfall.js';
 import { LogfareProvider } from './logfare.js';
-<<<<<<< HEAD
 import { AurayProvider } from './auray.js';
-=======
-import { AurayProvider } from './auray.js';
->>>>>>> 5a3abac8 (feat(providers): add Auray and preserve native Gemini TTS WAV (#1518))
+import { OpenCodeFreeProvider } from './opencode-free.js';
+import { XKiroProvider } from './xkiro.js';
+
 
 const providers = new Map<Platform, BaseProvider>();
 
