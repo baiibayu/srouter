@@ -726,6 +726,7 @@ describe('applyCatalog: searchEngines', () => {
 
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
+    process.env.CATALOG_BASE_URL = 'https://catalog.test';
     initDb(':memory:');
   });
 
@@ -823,6 +824,7 @@ describe('applyCatalog: decisionModels', () => {
 
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
+    process.env.CATALOG_BASE_URL = 'https://catalog.test';
     initDb(':memory:');
   });
 
