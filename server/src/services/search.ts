@@ -14,7 +14,7 @@ import { randomUUID } from 'node:crypto';
 import { secondsUntilNextMonth } from './key-budget.js';
 import { reserveProviderCredential, type ReservedProviderCredential } from './provider-credential.js';
 import { isOnCooldown, setCooldown } from './ratelimit.js';
-import { searchWeb } from './web-search.js';
+import { searchWeb, getWebSearchUsage } from './web-search.js';
 
 // Web search over the key pool (#1174).
 //
@@ -564,6 +564,14 @@ export function searchRetryAfterSec(err: SearchError): number | undefined {
 
 // ── Dashboard: engines ───────────────────────────────────────────────────────
 
+/** Backends that answer with no key and no account at all — their engine row
+ *  never needs a key slot (the dashboard badges them `keyless`). DuckDuckGo
+ *  and SearXNG only run through the legacy POST /v1/web-search walker, never
+ *  the keyed chain, so a stored key can't apply to them. */
+export function isKeylessSearchPlatform(platform: string): boolean {
+  return platform === 'duckduckgo' || platform === 'searxng';
+}
+
 export interface SearchEngineView {
   id: number;
   platform: string;
@@ -577,6 +585,8 @@ export interface SearchEngineView {
   premiumSince: string | null;
   /** premiumSince + 30 days: when a free install receives the engine. */
   freeFrom: string | null;
+  /** Runs with no key at all (duckduckgo, searxng) — never needs a slot. */
+  keyless: boolean;
   isCustom: boolean;
   keyCount: number;
   healthyKeyCount: number;
@@ -599,6 +609,12 @@ export function listSearchEngines(): SearchEngineView[] {
        GROUP BY platform, engine_id
     `).all() as { platform: string; engine_id: string; n: number }[]).map(r => [`${r.platform}:${r.engine_id}`, r.n]),
   );
+  // Legacy POST /v1/web-search traffic never reaches search_requests (the
+  // walker has no engine row to log against), so its own monthly tally merges
+  // in per platform — a backend counts once whichever endpoint served it.
+  // Nothing double-counts: runSearch's keyless fallback returns without
+  // logSearch, and only status='ok' rows are summed on the search_requests side.
+  const legacyMonthly = getWebSearchUsage().monthly;
 
   return orderedEngines().map(row => {
     const meta = parseSearchMeta(row.meta_json);
@@ -619,10 +635,12 @@ export function listSearchEngines(): SearchEngineView[] {
       features: meta.features ?? {},
       premiumSince,
       freeFrom: Number.isFinite(premiumMs) ? new Date(premiumMs + FREE_LAG_MS).toISOString() : null,
+      keyless: isKeylessSearchPlatform(row.platform),
       isCustom: row.platform === 'custom',
       keyCount: keys.length,
       healthyKeyCount: keys.filter(healthy).length,
-      searchesThisMonth: monthCounts.get(engineKey(row)) ?? 0,
+      searchesThisMonth: (monthCounts.get(engineKey(row)) ?? 0)
+        + (row.platform === 'custom' ? 0 : legacyMonthly[row.platform] ?? 0),
     };
   });
 }
@@ -687,6 +705,11 @@ export function searchAnalytics(range: SearchAnalyticsRange): SearchAnalytics {
   const today = (db.prepare(`
     SELECT COUNT(*) AS n FROM search_requests WHERE status = 'ok' AND created_at >= datetime('now', 'start of day')
   `).get() as { n: number }).n;
+  // Legacy walker attempts keep only a today/month bucket and no history, so
+  // today's attempts fold in here (and into each engine row's monthly count).
+  // The logs are disjoint per attempt: the keyed path never writes
+  // web_search_usage, and the keyless fallback never writes search_requests.
+  const legacyToday = Object.values(getWebSearchUsage().daily).reduce((n, v) => n + v, 0);
 
   const names = new Map(allEngineRows().map(r => [r.model_id, r.display_name]));
   const byEngine = (db.prepare(`
@@ -704,7 +727,7 @@ export function searchAnalytics(range: SearchAnalyticsRange): SearchAnalytics {
 
   return {
     total: totals.ok,
-    today,
+    today: today + legacyToday,
     // Percent, 0–100, one decimal: the same scale as the chat summary.
     successRate: totals.attempts > 0 ? Math.round((totals.ok / totals.attempts) * 1000) / 10 : 0,
     avgLatencyMs: Math.round(totals.avg_latency),

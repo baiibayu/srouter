@@ -48,6 +48,8 @@ export interface SearchEngine {
   creditsPerQuery: number | null
   features: { news?: boolean; answer?: boolean; fullContent?: boolean } | null
   premiumSince: string | null
+  /** Engine runs with no key at all (duckduckgo, searxng) — never needs a slot. */
+  keyless: boolean
   keyCount: number
   healthyKeyCount: number
   searchesThisMonth: number

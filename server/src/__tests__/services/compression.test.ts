@@ -386,19 +386,90 @@ describe('compression engines', () => {
   // The coverage leg is instrumented by v8, which inflates these timings by
   // roughly 2-3x, so it gets the same slack as a laptop. The uninstrumented
   // matrix leg still holds the exact caps.
-  const slack = process.env.CI && process.env.COVERAGE !== '1' ? 1 : 3;
-
-  it('stays within the 100 KB synchronous performance budget', () => {
-    const payload = `${'plain status line without protected tokens\n'.repeat(2_500)}tail`;
+  //
+  // The fixed off-CI 3x slack proved too small when the suite runs many files
+  // in parallel on a loaded machine: OS preemption stretches EVERY synchronous
+  // measurement roughly proportionally (the motivating run measured p50 at
+  // 24.3 ms, just over 8*3, and 901 ms on the linearity payload, over 250*3).
+  // Slack is therefore machine-relative off CI: time one fixed built-in-only
+  // workload (JSON parse/stringify + regex scan — deliberately NO production
+  // code, so a compression regression cannot inflate its own budget) once per
+  // file, the same way the budgets time compressRequest, and scale the caps
+  // by how much slower than a calm machine this process currently is. A
+  // loaded-but-proportional machine passes; a regression still fails at the
+  // same calm-equivalent thresholds as the old fixed 3x: budgets exceed 3x
+  // the CI caps — p50 > 24 ms, p99 and the adversarial single shots > 75 ms,
+  // and the linearity payload > 750 ms (~2.7x its typical calm 250-280 ms
+  // time) — because the calibration (built-ins only) never moves when
+  // production code slows down. Calibration tracks the LEVEL of machine load;
+  // it cannot see one-off OS/GC spikes (a standalone run once hit 117 ms on
+  // one of twelve 100 KB samples while steady-state was ~8 ms), so the two
+  // low-headroom tail statistics — the p99 and the linearity single shots —
+  // are medians of three independent repetitions: one spiked repetition is
+  // outvoted, while a real regression slows every repetition and still fails.
+  // The adversarial 25 ms singles keep ~5-15x calm headroom and stay
+  // single-shot. v8 coverage instruments src/ but not this excluded test
+  // file, which would skew the ratio low, so coverage runs keep the fixed
+  // 3x instead of trusting the calibration.
+  // CALM_CALIBRATION_MS: median of the workload below on the calm reference
+  // machine (Node 22 laptop; three consecutive runs: 7.3 / 8.2 / 8.4 ms).
+  const CALM_CALIBRATION_MS = 8;
+  function calibrateCpuSpeed(): number {
+    const source = JSON.stringify(Array.from({ length: 512 }, (_, i) => ({
+      id: i,
+      name: `row-${i}`,
+      enabled: i % 2 === 0,
+      note: `status update ${i} at /var/log/app-${i}.log`,
+    })));
     const samples: number[] = [];
-    for (let run = 0; run < 12; run += 1) {
+    for (let round = 0; round < 21; round += 1) {
       const started = performance.now();
-      compressRequest([msg('tool', payload)], { config: config('lossless'), recordStats: false });
+      for (let n = 0; n < 8; n += 1) {
+        const rows = JSON.parse(source) as { name: string; note: string }[];
+        const text = rows.map(row => `${row.name} ${row.note}`).join('\n');
+        void /status update \d+/.test(text);
+        void JSON.stringify(rows);
+      }
       samples.push(performance.now() - started);
     }
     samples.sort((a, b) => a - b);
-    const p50 = samples[Math.floor(samples.length * 0.5)];
-    const p99 = samples[samples.length - 1];
+    return samples[Math.floor(samples.length / 2)];
+  }
+  let slack: number;
+  if (process.env.CI && process.env.COVERAGE !== '1') {
+    slack = 1; // hosted runner: exact caps, machine-independent.
+  } else if (process.env.COVERAGE === '1') {
+    slack = 3; // v8 skews the calibration ratio; keep the historical fixed slack.
+  } else {
+    // Never below the old fixed 3x (a machine faster than the reference keeps
+    // today's headroom; load only ever widens the budgets proportionally).
+    slack = Math.max(3, (3 * calibrateCpuSpeed()) / CALM_CALIBRATION_MS);
+  }
+  const medianOf = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+
+  it('stays within the 100 KB synchronous performance budget', () => {
+    const payload = `${'plain status line without protected tokens\n'.repeat(2_500)}tail`;
+    const runOnce = () => {
+      const started = performance.now();
+      compressRequest([msg('tool', payload)], { config: config('lossless'), recordStats: false });
+      return performance.now() - started;
+    };
+    // Three independent batches of twelve: the p50 is the median of the
+    // batch medians (tight guard, as before), and the p99 is the MEDIAN of
+    // the three batch maxes — one batch catching a transient OS/GC spike
+    // cannot fail the tail budget by itself, but a real regression slows
+    // every batch's max and still fails.
+    const batchP50s: number[] = [];
+    const batchP99s: number[] = [];
+    for (let batch = 0; batch < 3; batch += 1) {
+      const samples: number[] = [];
+      for (let run = 0; run < 12; run += 1) samples.push(runOnce());
+      samples.sort((a, b) => a - b);
+      batchP50s.push(samples[Math.floor(samples.length * 0.5)]);
+      batchP99s.push(samples[samples.length - 1]);
+    }
+    const p50 = medianOf(batchP50s);
+    const p99 = medianOf(batchP99s);
     // Hosted-runner CPU scheduling and Node majors add enough jitter to make
     // 5 ms flaky (Node 22 measured 5.54–5.77 ms in otherwise-green CI runs).
     // Keep a tight median guard while the p99/adversarial 25 ms caps below
@@ -436,16 +507,21 @@ describe('compression engines', () => {
       }),
       msg('tool', content, { tool_call_id: 'c1' }),
     ], { config: config('standard'), recordStats: false });
-    const traceStarted = performance.now();
-    call(traceLines.join('\n'));
-    expect(performance.now() - traceStarted).toBeLessThan(250 * slack);
+    // Median-of-3: the 250 ms cap leaves only ~3x calm headroom here, so a
+    // single spiked repetition under parallel-worker load would fail a
+    // single-shot measurement even with calibrated slack. A real regression
+    // slows all three repetitions and still fails.
+    const timed = (content: string) => medianOf(Array.from({ length: 3 }, () => {
+      const started = performance.now();
+      call(content);
+      return performance.now() - started;
+    }));
+    expect(timed(traceLines.join('\n'))).toBeLessThan(250 * slack);
 
     // Distinct numeric literals are the highest-cardinality protected kind;
     // the fidelity survival scan once rescanned the output per literal.
     const numberLines: string[] = [];
     for (let i = 0; i < 12_000; i += 1) numberLines.push(`metric row ${i * 7 + 1_000_003} value ok`);
-    const numbersStarted = performance.now();
-    call(numberLines.join('\n'));
-    expect(performance.now() - numbersStarted).toBeLessThan(250 * slack);
+    expect(timed(numberLines.join('\n'))).toBeLessThan(250 * slack);
   });
 });

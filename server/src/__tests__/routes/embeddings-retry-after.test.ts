@@ -12,6 +12,18 @@ import { encrypt } from '../../lib/crypto.js';
 
 const realFetch = globalThis.fetch;
 
+// Provider base_urls use RFC 5737 TEST-NET literals, not fake hostnames.
+// proxyFetch re-assesses a `custom` platform URL on EVERY provider call
+// (lib/proxy.ts assertProviderUrlAllowed) and a non-IP hostname makes that a
+// REAL dns.lookup — `embeddings.test` measured 0.7-11.2s to ENOTFOUND on one
+// machine depending on the OS resolver's mood, which alone blew the 10s test
+// timeout under full-suite load. IP literals classify via net.isIP with zero
+// DNS; 192.0.2.0/24 is 'public' so the guard allows it even with
+// SROUTER_BLOCK_PRIVATE_PROVIDER_URLS set, and the mocked fetch never
+// connects anyway. Do not switch these back to hostnames.
+const LIMITED_PROVIDER = 'http://192.0.2.1:8443/v1';
+const OK_PROVIDER = 'http://192.0.2.2:8443/v1';
+
 let server: Server;
 let baseUrl: string;
 let token: string;
@@ -22,7 +34,7 @@ beforeEach(async () => {
   const db = getDb();
   const secret = encrypt('embed-rate-test-key');
   const keyId = Number(db.prepare(`INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, enabled, status, base_url)
-    VALUES ('custom', 'embed-rate', ?, ?, ?, 1, 'healthy', 'http://embeddings.test/v1')`)
+    VALUES ('custom', 'embed-rate', ?, ?, ?, 1, 'healthy', '${LIMITED_PROVIDER}')`)
     .run(secret.encrypted, secret.iv, secret.authTag).lastInsertRowid);
   db.prepare(`INSERT INTO embedding_models (family, platform, model_id, display_name, dimensions, priority, enabled, quota_label, key_id)
     VALUES ('rate-embed', 'custom', 'rate-embed', 'Rate embed', 2, 1, 1, '', ?)`).run(keyId);
@@ -37,6 +49,11 @@ beforeEach(async () => {
 afterEach(async () => {
   globalThis.fetch = realFetch;
   vi.restoreAllMocks();
+  // server.close() waits for ACTIVE connections; a test that times out
+  // mid-request would leave one open and the hook would then time out too
+  // (the cascade seen under full-suite load). The test is over here, so
+  // destroy everything first — the hook is then O(1) regardless of stragglers.
+  server.closeAllConnections();
   await new Promise<void>((resolve, reject) => server.close(err => (err ? reject(err) : resolve())));
 });
 
@@ -79,11 +96,11 @@ describe('embedding rate-limit Retry-After propagation', () => {
     const db = getDb();
     const secret = encrypt('embed-ok-key');
     const okKey = Number(db.prepare(`INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, enabled, status, base_url)
-      VALUES ('custom', 'embed-ok', ?, ?, ?, 1, 'healthy', 'http://embeddings-ok.test/v1')`)
+      VALUES ('custom', 'embed-ok', ?, ?, ?, 1, 'healthy', '${OK_PROVIDER}')`)
       .run(secret.encrypted, secret.iv, secret.authTag).lastInsertRowid);
     db.prepare(`INSERT INTO embedding_models (family, platform, model_id, display_name, dimensions, priority, enabled, quota_label, key_id)
       VALUES ('rate-embed', 'custom', 'rate-embed-ok', 'Rate embed ok', 2, 2, 1, '', ?)`).run(okKey);
-    globalThis.fetch = vi.fn(async (url: string) => String(url).includes('embeddings-ok.test')
+    globalThis.fetch = vi.fn(async (url: string) => String(url).includes('192.0.2.2')
       ? new Response(JSON.stringify({ data: [{ index: 0, embedding: [0.1, 0.2] }] }), { status: 200, headers: { 'content-type': 'application/json' } })
       : rateLimited('17')) as unknown as typeof fetch;
 

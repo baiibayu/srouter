@@ -413,8 +413,10 @@ settingsRouter.put('/complexity-gate', (req: Request, res: Response) => {
 
 // Web search backend (POST /v1/web-search): keyless-first pick — DuckDuckGo
 // default, SearXNG self-host, Tavily/Brave/Exa/TinyFish free-tier keys edited
-// on the Keys page (the TinyFish key also feeds the /v1/fetch chain). The
-// keys are write-only over the wire — GET reports only whether each is stored.
+// on the Keys page (the TinyFish key also feeds the /v1/fetch chain).
+// Firecrawl/Linkup slots sit beside them (catalog engines, no walker backend
+// yet). The keys are write-only over the wire — GET reports only whether each
+// is stored.
 // Both verbs also report `usage` (attempt counts per backend, current day and
 // month) so the Web tab can show quota burn without a provider-side API.
 const webSearchView = () => ({ ...getWebSearchConfig(), usage: getWebSearchUsage() });
@@ -430,6 +432,8 @@ const webSearchPutSchema = z.object({
   braveKey: z.string().min(1).nullable().optional(),
   exaKey: z.string().min(1).nullable().optional(),
   tinyfishKey: z.string().min(1).nullable().optional(),
+  firecrawlKey: z.string().min(1).nullable().optional(),
+  linkupKey: z.string().min(1).nullable().optional(),
 });
 
 // Partial update: send only the fields to change. A null key clears the
@@ -437,7 +441,7 @@ const webSearchPutSchema = z.object({
 settingsRouter.put('/web-search', (req: Request, res: Response) => {
   const parsed = webSearchPutSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: { message: 'Invalid web-search config: send {backend?, baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?}', type: 'invalid_request_error' } });
+    res.status(400).json({ error: { message: 'Invalid web-search config: send {backend?, baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?, firecrawlKey?, linkupKey?}', type: 'invalid_request_error' } });
     return;
   }
   try {

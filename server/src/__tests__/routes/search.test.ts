@@ -123,7 +123,10 @@ describe('search routes', () => {
     addKey('exa');
     const { status, body } = await call(app, 'GET', '/v1/search/engines');
     expect(status).toBe(200);
-    expect(body.data.map((e: any) => e.id)).toEqual(['tavily-search', 'exa-search', 'firecrawl-search', 'linkup-search']);
+    expect(body.data.map((e: any) => e.id)).toEqual([
+      'tinyfish-search', 'exa-search', 'brave-search',
+      'tavily-search', 'firecrawl-search', 'linkup-search',
+    ]);
     expect(body.data.find((e: any) => e.id === 'exa-search').available).toBe(true);
     expect(body.data.find((e: any) => e.id === 'tavily-search').available).toBe(false);
   });
@@ -131,7 +134,7 @@ describe('search routes', () => {
   it('GET/PATCH /api/search/engines lists, reorders and toggles engines', async () => {
     const list = await call(app, 'GET', '/api/search/engines');
     expect(list.status).toBe(200);
-    expect(list.body[0]).toMatchObject({ engineId: 'tavily-search', priority: 0, enabled: true, keyCount: 0, isCustom: false });
+    expect(list.body[0]).toMatchObject({ engineId: 'duckduckgo-search', priority: 0, enabled: false, keyCount: 0, isCustom: false, keyless: true });
     const firecrawl = list.body.find((e: any) => e.engineId === 'firecrawl-search');
 
     const moved = await call(app, 'PATCH', `/api/search/engines/${firecrawl.id}`, { body: { priority: 0, enabled: false } });

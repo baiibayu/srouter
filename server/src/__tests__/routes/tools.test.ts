@@ -4,6 +4,8 @@ import { createApp } from '../../app.js';
 import { initDb, getUnifiedApiKey } from '../../db/index.js';
 import { htmlToText, assertPublicHttpUrl } from '../../routes/tools.js';
 import { parseDdgHtml, setWebSearchConfig, getWebSearchUsage } from '../../services/web-search.js';
+import { getFetchUsage } from '../../services/fetch-usage.js';
+import { mintDashboardToken } from '../helpers/auth.js';
 
 // The helper ALWAYS talks to the local server through the real fetch: several
 // tests stub globalThis.fetch for the outbound (DDG/Jina) call, and a stubbed
@@ -22,6 +24,24 @@ async function post(app: Express, path: string, body: any, token?: string) {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(body),
+    });
+    const raw = await res.text();
+    let json: any = null;
+    try { json = JSON.parse(raw); } catch {}
+    return { status: res.status, body: json, raw };
+  } finally {
+    server.close();
+  }
+}
+
+async function get(app: Express, path: string, token?: string) {
+  const server = app.listen(0, '127.0.0.1');
+  try {
+    if (!server.listening) await new Promise<void>(resolve => server.once('listening', () => resolve()));
+    const addr = server.address() as any;
+    const res = await realFetch(`http://127.0.0.1:${addr.port}${path}`, {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     const raw = await res.text();
     let json: any = null;
@@ -319,6 +339,40 @@ describe('/v1/web-search + /v1/fetch', () => {
       expect(body.error.message).toContain('Fetch blocked');
     }
     expect(spy).not.toHaveBeenCalled();
+    // Blocked requests never reached the reader chain — they never count.
+    expect(getFetchUsage().monthly).toBe(0);
+  });
+
+  it('fetch counts every request that clears the SSRF guard', async () => {
+    const before = getFetchUsage();
+    const html = '<html><head><title>Counted</title></head><body><p>one</p></body></html>';
+    const encoded = new TextEncoder().encode(html);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: (k: string) => (k.toLowerCase() === 'content-type' ? 'text/html; charset=utf-8' : null) },
+      body: undefined,
+      arrayBuffer: async () => encoded.buffer.slice(encoded.byteOffset, encoded.byteOffset + encoded.byteLength),
+    }));
+    const { status } = await post(app, '/v1/fetch', { url: 'http://93.184.216.34/counted' }, token);
+    expect(status).toBe(200);
+    const after = getFetchUsage();
+    expect(after.daily).toBe(before.daily + 1);
+    expect(after.monthly).toBe(before.monthly + 1);
+  });
+
+  it('GET /api/fetch/usage reports the month and day counters to the dashboard', async () => {
+    const before = getFetchUsage();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    await post(app, '/v1/fetch', { url: 'http://93.184.216.34/more' }, token);
+    const { status, body } = await get(app, '/api/fetch/usage', mintDashboardToken());
+    expect(status).toBe(200);
+    expect(body).toEqual({ monthly: before.monthly + 1, today: before.daily + 1 });
+  });
+
+  it('GET /api/fetch/usage requires the dashboard token', async () => {
+    const { status } = await get(app, '/api/fetch/usage', 'bad-token');
+    expect(status).toBe(401);
   });
 
   it('fetch validates the body', async () => {

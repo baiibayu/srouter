@@ -15,25 +15,33 @@ interface WebSearchConfig {
   hasBraveKey: boolean
   hasExaKey: boolean
   hasTinyfishKey: boolean
+  hasFirecrawlKey: boolean
+  hasLinkupKey: boolean
 }
 
 // Where each keyed backend's free tier lives (no card required for any).
 // Shown as a direct link next to the key field so signup is one click away —
 // the same guidance the provider checklist gives for model providers.
 const KEY_SOURCES = {
-  tavily: 'https://app.tavily.com/',
-  brave: 'https://brave.com/search/api/',
-  exa: 'https://dashboard.exa.ai/',
   tinyfish: 'https://agent.tinyfish.ai/api-keys',
+  exa: 'https://dashboard.exa.ai/',
+  brave: 'https://brave.com/search/api/',
+  tavily: 'https://app.tavily.com/',
+  firecrawl: 'https://www.firecrawl.dev/app/api-keys',
+  linkup: 'https://app.linkup.so/api-keys',
 } as const
 
-type KeyedBackend = 'tavily' | 'brave' | 'exa' | 'tinyfish'
+type KeyedBackend = 'tinyfish' | 'exa' | 'brave' | 'tavily' | 'firecrawl' | 'linkup'
 
+// Slots and keyless rows share the Models → Search engine order so the Keys
+// page reads top-to-bottom like the catalog does.
 const KEY_LABELS: Record<KeyedBackend, string> = {
-  tavily: 'Tavily',
-  brave: 'Brave',
-  exa: 'Exa',
   tinyfish: 'TinyFish',
+  exa: 'Exa',
+  brave: 'Brave',
+  tavily: 'Tavily',
+  firecrawl: 'Firecrawl',
+  linkup: 'Linkup',
 }
 
 function KeyField({
@@ -97,11 +105,28 @@ function KeyField({
   )
 }
 
-// Keys page → Providers: the /v1/web-search backend picker plus the four
-// free-tier key slots (Tavily/Brave/Exa/TinyFish — TinyFish's key also feeds
-// the /v1/fetch reader chain). SearXNG's instance URL lives here too — this
-// is the whole "which backend answers the search" surface; the Models → Web
-// tab only reports the active state.
+// DuckDuckGo and SearXNG answer with no key at all — a status row instead of
+// a slot, carrying the same keyless badge the Models → Search cards use.
+function KeylessRow({ label }: { label: string }) {
+  const { t } = useI18n()
+  return (
+    <Row
+      label={label}
+      control={(
+        <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-emerald-600/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
+          {t('search.keylessBadge')}
+        </span>
+      )}
+    />
+  )
+}
+
+// Keys page → Providers: the /v1/web-search backend picker plus the free-tier
+// key slots (TinyFish/Exa/Brave/Tavily/Firecrawl/Linkup — TinyFish's key also
+// feeds the /v1/fetch reader chain) and the two keyless engines (DuckDuckGo,
+// SearXNG) as status rows. SearXNG's instance URL lives here too — this is the
+// whole "which backend answers the search" surface; the Models → Web tab only
+// reports the active state.
 export function WebSearchSection() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
@@ -154,6 +179,8 @@ export function WebSearchSection() {
             />
           )}
         />
+        <KeylessRow label="DuckDuckGo" />
+        <KeylessRow label="SearXNG" />
         {cfg.backend === 'searxng' && (
           <Row
             label={t('settings.webSearchSearxngUrl')}
@@ -186,16 +213,10 @@ export function WebSearchSection() {
           />
         )}
         <KeyField
-          backend="tavily"
-          stored={cfg.hasTavilyKey}
+          backend="tinyfish"
+          stored={cfg.hasTinyfishKey}
           busy={patch.isPending}
-          onSave={value => patch.mutate({ tavilyKey: value })}
-        />
-        <KeyField
-          backend="brave"
-          stored={cfg.hasBraveKey}
-          busy={patch.isPending}
-          onSave={value => patch.mutate({ braveKey: value })}
+          onSave={value => patch.mutate({ tinyfishKey: value })}
         />
         <KeyField
           backend="exa"
@@ -204,10 +225,28 @@ export function WebSearchSection() {
           onSave={value => patch.mutate({ exaKey: value })}
         />
         <KeyField
-          backend="tinyfish"
-          stored={cfg.hasTinyfishKey}
+          backend="brave"
+          stored={cfg.hasBraveKey}
           busy={patch.isPending}
-          onSave={value => patch.mutate({ tinyfishKey: value })}
+          onSave={value => patch.mutate({ braveKey: value })}
+        />
+        <KeyField
+          backend="tavily"
+          stored={cfg.hasTavilyKey}
+          busy={patch.isPending}
+          onSave={value => patch.mutate({ tavilyKey: value })}
+        />
+        <KeyField
+          backend="firecrawl"
+          stored={cfg.hasFirecrawlKey}
+          busy={patch.isPending}
+          onSave={value => patch.mutate({ firecrawlKey: value })}
+        />
+        <KeyField
+          backend="linkup"
+          stored={cfg.hasLinkupKey}
+          busy={patch.isPending}
+          onSave={value => patch.mutate({ linkupKey: value })}
         />
       </div>
     </section>

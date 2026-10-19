@@ -25,6 +25,7 @@ import dns from 'node:dns/promises';
 import { requireInferenceAuth } from './proxy.js';
 import { stripTags } from '../lib/html.js';
 import { searchWeb, getTinyfishApiKey } from '../services/web-search.js';
+import { recordFetchUsage } from '../services/fetch-usage.js';
 
 export const toolsRouter = Router();
 
@@ -200,6 +201,10 @@ toolsRouter.post('/fetch', async (req: Request, res: Response) => {
     res.status(400).json({ error: { message: `Fetch blocked: ${err.message}`, type: 'invalid_request_error' } });
     return;
   }
+
+  // Counted here, past the SSRF guard: the /api/fetch/usage cards tally reads
+  // this box actually issued, never the ones the guard turned away.
+  recordFetchUsage();
 
   // 1) Direct fetch — readable text, entity-decoded.
   try {

@@ -13,6 +13,7 @@ import {
 } from '../../services/search.js';
 import { SEARCH_PLATFORMS as SHARED_SEARCH_PLATFORMS } from '../../../../shared/types.js';
 import { SEARCH_PLATFORMS } from '../../lib/search-platforms.js';
+import { recordWebSearchAttempt } from '../../services/web-search.js';
 import { seedSearchEngines } from '../helpers/search-engines.js';
 
 const realFetch = globalThis.fetch;
@@ -77,11 +78,24 @@ describe('search service', () => {
     vi.restoreAllMocks();
   });
 
-  it('lists the catalog engines in priority order', () => {
-    expect(listSearchEngines().map(e => e.engineId)).toEqual(['tavily-search', 'exa-search', 'firecrawl-search', 'linkup-search']);
+  it('lists all eight engines in priority order', () => {
+    expect(listSearchEngines().map(e => e.engineId)).toEqual([
+      'duckduckgo-search', 'searxng-search', 'tinyfish-search', 'exa-search',
+      'brave-search', 'tavily-search', 'firecrawl-search', 'linkup-search',
+    ]);
     // The keyless DuckDuckGo fallback always answers, so search is available
     // even before any key lands.
     expect(searchAvailable()).toBe(true);
+  });
+
+  it('flags the keyless engines (duckduckgo, searxng) and only those', () => {
+    const keyless = new Map(listSearchEngines().map(e => [e.engineId, e.keyless]));
+    expect(keyless.get('duckduckgo-search')).toBe(true);
+    expect(keyless.get('searxng-search')).toBe(true);
+    expect(keyless.get('tinyfish-search')).toBe(false);
+    expect(keyless.get('exa-search')).toBe(false);
+    expect(keyless.get('brave-search')).toBe(false);
+    expect(keyless.get('tavily-search')).toBe(false);
   });
 
   it('answers 503 no_search_keys when no engine has a key and the keyless fallback fails too', async () => {
@@ -233,13 +247,15 @@ describe('search service', () => {
   it('cools a rate-limited key down and fails over to the next engine', async () => {
     addKey('tavily');
     addKey('exa');
-    const fn = mockFetch(url => url.includes('tavily')
+    // Exa leads the local order (the seeded priority map puts it ahead of
+    // Tavily), so the 429 lands on it first and Tavily answers the failover.
+    const fn = mockFetch(url => url.includes('exa')
       ? json({ detail: 'slow down' }, 429, { 'retry-after': '120' })
       : json({ results: [{ title: 'E', url: 'https://e', text: 'x' }] }));
-    expect((await runSearch('q')).provider).toBe('exa');
-    // The benched Tavily key is skipped on the next search.
+    expect((await runSearch('q')).provider).toBe('tavily');
+    // The benched Exa key is skipped on the next search.
     await runSearch('q2');
-    expect(calls(fn).map(c => new URL(c[0]).host)).toEqual(['api.tavily.com', 'api.exa.ai', 'api.exa.ai']);
+    expect(calls(fn).map(c => new URL(c[0]).host)).toEqual(['api.exa.ai', 'api.tavily.com', 'api.tavily.com']);
   });
 
   it('tries every key of an engine before moving on, and benches spent credits', async () => {
@@ -291,8 +307,11 @@ describe('search service', () => {
     const linkup = listSearchEngines().find(e => e.engineId === 'linkup-search')!;
     expect(updateSearchEngine(linkup.id, { priority: 0 })).toBe(true);
     const order = listSearchEngines();
-    expect(order.map(e => e.engineId)).toEqual(['linkup-search', 'tavily-search', 'exa-search', 'firecrawl-search']);
-    expect(order.map(e => e.priority)).toEqual([0, 1, 2, 3]);
+    expect(order.map(e => e.engineId)).toEqual([
+      'linkup-search', 'duckduckgo-search', 'searxng-search', 'tinyfish-search',
+      'exa-search', 'brave-search', 'tavily-search', 'firecrawl-search',
+    ]);
+    expect(order.map(e => e.priority)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     expect(order[0]).toMatchObject({ keyCount: 1, healthyKeyCount: 1, searchesThisMonth: 0, isCustom: false });
 
     mockFetch(() => json({ results: [{ type: 'text', name: 'L', url: 'https://l', content: 'c' }] }));
@@ -311,7 +330,9 @@ describe('search service', () => {
   it('summarises searches per engine and per day', async () => {
     addKey('tavily');
     addKey('exa');
-    mockFetch(url => url.includes('tavily')
+    // Exa leads the order, so it takes the injected failure and Tavily is
+    // the engine that answers — one ok per search, one failed attempt each.
+    mockFetch(url => url.includes('exa')
       ? json({}, 500)
       : json({ results: [{ title: 'E', url: 'https://e', text: 'x' }] }));
     await runSearch('a');
@@ -320,9 +341,27 @@ describe('search service', () => {
     expect(stats.total).toBe(2);
     expect(stats.today).toBe(2);
     expect(stats.successRate).toBe(50);
-    expect(stats.byEngine).toEqual([{ engineId: 'exa-search', displayName: 'Exa Search', count: 2 }]);
+    expect(stats.byEngine).toEqual([{ engineId: 'tavily-search', displayName: 'Tavily Search', count: 2 }]);
     expect(stats.series).toHaveLength(1);
-    expect(stats.series[0]).toMatchObject({ engineId: 'exa-search', count: 2 });
+    expect(stats.series[0]).toMatchObject({ engineId: 'tavily-search', count: 2 });
+  });
+
+  it('merges legacy walker usage into engine and analytics counts without double counting', async () => {
+    // The legacy POST /v1/web-search walker logs to its own settings blob —
+    // it never writes search_requests — so the two tallies add up per view.
+    recordWebSearchAttempt('tavily');
+    recordWebSearchAttempt('tavily');
+    expect(listSearchEngines().find(e => e.engineId === 'tavily-search')!.searchesThisMonth).toBe(2);
+    expect(searchAnalytics('7d').today).toBe(2);
+
+    addKey('tavily');
+    mockFetch(() => json({ results: [{ title: 'T', url: 'https://t', content: 'c', score: 0.5 }] }));
+    await runSearch('q');
+    // Keyed success lands on top of the legacy tally — each logged once.
+    expect(listSearchEngines().find(e => e.engineId === 'tavily-search')!.searchesThisMonth).toBe(3);
+    const stats = searchAnalytics('7d');
+    expect(stats.today).toBe(3);
+    expect(stats.total).toBe(1);
   });
 
   describe('keyless fallback (legacy DuckDuckGo walker)', () => {

@@ -770,9 +770,15 @@ describe('applyCatalog: generative media meta', () => {
 
 // Web search engines (#1174) ride their own optional registry into
 // media_models with modality 'search', on the same rules as video: a catalog
-// without the key keeps the bundled baseline, one with it is a full snapshot.
+// without the key keeps what is already there, one with it is a full snapshot.
+// DuckDuckGo, SearXNG, TinyFish and Brave are NOT registry engines — the
+// migration seeds them and every variant below must leave them untouched:
+// their platforms have no adapter in this binary, so insert and prune skip
+// them alike (services/catalog-sync.ts).
 describe('applyCatalog: searchEngines', () => {
   type CatalogSearch = NonNullable<AnyCatalog['searchEngines']>[number];
+
+  const SEEDED = ['duckduckgo-search', 'searxng-search', 'tinyfish-search', 'brave-search'];
 
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
@@ -801,22 +807,30 @@ describe('applyCatalog: searchEngines', () => {
     return catalog;
   }
 
-  function searchRows(): Array<{ platform: string; model_id: string; enabled: number; priority: number; quota_label: string; meta_json: string | null }> {
+  function searchRows(): Array<{ platform: string; model_id: string; display_name: string; enabled: number; priority: number; quota_label: string; meta_json: string | null }> {
     return getDb().prepare(`
-      SELECT platform, model_id, enabled, priority, quota_label, meta_json
+      SELECT platform, model_id, display_name, enabled, priority, quota_label, meta_json
         FROM media_models WHERE modality = 'search' ORDER BY priority, id
     `).all() as any;
   }
 
-  it('ships no search engines until a catalog carries the registry', () => {
-    expect(searchRows()).toEqual([]);
+  it('seeds the four local engines before any catalog arrives', () => {
+    expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual([
+      'duckduckgo:duckduckgo-search', 'searxng:searxng-search',
+      'tinyfish:tinyfish-search', 'brave:brave-search',
+    ]);
+    expect(searchRows().map(r => r.enabled)).toEqual([0, 0, 1, 1]);
   });
 
   it('applies the registry as a full snapshot with metadata in meta_json', () => {
     applyCatalog(getDb(), searchCatalog(searchRoster()));
-    expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual(['exa:exa-search', 'tavily:tavily-search']);
-    expect(searchRows()[0].quota_label).toBe('$10/month in credits');
-    expect(JSON.parse(searchRows()[1].meta_json!)).toEqual({
+    expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual([
+      'duckduckgo:duckduckgo-search', 'searxng:searxng-search',
+      'tinyfish:tinyfish-search', 'brave:brave-search',
+      'exa:exa-search', 'tavily:tavily-search',
+    ]);
+    expect(searchRows().find(r => r.model_id === 'exa-search')!.quota_label).toBe('$10/month in credits');
+    expect(JSON.parse(searchRows().find(r => r.model_id === 'tavily-search')!.meta_json!)).toEqual({
       creditsPerQuery: 1,
       features: { news: true, answer: true },
       premiumSince: '2026-10-13T00:00:00.000Z',
@@ -825,15 +839,27 @@ describe('applyCatalog: searchEngines', () => {
 
   it('keeps existing engines when a catalog omits the optional registry', () => {
     applyCatalog(getDb(), searchCatalog(undefined));
-    expect(searchRows()).toHaveLength(2);
+    expect(searchRows()).toHaveLength(6);
   });
 
-  it('removes every engine when the registry is empty (a free catalog before an engine ages in)', () => {
+  it('prunes only registry-owned engines when the registry is empty (a free catalog before an engine ages in)', () => {
     const counts = applyCatalog(getDb(), searchCatalog([]));
     expect(counts.removed).toBeGreaterThanOrEqual(2);
-    expect(searchRows()).toEqual([]);
+    expect(searchRows().map(r => r.model_id)).toEqual(SEEDED);
     applyCatalog(getDb(), searchCatalog(searchRoster()));
-    expect(searchRows()).toHaveLength(2);
+    expect(searchRows()).toHaveLength(6);
+  });
+
+  it('keeps the four locally seeded engines across every catalog variant', () => {
+    applyCatalog(getDb(), searchCatalog(searchRoster()));
+    expect(searchRows().map(r => r.model_id)).toEqual(expect.arrayContaining(SEEDED));
+    applyCatalog(getDb(), searchCatalog([]));
+    expect(searchRows().map(r => r.model_id)).toEqual(SEEDED);
+    applyCatalog(getDb(), searchCatalog(undefined));
+    expect(searchRows().map(r => r.model_id)).toEqual(expect.arrayContaining(SEEDED));
+    // End on the roster: later tests here expect the registry engines back.
+    applyCatalog(getDb(), searchCatalog(searchRoster()));
+    expect(searchRows()).toHaveLength(6);
   });
 
   it('keeps a local disable across catalog applies', () => {
@@ -856,7 +882,10 @@ describe('applyCatalog: searchEngines', () => {
     roster.push({ platform: 'brave', engineId: 'brave-search', displayName: 'Brave', priority: 5, enabled: true });
     const counts = applyCatalog(getDb(), searchCatalog(roster));
     expect(counts.skippedUnknownPlatform).toBeGreaterThanOrEqual(1);
-    expect(searchRows().map(r => r.model_id)).not.toContain('brave-search');
+    // brave-search exists only as the migration-seeded row: the catalog's
+    // entry never reaches it, so its name, priority and label stay put.
+    const brave = searchRows().find(r => r.model_id === 'brave-search');
+    expect(brave).toMatchObject({ display_name: 'Brave Search', priority: -1, quota_label: 'free-tier key' });
   });
 
   it('rejects a malformed searchEngines entry before applying the cached catalog', () => {

@@ -20,6 +20,7 @@ const engine = (over: Partial<SearchEngine>): SearchEngine => ({
   creditsPerQuery: 1,
   features: null,
   premiumSince: null,
+  keyless: false,
   keyCount: 1,
   healthyKeyCount: 1,
   searchesThisMonth: 0,

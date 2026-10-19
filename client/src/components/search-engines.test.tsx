@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // #1174: Models → Search lists the catalog's search engines in failover order,
-// marks the first enabled one as default, badges Premium-first rows with the
-// day they reach Free, and promotes an engine with PATCH priority 0.
+// marks the first enabled one as default, badges keyless engines green (and
+// keyed rows missing a key amber), and promotes an engine with PATCH priority 0.
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -17,7 +17,7 @@ vi.mock('@/lib/api', () => ({ apiFetch: vi.fn() }))
 const engine = (over: Partial<SearchEngine>): SearchEngine => ({
   id: 1, platform: 'tavily', engineId: 'tavily-search', displayName: 'Tavily', priority: 0,
   enabled: true, quotaLabel: '1,000 credits/month', creditsPerQuery: 1, features: null,
-  premiumSince: null, keyCount: 1, healthyKeyCount: 1, searchesThisMonth: 0, ...over,
+  premiumSince: null, keyless: false, keyCount: 1, healthyKeyCount: 1, searchesThisMonth: 0, ...over,
 })
 
 let root: Root
@@ -35,6 +35,7 @@ async function flush() { for (let i = 0; i < 4; i++) await act(async () => { awa
 async function mount(engines: SearchEngine[]) {
   vi.mocked(apiFetch).mockReset().mockImplementation(async (path: string) => {
     if (path === '/api/search/engines') return engines
+    if (path === '/api/fetch/usage') return { monthly: 0, today: 0 }
     if (path.startsWith('/api/analytics/search')) return { total: 0, today: 3, successRate: 100, avgLatencyMs: 0, byEngine: [], series: [] }
     return {}
   })
@@ -63,10 +64,23 @@ it('lists engines in priority order and marks the first enabled one as default',
   expect(container.textContent).toContain('3 req today')
 })
 
-it('badges a Premium-first engine with the day it reaches Free', async () => {
-  const since = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  await mount([engine({ id: 3, platform: 'firecrawl', engineId: 'firecrawl-search', displayName: 'Firecrawl', premiumSince: since })])
-  expect(container.textContent).toMatch(/Premium · free from/)
+const cardOf = (engineId: string) =>
+  [...container.querySelectorAll('section')].find(section => section.textContent?.includes(engineId))!
+
+it('badges a keyless engine as keyless instead of no key', async () => {
+  await mount([
+    engine({ id: 5, platform: 'duckduckgo', engineId: 'duckduckgo-search', displayName: 'DuckDuckGo', keyless: true, keyCount: 0 }),
+  ])
+  const card = cardOf('duckduckgo-search')
+  expect(card.textContent).toContain('keyless')
+  expect(card.textContent).not.toContain('no key')
+})
+
+it('keeps the no-key badge for a keyed engine whose slot is empty', async () => {
+  await mount([engine({ id: 3, platform: 'firecrawl', engineId: 'firecrawl-search', displayName: 'Firecrawl', keyCount: 0 })])
+  const card = cardOf('firecrawl-search')
+  expect(card.textContent).toContain('no key')
+  expect(card.textContent).not.toContain('keyless')
 })
 
 it('promotes an engine to default with priority 0', async () => {

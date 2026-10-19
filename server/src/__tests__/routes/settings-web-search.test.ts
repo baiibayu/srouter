@@ -6,7 +6,7 @@ import { mintDashboardToken } from '../helpers/auth.js';
 import {
   getWebSearchConfig, setWebSearchConfig,
   WEB_SEARCH_BACKEND_KEY, WEB_SEARCH_BASE_URL_KEY, WEB_SEARCH_TAVILY_KEY, WEB_SEARCH_BRAVE_KEY,
-  WEB_SEARCH_EXA_KEY, TINYFISH_API_KEY,
+  WEB_SEARCH_EXA_KEY, TINYFISH_API_KEY, WEB_SEARCH_FIRECRAWL_KEY, WEB_SEARCH_LINKUP_KEY,
 } from '../../services/web-search.js';
 
 async function request(app: Express, method: string, path: string, body: any, token: string) {
@@ -41,7 +41,11 @@ describe('/api/settings/web-search', () => {
   });
 
   afterEach(() => {
-    setWebSearchConfig({ backend: 'duckduckgo', baseUrl: null, tavilyKey: null, braveKey: null, exaKey: null, tinyfishKey: null });
+    setWebSearchConfig({
+      backend: 'duckduckgo', baseUrl: null,
+      tavilyKey: null, braveKey: null, exaKey: null, tinyfishKey: null,
+      firecrawlKey: null, linkupKey: null,
+    });
   });
 
   it('reports the defaults (duckduckgo, no URL, no keys)', async () => {
@@ -50,6 +54,7 @@ describe('/api/settings/web-search', () => {
     expect(body).toEqual({
       backend: 'duckduckgo', baseUrl: '',
       hasTavilyKey: false, hasBraveKey: false, hasExaKey: false, hasTinyfishKey: false,
+      hasFirecrawlKey: false, hasLinkupKey: false,
       usage: { daily: {}, monthly: {} },
     });
   });
@@ -108,6 +113,23 @@ describe('/api/settings/web-search', () => {
     expect(clear.body.hasTinyfishKey).toBe(false);
     expect(getSetting(WEB_SEARCH_EXA_KEY)).toBeUndefined();
     expect(getSetting(TINYFISH_API_KEY)).toBeUndefined();
+  });
+
+  it('stores the Firecrawl and Linkup slots in their own slots (write-only)', async () => {
+    const put = await request(app, 'PUT', '/api/settings/web-search', { firecrawlKey: 'fc-secret', linkupKey: 'lk-secret' }, token);
+    expect(put.status).toBe(200);
+    expect(put.body.hasFirecrawlKey).toBe(true);
+    expect(put.body.hasLinkupKey).toBe(true);
+    expect(put.body.firecrawlKey).toBeUndefined();
+    expect(put.body.linkupKey).toBeUndefined();
+    expect(getSetting(WEB_SEARCH_FIRECRAWL_KEY)).toBe('fc-secret');
+    expect(getSetting(WEB_SEARCH_LINKUP_KEY)).toBe('lk-secret');
+
+    const clear = await request(app, 'PUT', '/api/settings/web-search', { firecrawlKey: null, linkupKey: null }, token);
+    expect(clear.body.hasFirecrawlKey).toBe(false);
+    expect(clear.body.hasLinkupKey).toBe(false);
+    expect(getSetting(WEB_SEARCH_FIRECRAWL_KEY)).toBeUndefined();
+    expect(getSetting(WEB_SEARCH_LINKUP_KEY)).toBeUndefined();
   });
 
   it('rejects invalid configs', async () => {

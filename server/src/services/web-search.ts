@@ -36,6 +36,12 @@ export const WEB_SEARCH_BASE_URL_KEY = 'web_search_base_url';
 export const WEB_SEARCH_TAVILY_KEY = 'web_search_tavily_key';
 export const WEB_SEARCH_BRAVE_KEY = 'web_search_brave_key';
 export const WEB_SEARCH_EXA_KEY = 'web_search_exa_key';
+// Firecrawl/Linkup are catalog-only search engines (no legacy-walker backend),
+// but their keys are free-tier accounts the Keys page edits beside the other
+// six — stored here so the slots exist contract-complete before an adapter
+// consumes them.
+export const WEB_SEARCH_FIRECRAWL_KEY = 'web_search_firecrawl_key';
+export const WEB_SEARCH_LINKUP_KEY = 'web_search_linkup_key';
 // One TinyFish key is account-wide: it powers the search backend AND the
 // /v1/fetch reader chain — hence the name outside the web_search_* prefix.
 export const TINYFISH_API_KEY = 'tinyfish_api_key';
@@ -57,6 +63,9 @@ export interface WebSearchConfig {
   hasBraveKey: boolean;
   hasExaKey: boolean;
   hasTinyfishKey: boolean;
+  /** Stored Firecrawl/Linkup slot (catalog engines — no walker backend yet). */
+  hasFirecrawlKey: boolean;
+  hasLinkupKey: boolean;
 }
 
 function readKey(settingKey: string): string | null {
@@ -74,6 +83,8 @@ export function getWebSearchConfig(): WebSearchConfig {
     hasBraveKey: readKey(WEB_SEARCH_BRAVE_KEY) !== null,
     hasExaKey: readKey(WEB_SEARCH_EXA_KEY) !== null,
     hasTinyfishKey: readKey(TINYFISH_API_KEY) !== null,
+    hasFirecrawlKey: readKey(WEB_SEARCH_FIRECRAWL_KEY) !== null,
+    hasLinkupKey: readKey(WEB_SEARCH_LINKUP_KEY) !== null,
   };
 }
 
@@ -129,6 +140,8 @@ export interface WebSearchPatch {
   braveKey?: string | null;
   exaKey?: string | null;
   tinyfishKey?: string | null;
+  firecrawlKey?: string | null;
+  linkupKey?: string | null;
 }
 
 // Partial update; null/empty clears the stored value (mirrors the complexity
@@ -152,6 +165,8 @@ export function setWebSearchConfig(patch: WebSearchPatch): void {
     [patch.braveKey, WEB_SEARCH_BRAVE_KEY],
     [patch.exaKey, WEB_SEARCH_EXA_KEY],
     [patch.tinyfishKey, TINYFISH_API_KEY],
+    [patch.firecrawlKey, WEB_SEARCH_FIRECRAWL_KEY],
+    [patch.linkupKey, WEB_SEARCH_LINKUP_KEY],
   ] as const) {
     if (value === undefined) continue;
     if (value === null || value.trim() === '') {
