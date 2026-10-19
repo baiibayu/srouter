@@ -223,7 +223,9 @@
     "updateNow": "지금 업데이트",
     "updatingContainer": "새 이미지를 받아 재시작하는 중입니다. SRouter가 돌아오면 이 페이지가 새로고침됩니다.",
     "updateNowFailed": "업데이터가 요청을 받지 않았습니다. watchtower 컨테이너가 실행 중인지 확인하세요.",
-    "updateNowTimeout": "5분이 지나도 SRouter가 재시작되지 않았습니다. watchtower 컨테이너 로그를 확인하세요."
+    "updateNowTimeout": "5분이 지나도 SRouter가 재시작되지 않았습니다. watchtower 컨테이너 로그를 확인하세요.",
+    "complexityGateDecision": "Local decision model",
+    "complexityGateDecisionHint": "Score requests in-process with the free decision models on Models → Decision (Clef Flash, Mercury Decide) — no host to configure, automatic heuristic fallback."
   },
   "models": {
     "title": "모델",
@@ -377,7 +379,9 @@
     "systemOneHeuristicDetail": "built-in · auto fallback",
     "systemOneSectionDesc": "How SRouter scores request complexity. The remote scorer falls back to the local heuristic automatically — Zen free works out of the box, no key needed.",
     "systemOneRemote": "System One (remote)",
-    "systemOneConfigToggle": "Host, model & key"
+    "systemOneConfigToggle": "Host, model & key",
+    "systemOneDecision": "Local decision (free tier)",
+    "systemOneDecisionDetail": "decision models on your keys — auto fallback"
   },
   "strategies": {
     "explore": "미측정 모델 탐색",
@@ -817,8 +821,7 @@
     "webSearchGetKey": "Get a free key",
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "{limit} {metric} 중 {remaining} 남음",
-    "quotaBalanceLeft": "{remaining} 남음"
-,
+    "quotaBalanceLeft": "{remaining} 남음",
     "groupLabel": "Group",
     "groupLabelPlaceholder": "e.g. Relays, Work…",
     "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
@@ -1387,7 +1390,8 @@
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
-    "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+    "agentsBadgeCodex": "Web search: web_search tool served by your search keys",
+    "playgroundKeyless": "DuckDuckGo (keyless fallback)"
   },
   "decision": {
     "tab": "결정",

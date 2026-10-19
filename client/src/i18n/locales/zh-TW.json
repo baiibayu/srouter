@@ -223,7 +223,9 @@
     "updateNow": "立即更新",
     "updatingContainer": "正在拉取新映像並重新啟動。SRouter 恢復後此頁面會自動重新載入。",
     "updateNowFailed": "更新器未接受請求。請確認 watchtower 容器正在執行。",
-    "updateNowTimeout": "5 分鐘後 SRouter 仍未重新啟動。請查看 watchtower 容器的記錄。"
+    "updateNowTimeout": "5 分鐘後 SRouter 仍未重新啟動。請查看 watchtower 容器的記錄。",
+    "complexityGateDecision": "Local decision model",
+    "complexityGateDecisionHint": "Score requests in-process with the free decision models on Models → Decision (Clef Flash, Mercury Decide) — no host to configure, automatic heuristic fallback."
   },
   "models": {
     "title": "模型",
@@ -377,7 +379,9 @@
     "systemOneHeuristicDetail": "built-in · auto fallback",
     "systemOneSectionDesc": "How SRouter scores request complexity. The remote scorer falls back to the local heuristic automatically — Zen free works out of the box, no key needed.",
     "systemOneRemote": "System One (remote)",
-    "systemOneConfigToggle": "Host, model & key"
+    "systemOneConfigToggle": "Host, model & key",
+    "systemOneDecision": "Local decision (free tier)",
+    "systemOneDecisionDetail": "decision models on your keys — auto fallback"
   },
   "strategies": {
     "explore": "探索未測模型",
@@ -817,8 +821,7 @@
     "webSearchGetKey": "Get a free key",
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "剩餘 {remaining} / {limit} {metric}",
-    "quotaBalanceLeft": "剩餘 {remaining}"
-,
+    "quotaBalanceLeft": "剩餘 {remaining}",
     "groupLabel": "Group",
     "groupLabelPlaceholder": "e.g. Relays, Work…",
     "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
@@ -1387,7 +1390,8 @@
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
-    "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+    "agentsBadgeCodex": "Web search: web_search tool served by your search keys",
+    "playgroundKeyless": "DuckDuckGo (keyless fallback)"
   },
   "decision": {
     "tab": "決策",

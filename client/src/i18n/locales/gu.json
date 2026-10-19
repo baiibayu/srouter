@@ -223,7 +223,9 @@
     "updateNow": "હમણાં અપડેટ કરો",
     "updatingContainer": "નવી ઇમેજ ખેંચી રહ્યા છીએ અને ફરી શરૂ કરી રહ્યા છીએ. SRouter પાછું આવે ત્યારે આ પેજ ફરી લોડ થશે.",
     "updateNowFailed": "અપડેટરે વિનંતી સ્વીકારી નહીં. watchtower કન્ટેનર ચાલુ છે કે નહીં તે તપાસો.",
-    "updateNowTimeout": "5 મિનિટ પછી પણ SRouter ફરી શરૂ થયું નથી. watchtower કન્ટેનરના લૉગ તપાસો."
+    "updateNowTimeout": "5 મિનિટ પછી પણ SRouter ફરી શરૂ થયું નથી. watchtower કન્ટેનરના લૉગ તપાસો.",
+    "complexityGateDecision": "Local decision model",
+    "complexityGateDecisionHint": "Score requests in-process with the free decision models on Models → Decision (Clef Flash, Mercury Decide) — no host to configure, automatic heuristic fallback."
   },
   "models": {
     "title": "મોડલ્સ",
@@ -377,7 +379,9 @@
     "systemOneHeuristicDetail": "built-in · auto fallback",
     "systemOneSectionDesc": "How SRouter scores request complexity. The remote scorer falls back to the local heuristic automatically — Zen free works out of the box, no key needed.",
     "systemOneRemote": "System One (remote)",
-    "systemOneConfigToggle": "Host, model & key"
+    "systemOneConfigToggle": "Host, model & key",
+    "systemOneDecision": "Local decision (free tier)",
+    "systemOneDecisionDetail": "decision models on your keys — auto fallback"
   },
   "strategies": {
     "explore": "માપ્યા વગરના મોડલ્સ એક્સપ્લોર કરો",
@@ -817,8 +821,7 @@
     "webSearchGetKey": "Get a free key",
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "{limit} {metric}માંથી {remaining} બાકી",
-    "quotaBalanceLeft": "{remaining} બાકી"
-,
+    "quotaBalanceLeft": "{remaining} બાકી",
     "groupLabel": "Group",
     "groupLabelPlaceholder": "e.g. Relays, Work…",
     "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
@@ -1387,7 +1390,8 @@
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
-    "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+    "agentsBadgeCodex": "Web search: web_search tool served by your search keys",
+    "playgroundKeyless": "DuckDuckGo (keyless fallback)"
   },
   "decision": {
     "tab": "નિર્ણય",

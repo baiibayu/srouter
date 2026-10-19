@@ -47,7 +47,7 @@ export function decisionExampleCurl(origin: string): string {
   }
   return [
     `curl ${origin}/v1/decisions \\`,
-    `  -H "Authorization: Bearer $FREELLMAPI_KEY" \\`,
+    `  -H "Authorization: Bearer $SROUTER_API_KEY" \\`,
     `  -H "Content-Type: application/json" \\`,
     `  -d '${JSON.stringify(body, null, 2).replace(/\n/g, '\n  ')}'`,
   ].join('\n')

@@ -17,6 +17,7 @@ model: "openai/fast-coder"
   ],
   "notes": [
     "Environment-only alternative: OPENAI_API_BASE=http://localhost:3000/v1 OPENAI_API_KEY=… aider --model openai/fast-coder",
+    "MCP: aider has no MCP support; nothing to configure.",
   ],
 }
 `;
@@ -28,6 +29,7 @@ exports[`tool generators > setup-atomcode has stable golden output 1`] = `
     "AtomCode is an extension for Atom IDE that integrates with OpenAI-compatible gateways.",
     "Set the base URL to http://localhost:3000/v1 and the API key to your unified key.",
     "AtomCode fetches models from the gateway automatically.",
+    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -52,10 +54,27 @@ exports[`tool generators > setup-claude has stable golden output 1`] = `
         },
       },
     },
+    {
+      "format": "json",
+      "path": "/home/tester/.claude.json",
+      "sensitive": true,
+      "value": {
+        "mcpServers": {
+          "srouter": {
+            "headers": {
+              "Authorization": "Bearer srouter-test-key",
+            },
+            "type": "http",
+            "url": "http://localhost:3000/mcp",
+          },
+        },
+      },
+    },
   ],
   "notes": [
     "Claude Code will read this configuration automatically.",
     "For zero-persistence credentials, prefer: srouter launch",
+    "MCP: wrote mcpServers.srouter -> /home/tester/.claude.json",
   ],
 }
 `;
@@ -91,9 +110,28 @@ exports[`tool generators > setup-cline has stable golden output 1`] = `
         "version": 1,
       },
     },
+    {
+      "format": "json",
+      "path": "/home/tester/.cline/data/settings/cline_mcp_settings.json",
+      "sensitive": true,
+      "value": {
+        "mcpServers": {
+          "srouter": {
+            "autoApprove": [],
+            "disabled": false,
+            "headers": {
+              "Authorization": "Bearer srouter-test-key",
+            },
+            "type": "streamableHttp",
+            "url": "http://localhost:3000/mcp",
+          },
+        },
+      },
+    },
   ],
   "notes": [
     "Cline will use the generated OpenAI Compatible provider immediately.",
+    "MCP: wrote mcpServers.srouter -> /home/tester/.cline/data/settings/cline_mcp_settings.json",
   ],
 }
 `;
@@ -115,6 +153,10 @@ base_url = "http://localhost:3000/v1"
 wire_api = "responses"
 env_key = "SROUTER_API_KEY"
 requires_openai_auth = false
+
+[mcp_servers.srouter]
+url = "http://localhost:3000/mcp"
+bearer_token_env_var = "SROUTER_API_KEY"
 # srouter:end
 ",
       "format": "toml",
@@ -124,6 +166,7 @@ requires_openai_auth = false
   "notes": [
     "Export SROUTER_API_KEY before running codex; the key is not written to config.toml.",
     "Selected fast-coder with a 131072 token context window.",
+    "MCP: wrote mcp_servers.srouter -> /home/tester/.codex/config.toml (Bearer token read from $SROUTER_API_KEY)",
   ],
 }
 `;
@@ -140,6 +183,10 @@ wire_api = "responses"
 env_key = "SROUTER_API_KEY"
 requires_openai_auth = false
 
+[mcp_servers.srouter]
+url = "http://localhost:3000/mcp"
+bearer_token_env_var = "SROUTER_API_KEY"
+
 [profiles.work]
 model = "fast-coder"
 model_provider = "srouter"
@@ -153,6 +200,7 @@ model_provider = "srouter"
     "Export SROUTER_API_KEY before running codex; the key is not written to config.toml.",
     "Activate this profile with: codex --profile work",
     "Selected fast-coder with a 131072 token context window.",
+    "MCP: wrote mcp_servers.srouter -> /home/tester/.codex/config.toml (Bearer token read from $SROUTER_API_KEY)",
   ],
 }
 `;
@@ -191,6 +239,7 @@ models:
   "notes": [
     "The key is in ~/.continue/.env (read by the Continue CLI and the IDE extensions); config.yaml references it as a secret.",
     "One-shot check with the CLI (npm install -g @continuedev/cli): cn -p "Say hello"",
+    "MCP: add to /home/tester/.continue/config.yaml: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -253,6 +302,7 @@ exports[`tool generators > setup-crush has stable golden output 1`] = `
   "notes": [
     "Export SROUTER_API_KEY before starting Crush.",
     "srouter/fast-coder is now the large and small model.",
+    "MCP: add to /home/tester/.config/crush/crush.json: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -266,6 +316,7 @@ exports[`tool generators > setup-cursor has stable golden output 1`] = `
     "Cursor only documents custom keys for standard chat models; custom base-URL overrides may not support Responses-based or built-in models.",
     "The override affects Cursor globally while enabled, so disable it before switching back to built-in providers.",
     "Use a separately revocable URL token if the client cannot set an Authorization header.",
+    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -295,6 +346,7 @@ exports[`tool generators > setup-droid has stable golden output 1`] = `
     "Other keys in ~/.factory/settings.json are kept, but its customModels array is replaced with this entry — re-add any other custom models you had.",
     "Choose custom:fast-coder in /model to route the session through the gateway.",
     "settings.json is watched, so a running droid session picks the change up without a restart.",
+    "MCP: add to /home/tester/.factory/settings.json: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -350,6 +402,7 @@ exports[`tool generators > setup-dsh has stable golden output 1`] = `
     "One-shot check: npx @deepseek-ai/dsh --profile headless "Say hello"",
     "Settings are hot-reloaded, so a running dsh picks this up on its next request.",
     "Models are declared text-only; give a vision model \`input: [text, image]\` under srouter.models in settings.yaml to send it images.",
+    "MCP: add to /home/tester/.dsh/settings.yaml: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -362,6 +415,7 @@ exports[`tool generators > setup-generic has stable golden output 1`] = `
     "OPENAI_API_KEY=srouter-test-key",
     "OPENAI_MODEL=fast-coder",
     "curl http://localhost:3000/v1/chat/completions -H "Authorization: Bearer $OPENAI_API_KEY" -H "Content-Type: application/json" -d '{"model":"fast-coder","messages":[{"role":"user","content":"Hello"}]}'",
+    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -407,6 +461,7 @@ GOOSE_MODEL: "fast-coder"
   ],
   "notes": [
     "Export SROUTER_API_KEY before starting Goose.",
+    "MCP: add to /home/tester/.config/goose/config.yaml: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -445,6 +500,7 @@ exports[`tool generators > setup-hermes has stable golden output 1`] = `
     "Install Hermes Agent with: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup",
     "Try it with: hermes -z "Say hello" — custom/fast-coder is the default model.",
     "A running \`hermes gateway\` (Telegram, Discord, …) needs a restart to pick the change up.",
+    "MCP: add to /home/tester/.hermes/config.yaml: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -457,6 +513,7 @@ exports[`tool generators > setup-jetbrains has stable golden output 1`] = `
     "Point the assistant at this gateway as an OpenAI-compatible custom endpoint.",
     "Set the base URL to http://localhost:3000/v1 and the API key to your unified key.",
     "The IDE fetches the model list from the endpoint, so your catalog shows up in the model dropdown.",
+    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -502,6 +559,7 @@ exports[`tool generators > setup-kilo has stable golden output 1`] = `
   "notes": [
     "Export SROUTER_API_KEY before starting Kilo; global config is trusted for {env:…} expansion.",
     "One-shot check: kilo run "Say hello" — openai-compatible/fast-coder is the default model.",
+    "MCP: add to /home/tester/.config/kilo/kilo.jsonc: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -549,6 +607,7 @@ exports[`tool generators > setup-mimo has stable golden output 1`] = `
     "Export SROUTER_API_KEY before starting MiMo Code.",
     "Start it with \`mimo\` — srouter/fast-coder is the default model.",
     "One-shot check: mimo run "Say hello"",
+    "MCP: add to /home/tester/.config/mimocode/config.json: "mcp": { "servers": { "srouter": { "type": "remote", "url": "http://localhost:3000/mcp", "oauth": false, "headers": { "Authorization": "Bearer <unified-key>" } } } } (OpenCode-style remote MCP config)",
   ],
 }
 `;
@@ -588,6 +647,7 @@ exports[`tool generators > setup-omp has stable golden output 1`] = `
     "~/.omp/agent/models.yml gains a srouter provider; other providers in it are kept.",
     "modelRoles.default points at srouter/fast-coder; run omp — discovery fills /model with every gateway model.",
     "One-shot check: omp -p "Say hello".",
+    "MCP: add to /home/tester/.omp/agent/config.yml: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -599,6 +659,7 @@ exports[`tool generators > setup-openclaude has stable golden output 1`] = `
     "OpenClaude is a Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
     "Set OPENAI_BASE_URL=http://localhost:3000/v1 and OPENAI_API_KEY to your unified key.",
     "OpenClaude then speaks Claude-style tool calls through the gateway, which translates them to the upstream provider.",
+    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -678,6 +739,7 @@ exports[`tool generators > setup-openclaw has stable golden output 1`] = `
     "Try it without the gateway daemon: openclaw agent exec --model srouter/fast-coder "Say hello"",
     "srouter/fast-coder is the default model; a running \`openclaw gateway\` needs a restart to pick the change up.",
     "Models are declared text-only; give a vision model \`input: ["text", "image"]\` under models.providers.srouter to send it images.",
+    "MCP: add to /home/tester/.openclaw/openclaw.json: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -688,8 +750,21 @@ exports[`tool generators > setup-opencode has stable golden output 1`] = `
     {
       "format": "json",
       "path": "/home/tester/.config/opencode/opencode.json",
+      "sensitive": true,
       "value": {
         "$schema": "https://opencode.ai/config.json",
+        "mcp": {
+          "servers": {
+            "srouter": {
+              "headers": {
+                "Authorization": "Bearer srouter-test-key",
+              },
+              "oauth": false,
+              "type": "remote",
+              "url": "http://localhost:3000/mcp",
+            },
+          },
+        },
         "model": "srouter/fast-coder",
         "provider": {
           "srouter": {
@@ -723,6 +798,7 @@ exports[`tool generators > setup-opencode has stable golden output 1`] = `
   "notes": [
     "Export SROUTER_API_KEY before starting OpenCode.",
     "srouter/fast-coder is now the default model.",
+    "MCP: wrote mcp.servers.srouter -> /home/tester/.config/opencode/opencode.json",
   ],
 }
 `;
@@ -796,6 +872,7 @@ exports[`tool generators > setup-pi has stable golden output 1`] = `
     "Try it with: pi -p "Say hello" — srouter/fast-coder is the default model.",
     "Every catalog model is in /model; a running Pi session picks the change up when /model is opened.",
     "Models are declared text-only; give a vision model \`input: ["text", "image"]\` under providers.srouter in models.json to send it images.",
+    "MCP: add to /home/tester/.pi/agent/settings.json: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -852,6 +929,7 @@ exports[`tool generators > setup-qwen has stable golden output 1`] = `
   ],
   "notes": [
     "Native Gemini mode is also available at http://localhost:3000/v1beta with GEMINI_API_KEY.",
+    "MCP: add to /home/tester/.qwen/settings.json: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -888,6 +966,7 @@ price = { cache_hit = 0, input = 0, output = 0, currency = "$" }",
     "Try it with: reasonix -p "Say hello" — srouter/fast-coder is the default model.",
     "Every catalog model is in /model as srouter/<id>; other [[providers]] entries in config.toml are kept.",
     "Reasonix Studio lists only the providers in [desktop].provider_access when that list is set; add "srouter" there, or under Settings → Model → Access.",
+    "MCP: add to C:/Users/Hype AMD/AppData/Roaming/reasonix/config.toml: [mcp_servers.srouter] with url = "http://localhost:3000/mcp" and bearer_token_env_var = "SROUTER_API_KEY" (Streamable HTTP; export SROUTER_API_KEY first)",
   ],
 }
 `;
@@ -959,6 +1038,7 @@ exports[`tool generators > setup-roo has stable golden output 1`] = `
     "Roo CLI: merge {"roo-cline.autoImportSettingsPath": "/home/tester/.roo/srouter-cli.json"} into ~/.vscode-mock/global-storage/global-state.json (create it if missing), then:",
     "  export OPENROUTER_API_KEY=<unified-key>   # the CLI refuses to start without it, even with the key in the profile",
     "  roo -m fast-coder "Say hello"            # -m is required: the CLI's built-in default model shadows cli-settings.json",
+    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;
@@ -971,6 +1051,7 @@ exports[`tool generators > setup-zed has stable golden output 1`] = `
     "Zed speaks the OpenAI chat API directly, so connect it as an OpenAI-compatible assistant provider.",
     "Set the base URL to http://localhost:3000/v1 and the API key to your unified key.",
     "Zed reads models from the endpoint on connect, so the catalog appears in its model picker automatically.",
+    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;

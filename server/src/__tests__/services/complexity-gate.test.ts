@@ -12,6 +12,7 @@ import {
   DEFAULT_JEV_BASE_URL,
   DEFAULT_JEV_TIMEOUT_MS,
 } from '../../services/complexity-gate.js';
+import { seedDecisionModels } from '../helpers/decision-models.js';
 
 function msg(content: ChatMessage['content']): ChatMessage {
   return { role: 'user', content };
@@ -230,6 +231,81 @@ describe('complexity gate — Jev backend (fail-open to heuristic)', () => {
       status: 200,
       json: async () => ({ answers: { complexity: { score: 'nonsense' } } }),
     }));
+    expect(await classifyComplexity([msg('hi')], undefined)).toBe('trivial');
+  });
+});
+
+describe('complexity gate — local decision backend (fail-open to heuristic)', () => {
+  beforeAll(() => {
+    process.env.ENCRYPTION_KEY = '0'.repeat(64);
+    initDb(':memory:');
+  });
+
+  beforeEach(() => {
+    seedDecisionModels();
+    const { encrypted, iv, authTag } = encrypt('openrouter-test-key');
+    getDb().prepare(`
+      INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled)
+      VALUES ('openrouter', 'test', ?, ?, ?, 'healthy', 1)
+    `).run(encrypted, iv, authTag);
+    setComplexityGate({ enabled: true, backend: 'decision' });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    setComplexityGate({ enabled: false, backend: 'heuristic' });
+    getDb().prepare('DELETE FROM api_keys').run();
+    getDb().prepare('DELETE FROM media_models').run();
+  });
+
+  it('accepts the decision backend in settings', () => {
+    expect(getComplexityGate().backend).toBe('decision');
+  });
+
+  it('falls back to the heuristic when no decision model is usable (no fetch)', async () => {
+    getDb().prepare('DELETE FROM api_keys').run();
+    getDb().prepare('DELETE FROM media_models').run();
+    const spy = vi.fn();
+    vi.stubGlobal('fetch', spy);
+    expect(await classifyComplexity([msg('hi')], undefined)).toBe('trivial');
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('scores in-process with a local decision model and maps the score', async () => {
+    // Clef (cloudflare, no key) is skipped; Mercury Decide answers over the
+    // OpenRouter decisions wire: score 3.6 * 2.5 = 9 → hard.
+    const spy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ answers: { complexity: { score: 3.6 } }, usage: { input_tokens: 12, output_tokens: 4 } }),
+    });
+    vi.stubGlobal('fetch', spy);
+    expect(await classifyComplexity([msg('y'.repeat(500))], undefined)).toBe('hard');
+    const [url, init] = spy.mock.calls[0];
+    expect(url).toBe('https://openrouter.ai/api/alpha/decisions');
+    const body = JSON.parse(init.body);
+    expect(body.model).toBe('inception/mercury-decide:free');
+    expect(body.questions.complexity.type).toBe('score');
+    expect(body.questions.complexity.criteria).toEqual(['trivial', 'simple', 'moderate', 'complex', 'expert']);
+    expect(String(body.state)).toContain('user: ');
+  });
+
+  it('a decision HTTP error falls back to the heuristic', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    expect(await classifyComplexity([msg('hi')], undefined)).toBe('trivial');
+  });
+
+  it('a malformed score answer falls back to the heuristic', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ answers: { complexity: { score: 'nonsense' } } }),
+    }));
+    expect(await classifyComplexity([msg('hi')], undefined)).toBe('trivial');
+  });
+
+  it('a network failure falls back to the heuristic', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('boom')));
     expect(await classifyComplexity([msg('hi')], undefined)).toBe('trivial');
   });
 });

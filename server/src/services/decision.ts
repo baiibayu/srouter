@@ -194,8 +194,8 @@ const ADAPTERS: Record<string, Adapter> = {
         headers: {
           Authorization: `Bearer ${cred.key}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:3001',
-          'X-Title': 'FreeLLMAPI',
+          'HTTP-Referer': 'http://localhost:20268',
+          'X-Title': 'SRouter',
         },
         body: JSON.stringify({ model: modelId, state: body.state, questions: body.questions }),
       },

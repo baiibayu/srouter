@@ -14,7 +14,7 @@ import { useI18n } from '@/i18n'
 // jevApiKey is write-only: the server reports hasJevApiKey, never the value.
 interface ComplexityGateConfig {
   enabled: boolean
-  backend: 'heuristic' | 'jev'
+  backend: 'heuristic' | 'jev' | 'decision'
   jevBaseUrl: string
   jevModel: string
   jevHostPreset: string
@@ -141,10 +141,16 @@ export default function SystemOnePage() {
           })}
           {statusRow({
             name: t('models.systemOneRemote'),
-            detail: cfg ? `${hostLabel(cfg.jevHostPreset)} · ${cfg.jevModel}` : undefined,
+            detail: cfg ? `${hostLabel(cfg.jevHostPreset)} → ${cfg.jevModel}` : undefined,
             active: remoteActive,
             badge: remoteActive ? t('models.systemOneOn') : t('models.systemOneOff'),
             missingKey: remoteActive && !cfg.jevKeyless && !cfg.hasJevApiKey,
+          })}
+          {statusRow({
+            name: t('models.systemOneDecision'),
+            detail: t('models.systemOneDecisionDetail'),
+            active: enabled && cfg.backend === 'decision',
+            badge: enabled && cfg.backend === 'decision' ? t('models.systemOneOn') : t('models.systemOneOff'),
           })}
         </div>
 
@@ -161,6 +167,18 @@ export default function SystemOnePage() {
                 aria-label={t('settings.complexityGateRemote')}
                 checked={cfg.backend === 'jev'}
                 onCheckedChange={checked => patch.mutate({ backend: checked ? 'jev' : 'heuristic' })}
+              />
+            )}
+          />
+          <Row
+            label={t('settings.complexityGateDecision')}
+            hint={t('settings.complexityGateDecisionHint')}
+            control={(
+              <Switch
+                size="sm"
+                aria-label={t('settings.complexityGateDecision')}
+                checked={cfg.backend === 'decision'}
+                onCheckedChange={checked => patch.mutate({ backend: checked ? 'decision' : 'heuristic' })}
               />
             )}
           />

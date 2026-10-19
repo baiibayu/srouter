@@ -223,7 +223,9 @@
     "updateNow": "ഇപ്പോൾ അപ്‌ഡേറ്റ് ചെയ്യുക",
     "updatingContainer": "പുതിയ ഇമേജ് എടുത്ത് റീസ്റ്റാർട്ട് ചെയ്യുന്നു. SRouter തിരിച്ചെത്തുമ്പോൾ ഈ പേജ് റീലോഡ് ചെയ്യും.",
     "updateNowFailed": "അപ്‌ഡേറ്റർ അഭ്യർത്ഥന സ്വീകരിച്ചില്ല. watchtower കണ്ടെയ്‌നർ പ്രവർത്തിക്കുന്നുണ്ടോ എന്ന് പരിശോധിക്കുക.",
-    "updateNowTimeout": "5 മിനിറ്റിനുശേഷവും SRouter റീസ്റ്റാർട്ട് ആയില്ല. watchtower കണ്ടെയ്‌നറിന്റെ ലോഗുകൾ പരിശോധിക്കുക."
+    "updateNowTimeout": "5 മിനിറ്റിനുശേഷവും SRouter റീസ്റ്റാർട്ട് ആയില്ല. watchtower കണ്ടെയ്‌നറിന്റെ ലോഗുകൾ പരിശോധിക്കുക.",
+    "complexityGateDecision": "Local decision model",
+    "complexityGateDecisionHint": "Score requests in-process with the free decision models on Models → Decision (Clef Flash, Mercury Decide) — no host to configure, automatic heuristic fallback."
   },
   "models": {
     "title": "മോഡലുകൾ",
@@ -377,7 +379,9 @@
     "systemOneHeuristicDetail": "built-in · auto fallback",
     "systemOneSectionDesc": "How SRouter scores request complexity. The remote scorer falls back to the local heuristic automatically — Zen free works out of the box, no key needed.",
     "systemOneRemote": "System One (remote)",
-    "systemOneConfigToggle": "Host, model & key"
+    "systemOneConfigToggle": "Host, model & key",
+    "systemOneDecision": "Local decision (free tier)",
+    "systemOneDecisionDetail": "decision models on your keys — auto fallback"
   },
   "strategies": {
     "explore": "അളക്കാത്ത മോഡലുകൾ പര്യവേക്ഷണം ചെയ്യുക",
@@ -817,8 +821,7 @@
     "webSearchGetKey": "Get a free key",
     "webSearchHelp": "Backend for POST /v1/web-search. DuckDuckGo and SearXNG need no key; Tavily, Brave and Exa are free tiers (no card); TinyFish is free (12k searches/day). If a backend fails, the request walks the fallback chain (DuckDuckGo first).",
     "quotaBalanceHint": "{limit} {metric}-ൽ {remaining} ശേഷിക്കുന്നു",
-    "quotaBalanceLeft": "{remaining} ശേഷിക്കുന്നു"
-,
+    "quotaBalanceLeft": "{remaining} ശേഷിക്കുന്നു",
     "groupLabel": "Group",
     "groupLabelPlaceholder": "e.g. Relays, Work…",
     "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
@@ -1387,7 +1390,8 @@
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
-    "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+    "agentsBadgeCodex": "Web search: web_search tool served by your search keys",
+    "playgroundKeyless": "DuckDuckGo (keyless fallback)"
   },
   "decision": {
     "tab": "തീരുമാനം",

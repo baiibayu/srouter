@@ -80,6 +80,13 @@ describe('/api/settings/complexity-gate', () => {
     expect(get.body).toEqual(put.body);
   });
 
+  it('accepts the local decision backend', async () => {
+    const put = await request(app, 'PUT', '/api/settings/complexity-gate', { backend: 'decision' }, token);
+    expect(put.status).toBe(200);
+    expect(put.body.backend).toBe('decision');
+    setComplexityGate({ backend: 'jev' }); // restore for the later tests
+  });
+
   it('jevApiKey is write-only: set shows hasJevApiKey, GET never echoes it', async () => {
     const put = await request(app, 'PUT', '/api/settings/complexity-gate', { jevApiKey: 'super-secret' }, token);
     expect(put.status).toBe(200);

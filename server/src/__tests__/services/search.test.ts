@@ -79,10 +79,13 @@ describe('search service', () => {
 
   it('lists the catalog engines in priority order', () => {
     expect(listSearchEngines().map(e => e.engineId)).toEqual(['tavily-search', 'exa-search', 'firecrawl-search', 'linkup-search']);
-    expect(searchAvailable()).toBe(false);
+    // The keyless DuckDuckGo fallback always answers, so search is available
+    // even before any key lands.
+    expect(searchAvailable()).toBe(true);
   });
 
-  it('answers 503 no_search_keys when no engine has a key', async () => {
+  it('answers 503 no_search_keys when no engine has a key and the keyless fallback fails too', async () => {
+    mockFetch(() => { throw new Error('network down'); });
     await expect(runSearch('q')).rejects.toMatchObject({ status: 503, code: 'no_search_keys' });
   });
 
@@ -163,7 +166,7 @@ describe('search service', () => {
       expect((init.headers as Record<string, string>)['x-api-key']).toBeUndefined();
       const body = bodyOf(calls(fn)[0]);
       expect(body).toMatchObject({ method: 'tools/call', params: { name: 'web_search', arguments: { objective: 'node version', search_queries: ['node version'] } } });
-      expect(body.params.arguments.session_id).toMatch(/^freellmapi-/);
+      expect(body.params.arguments.session_id).toMatch(/^srouter-/);
       expect(out).toMatchObject({ provider: 'parallel', engine: 'parallel-search' });
       expect(out.results).toEqual([
         { title: 'A & B', url: 'https://a', content: 'one … two', score: 1 },
@@ -320,6 +323,49 @@ describe('search service', () => {
     expect(stats.byEngine).toEqual([{ engineId: 'exa-search', displayName: 'Exa Search', count: 2 }]);
     expect(stats.series).toHaveLength(1);
     expect(stats.series[0]).toMatchObject({ engineId: 'exa-search', count: 2 });
+  });
+
+  describe('keyless fallback (legacy DuckDuckGo walker)', () => {
+    const DDG_FIXTURE = `
+<html><body>
+<div class="result">
+  <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fpage&amp;rut=abc">Example <b>Title</b></a>
+  <a class="result__snippet" href="https://example.com/page">A snippet with &amp; entities</a>
+</div>
+</body></html>`;
+    const ddgHtml = () => new Response(DDG_FIXTURE, { status: 200, headers: { 'content-type': 'text/html' } });
+
+    it('answers from DuckDuckGo when no keys exist', async () => {
+      const fn = mockFetch(() => ddgHtml());
+      const out = await runSearch('apa itu srouter');
+      expect(calls(fn)[0][0]).toContain('https://html.duckduckgo.com/html/?q=');
+      expect(out).toMatchObject({ provider: 'duckduckgo', engine: 'duckduckgo' });
+      expect(out.results[0]).toEqual({
+        title: 'Example Title',
+        url: 'https://example.com/page',
+        content: 'A snippet with & entities',
+        score: 1,
+      });
+      // The legacy walker has its own usage counters, not search_requests.
+      expect(logRows()).toEqual([]);
+    });
+
+    it('falls back to keyless after every keyed engine fails', async () => {
+      addKey('tavily');
+      mockFetch(url => String(url).includes('tavily')
+        ? json({ detail: 'boom' }, 500)
+        : ddgHtml());
+      const out = await runSearch('q');
+      expect(out.provider).toBe('duckduckgo');
+      expect(logRows().map(r => `${r.platform}:${r.status}`)).toEqual(['tavily:error']);
+    });
+
+    it('honours an explicit engine pin: no keyless escape hatch', async () => {
+      addKey('tavily');
+      const fn = mockFetch(() => json({ detail: 'boom' }, 500));
+      await expect(runSearch('q', { engine: 'tavily-search' })).rejects.toMatchObject({ status: 502 });
+      expect(calls(fn).map(c => String(c[0]))).toEqual(['https://api.tavily.com/search']);
+    });
   });
 });
 

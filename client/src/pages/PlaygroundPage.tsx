@@ -335,7 +335,9 @@ export default function PlaygroundPage() {
     retry: false,
   })
   const usableEngines = engineChain(searchEngines).filter(e => e.keyCount > 0)
-  const webSearchAvailable = usableEngines.length > 0
+  // Keyless fallback: /v1/search answers via the DuckDuckGo walker even with
+  // zero keys, so the switch is available on a fresh install.
+  const webSearchAvailable = true
   const webSearchOn = webSearch && webSearchAvailable
   const transcriptionAvailable = hasTranscription(mediaModels)
   const [dictationChoice, setDictationChoice] = useState<string>(
@@ -1341,7 +1343,9 @@ export default function PlaygroundPage() {
         webSearch={webSearch}
         onWebSearchChange={updateWebSearch}
         webSearchAvailable={webSearchAvailable}
-        webSearchChain={usableEngines.map(e => e.displayName).join(' → ')}
+        webSearchChain={usableEngines.length > 0
+          ? usableEngines.map(e => e.displayName).join(' → ')
+          : t('search.playgroundKeyless')}
       />
       )}
     </div>

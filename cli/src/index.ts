@@ -7,6 +7,7 @@ import spawn from 'cross-spawn';
 import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { applyGeneratedFiles, printDryRunDiff } from './config-files.js';
+import { MCP_TOGGLE_NOTE, MCP_TOOLS_SUMMARY } from './mcp.js';
 import { getTool, tools } from './tools.js';
 import { resolveLaunchModel, type ResolvedModel } from './models.js';
 import { DOCTOR_TOOLS, diagnose, exitCodeFor, formatReport, type ToolReport } from './doctor.js';
@@ -318,6 +319,8 @@ async function setup(command: string, options: CliOptions): Promise<void> {
 
   if (generation.files.length === 0) {
     for (const note of generation.notes) process.stdout.write(`${note}\n`);
+    process.stdout.write(`\n${MCP_TOGGLE_NOTE}\n`);
+    process.stdout.write(`${MCP_TOOLS_SUMMARY}\n`);
     return;
   }
 
@@ -333,6 +336,8 @@ async function setup(command: string, options: CliOptions): Promise<void> {
     }
   }
   for (const note of generation.notes) process.stdout.write(`\n${note}\n`);
+  process.stdout.write(`\n${MCP_TOGGLE_NOTE}\n`);
+  process.stdout.write(`${MCP_TOOLS_SUMMARY}\n`);
 }
 
 // Runs an interactive child with inherited stdio. SIGINT is ignored in the

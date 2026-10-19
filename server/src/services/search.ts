@@ -14,6 +14,7 @@ import { randomUUID } from 'node:crypto';
 import { secondsUntilNextMonth } from './key-budget.js';
 import { reserveProviderCredential, type ReservedProviderCredential } from './provider-credential.js';
 import { isOnCooldown, setCooldown } from './ratelimit.js';
+import { searchWeb } from './web-search.js';
 
 // Web search over the key pool (#1174).
 //
@@ -237,7 +238,7 @@ function keepHits(hits: Array<{ title: string; url: string; content: string; sco
 
 // Parallel's anonymous Search MCP asks for a stable conversation id on every
 // call (used for its free-tier rate limiting); one per server process.
-const PARALLEL_SESSION_ID = `freellmapi-${randomUUID()}`;
+const PARALLEL_SESSION_ID = `srouter-${randomUUID()}`;
 const RATE_LIMIT_TEXT = /rate.?limit|too many requests|quota/i;
 
 /** Unwrap a JSON-RPC `tools/call` reply from Parallel's Search MCP into the
@@ -407,9 +408,9 @@ function coolDown(row: SearchEngineRow, keyId: number, e: SearchError): void {
   }
 }
 
-/** True when at least one enabled engine has a usable key, i.e. a search can
- *  be attempted. The agents' web_search integration keys off this. */
-export function searchAvailable(): boolean {
+/** True when at least one enabled engine has a usable key (the keyed chain
+ *  can run without waiting for the keyless fallback). */
+function hasSearchKey(): boolean {
   const db = getDb();
   for (const row of orderedEngines()) {
     if (row.enabled !== 1) continue;
@@ -424,6 +425,13 @@ export function searchAvailable(): boolean {
     if (k) return true;
   }
   return false;
+}
+
+/** True when a search can run: the keyless DuckDuckGo/SearXNG walker always
+ *  answers (no key needed), keyed engines improve on it. The agents'
+ *  web_search integration keys off this, so a fresh install gets search too. */
+export function searchAvailable(): boolean {
+  return true;
 }
 
 function searchChain(engine: string | undefined): SearchEngineRow[] {
@@ -500,18 +508,37 @@ export async function runSearch(query: string, opts: SearchOptions = {}): Promis
     }
   }
 
+  // Keyless fallback: the legacy DuckDuckGo/SearXNG walker (POST /v1/web-search)
+  // answers without any key, so a fresh install — or a fully benched key pool —
+  // still searches standalone. Skipped when the caller pinned a specific engine.
+  let legacyError: string | null = null;
+  if (!opts.engine || opts.engine === 'auto') {
+    try {
+      const legacy = await searchWeb(query, maxResults);
+      return {
+        query,
+        results: legacy.results.map((r) => ({ title: r.title, url: r.url, content: r.snippet, score: 1 })),
+        provider: legacy.provider,
+        engine: legacy.provider,
+      };
+    } catch (err: any) {
+      legacyError = String(err?.message ?? err).slice(0, 160);
+    }
+  }
+  const legacyNote = legacyError ? ` Keyless fallback: ${legacyError}.` : '';
+
   if (attempted === 0 && !lastError) {
     // Keys exist but every one is benched (rate limited, out of credits or
     // rejected recently): a retryable condition, not a setup problem.
-    if (searchAvailable()) {
+    if (hasSearchKey()) {
       throw new SearchError(
-        'Every search key is cooling down (rate limited or out of credits). Try again later or add another search key.',
+        `Every search key is cooling down (rate limited or out of credits). Try again later or add another search key.${legacyNote}`,
         429,
         'search_keys_cooling_down',
       );
     }
     throw new SearchError(
-      'No search key configured. Enable Parallel (no key needed) or add a Tavily, Exa, Firecrawl or Linkup key on the Keys page.',
+      `No search key configured and the keyless fallback did not answer. Add a Tavily, Exa, Firecrawl or Linkup key on the Keys page.${legacyNote}`,
       503,
       'no_search_keys',
     );
@@ -520,7 +547,7 @@ export async function runSearch(query: string, opts: SearchOptions = {}): Promis
   // an upstream 401 means OUR provider key failed, not the caller's.
   const status = lastError?.status === 429 ? 429 : 502;
   throw new SearchError(
-    `All search engines failed${lastError ? ` (last: ${lastError.message.slice(0, 160)})` : ' (no usable keys)'}.`,
+    `All search engines failed${lastError ? ` (last: ${lastError.message.slice(0, 160)})` : ' (no usable keys)'}.${legacyNote}`,
     status,
     lastError?.code,
     status === 429 ? hints.retryAfterMs() : undefined,

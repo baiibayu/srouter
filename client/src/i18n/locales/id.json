@@ -223,7 +223,9 @@
     "updateNow": "Perbarui sekarang",
     "updatingContainer": "Menarik image baru dan memulai ulang. Halaman ini dimuat ulang saat SRouter kembali.",
     "updateNowFailed": "Pembaru tidak menerima permintaan. Pastikan kontainer watchtower berjalan.",
-    "updateNowTimeout": "SRouter belum dimulai ulang setelah 5 menit. Periksa log kontainer watchtower."
+    "updateNowTimeout": "SRouter belum dimulai ulang setelah 5 menit. Periksa log kontainer watchtower.",
+    "complexityGateDecision": "Model decision lokal",
+    "complexityGateDecisionHint": "Skor request in-process memakai model decision gratis di Models → Decision (Clef Flash, Mercury Decide) — tanpa host untuk dikonfigurasi, otomatis jatuh ke heuristik."
   },
   "models": {
     "title": "Model",
@@ -377,7 +379,9 @@
     "systemOneHeuristicDetail": "bawaan · auto fallback",
     "systemOneSectionDesc": "Cara SRouter menilai kompleksitas request. Skor remote otomatis fallback ke heuristic lokal — Zen gratis langsung jalan, tanpa key.",
     "systemOneRemote": "System One (remote)",
-    "systemOneConfigToggle": "Host, model & kunci"
+    "systemOneConfigToggle": "Host, model & kunci",
+    "systemOneDecision": "Decision lokal (kuota gratis)",
+    "systemOneDecisionDetail": "model decision dari key Anda — fallback otomatis"
   },
   "strategies": {
     "explore": "Jelajahi model yang belum terukur (aktif secara bawaan)",
@@ -817,8 +821,7 @@
     "webSearchGetKey": "Dapatkan kunci gratis",
     "webSearchHelp": "Backend untuk POST /v1/web-search. DuckDuckGo dan SearXNG tanpa kunci; Tavily, Brave, Exa free tier (tanpa kartu); TinyFish gratis (12k pencarian/hari). Jika sebuah backend gagal, permintaan menelusuri rantai jatuh balik (DuckDuckGo lebih dulu).",
     "quotaBalanceHint": "Tersisa {remaining} dari {limit} {metric}",
-    "quotaBalanceLeft": "Tersisa {remaining}"
-,
+    "quotaBalanceLeft": "Tersisa {remaining}",
     "groupLabel": "Group",
     "groupLabelPlaceholder": "e.g. Relays, Work…",
     "groupLabelHint": "Optional: endpoints in the same group are listed together, and a request can stay inside the group with custom:<model>#<group>. Leave blank for the default Custom group.",
@@ -1387,7 +1390,8 @@
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
     "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
-    "agentsBadgeCodex": "Web search: web_search tool served by your search keys"
+    "agentsBadgeCodex": "Web search: web_search tool served by your search keys",
+    "playgroundKeyless": "DuckDuckGo (fallback tanpa key)"
   },
   "decision": {
     "tab": "Keputusan",

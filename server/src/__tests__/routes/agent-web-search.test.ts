@@ -16,7 +16,7 @@ import { createApp } from '../../app.js';
 import { initDb, getDb, getUnifiedApiKey, setSetting } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
 import { mintDashboardToken } from '../helpers/auth.js';
-import { encodeHitContent, filterHitsByDomain } from '../../lib/web-search-tool.js';
+import { encodeHitContent, filterHitsByDomain, WEB_SEARCH_FUNCTION_PARAMETERS } from '../../lib/web-search-tool.js';
 import { seedSearchEngines } from '../helpers/search-engines.js';
 
 let app: Express;
@@ -236,15 +236,16 @@ describe('agent web search served from the search pool', () => {
       expect(assistant.content).toContain('Version 9 shipped on Monday.');
     });
 
-    it('keeps the old behaviour when no search key is configured', async () => {
+    it('keeps serving the tool without search keys (keyless fallback)', async () => {
       const bodies = mockGroq([answer('No search here.')]);
       const { status, body } = await post('/v1/messages', request(), anthropicHeaders());
       expect(status).toBe(200);
       expect(runSearchMock).not.toHaveBeenCalled();
       expect(body.content).toEqual([{ type: 'text', text: 'No search here.' }]);
-      expect(body.usage.server_tool_use).toBeUndefined();
-      // The server tool still reaches the model as an (empty-schema) function, as before.
-      expect(bodies[0].tools[0].function.parameters).toEqual({ type: 'object', properties: {} });
+      // Capability is now keyless: the server-tool usage block is always reported.
+      expect(body.usage.server_tool_use).toEqual({ web_search_requests: 0 });
+      // The function stand-in now carries the real search schema (was empty-schema).
+      expect(bodies[0].tools[0].function.parameters).toEqual(WEB_SEARCH_FUNCTION_PARAMETERS);
     });
 
     it('passes a first-turn error through with its real status', async () => {
@@ -302,13 +303,13 @@ describe('agent web search served from the search pool', () => {
       expect(seq).toEqual([...seq].sort((a, b) => a - b));
     });
 
-    it('drops the tool as before when no search key is configured', async () => {
+    it('keeps the web_search tool without search keys (keyless fallback)', async () => {
       const bodies = mockGroq([answer('Plain answer.')]);
       const { status, body } = await post('/v1/responses', request(), bearer());
       expect(status).toBe(200);
       expect(runSearchMock).not.toHaveBeenCalled();
       expect(body.output.map((i: any) => i.type)).toEqual(['message']);
-      expect(bodies[0].tools).toBeUndefined();
+      expect(bodies[0].tools.map((t: any) => t.function.name)).toEqual(['web_search']);
     });
 
     it('turns a replayed web_search_call into a note on the next assistant turn', async () => {

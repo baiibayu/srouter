@@ -1,5 +1,5 @@
-// Unified API key prefix: drop the rebranded-away 'freellmapi-' (and any
-// interim 'srouter-') prefix in favour of the short, provider-neutral 'sr-'.
+// Unified API key prefix: drop the pre-rebrand legacy prefix (and any
+// interim 'srouter-' one) in favour of the short, provider-neutral 'sr-'.
 // Only the prefix is rewritten — the random suffix (the actual secret) is
 // preserved byte-for-byte, so every client already configured against this
 // install keeps working; only the displayed/stored string changes.
@@ -17,7 +17,7 @@ export function up(db: Db): void {
 }
 
 export function down(db: Db): void {
-  // The original prefix (freellmapi- vs srouter- vs none) is not recorded, so
+  // The original prefix (legacy vs srouter- vs none) is not recorded, so
   // the rewrite cannot be reversed to the byte. The honest reverse of "adopt
   // the sr- prefix" is to drop the marker and leave the secret bare; a re-run
   // of up() restores 'sr-', and auth compares the full string either way —

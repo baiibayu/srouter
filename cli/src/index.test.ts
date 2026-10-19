@@ -88,18 +88,18 @@ describe('CLI arguments and launchers', () => {
   });
 
   it.skipIf(process.platform !== 'win32')('launches Windows command shims for both agents', async () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'freellmapi-launch-'));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'srouter-launch-'));
     temporary.push(directory);
     for (const command of ['codex', 'claude']) {
       fs.writeFileSync(path.join(directory, `${command}.cmd`),
-        `@echo off\r\necho ${command} > "%FREELLMAPI_TEST_MARKER%"\r\nexit /b 17\r\n`);
+        `@echo off\r\necho ${command} > "%SROUTER_TEST_MARKER%"\r\nexit /b 17\r\n`);
     }
     const previousPath = process.env.PATH;
-    const previousMarker = process.env.FREELLMAPI_TEST_MARKER;
+    const previousMarker = process.env.SROUTER_TEST_MARKER;
     const previousFetch = globalThis.fetch;
     const marker = path.join(directory, 'launched.txt');
     process.env.PATH = `${directory};${process.env.SystemRoot}\\System32`;
-    process.env.FREELLMAPI_TEST_MARKER = marker;
+    process.env.SROUTER_TEST_MARKER = marker;
     globalThis.fetch = async () => new Response(JSON.stringify({
       data: [{ id: 'test-model', available: true }],
     }), { headers: { 'Content-Type': 'application/json' } });
@@ -114,8 +114,8 @@ describe('CLI arguments and launchers', () => {
       globalThis.fetch = previousFetch;
       if (previousPath === undefined) delete process.env.PATH;
       else process.env.PATH = previousPath;
-      if (previousMarker === undefined) delete process.env.FREELLMAPI_TEST_MARKER;
-      else process.env.FREELLMAPI_TEST_MARKER = previousMarker;
+      if (previousMarker === undefined) delete process.env.SROUTER_TEST_MARKER;
+      else process.env.SROUTER_TEST_MARKER = previousMarker;
     }
   });
 

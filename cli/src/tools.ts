@@ -1,4 +1,12 @@
 import path from 'node:path';
+import {
+  claudeMcpValue,
+  clineMcpPath,
+  clineMcpValue,
+  codexMcpToml,
+  opencodeMcpValue,
+  withMcpNotes,
+} from './mcp.js';
 import type {
   CatalogModel,
   GenerateContext,
@@ -62,29 +70,46 @@ function claude(ctx: GenerateContext): Generation {
   const directory = ctx.profile === 'default'
     ? posixPath(ctx.homeDir, '.claude')
     : posixPath(ctx.homeDir, '.claude', 'profiles', ctx.profile);
+  // MCP servers do NOT live in settings.json (Claude Code ignores an
+  // mcpServers key there): user scope is ~/.claude.json, or
+  // $CLAUDE_CONFIG_DIR/.claude.json for a profile — the file
+  // `claude mcp add --scope user` writes. Deep-merged so other servers and
+  // Claude's own state in that file survive.
+  const mcpPath = ctx.profile === 'default'
+    ? posixPath(ctx.homeDir, '.claude.json')
+    : posixPath(directory, '.claude.json');
   return {
-    files: [{
-      path: posixPath(directory, 'settings.json'),
-      format: 'json',
-      sensitive: true,
-      value: {
-        env: {
-          ANTHROPIC_BASE_URL: rootUrl(ctx.url),
-          ANTHROPIC_AUTH_TOKEN: ctx.apiKey,
-          ANTHROPIC_MODEL: model.id,
-          ANTHROPIC_DEFAULT_OPUS_MODEL: model.id,
-          ANTHROPIC_DEFAULT_SONNET_MODEL: model.id,
-          ANTHROPIC_DEFAULT_HAIKU_MODEL: model.id,
-          CLAUDE_CODE_AUTO_COMPACT_WINDOW: String(contextWindow(model)),
-          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY: '1',
+    files: [
+      {
+        path: posixPath(directory, 'settings.json'),
+        format: 'json',
+        sensitive: true,
+        value: {
+          env: {
+            ANTHROPIC_BASE_URL: rootUrl(ctx.url),
+            ANTHROPIC_AUTH_TOKEN: ctx.apiKey,
+            ANTHROPIC_MODEL: model.id,
+            ANTHROPIC_DEFAULT_OPUS_MODEL: model.id,
+            ANTHROPIC_DEFAULT_SONNET_MODEL: model.id,
+            ANTHROPIC_DEFAULT_HAIKU_MODEL: model.id,
+            CLAUDE_CODE_AUTO_COMPACT_WINDOW: String(contextWindow(model)),
+            CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY: '1',
+          },
         },
       },
-    }],
+      {
+        path: mcpPath,
+        format: 'json',
+        sensitive: true,
+        value: claudeMcpValue(ctx),
+      },
+    ],
     notes: [
       ctx.profile === 'default'
         ? 'Claude Code will read this configuration automatically.'
         : `Launch with CLAUDE_CONFIG_DIR=${directory} claude`,
       'For zero-persistence credentials, prefer: srouter launch',
+      `MCP: wrote mcpServers.srouter -> ${mcpPath}`,
     ],
   };
 }
@@ -103,6 +128,10 @@ function codex(ctx: GenerateContext): Generation {
   // Codex reads exactly one file, ~/.codex/config.toml. Named profiles are
   // `[profiles.NAME]` tables in that same file, selected with
   // `codex --profile NAME`; separate per-profile files are never read.
+  // MCP servers are global top-level tables in the same file; Codex reads the
+  // Bearer token from $SROUTER_API_KEY, so the unified key stays out of TOML
+  // exactly like the chat provider's env_key.
+  const mcpBlock = ['', ...codexMcpToml(ctx.url)];
   const content = ctx.profile === 'default'
     ? [
       '# srouter:start',
@@ -113,12 +142,14 @@ function codex(ctx: GenerateContext): Generation {
       'tool_output_token_limit = 20000',
       '',
       ...providerTable,
+      ...mcpBlock,
       '# srouter:end',
       '',
     ]
     : [
       '# srouter:start',
       ...providerTable,
+      ...mcpBlock,
       '',
       `[profiles.${/^[A-Za-z0-9_-]+$/.test(ctx.profile) ? ctx.profile : JSON.stringify(ctx.profile)}]`,
       `model = ${JSON.stringify(model.id)}`,
@@ -138,41 +169,56 @@ function codex(ctx: GenerateContext): Generation {
         ? []
         : [`Activate this profile with: codex --profile ${ctx.profile}`]),
       `Selected ${model.id} with a ${contextWindow(model)} token context window.`,
+      `MCP: wrote mcp_servers.srouter -> ${posixPath(ctx.homeDir, '.codex', 'config.toml')} (Bearer token read from $SROUTER_API_KEY)`,
     ],
   };
 }
 
 function cline(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
+  const mcpPath = clineMcpPath(ctx.homeDir);
   return {
-    files: [{
-      path: posixPath(ctx.homeDir, '.cline', 'data', 'settings', 'providers.json'),
-      format: 'json',
-      sensitive: true,
-      value: {
-        version: 1,
-        lastUsedProvider: 'openai-compatible',
-        providers: {
-          'openai-compatible': {
-            settings: {
-              provider: 'openai-compatible',
-              protocol: 'openai-chat',
-              client: 'openai-compatible',
-              model: model.id,
-              baseUrl: v1Url(ctx.url),
-              apiKey: ctx.apiKey,
-              contextWindow: contextWindow(model),
-              capabilities: ['streaming', 'tools'],
+    files: [
+      {
+        path: posixPath(ctx.homeDir, '.cline', 'data', 'settings', 'providers.json'),
+        format: 'json',
+        sensitive: true,
+        value: {
+          version: 1,
+          lastUsedProvider: 'openai-compatible',
+          providers: {
+            'openai-compatible': {
+              settings: {
+                provider: 'openai-compatible',
+                protocol: 'openai-chat',
+                client: 'openai-compatible',
+                model: model.id,
+                baseUrl: v1Url(ctx.url),
+                apiKey: ctx.apiKey,
+                contextWindow: contextWindow(model),
+                capabilities: ['streaming', 'tools'],
+              },
+              // The field is required by Cline's persisted schema. Keeping it
+              // deterministic makes repeated setup runs idempotent.
+              updatedAt: '2026-07-27T00:00:00.000Z',
+              tokenSource: 'manual',
             },
-            // The field is required by Cline's persisted schema. Keeping it
-            // deterministic makes repeated setup runs idempotent.
-            updatedAt: '2026-07-27T00:00:00.000Z',
-            tokenSource: 'manual',
           },
         },
       },
-    }],
-    notes: ['Cline will use the generated OpenAI Compatible provider immediately.'],
+      // Cline keeps MCP servers in a separate settings file (the CLI's
+      // cline_mcp_settings.json), remote servers as type "streamableHttp".
+      {
+        path: mcpPath,
+        format: 'json',
+        sensitive: true,
+        value: clineMcpValue(ctx),
+      },
+    ],
+    notes: [
+      'Cline will use the generated OpenAI Compatible provider immediately.',
+      `MCP: wrote mcpServers.srouter -> ${mcpPath}`,
+    ],
   };
 }
 
@@ -260,6 +306,10 @@ function opencode(ctx: GenerateContext): Generation {
     files: [{
       path: posixPath(ctx.homeDir, '.config', 'opencode', 'opencode.json'),
       format: 'json',
+      // The MCP entry embeds the unified key as a Bearer header (OpenCode's
+      // {env:…} interpolation in remote MCP headers is unreliable), so the
+      // whole file is written 0600 from here on.
+      sensitive: true,
       value: {
         $schema: 'https://opencode.ai/config.json',
         model: `srouter/${model.id}`,
@@ -274,11 +324,13 @@ function opencode(ctx: GenerateContext): Generation {
             models: modelEntries,
           },
         },
+        ...opencodeMcpValue(ctx),
       },
     }],
     notes: [
       'Export SROUTER_API_KEY before starting OpenCode.',
       `srouter/${model.id} is now the default model.`,
+      `MCP: wrote mcp.servers.srouter -> ${posixPath(ctx.homeDir, '.config', 'opencode', 'opencode.json')}`,
     ],
   };
 }
@@ -1181,7 +1233,10 @@ export const tools: ToolDefinition[] = metadata.map(([
   command,
   docsUrl,
   modelBehavior,
-  generate,
+  // Writers (claude, codex, cline, opencode) add their own "MCP: wrote ..."
+  // note; every other tool gets a ready-to-paste snippet naming its config
+  // file, or an explicit "no MCP support" line (aider).
+  generate: (ctx: GenerateContext) => withMcpNotes(id, generate(ctx), ctx),
 }));
 
 export function getTool(id: string): ToolDefinition | undefined {

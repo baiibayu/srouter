@@ -30,9 +30,23 @@ function completed(id = 'resp_done', model = 'zai-org/GLM-5.2-FP8') {
 }
 
 describe('SailProvider', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    // The polling test below installs fake timers per-test; never leak them
+    // (or their pending virtual timers) into the next case or the next file.
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
 
   it('submits a background Responses job, polls it, and normalizes the result', async () => {
+    // Every timing surface of the background poll rides ONE virtual clock:
+    // the 1000ms deadline at sail.ts:278 reads Date.now() against a
+    // startedAt captured at :263, the poll sleep is setTimeout at :250, and
+    // fetchWithTimeout's abort deadline is setTimeout at base.ts:335 — all
+    // faked by default (vitest 3.2.7, no toFake override). Under real
+    // timers the full-suite run flaked this test: the event loop stalled
+    // >1000ms under CPU load, so the REAL clock crossed the budget between
+    // two mocked fetches that never themselves took a millisecond.
+    vi.useFakeTimers();
     const calls: Array<{ url: string; init?: RequestInit; body?: any }> = [];
     vi.spyOn(global, 'fetch').mockImplementation(async (url, init) => {
       calls.push({
@@ -47,12 +61,23 @@ describe('SailProvider', () => {
     });
 
     const provider = new SailProvider({ pollIntervalMs: 0, timeoutMs: 1_000 });
-    const result = await provider.chatCompletion(
+    const promise = provider.chatCompletion(
       'sail-key',
       [{ role: 'user', content: 'Reply OK' }],
       'zai-org/GLM-5.2-FP8',
       { max_tokens: 64, reasoning_effort: 'none', temperature: 0 },
     );
+
+    // Virtual timeline: tickAsync first yields to a REAL setTimeout, which
+    // drains the whole submit → poll → normalize cascade as microtasks
+    // while the fake clock is still frozen at t=0 — pollIntervalMs is 0, so
+    // wait() is a no-op and no fake timer needs to fire for the chain to
+    // settle; the deadline check therefore always sees elapsed 0 < 1000.
+    // The 2000ms bump afterwards fires the two request-bound abort timers
+    // (armed at t+1000, never cleared per base.ts 'request' bounds) as
+    // no-ops on an already-settled chain, leaving zero pending fake timers.
+    await vi.advanceTimersByTimeAsync(2_000);
+    const result = await promise;
 
     expect(calls.map(call => call.url)).toEqual([
       'https://api.sailresearch.com/v1/responses',

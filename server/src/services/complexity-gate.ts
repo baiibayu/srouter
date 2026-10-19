@@ -12,6 +12,10 @@
 //      same identity as opencode-free), OpenRouter (typesafe/jev-1.13, key from
 //      the linked provider), TypeSafe, v1m, system-one.dev, jev-ai.pro
 //      (those need a stored key) or a custom base URL.
+//   1b. Local decision (optional) — the SAME System One wire format, answered
+//      in-process by the decision models on the operator's own keys (Models →
+//      Decision: Clef Flash, Mercury Decide — free tier). No host to
+//      configure; same timeout budget; same fail-open to the heuristic.
 //   2. Heuristic local (the permanent backend) — bounded reads of the prompt
 //      text: length, fenced code blocks, image parts, tools. Microseconds,
 //      zero network, zero RAM/model cost, never throws.
@@ -23,12 +27,13 @@ import { getSetting, setSetting, getDb } from '../db/index.js';
 import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { contentToString } from '../lib/content.js';
 import { decrypt } from '../lib/crypto.js';
+import { runDecision, decisionsAvailable } from './decision.js';
 
 export type ComplexityLevel = 'trivial' | 'normal' | 'hard';
 
 export interface ComplexityGateConfig {
   enabled: boolean;
-  backend: 'heuristic' | 'jev';
+  backend: 'heuristic' | 'jev' | 'decision';
   jevBaseUrl: string;
   jevModel: string;
   jevHostPreset: string;
@@ -55,7 +60,7 @@ export const COMPLEXITY_GATE_JEV_TIMEOUT_KEY = 'complexity_gate_jev_timeout_ms';
 export const DEFAULT_JEV_BASE_URL = 'https://opencode.ai/zen';
 export const DEFAULT_JEV_TIMEOUT_MS = 2000;
 const DEFAULT_JEV_MODEL = 'jev-latest';
-const VALID_BACKENDS = ['heuristic', 'jev'] as const;
+const VALID_BACKENDS = ['heuristic', 'jev', 'decision'] as const;
 
 // -- Host presets -------------------------------------------------------------
 //
@@ -205,7 +210,7 @@ export function getComplexityGate(): ComplexityGateConfig {
   return {
     enabled: getSetting(COMPLEXITY_GATE_ENABLED_KEY) === '1',
     backend: backendRaw && (VALID_BACKENDS as readonly string[]).includes(backendRaw)
-      ? backendRaw as 'heuristic' | 'jev'
+      ? backendRaw as 'heuristic' | 'jev' | 'decision'
       : 'heuristic',
     jevBaseUrl,
     jevModel: resolveJevModel(jevBaseUrl),
@@ -222,7 +227,7 @@ export function getComplexityGate(): ComplexityGateConfig {
 
 export interface ComplexityGatePatch {
   enabled?: boolean;
-  backend?: 'heuristic' | 'jev';
+  backend?: 'heuristic' | 'jev' | 'decision';
   jevBaseUrl?: string | null;
   jevApiKey?: string | null;
   jevModel?: string | null;
@@ -340,6 +345,34 @@ function zenSessionId(): string {
   return `ses_${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
 }
 
+/** Bounded excerpt of the conversation, in the System One `state` shape. */
+function excerptOf(messages: ChatMessage[] | undefined): string {
+  return (messages ?? [])
+    .map((m) => `${m.role}: ${contentToString(m.content)}`)
+    .join('\n')
+    .slice(0, MAX_SCAN_CHARS);
+}
+
+/** The ONE typed score question both remote Jev and local decision share. */
+function complexityQuestion(): Record<string, { type: 'score'; instructions: string; criteria: string[] }> {
+  return {
+    complexity: {
+      type: 'score',
+      instructions: 'Rate the overall complexity of this conversation.',
+      criteria: [...COMPLEXITY_CRITERIA],
+    },
+  };
+}
+
+/** Jev/local wire answer → level. The 5-level score is a probability-weighted
+ *  index 0..4; scale it back to the 0..10 the thresholds expect. */
+function scoreToLevel(raw: number): ComplexityLevel {
+  const score = raw * (10 / (COMPLEXITY_CRITERIA.length - 1));
+  if (score <= 3) return 'trivial';
+  if (score >= 7) return 'hard';
+  return 'normal';
+}
+
 async function classifyWithJev(
   cfg: ComplexityGateConfig,
   messages: ChatMessage[] | undefined,
@@ -361,11 +394,6 @@ async function classifyWithJev(
     headers.authorization = `Bearer ${apiKey}`;
   }
 
-  const excerpt = (messages ?? [])
-    .map((m) => `${m.role}: ${contentToString(m.content)}`)
-    .join('\n')
-    .slice(0, MAX_SCAN_CHARS);
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.jevTimeoutMs);
   try {
@@ -374,14 +402,8 @@ async function classifyWithJev(
       headers,
       body: JSON.stringify({
         model: cfg.jevModel,
-        state: excerpt,
-        questions: {
-          complexity: {
-            type: 'score',
-            instructions: 'Rate the overall complexity of this conversation.',
-            criteria: [...COMPLEXITY_CRITERIA],
-          },
-        },
+        state: excerptOf(messages),
+        questions: complexityQuestion(),
       }),
       signal: controller.signal,
     });
@@ -391,11 +413,31 @@ async function classifyWithJev(
     };
     const raw = data.answers?.complexity?.score;
     if (typeof raw !== 'number' || !Number.isFinite(raw)) return null;
-    // Weighted index over COMPLEXITY_CRITERIA levels (0..4) → 0..10 scale.
-    const score = raw * (10 / (COMPLEXITY_CRITERIA.length - 1));
-    if (score <= 3) return 'trivial';
-    if (score >= 7) return 'hard';
-    return 'normal';
+    return scoreToLevel(raw);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Local decision backend: the SAME System One wire format, answered in-process
+ *  by the decision models on the operator's own keys (Models → Decision) —
+ *  free tier, no host to configure, same fail-open contract as Jev. */
+async function classifyWithLocalDecision(
+  cfg: ComplexityGateConfig,
+  messages: ChatMessage[] | undefined,
+): Promise<ComplexityLevel | null> {
+  if (!decisionsAvailable()) return null;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), cfg.jevTimeoutMs);
+  try {
+    const out = await runDecision(
+      { state: excerptOf(messages), questions: complexityQuestion() },
+      { signal: controller.signal },
+    );
+    const raw = (out.answers as { complexity?: { score?: unknown } })?.complexity?.score;
+    if (typeof raw !== 'number' || !Number.isFinite(raw)) return null;
+    return scoreToLevel(raw);
   } finally {
     clearTimeout(timer);
   }
@@ -419,6 +461,14 @@ export async function classifyComplexity(
         if (level) return level;
       } catch {
         // Jev error/timeout → heuristic (layer 2).
+      }
+    }
+    if (cfg.backend === 'decision') {
+      try {
+        const level = await classifyWithLocalDecision(cfg, messages);
+        if (level) return level;
+      } catch {
+        // Decision error/timeout → heuristic (layer 2).
       }
     }
     return classifyComplexityHeuristic(messages, tools);

@@ -386,7 +386,7 @@ settingsRouter.get('/complexity-gate', (_req: Request, res: Response) => {
 
 const complexityGatePutSchema = z.object({
   enabled: z.boolean().optional(),
-  backend: z.enum(['heuristic', 'jev']).optional(),
+  backend: z.enum(['heuristic', 'jev', 'decision']).optional(),
   jevBaseUrl: z.string().url().nullable().optional(),
   jevApiKey: z.string().min(1).nullable().optional(),
   jevModel: z.string().min(1).max(120).nullable().optional(),

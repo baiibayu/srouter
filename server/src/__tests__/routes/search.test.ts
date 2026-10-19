@@ -68,10 +68,33 @@ describe('search routes', () => {
     expect(status).toBe(401);
   });
 
-  it('POST /v1/search returns a 503 with a code when no search key exists', async () => {
+  const DDG_FIXTURE = `<html><body><div class="result">
+  <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fpage&amp;rut=abc">Example <b>Title</b></a>
+  <a class="result__snippet" href="https://example.com/page">A snippet with &amp; entities</a>
+</div></body></html>`;
+
+  it('POST /v1/search returns a 503 only when the keyless fallback fails too', async () => {
+    // No keys: the DuckDuckGo walker is attempted first; stub it dead (offline).
+    globalThis.fetch = vi.fn(() => Promise.reject(new Error('network down'))) as unknown as typeof fetch;
     const { status, body } = await call(app, 'POST', '/v1/search', { body: { query: 'q' } });
     expect(status).toBe(503);
     expect(body.error.code).toBe('no_search_keys');
+  });
+
+  it('POST /v1/search answers without any key via the keyless fallback', async () => {
+    globalThis.fetch = vi.fn((url: string) => Promise.resolve(
+      String(url).includes('duckduckgo')
+        ? new Response(DDG_FIXTURE, { status: 200, headers: { 'content-type': 'text/html' } })
+        : new Response('not found', { status: 500 }),
+    )) as unknown as typeof fetch;
+    const { status, body } = await call(app, 'POST', '/v1/search', { body: { query: 'q' } });
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      query: 'q',
+      provider: 'duckduckgo',
+      engine: 'duckduckgo',
+      results: [{ title: 'Example Title', url: 'https://example.com/page', content: 'A snippet with & entities', score: 1 }],
+    });
   });
 
   it('POST /v1/search serves hits with provider and engine', async () => {

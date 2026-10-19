@@ -7,6 +7,7 @@ import { CardSkeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/page-header'
 import { ModelsTabs } from '@/components/models-tabs'
 import { UsageSummaryCard } from '@/components/usage-summary-card'
+import { WebFetchCard } from '@/components/web-fetch-card'
 import { useI18n } from '@/i18n'
 import { engineChain, freeFromDate, type SearchAnalytics, type SearchEngine } from '@/lib/search'
 
@@ -178,6 +179,8 @@ export function SearchEnginesView() {
             />
           ))
         )}
+
+        <WebFetchCard />
       </div>
     </div>
   )
