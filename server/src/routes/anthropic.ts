@@ -907,8 +907,16 @@ async function streamCompletion(
     outputChars += text.length;
   };
 
+  let keepaliveId: NodeJS.Timeout | null = null;
   try {
     const gen = route.provider.streamChatCompletion(route.apiKey, messages, route.modelId, options);
+    keepaliveId = setInterval(() => {
+      if (!messageStarted) {
+        ctx.disarmHedge();
+        writeSse(res, 'ping', { type: 'ping' });
+      }
+    }, 5_000);
+    keepaliveId.unref?.();
 
     for await (const chunk of gen) {
       if (ctx.clientGone()) break; // client hung up: stop pulling; reader.cancel() aborts upstream
@@ -1077,6 +1085,7 @@ async function streamCompletion(
     recordUpstreamSuccess(route, ctx.estimatedInputTokens + outputTokens, ctx.state);
     if (!ctx.pinned || ctx.stickyScope) setStickyModel(messages, route.modelDbId, ctx.sessionId, ctx.stickyScope ?? ctx.strategyKey);
     logRequest(route.platform, route.modelId, route.keyId, 'success', ctx.estimatedInputTokens, outputTokens, Date.now() - ctx.start, null, null, ctx.pinnedModelId, null, 'http');
+  clearInterval(keepaliveId);
   } catch (err: any) {
     if (err instanceof StreamAlreadyStarted) throw err;
     // Client abort mid-stream: the pump's own `if (ctx.clientGone()) break`

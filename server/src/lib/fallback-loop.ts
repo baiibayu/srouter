@@ -169,7 +169,7 @@ function benchKeyAcrossPlatform(
 // 0 disables the budget entirely.
 // Precedence mirrors the response cache: the settings-table value wins when
 // present (runtime-tunable), then the env var, then the default.
-export const DEFAULT_FALLBACK_TIME_BUDGET_MS = 45_000;
+export const DEFAULT_FALLBACK_TIME_BUDGET_MS = 120_000;
 // Share of the wall-clock budget an aborted attempt must have been silent for
 // before the hedge abort counts as provider health rather than bad luck. An
 // attempt late in a ladder inherits only the scraps of the budget its
@@ -1450,8 +1450,8 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
     const budgetMs = attempt > 1
       ? getEndpointTimeBudgetMs(baseBudgetMs, route.platform, route.endpointScope)
       : baseBudgetMs;
-    // Attempt 0 and the first retry remain exempt (#751). Routing reserves a
-    // lease, so even a candidate rejected here must pass through finally.
+    // Attempt 0 always runs (#751: routing reserves a lease, so even a
+    // candidate rejected here must pass through finally).
     if (attempt > 1 && budgetMs > 0 && Date.now() - startedAt >= budgetMs) {
       hooks.onExhausted(
         exhaustedRetryError(lastError, maxRetries, { attempts, timedOut: true, budgetMs }),
@@ -1491,7 +1491,7 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
     // Fallback-v2 hedging: arm a timer for the remaining wall-clock budget so a
     // STALLED attempt is aborted mid-flight (abortInFlight) instead of only
     // refusing to start the next retry behind it. Mirrors the loop-top budget
-    // check — attempt 0 and the first retry always run (#751).
+    // check — attempt 0 always runs (#751).
     //
     // The timer only covers the silent window. dispatch calls ctx.disarmHedge()
     // as soon as the attempt proves it is alive (first byte / headers flushed),

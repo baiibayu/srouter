@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb, initDb, setSetting } from '../../db/index.js';
 import { newClientAbortError, newHedgeAbortError } from '../../lib/error-classify.js';
-import { newFallbackState, runFallbackLoop, type FallbackHooks } from '../../lib/fallback-loop.js';
+import { getFallbackTimeBudgetMs, newFallbackState, runFallbackLoop, type FallbackHooks } from '../../lib/fallback-loop.js';
 import { invalidateTtfbBudgetCache } from '../../lib/ttfb-budget.js';
 import { acquireLease, inFlightForKey, releaseLease, resetLeases } from '../../services/ratelimit.js';
 import type { RouteResult } from '../../services/router.js';
@@ -17,9 +17,14 @@ let nextKey = 50_000;
 function scenario(plan: Attempt[], overrides: Partial<FallbackHooks> = {}) {
   const controller = new AbortController();
   const routed: RouteResult[] = [];
+  // The TTFB-widening tests run against a FIXED 45s base so the adaptation
+  // logic is actually exercised: a 50s P95 clears the 0.5×base slow endpoint
+  // threshold at 45s and widens the budget, but would not at 120s. Only the
+  // production DEFAULT and the runtime-setting floor test move with it.
+  const baseBudget = overrides.timeBudgetMs ?? 45_000;
   const hooks = {
     state: newFallbackState(),
-    timeBudgetMs: 45_000,
+    timeBudgetMs: baseBudget,
     maxRetries: 6,
     breakerLimit: 0,
     route: vi.fn((attempt: number): RouteResult => {
@@ -67,7 +72,10 @@ function scenario(plan: Attempt[], overrides: Partial<FallbackHooks> = {}) {
     onRoutingExhausted: vi.fn(),
     ...overrides,
   };
-  return { hooks, routed };
+  // The base budget this scenario runs under, so the assertions below track
+  // the configured default (currently 120s) instead of hardcoding a number.
+  const budget = overrides.timeBudgetMs ?? getFallbackTimeBudgetMs();
+  return { hooks, routed, budget, baseBudget };
 }
 
 function history(platform: string, ttfbMs: number, endpointScope = ''): void {
@@ -296,9 +304,9 @@ describe('endpoint TTFB-aware fallback budget (#1262)', () => {
   });
 
   it('preserves timeout exhaustion when routing is also exhausted after the base deadline', async () => {
-    const { hooks } = scenario(warmups(25_000));
+    const { hooks, budget } = scenario(warmups(25_000));
     const run = runFallbackLoop(hooks);
-    await vi.advanceTimersByTimeAsync(50_000);
+    await vi.advanceTimersByTimeAsync(budget + 1_000);
     await run;
 
     expect(hooks.onExhausted.mock.calls[0][1].timedOut).toBe(true);

@@ -1269,6 +1269,9 @@ export async function handleResponses(req: Request, res: Response): Promise<void
           }
         };
 
+        // TTFB keepalive: send periodic `response.in_progress` events during
+        // TTFB so idle proxies / client watchdogs do not cut the connection.
+        let keepaliveId: NodeJS.Timeout | null = null;
         try {
           const gen = route.provider.streamChatCompletion(
             route.apiKey,
@@ -1277,6 +1280,19 @@ export async function handleResponses(req: Request, res: Response): Promise<void
             routeOpts,
             quotaContextForRoute(route, 'responses'),
           );
+
+          try {
+            keepaliveId = setInterval(() => {
+              if (!streamStarted) {
+                ctx.disarmHedge();
+                res.write(`event: response.in_progress\n`);
+                res.write(`data: ${JSON.stringify({ type: 'response.in_progress', response: { status: 'in_progress', model: route.modelId, output: [], output_text: '' } })}\n\n`);
+              }
+            }, 5_000);
+            keepaliveId.unref?.();
+          } catch {
+            /* interval setup race — proceed without keepalive */
+          }
 
           for await (const chunk of gen) {
             if (clientGone) break; // client hung up: stop pulling; reader.cancel() aborts upstream
@@ -1400,6 +1416,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
             }
             heldText = '';
           }
+          if (keepaliveId) clearInterval(keepaliveId);
 
           // Empty completion — the provider returned 200 with no text AND no
           // tool calls. Seen in production from nemotron-3-super on ~65k-token
@@ -1486,6 +1503,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
           logRequest(route.platform, route.modelId, route.keyId, 'success', estimatedInputTokens, totalOutputTokens, Date.now() - start, null, ttfbMs, null, null, 'http');
           return 'done';
         } catch (streamErr: any) {
+          if (keepaliveId) clearInterval(keepaliveId);
           // Client abort mid-stream: the pump's own `if (clientGone) break`
           // can lose the race against the fetch-signal rejection, so the
           // abort may surface here instead. Rethrow — the shared loop's

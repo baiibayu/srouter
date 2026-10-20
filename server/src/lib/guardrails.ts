@@ -30,7 +30,7 @@ import { getSetting } from '../db/index.js';
 export const REQUEST_MAX_TOKENS_BUDGET_SETTING = 'request_max_tokens_budget';
 export const MAX_CONSECUTIVE_UPSTREAM_FAILS_SETTING = 'max_consecutive_upstream_fails';
 
-function readGuardrailValue(settingKey: string, envKey: string): number {
+function readGuardrailValue(settingKey: string, envKey: string, fallback = 0): number {
   let stored: string | undefined;
   try {
     stored = getSetting(settingKey);
@@ -42,17 +42,17 @@ function readGuardrailValue(settingKey: string, envKey: string): number {
     const n = Number(raw);
     if (Number.isInteger(n) && n >= 0) return n;
   }
-  return 0;
+  return fallback;
 }
 
 /** Per-request token budget ceiling; 0 = disabled. */
 export function getRequestMaxTokensBudget(): number {
-  return readGuardrailValue(REQUEST_MAX_TOKENS_BUDGET_SETTING, 'REQUEST_MAX_TOKENS_BUDGET');
+  return readGuardrailValue(REQUEST_MAX_TOKENS_BUDGET_SETTING, 'REQUEST_MAX_TOKENS_BUDGET', 0);
 }
 
 /** Consecutive-upstream-failure breaker threshold; 0 = disabled. */
 export function getMaxConsecutiveUpstreamFails(): number {
-  return readGuardrailValue(MAX_CONSECUTIVE_UPSTREAM_FAILS_SETTING, 'MAX_CONSECUTIVE_UPSTREAM_FAILS');
+  return readGuardrailValue(MAX_CONSECUTIVE_UPSTREAM_FAILS_SETTING, 'MAX_CONSECUTIVE_UPSTREAM_FAILS', 0);
 }
 
 // ── Token budget (pre-flight) ────────────────────────────────────────────────

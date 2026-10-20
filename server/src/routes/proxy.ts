@@ -1437,7 +1437,21 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
         let sawText = false;
         let upstreamFinish: string | null = null;
         const buffered: unknown[] = [];
-
+        // Fallback-v2 keepalive: send periodic `response.in_progress` events
+        // during TTFB so idle proxies / client watchdogs do not cut the connection.
+        let keepaliveId: NodeJS.Timeout | null = null;
+        try {
+          keepaliveId = setInterval(() => {
+            if (!headerSent) {
+              ctx.disarmHedge();
+              res.write(`event: response.in_progress\n`);
+              res.write(`data: ${JSON.stringify({ type: 'response.in_progress', response: { status: 'in_progress', model: route.modelId, output: [], output_text: '' } })}\n\n`);
+            }
+          }, 5_000);
+          keepaliveId.unref?.();
+        } catch {
+          /* interval setup race — proceed without keepalive */
+        }
         const flushHeaders = () => {
           if (headerSent) return;
           // #764: ttfb is recorded on the first token of ANY kind (content or
@@ -1536,6 +1550,7 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
             outputTokens: totalOutputTokens,
           });
           logRequest(route.platform, route.modelId, route.keyId, 'success', estimatedInputTokens, totalOutputTokens, Date.now() - start, null, ttfbMs, pinnedModelId, null, 'http');
+          if (keepaliveId) clearInterval(keepaliveId);
           return 'done';
         } catch (streamErr: any) {
           // Client abort mid-stream: the pump's own `if (clientGone) break`
