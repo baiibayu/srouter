@@ -327,14 +327,15 @@ export default function PlaygroundPage() {
   })
   const mediaModels = mediaData?.models ?? []
 
-  // Engines that can actually run a search: enabled, with a key behind them.
+  // Engines that can actually run a search: enabled and configured (keyless
+  // engines are always configured; keyed ones need their settings key).
   // An older server without the endpoint just leaves the switch unavailable.
   const { data: searchEngines = [] } = useQuery<SearchEngine[]>({
     queryKey: ['search-engines'],
     queryFn: () => apiFetch('/api/search/engines'),
     retry: false,
   })
-  const usableEngines = engineChain(searchEngines).filter(e => e.keyCount > 0)
+  const usableEngines = engineChain(searchEngines).filter(e => e.configured)
   // Keyless fallback: /v1/search answers via the DuckDuckGo walker even with
   // zero keys, so the switch is available on a fresh install.
   const webSearchAvailable = true

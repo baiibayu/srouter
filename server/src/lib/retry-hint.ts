@@ -10,8 +10,8 @@
 
 /** One chain walk's view of the upstream back-offs. */
 export class RetryHintTracker {
-  private minMs: number | undefined;
-  private unknown = false;
+  minMs: number | undefined;
+  unknown = false;
   private attempts = 0;
 
   /** Record one failed candidate. `retryAfterMs` is the stated back-off, if any. */
@@ -22,6 +22,11 @@ export class RetryHintTracker {
       return;
     }
     this.minMs = this.minMs === undefined ? retryAfterMs : Math.min(this.minMs, retryAfterMs);
+  }
+
+  /** True when every recorded failure was a 429 with a Retry-After. */
+  allRateLimited(): boolean {
+    return this.attempts > 0 && !this.unknown;
   }
 
   /** The soonest stated back-off when every recorded failure was a 429 carrying

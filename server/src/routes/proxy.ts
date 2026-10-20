@@ -836,6 +836,7 @@ proxyRouter.get('/search/engines', (req: Request, res: Response) => {
         provider: e.platform,
         name: e.displayName,
         available: e.healthyKeyCount > 0,
+        configured: e.configured,
       })),
   });
 });

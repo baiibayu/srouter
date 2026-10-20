@@ -1,33 +1,8 @@
-// Web search backends for POST /v1/web-search — keyless first.
-//
-//   duckduckgo (default, keyless) — DDG HTML scraping, no account, no quota
-//   searxng                      — your own SearXNG instance, keyless
-//   tavily / brave / exa         — free-tier API key (no card), stored locally
-//   tinyfish                     — free key (Search is free at any balance,
-//                                  12k req/day); the same key also feeds the
-//                                  /v1/fetch reader chain
-//
-// The active backend is an operator setting (GET/PUT /api/settings/web-search)
-// and is tried first. On failure searchWeb walks a fixed fallback chain —
-// DuckDuckGo (keyless), SearXNG (own instance), then the keyed backends from
-// the largest free quota to the smallest (tinyfish → exa → brave → tavily) —
-// so a rate-limited DDG or a dead provider does not fail the request. The
-// whole walk runs in one ~25s budget so a dead network cannot stack timeouts.
-// Only when the budget or the whole chain runs out does the route answer
-// 502, with every backend's error joined so the first cause stays visible; a
-// request that needed more than one attempt also carries `attempts` (who
-// failed, why, who answered).
-//
-// Every attempt is counted per backend (daily + monthly) so the Web tab can
-// show how much of each free quota the box is burning — there is no API to
-// ask providers what is left, so the tally is kept locally.
-
+﻿// Key slots for the unified search chain (#1174).
+// Each platform has its own settings key — the Keys page edits them side by side.
 import { getSetting, setSetting, getDb } from '../db/index.js';
 import { decodeEntities, stripTags } from '../lib/html.js';
 
-export type WebSearchBackend = 'duckduckgo' | 'searxng' | 'tavily' | 'brave' | 'exa' | 'tinyfish';
-
-export const WEB_SEARCH_BACKEND_KEY = 'web_search_backend';
 export const WEB_SEARCH_BASE_URL_KEY = 'web_search_base_url';
 // One key slot per keyed backend — each is a separate free-tier account, and
 // the Keys page edits them side by side (settings.web_search_api_key from the
@@ -50,13 +25,10 @@ export const TINYFISH_API_KEY = 'tinyfish_api_key';
 // tiers. One JSON blob; daily/monthly buckets roll over on read.
 const WEB_SEARCH_USAGE_KEY = 'web_search_usage';
 
-const VALID_BACKENDS: readonly string[] = ['duckduckgo', 'searxng', 'tavily', 'brave', 'exa', 'tinyfish'];
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const SEARCH_TIMEOUT_MS = 15_000;
 
 export interface WebSearchConfig {
-  backend: WebSearchBackend;
-  /** SearXNG instance base URL; '' when unset. */
   baseUrl: string;
   /** Whether a Tavily/Brave/Exa/TinyFish key is stored — the keys themselves never leave the server. */
   hasTavilyKey: boolean;
@@ -68,16 +40,14 @@ export interface WebSearchConfig {
   hasLinkupKey: boolean;
 }
 
-function readKey(settingKey: string): string | null {
+export function readKey(settingKey: string): string | null {
   const raw = getSetting(settingKey);
   return raw === undefined || raw.trim() === '' ? null : raw;
 }
 
 export function getWebSearchConfig(): WebSearchConfig {
-  const backendRaw = getSetting(WEB_SEARCH_BACKEND_KEY);
   const baseUrlRaw = getSetting(WEB_SEARCH_BASE_URL_KEY);
   return {
-    backend: backendRaw && VALID_BACKENDS.includes(backendRaw) ? backendRaw as WebSearchBackend : 'duckduckgo',
     baseUrl: baseUrlRaw?.trim() ?? '',
     hasTavilyKey: readKey(WEB_SEARCH_TAVILY_KEY) !== null,
     hasBraveKey: readKey(WEB_SEARCH_BRAVE_KEY) !== null,
@@ -133,8 +103,13 @@ export function getWebSearchUsage(): { daily: Record<string, number>; monthly: R
   return { daily: s.daily, monthly: s.monthly };
 }
 
+/** SearXNG instance base URL; '' when unset. Exported for use by the unified search adapter. */
+export function getBaseUrl(): string {
+  const raw = getSetting(WEB_SEARCH_BASE_URL_KEY);
+  return raw?.trim() ?? '';
+}
+
 export interface WebSearchPatch {
-  backend?: WebSearchBackend;
   baseUrl?: string | null;
   tavilyKey?: string | null;
   braveKey?: string | null;
@@ -147,12 +122,6 @@ export interface WebSearchPatch {
 // Partial update; null/empty clears the stored value (mirrors the complexity
 // gate's write-only key handling in services/complexity-gate.ts).
 export function setWebSearchConfig(patch: WebSearchPatch): void {
-  if (patch.backend !== undefined) {
-    if (!VALID_BACKENDS.includes(patch.backend)) {
-      throw new Error(`Unknown web search backend: ${patch.backend}`);
-    }
-    setSetting(WEB_SEARCH_BACKEND_KEY, patch.backend);
-  }
   if (patch.baseUrl !== undefined) {
     if (patch.baseUrl === null || patch.baseUrl.trim() === '') {
       getDb().prepare('DELETE FROM settings WHERE key = ?').run(WEB_SEARCH_BASE_URL_KEY);
@@ -183,7 +152,7 @@ export interface WebSearchResult {
   snippet: string;
 }
 
-// ── DuckDuckGo (default, keyless) ───────────────────────────────────────────
+// ── DuckDuckGo (default, keyless) ──
 
 function resolveDdgHref(href: string): string | null {
   const abs = href.startsWith('//') ? `https:${href}` : href;
@@ -233,7 +202,7 @@ async function searchDuckduckgo(query: string, maxResults: number): Promise<WebS
   return results.slice(0, maxResults);
 }
 
-// ── SearXNG (self-host, keyless) ────────────────────────────────────────────
+// ── SearXNG (self-host, keyless) ──
 
 /** Normalize a backend's row shape into hits, keeping rows with a URL. */
 function mapHits(
@@ -253,8 +222,8 @@ function mapHits(
   return out;
 }
 
-async function searchSearxng(cfg: WebSearchConfig, query: string, maxResults: number): Promise<WebSearchResult[]> {
-  const base = cfg.baseUrl.replace(/\/+$/, '');
+async function searchSearxng(baseUrl: string, query: string, maxResults: number): Promise<WebSearchResult[]> {
+  const base = baseUrl.replace(/\/+$/, '');
   if (!base) throw new Error('SearXNG backend needs an instance URL (Keys page → Web search)');
   const res = await fetch(`${base}/search?format=json&q=${encodeURIComponent(query)}`, {
     headers: { 'user-agent': UA, accept: 'application/json' },
@@ -270,160 +239,30 @@ async function searchSearxng(cfg: WebSearchConfig, query: string, maxResults: nu
   return mapHits((data.results ?? []).map(r => ({ title: r.title, url: r.url, snippet: r.content })), maxResults);
 }
 
-// ── Tavily (free-tier key: 1,000 searches/month, no card) ──────────────────
-
-async function searchTavily(query: string, maxResults: number): Promise<WebSearchResult[]> {
-  const key = readKey(WEB_SEARCH_TAVILY_KEY);
-  if (!key) throw new Error('Tavily backend needs a free API key (Keys page → Search providers)');
-  const res = await fetch('https://api.tavily.com/search', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'user-agent': UA },
-    body: JSON.stringify({ api_key: key, query, max_results: maxResults }),
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`Tavily responded ${res.status}`);
-  const data = await res.json() as { results?: Array<{ title?: string; url?: string; content?: string }> };
-  return mapHits((data.results ?? []).map(r => ({ title: r.title, url: r.url, snippet: r.content })), maxResults);
-}
-
-// ── Brave (free-tier key: 2,000 queries/month, no card) ────────────────────
-
-async function searchBrave(query: string, maxResults: number): Promise<WebSearchResult[]> {
-  const key = readKey(WEB_SEARCH_BRAVE_KEY);
-  if (!key) throw new Error('Brave backend needs a free API key (Keys page → Search providers)');
-  const res = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${maxResults}`, {
-    headers: { 'x-subscription-token': key, accept: 'application/json', 'user-agent': UA },
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`Brave responded ${res.status}`);
-  const data = await res.json() as { web?: { results?: Array<{ title?: string; url?: string; description?: string }> } };
-  return mapHits((data.web?.results ?? []).map(r => ({ title: r.title, url: r.url, snippet: r.description })), maxResults);
-}
-
-// ── Exa (free tier: $10 credits/month, no card) ────────────────────────────
-
-async function searchExa(query: string, maxResults: number): Promise<WebSearchResult[]> {
-  const key = readKey(WEB_SEARCH_EXA_KEY);
-  if (!key) throw new Error('Exa backend needs a free API key (Keys page → Web search)');
-  const res = await fetch('https://api.exa.ai/search', {
-    method: 'POST',
-    headers: { 'x-api-key': key, 'content-type': 'application/json', 'user-agent': UA },
-    body: JSON.stringify({ query, numResults: maxResults, contents: { highlights: true } }),
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`Exa responded ${res.status}`);
-  const data = await res.json() as { results?: Array<{ title?: string | null; url?: string; text?: string | null; highlights?: string[] | null }> };
-  return mapHits(
-    (data.results ?? []).map(r => ({
-      title: r.title ?? undefined,
-      url: r.url,
-      snippet: r.highlights?.join(' ') || r.text || '',
-    })),
-    maxResults,
-  );
-}
-
-// ── TinyFish (free: Search 12k req/day, key also powers /v1/fetch) ─────────
-
-async function searchTinyfish(query: string, maxResults: number): Promise<WebSearchResult[]> {
-  const key = getTinyfishApiKey();
-  if (!key) throw new Error('TinyFish backend needs a free API key (Keys page → Web search)');
-  const params = new URLSearchParams({ query });
-  const res = await fetch(`https://api.search.tinyfish.ai?${params.toString()}`, {
-    headers: { 'x-api-key': key, accept: 'application/json', 'user-agent': UA },
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`TinyFish responded ${res.status}`);
-  const data = await res.json() as { results?: Array<{ title?: string; url?: string; snippet?: string }> };
-  return mapHits(data.results ?? [], maxResults);
-}
-
-// ── Orchestration ───────────────────────────────────────────────────────────
-
-async function runBackendFor(backend: WebSearchBackend, cfg: WebSearchConfig, query: string, maxResults: number): Promise<WebSearchResult[]> {
-  switch (backend) {
-    case 'searxng': return searchSearxng(cfg, query, maxResults);
-    case 'tavily': return searchTavily(query, maxResults);
-    case 'brave': return searchBrave(query, maxResults);
-    case 'exa': return searchExa(query, maxResults);
-    case 'tinyfish': return searchTinyfish(query, maxResults);
-    default: return searchDuckduckgo(query, maxResults);
-  }
-}
-
-// Fallback order after the operator's pick: DuckDuckGo first (keyless, fast —
-// the normal failure costs nothing), then the self-hosted instance, then the
-// keyed backends from the largest free quota to the smallest so a burst of
-// fallback traffic lands on TinyFish's 12k/day before Tavily's 1k/month.
-// Backends that can only fail (no key, no URL) are skipped outright.
-const FALLBACK_ORDER: readonly WebSearchBackend[] = ['duckduckgo', 'searxng', 'tinyfish', 'exa', 'brave', 'tavily'];
-
-function buildChain(cfg: WebSearchConfig): WebSearchBackend[] {
-  const hasKey: Partial<Record<WebSearchBackend, boolean>> = {
-    tavily: cfg.hasTavilyKey,
-    brave: cfg.hasBraveKey,
-    exa: cfg.hasExaKey,
-    tinyfish: cfg.hasTinyfishKey,
-  };
-  const chain: WebSearchBackend[] = [cfg.backend];
-  for (const backend of FALLBACK_ORDER) {
-    if (chain.includes(backend)) continue;
-    if (backend === 'searxng' && !cfg.baseUrl) continue;
-    if (backend in hasKey && !hasKey[backend]) continue;
-    chain.push(backend);
-  }
-  return chain;
-}
+// ── Keyless fallback walker (interim shim while the Fase B chain rewrite lands) ──
 
 export interface WebSearchAttempt {
-  backend: WebSearchBackend;
+  backend: string;
   ok: boolean;
   /** Failure message; absent on success. */
   error?: string;
 }
 
-// Total wall-clock budget for one search across the whole chain. Without it a
-// fully dead network would stack every backend's own 15s timeout (~90s) before
-// the 502; with it the request gives up at ~25s and reports what it tried.
-const CHAIN_BUDGET_MS = 25_000;
-
-function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`gave up after ${ms}ms`)), ms);
-    promise.then(
-      (value) => { clearTimeout(timer); resolve(value); },
-      (error) => { clearTimeout(timer); reject(error); },
-    );
-  });
-}
-
-/**
- * Try the configured backend, then the fallback chain, until one answers —
- * in one 25s budget. The response `provider` is whichever backend actually
- * served; `attempts` (present only when it took more than one) records who
- * failed and why. When every candidate errors (or the budget runs out), the
- * thrown message joins them all so the route's 502 keeps the first cause
- * visible and names anything left untried.
- */
 export async function searchWeb(
   query: string,
   maxResults: number,
-): Promise<{ provider: WebSearchBackend; results: WebSearchResult[]; attempts?: WebSearchAttempt[] }> {
-  const cfg = getWebSearchConfig();
-  const chain = buildChain(cfg);
+): Promise<{ provider: string; results: WebSearchResult[]; attempts?: WebSearchAttempt[] }> {
   const attempts: WebSearchAttempt[] = [];
   const errors: string[] = [];
-  const start = Date.now();
-  for (const backend of chain) {
-    const remaining = CHAIN_BUDGET_MS - (Date.now() - start);
-    if (remaining <= 0) {
-      const untried = chain.slice(chain.indexOf(backend)).join(', ');
-      errors.push(`chain budget of ${CHAIN_BUDGET_MS}ms exhausted, untried: ${untried}`);
-      break;
-    }
+  const chain: Array<[string, () => Promise<WebSearchResult[]>]> = [
+    ['duckduckgo', () => searchDuckduckgo(query, maxResults)],
+  ];
+  const baseUrl = getBaseUrl();
+  if (baseUrl) chain.push(['searxng', () => searchSearxng(baseUrl, query, maxResults)]);
+  for (const [backend, run] of chain) {
     recordWebSearchAttempt(backend);
     try {
-      const results = await withDeadline(runBackendFor(backend, cfg, query, maxResults), remaining);
+      const results = await run();
       attempts.push({ backend, ok: true });
       return attempts.length > 1
         ? { provider: backend, results, attempts }

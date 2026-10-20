@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-// #1174: Models → Search lists the catalog's search engines in failover order,
-// marks the first enabled one as default, badges keyless engines green (and
-// keyed rows missing a key amber), and promotes an engine with PATCH priority 0.
+// #1174 / Fase B: Models → Search lists the catalog's search engines in
+// failover order, marks the first enabled one as default, and reports each
+// card's honest status from the server's `configured` flag — keyless engines
+// ready, SearXNG waiting on its instance URL, keyed engines either ready or
+// badged "no key" with a link to the Keys page. keyCount is not consulted.
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -17,7 +19,8 @@ vi.mock('@/lib/api', () => ({ apiFetch: vi.fn() }))
 const engine = (over: Partial<SearchEngine>): SearchEngine => ({
   id: 1, platform: 'tavily', engineId: 'tavily-search', displayName: 'Tavily', priority: 0,
   enabled: true, quotaLabel: '1,000 credits/month', creditsPerQuery: 1, features: null,
-  premiumSince: null, keyless: false, keyCount: 1, healthyKeyCount: 1, searchesThisMonth: 0, ...over,
+  premiumSince: null, keyless: false, configured: true, keyCount: 1, healthyKeyCount: 1,
+  searchesThisMonth: 0, ...over,
 })
 
 let root: Root
@@ -36,6 +39,7 @@ async function mount(engines: SearchEngine[]) {
   vi.mocked(apiFetch).mockReset().mockImplementation(async (path: string) => {
     if (path === '/api/search/engines') return engines
     if (path === '/api/fetch/usage') return { monthly: 0, today: 0 }
+    if (path === '/api/fetch/config') return { primary: 'auto', effective: 'jina', tinyfishKey: false }
     if (path.startsWith('/api/analytics/search')) return { total: 0, today: 3, successRate: 100, avgLatencyMs: 0, byEngine: [], series: [] }
     return {}
   })
@@ -67,20 +71,52 @@ it('lists engines in priority order and marks the first enabled one as default',
 const cardOf = (engineId: string) =>
   [...container.querySelectorAll('section')].find(section => section.textContent?.includes(engineId))!
 
-it('badges a keyless engine as keyless instead of no key', async () => {
+it('badges a keyless engine as keyless and says it is ready', async () => {
   await mount([
-    engine({ id: 5, platform: 'duckduckgo', engineId: 'duckduckgo-search', displayName: 'DuckDuckGo', keyless: true, keyCount: 0 }),
+    engine({ id: 5, platform: 'duckduckgo', engineId: 'duckduckgo-search', displayName: 'DuckDuckGo', keyless: true, configured: true, keyCount: 0 }),
   ])
   const card = cardOf('duckduckgo-search')
   expect(card.textContent).toContain('keyless')
+  expect(card.textContent).toContain('ready to use')
   expect(card.textContent).not.toContain('no key')
 })
 
-it('keeps the no-key badge for a keyed engine whose slot is empty', async () => {
-  await mount([engine({ id: 3, platform: 'firecrawl', engineId: 'firecrawl-search', displayName: 'Firecrawl', keyCount: 0 })])
+it('tracks the configured flag, not the key pool, for a keyed engine', async () => {
+  // A populated pool is no longer what makes an engine "ready": the settings
+  // key is, so configured=false still shows the no-key badge.
+  await mount([engine({ id: 3, platform: 'firecrawl', engineId: 'firecrawl-search', displayName: 'Firecrawl', configured: false, keyCount: 4 })])
   const card = cardOf('firecrawl-search')
   expect(card.textContent).toContain('no key')
+  expect(card.textContent).toContain('add a key')
+  expect(card.querySelector('a[href="/keys?tab=webSearch"]')).not.toBeNull()
   expect(card.textContent).not.toContain('keyless')
+})
+
+it('drops the no-key badge once a keyed engine is configured', async () => {
+  await mount([engine({ id: 4, platform: 'exa', engineId: 'exa-search', displayName: 'Exa', configured: true, keyCount: 0 })])
+  const card = cardOf('exa-search')
+  expect(card.textContent).not.toContain('no key')
+  expect(card.textContent).not.toContain('keyless')
+})
+
+it('tells SearXNG apart by whether its instance URL is stored', async () => {
+  await mount([
+    engine({ id: 6, platform: 'searxng', engineId: 'searxng-search', displayName: 'SearXNG', keyless: true, configured: false, keyCount: 0 }),
+    engine({ id: 7, platform: 'parallel', engineId: 'parallel-search', displayName: 'Parallel', keyless: true, configured: true, keyCount: 0, priority: 1 }),
+  ])
+  const searxng = cardOf('searxng-search')
+  expect(searxng.textContent).toContain('keyless')
+  expect(searxng.textContent).toContain('instance URL not set')
+  const parallel = cardOf('parallel-search')
+  expect(parallel.textContent).toContain('ready to use')
+})
+
+it('shows a connected SearXNG once the instance URL is stored', async () => {
+  await mount([engine({ id: 6, platform: 'searxng', engineId: 'searxng-search', displayName: 'SearXNG', keyless: true, configured: true, keyCount: 0 })])
+  const card = cardOf('searxng-search')
+  expect(card.textContent).toContain('keyless')
+  expect(card.textContent).toContain('connected')
+  expect(card.textContent).not.toContain('instance URL not set')
 })
 
 it('promotes an engine to default with priority 0', async () => {

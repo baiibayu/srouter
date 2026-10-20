@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 export interface SegmentOption<T extends string> {
   value: T
   label: string
+  /** Greyed out and unclickable — the choice exists but cannot run yet. */
+  disabled?: boolean
 }
 
 export function SegmentedControl<T extends string>({
@@ -30,11 +32,12 @@ export function SegmentedControl<T extends string>({
           role="tab"
           aria-selected={value === o.value}
           onClick={() => onValueChange(o.value)}
+          disabled={o.disabled}
           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${
             value === o.value
               ? 'bg-primary text-primary-foreground font-medium'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-          }`}
+          } ${o.disabled ? 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground' : ''}`}
         >
           {o.label}
         </button>

@@ -5,10 +5,6 @@
 // "read that". SRouter answers those itself — same API key as the inference
 // endpoints, rate-limited by the shared /v1 proxy limiter (mounted in app.ts).
 //
-//   POST /v1/web-search  {query, max_results?}   → multi-backend search (see
-//       services/web-search.ts: keyless-first — DuckDuckGo default, SearXNG /
-//       Tavily / Brave / Exa / TinyFish via Settings, auto-fallback to
-//       DuckDuckGo)
 //   POST /v1/fetch       {url, max_bytes?}       → readable text, SSRF-guarded
 //
 // Fetch is an SSRF surface by definition (the caller hands us a URL to
@@ -23,8 +19,8 @@ import { z } from 'zod';
 import net from 'node:net';
 import dns from 'node:dns/promises';
 import { requireInferenceAuth } from './proxy.js';
+import { getTinyfishApiKey } from '../services/web-search.js';
 import { stripTags } from '../lib/html.js';
-import { searchWeb, getTinyfishApiKey } from '../services/web-search.js';
 import { recordFetchUsage } from '../services/fetch-usage.js';
 
 export const toolsRouter = Router();
@@ -152,38 +148,23 @@ function bounded(text: string, maxBytes: number): { text: string; truncated: boo
   return { text: buf.subarray(0, maxBytes).toString('utf8'), truncated: true };
 }
 
-// ── POST /v1/web-search ────────────────────────────────────────────────────
-// Backends, config and parsing live in services/web-search.ts (keyless-first,
-// fallback chain: pick → DuckDuckGo → SearXNG → keyed largest-quota-first);
-// this router only validates and shapes. A response that needed more than one
-// attempt carries `attempts` (who failed, why, who answered).
-
-const webSearchSchema = z.object({
-  query: z.string().trim().min(1).max(500),
-  max_results: z.number().int().min(1).max(10).optional(),
-});
-
-toolsRouter.post('/web-search', async (req: Request, res: Response) => {
-  if (!requireInferenceAuth(req, res)) return;
-  const parsed = webSearchSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: { message: 'Invalid web-search request: send {query, max_results?}', type: 'invalid_request_error' } });
-    return;
-  }
-  try {
-    const { provider, results, attempts } = await searchWeb(parsed.data.query, parsed.data.max_results ?? 5);
-    res.json({ provider, query: parsed.data.query, results, ...(attempts ? { attempts } : {}) });
-  } catch (err: any) {
-    res.status(502).json({ error: { message: `Web search failed: ${err.message}`, type: 'api_error' } });
-  }
-});
-
 // ── POST /v1/fetch ─────────────────────────────────────────────────────────
 
 const fetchSchema = z.object({
   url: z.string().trim().min(1).max(2048),
   max_bytes: z.number().int().min(1024).max(HARD_MAX_BYTES).optional(),
 });
+
+function readerChainOrder(): Array<'tinyfish' | 'jina'> {
+  // The fetch config (GET/PUT /api/fetch/config) names the primary reader; the
+  // effective reader is tinyfish when its key is stored, else jina. The chain
+  // tries the effective primary first and the other reader as the fallback.
+  const primary = (process.env.FETCH_PRIMARY ?? 'auto').trim();
+  const effective: 'tinyfish' | 'jina' = (primary === 'tinyfish' || primary === 'auto') && getTinyfishApiKey()
+    ? 'tinyfish'
+    : 'jina';
+  return effective === 'tinyfish' ? ['tinyfish', 'jina'] : ['jina', 'tinyfish'];
+}
 
 toolsRouter.post('/fetch', async (req: Request, res: Response) => {
   if (!requireInferenceAuth(req, res)) return;
@@ -232,53 +213,50 @@ toolsRouter.post('/fetch', async (req: Request, res: Response) => {
     // fall through to the reader fallbacks
   }
 
-  // 2) TinyFish Fetch (free tier: 1,000 URLs/day) — only when its key is
-  //    stored (the same account-wide key powers the search backend). Renders
-  //    JS-heavy/anti-bot pages and returns markdown, same contract as Jina.
-  try {
-    const tinyfishKey = getTinyfishApiKey();
-    if (tinyfishKey) {
-      const reader = await fetch('https://api.fetch.tinyfish.ai', {
-        method: 'POST',
-        headers: {
-          'x-api-key': tinyfishKey,
-          'content-type': 'application/json',
-          accept: 'application/json',
-          'user-agent': UA,
-        },
-        body: JSON.stringify({ urls: [url.toString()], format: 'markdown' }),
-        signal: AbortSignal.timeout(TINYFISH_TIMEOUT_MS),
-      });
-      if (reader.ok) {
-        const data = await reader.json() as { results?: Array<{ title?: string | null; text?: string | null }> };
-        const got = data.results?.[0];
-        if (got?.text) {
-          const cut = bounded(got.text, maxBytes);
-          res.json({ url: url.toString(), via: 'tinyfish', title: got.title ?? null, text: cut.text, truncated: cut.truncated, content_type: 'text/markdown' });
+  // 2) Reader fallbacks, in fetch-config order (effective primary first,
+  //    then the other reader). TinyFish needs its key; Jina is keyless.
+  const chain = readerChainOrder();
+  for (const reader of chain) {
+    try {
+      if (reader === 'tinyfish') {
+        const tinyfishKey = getTinyfishApiKey();
+        if (!tinyfishKey) continue;
+        const resp = await fetch('https://api.fetch.tinyfish.ai', {
+          method: 'POST',
+          headers: {
+            'x-api-key': tinyfishKey,
+            'content-type': 'application/json',
+            accept: 'application/json',
+            'user-agent': UA,
+          },
+          body: JSON.stringify({ urls: [url.toString()], format: 'markdown' }),
+          signal: AbortSignal.timeout(TINYFISH_TIMEOUT_MS),
+        });
+        if (resp.ok) {
+          const data = await resp.json() as { results?: Array<{ title?: string | null; text?: string | null }> };
+          const got = data.results?.[0];
+          if (got?.text) {
+            const cut = bounded(got.text, maxBytes);
+            res.json({ url: url.toString(), via: 'tinyfish', title: got.title ?? null, text: cut.text, truncated: cut.truncated, content_type: 'text/markdown' });
+            return;
+          }
+        }
+        // Anything else (429/402/no text) → fall through to the next reader.
+      } else {
+        const resp = await fetch(`https://r.jina.ai/${url.toString()}`, {
+          headers: { 'user-agent': 'srouter/1.0', accept: 'text/plain' },
+          signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
+        });
+        if (resp.ok) {
+          const { buf, truncated } = await readBounded(resp, maxBytes);
+          const cut = bounded(buf.toString('utf8'), maxBytes);
+          res.json({ url: url.toString(), via: 'jina', title: null, text: cut.text, truncated: truncated || cut.truncated, content_type: 'text/markdown' });
           return;
         }
       }
-      // Anything else (429/402/no text) → fall through to Jina.
+    } catch {
+      // Reader unreachable → try the next one.
     }
-  } catch {
-    // TinyFish unreachable → Jina next
   }
-
-  // 3) Jina Reader fallback — handles bot walls/JS-heavy pages, returns
-  //    markdown, free tier without a key (rate-limited per IP).
-  try {
-    const reader = await fetch(`https://r.jina.ai/${url.toString()}`, {
-      headers: { 'user-agent': 'srouter/1.0', accept: 'text/plain' },
-      signal: AbortSignal.timeout(JINA_TIMEOUT_MS),
-    });
-    if (reader.ok) {
-      const { buf, truncated } = await readBounded(reader, maxBytes);
-      const cut = bounded(buf.toString('utf8'), maxBytes);
-      res.json({ url: url.toString(), via: 'jina', title: null, text: cut.text, truncated: truncated || cut.truncated, content_type: 'text/markdown' });
-      return;
-    }
-    res.status(502).json({ error: { message: `Fetch failed: direct and reader fallback both rejected the request (reader status ${reader.status})`, type: 'api_error' } });
-  } catch (err: any) {
-    res.status(502).json({ error: { message: `Fetch failed: ${err.message}`, type: 'api_error' } });
-  }
+  res.status(502).json({ error: { message: 'Fetch failed: direct and reader fallback both rejected the request', type: 'api_error' } });
 });

@@ -50,6 +50,13 @@ export interface SearchEngine {
   premiumSince: string | null
   /** Engine runs with no key at all (duckduckgo, searxng) — never needs a slot. */
   keyless: boolean
+  /**
+   * True when the engine can actually answer right now: duckduckgo and
+   * parallel always, searxng once its instance URL is stored, and a keyed
+   * engine once its settings key is filled. This — not keyCount — is the
+   * status source for the Models → Search cards.
+   */
+  configured: boolean
   keyCount: number
   healthyKeyCount: number
   searchesThisMonth: number

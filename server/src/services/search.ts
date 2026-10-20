@@ -1,9 +1,9 @@
 import { getDb, getSetting, setSetting } from '../db/index.js';
 import { parseRetryAfterMs } from '../providers/base.js';
-import { RetryHintTracker } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
-import { proxyFetch } from '../lib/proxy.js';
+import { RetryHintTracker } from '../lib/retry-hint.js';
 import { isSearchPlatform } from '../lib/search-platforms.js';
+import { proxyFetch } from '../lib/proxy.js';
 import { TAVILY_BASE_URL } from '../providers/tavily.js';
 import { EXA_BASE_URL } from '../providers/exa.js';
 import { FIRECRAWL_BASE_URL } from '../providers/firecrawl.js';
@@ -14,7 +14,12 @@ import { randomUUID } from 'node:crypto';
 import { secondsUntilNextMonth } from './key-budget.js';
 import { reserveProviderCredential, type ReservedProviderCredential } from './provider-credential.js';
 import { isOnCooldown, setCooldown } from './ratelimit.js';
-import { searchWeb, getWebSearchUsage } from './web-search.js';
+import {
+  searchWeb, getWebSearchUsage,
+  WEB_SEARCH_TAVILY_KEY, WEB_SEARCH_EXA_KEY,
+  WEB_SEARCH_FIRECRAWL_KEY, WEB_SEARCH_LINKUP_KEY, WEB_SEARCH_BRAVE_KEY,
+  getWebSearchConfig, getBaseUrl, getTinyfishApiKey, readKey,
+} from './web-search.js';
 
 // Web search over the key pool (#1174).
 //
@@ -40,17 +45,22 @@ export const SEARCH_MODALITY = 'search';
 const PRIORITY_OVERRIDES_SETTING = 'search_engine_priority';
 
 const FETCH_TIMEOUT_MS = 30_000;
-const MAX_RESULTS = 20;
-const DEFAULT_RESULTS = 5;
 /** Page text per hit for the engines that return full content (Exa). Enough
  *  for a model to ground an answer without flooding its context. */
 const CONTENT_CHARS = 1_500;
+/** Cooldowns, per key and engine. */
+/** Out of credits: free search credits reset on each account's own cycle, not
+ *  a calendar month, so re-check twice a day instead of benching to month end. */
+
 /** Cooldowns, per key and engine. */
 const RATE_LIMIT_COOLDOWN_MS = 60_000;
 const BAD_KEY_COOLDOWN_MS = 60 * 60_000;
 /** Out of credits: free search credits reset on each account's own cycle, not
  *  a calendar month, so re-check twice a day instead of benching to month end. */
 const NO_CREDIT_COOLDOWN_MS = 12 * 60 * 60_000;
+
+const MAX_RESULTS = 20;
+const DEFAULT_RESULTS = 5;
 
 export interface SearchHit {
   title: string;
@@ -278,45 +288,63 @@ async function tavilyShaped(url: string, platform: string, cred: ReservedProvide
 }
 
 const ADAPTERS: Record<string, Adapter> = {
-  tavily: (cred, query, opts, n) => tavilyShaped(`${TAVILY_BASE_URL}/search`, 'tavily', cred, query, opts, n),
-
-  custom: (cred, query, opts, n) => {
-    if (!cred.baseUrl) throw new SearchError('custom search endpoint has no base URL', 502);
-    return tavilyShaped(`${cred.baseUrl}/search`, 'custom', cred, query, opts, n);
+  // Keyless backends that do not use reserved provider credentials
+  duckduckgo: async (_cred, query, _opts, maxResults) => {
+    const results = await searchWeb(query, maxResults);
+    return {
+      answer: undefined,
+      results: results.results.map(r => ({
+        title: r.title,
+        url: r.url,
+        content: r.snippet,
+        score: 1,
+      })),
+    };
   },
 
-  exa: async (cred, query, opts, n) => {
-    const body: Record<string, unknown> = {
-      query,
-      numResults: n,
-      type: 'auto',
-      contents: { text: { maxCharacters: CONTENT_CHARS } },
-    };
-    if (opts.topic === 'news') body.category = 'news';
-    const parsed = await upstream(`${EXA_BASE_URL}/search`, 'exa', {
-      method: 'POST',
-      headers: { 'x-api-key': cred.key, 'Content-Type': 'application/json' },
+  searxng: async (_cred, _query, _opts, _maxResults) => {
+    // searxng is configured via baseUrl in settings; keyless fallback handles it.
+    // No dedicated adapter needed — the keyless chain routes to it when enabled.
+    return { answer: undefined, results: [] };
+  },
+
+  // Catalog-managed keyed engines using settings slots
+  tavily: async (cred, query, opts, maxResults) => {
+    const key = readKey(WEB_SEARCH_TAVILY_KEY);
+    if (!key) throw new SearchError("Tavily key not configured", 503, "no_key");
+    return tavilyShaped(TAVILY_BASE_URL + "/search", "tavily", { ...cred, key }, query, opts, maxResults);
+  },
+
+  exa: async (cred, query, opts, maxResults) => {
+    const key = readKey(WEB_SEARCH_EXA_KEY);
+    if (!key) throw new SearchError("Exa key not configured", 503, "no_key");
+    const body: Record<string, unknown> = { query, numResults: maxResults, type: "auto", contents: { text: { maxCharacters: CONTENT_CHARS } } };
+    if (opts.topic === "news") body.category = "news";
+    const parsed = await upstream(EXA_BASE_URL + "/search", "exa", {
+      method: "POST",
+      headers: { "x-api-key": key, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }, opts.signal) as { results?: Array<Record<string, unknown>> };
-    const hits = (Array.isArray(parsed?.results) ? parsed.results : []).map(r => ({
+    const hits = (parsed.results || []).map(r => ({
       title: str(r.title),
       url: str(r.url),
-      content: str(r.text) || str(r.summary) || (Array.isArray(r.highlights) ? r.highlights.filter(h => typeof h === 'string').join(' … ') : ''),
+      content: str(r.text) || str(r.summary) || "",
     }));
     return { results: keepHits(hits) };
   },
 
-  firecrawl: async (cred, query, opts, n) => {
-    const source = opts.topic === 'news' ? 'news' : 'web';
-    const parsed = await upstream(`${FIRECRAWL_BASE_URL}/search`, 'firecrawl', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${cred.key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, limit: n, sources: [source] }),
+  firecrawl: async (cred, query, opts, maxResults) => {
+    const key = readKey(WEB_SEARCH_FIRECRAWL_KEY);
+    if (!key) throw new SearchError("Firecrawl key not configured", 503, "no_key");
+    const source = opts.topic === "news" ? "news" : "web";
+    const parsed = await upstream(FIRECRAWL_BASE_URL + "/search", "firecrawl", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({ query, limit: maxResults, sources: [source] }),
     }, opts.signal) as { data?: { web?: Array<Record<string, unknown>>; news?: Array<Record<string, unknown>> } | Array<Record<string, unknown>> };
-    // v2 groups hits by source; tolerate the v1 flat array too.
-    const data = parsed?.data;
-    const rows = Array.isArray(data) ? data : (data?.[source] ?? data?.web ?? []);
-    const hits = (Array.isArray(rows) ? rows : []).map(r => ({
+    const data = parsed.data ?? [];
+    const rows = Array.isArray(data) ? data : (data[source] || data.web || []);
+    const hits = (rows || []).map(r => ({
       title: str(r.title),
       url: str(r.url),
       content: str(r.description) || str(r.snippet) || str(r.markdown),
@@ -324,59 +352,110 @@ const ADAPTERS: Record<string, Adapter> = {
     return { results: keepHits(hits) };
   },
 
-  linkup: async (cred, query, opts, n) => {
+  linkup: async (cred, query, opts, maxResults) => {
+    const key = readKey(WEB_SEARCH_LINKUP_KEY);
+    if (!key) throw new SearchError("Linkup key not configured", 503, "no_key");
     const answer = opts.includeAnswer === true;
-    const parsed = await upstream(`${LINKUP_BASE_URL}/search`, 'linkup', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${cred.key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: query, depth: 'standard', outputType: answer ? 'sourcedAnswer' : 'searchResults', maxResults: n }),
-    }, opts.signal) as { answer?: unknown; sources?: Array<Record<string, unknown>>; results?: Array<Record<string, unknown>> };
+    const parsed = await upstream(LINKUP_BASE_URL + "/search", "linkup", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({ q: query, depth: "standard", outputType: answer ? "sourcedAnswer" : "searchResults", maxResults }),
+    }, opts.signal) as { sources?: Array<Record<string, unknown>>; results?: Array<Record<string, unknown>>; answer?: string };
     if (answer) {
-      const hits = (Array.isArray(parsed?.sources) ? parsed.sources : []).map(r => ({
-        title: str(r.name),
-        url: str(r.url),
-        content: str(r.snippet),
-      }));
-      return { answer: typeof parsed?.answer === 'string' ? parsed.answer : undefined, results: keepHits(hits) };
+      const hits = (parsed.sources || []).map(r => ({ title: str(r.name), url: str(r.url), content: str(r.snippet) }));
+      return { answer: typeof parsed.answer === "string" ? parsed.answer : undefined, results: keepHits(hits) };
     }
-    const hits = (Array.isArray(parsed?.results) ? parsed.results : [])
-      .filter(r => r.type === undefined || r.type === 'text')
-      .map(r => ({ title: str(r.name), url: str(r.url), content: str(r.content) }));
+    const hits = (parsed.results || []).filter(r => r.type === undefined || r.type === "text").map(r => ({ title: str(r.name), url: str(r.url), content: str(r.content) }));
     return { results: keepHits(hits) };
   },
 
-  // Keyless: the stored `no-key` sentinel goes through the anonymous Search
-  // MCP; a real key uses the REST API. Both return the same result shape.
-  parallel: async (cred, query, opts, n) => {
-    const args = { objective: query, search_queries: [query] };
-    const parsed = isAnonymousCredential(cred.key)
-      ? parallelMcpPayload(await upstream(PARALLEL_MCP_URL, 'parallel', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'tools/call',
-            params: { name: 'web_search', arguments: { ...args, session_id: PARALLEL_SESSION_ID } },
-          }),
-        }, opts.signal))
-      : await upstream(`${PARALLEL_BASE_URL}/search`, 'parallel', {
-          method: 'POST',
-          headers: { 'x-api-key': cred.key.trim(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...args, mode: 'fast', advanced_settings: { max_results: n } }),
-        }, opts.signal) as { results?: Array<Record<string, unknown>> };
-    const hits = (Array.isArray(parsed?.results) ? parsed.results : []).slice(0, n).map(r => ({
-      title: str(r.title) || str(r.url),
+  tinyfish: async (cred, query, _opts, _maxResults) => {
+    const key = getTinyfishApiKey();
+    if (!key) throw new SearchError("TinyFish key not configured", 503, "no_key");
+    const params = new URLSearchParams({ query });
+    const res = await upstream("https://api.search.tinyfish.ai?" + params.toString(), "tinyfish", {
+      method: "GET",
+      headers: { "x-api-key": key, accept: "application/json", "user-agent": "Mozilla/5.0" },
+    }) as { results?: Array<{ title?: string; url?: string; snippet?: string }> };
+    const hits = (res.results || []).map(r => ({
+      title: str(r.title),
       url: str(r.url),
-      content: Array.isArray(r.excerpts) ? r.excerpts.filter(e => typeof e === 'string').join(' … ') : '',
+      content: str(r.snippet) || "",
+      score: 1,
     }));
     return { results: keepHits(hits) };
+  },
+
+  brave: async (cred, query, opts, maxResults) => {
+    const key = readKey(WEB_SEARCH_BRAVE_KEY);
+    if (!key) throw new SearchError("Brave key not configured", 503, "no_key");
+    const res = await upstream("https://api.search.brave.com/res/v1/web/search?q=" + encodeURIComponent(query) + "&count=" + maxResults, "brave", {
+      method: "GET",
+      headers: { "x-subscription-token": key, accept: "application/json", "user-agent": "Mozilla/5.0" },
+    }, opts.signal) as { web?: { results?: Array<Record<string, unknown>> } };
+    const hits = (res.web?.results || []).map(r => ({
+      title: str(r.title),
+      url: str(r.url),
+      content: str(r.description) || "",
+      score: 1,
+    }));
+    return { results: keepHits(hits) };
+  },
+
+  // Parallel uses MCP anonymous or REST keyed
+  parallel: async (cred, query, opts, maxResults) => {
+    const args = { objective: query, search_queries: [query] };
+    const parsed = isAnonymousCredential(cred.key)
+      ? parallelMcpPayload(await upstream(PARALLEL_MCP_URL, "parallel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name: "web_search", arguments: { ...args, session_id: PARALLEL_SESSION_ID } },
+          }),
+        }, opts.signal))
+      : await upstream(PARALLEL_BASE_URL + "/search", "parallel", {
+          method: "POST",
+          headers: { "x-api-key": cred.key.trim(), "Content-Type": "application/json" },
+          body: JSON.stringify({ ...args, mode: "fast", advanced_settings: { max_results: maxResults } }),
+        }, opts.signal) as { results?: Array<{ title?: string; url?: string; excerpts?: unknown[] }> };
+    const hits = (parsed.results || []).slice(0, maxResults).map(r => ({
+      title: str(r.title) || str(r.url),
+      url: str(r.url),
+      content: Array.isArray(r.excerpts) ? r.excerpts.filter((e: unknown): e is string => typeof e === "string").join(" … ") : "",
+    }));
+    return { results: keepHits(hits) };
+  },
+
+  // Custom search relays: the operator's own endpoint, bound to an api_keys
+  // row (the key and base_url arrive via reserveProviderCredential in runSearch).
+  custom: async (cred, query, opts, n) => {
+    if (!cred.baseUrl) throw new SearchError("custom search endpoint has no base URL", 502);
+    return tavilyShaped(`${cred.baseUrl}/search`, "custom", cred, query, opts, n);
   },
 };
 
 /** Platforms with a search adapter. catalog-sync gates searchEngines rows on
  *  this, the way VIDEO_PLATFORMS gates video rows. */
 export const SEARCH_ENGINE_PLATFORMS = new Set(Object.keys(ADAPTERS).filter(p => p !== 'custom'));
+
+/** The five locally-seeded search backends: the migration plants each of them
+ *  and the dashboard's local reorder owns their order. The upstream catalog
+ *  never publishes them, so applyCatalog must neither update nor prune their
+ *  rows — the insert and prune loops gate on the complement instead. */
+export const LOCAL_SEARCH_PLATFORMS = new Set([
+  'duckduckgo', 'parallel', 'searxng', 'tinyfish', 'brave',
+]);
+
+/** Search platforms the upstream catalog publishes and therefore manages
+ *  wholesale (insert + prune). Everything with an adapter that is not a local
+ *  backend; a new keyed adapter defaults to catalog-managed until someone
+ *  plants it locally and lists it in LOCAL_SEARCH_PLATFORMS. */
+export const CATALOG_MANAGED_SEARCH_PLATFORMS = new Set(
+  [...SEARCH_ENGINE_PLATFORMS].filter(p => !LOCAL_SEARCH_PLATFORMS.has(p)),
+);
 
 // ── Routing ─────────────────────────────────────────────────────────────────
 
@@ -412,6 +491,7 @@ function coolDown(row: SearchEngineRow, keyId: number, e: SearchError): void {
  *  can run without waiting for the keyless fallback). */
 function hasSearchKey(): boolean {
   const db = getDb();
+  const config = getWebSearchConfig();
   for (const row of orderedEngines()) {
     if (row.enabled !== 1) continue;
     if (row.platform === 'custom') {
@@ -421,23 +501,104 @@ function hasSearchKey(): boolean {
       continue;
     }
     if (!ADAPTERS[row.platform]) continue;
-    const k = db.prepare("SELECT 1 FROM api_keys WHERE platform = ? AND enabled = 1 AND status IN ('healthy', 'unknown') LIMIT 1").get(row.platform);
-    if (k) return true;
+    // Keyless platforms (duckduckgo, parallel, searxng) are NOT counted here
+    // - they are handled by the keyless fallback walker, not the keyed chain
+    switch (row.platform) {
+      case 'duckduckgo':
+      case 'parallel':
+      case 'searxng':
+        break;
+      case 'tavily':
+        if (config.hasTavilyKey) return true;
+        break;
+      case 'exa':
+        if (config.hasExaKey) return true;
+        break;
+      case 'firecrawl':
+        if (config.hasFirecrawlKey) return true;
+        break;
+      case 'linkup':
+        if (config.hasLinkupKey) return true;
+        break;
+      case 'brave':
+        if (config.hasBraveKey) return true;
+        break;
+      case 'tinyfish':
+        if (config.hasTinyfishKey) return true;
+        break;
+    }
   }
   return false;
 }
 
-/** True when a search can run: the keyless DuckDuckGo/SearXNG walker always
- *  answers (no key needed), keyed engines improve on it. The agents'
- *  web_search integration keys off this, so a fresh install gets search too. */
+/** DB-derived availability: true iff at least one enabled engine is runnable.
+ *  Keyless platforms (duckduckgo, parallel) are always runnable when enabled.
+ *  searxng needs a baseUrl; keyed platforms need a valid settings-slot key. */
 export function searchAvailable(): boolean {
-  return true;
+  const db = getDb();
+  const enabledRows = db.prepare(`
+    SELECT platform, model_id, key_id FROM media_models
+    WHERE modality = ? AND enabled = 1
+  `).all(SEARCH_MODALITY) as { platform: string; model_id: string; key_id: number | null }[];
+
+  for (const row of enabledRows) {
+    if (row.platform === 'duckduckgo' || row.platform === 'parallel') {
+      return true;
+    }
+    if (row.platform === 'searxng' && getBaseUrl()) {
+      return true;
+    }
+    const config = getWebSearchConfig();
+    switch (row.platform) {
+      case 'tinyfish': if (config.hasTinyfishKey) return true; break;
+      case 'brave': if (config.hasBraveKey) return true; break;
+      case 'tavily': if (config.hasTavilyKey) return true; break;
+      case 'exa': if (config.hasExaKey) return true; break;
+      case 'firecrawl': if (config.hasFirecrawlKey) return true; break;
+      case 'linkup': if (config.hasLinkupKey) return true; break;
+      case 'custom': if (row.key_id != null) return true; break;
+    }
+  }
+  return false;
 }
 
 function searchChain(engine: string | undefined): SearchEngineRow[] {
-  const enabled = orderedEngines().filter(r => r.enabled === 1 && ADAPTERS[r.platform]);
-  // Custom relays first, catalog engines after, each group in effective order.
-  const chain = [...enabled.filter(r => r.platform === 'custom'), ...enabled.filter(r => r.platform !== 'custom')];
+  const db = getDb();
+  const enabledRows = orderedEngines().filter(r => r.enabled === 1);
+
+  // Filter to runnable engines: skip those that cannot work
+  const runnable: SearchEngineRow[] = [];
+  for (const row of enabledRows) {
+    if (!ADAPTERS[row.platform]) continue;
+
+    let canRun = false;
+    if (row.platform === 'duckduckgo' || row.platform === 'parallel') {
+      canRun = true;
+    } else if (row.platform === 'searxng') {
+      canRun = getBaseUrl().length > 0;
+    } else if (row.platform === 'custom' && row.key_id != null) {
+      const k = db.prepare("SELECT 1 FROM api_keys WHERE id = ? AND enabled = 1 AND status IN ('healthy', 'unknown')").get(row.key_id);
+      canRun = !!k;
+    } else {
+      const config = getWebSearchConfig();
+      switch (row.platform) {
+        case 'tinyfish': canRun = config.hasTinyfishKey; break;
+        case 'brave': canRun = config.hasBraveKey; break;
+        case 'tavily': canRun = config.hasTavilyKey; break;
+        case 'exa': canRun = config.hasExaKey; break;
+        case 'firecrawl': canRun = config.hasFirecrawlKey; break;
+        case 'linkup': canRun = config.hasLinkupKey; break;
+      }
+    }
+
+    if (canRun) {
+      runnable.push(row);
+    }
+  }
+
+  // Custom relays first, then catalog engines
+  const chain = [...runnable.filter(r => r.platform === 'custom'), ...runnable.filter(r => r.platform !== 'custom')];
+
   if (!engine || engine === 'auto') return chain;
   const pinned = chain.filter(r => r.model_id === engine);
   if (pinned.length === 0) {
@@ -459,60 +620,85 @@ export async function runSearch(query: string, opts: SearchOptions = {}): Promis
 
   let lastError: SearchError | null = null;
   let attempted = 0;
+  let allRateLimited = true;
   const hints = new RetryHintTracker();
   for (const row of chain) {
-    // Several keys per engine: a benched or failing key passes to the next
-    // key of the same engine before the chain moves to the next engine.
-    const tried = new Set<number>();
-    for (;;) {
-      if (opts.signal?.aborted) throw new SearchError('search cancelled by the client', 499);
-      const { credential, budgetBlocked } = reserveProviderCredential(
-        row,
-        0,
-        keyId => tried.has(keyId) || isOnCooldown(row.platform, row.model_id, keyId),
-      );
-      if (!credential) {
-        if (budgetBlocked) {
-          lastError = new SearchError('Monthly key budget exhausted', 429, 'quota_exceeded');
-          hints.record(429, secondsUntilNextMonth() * 1000);
+    if (opts.signal?.aborted) throw new SearchError("search cancelled by the client", 499);
+
+    if (row.platform === "custom") {
+      const tried = new Set<number>();
+      for (;;) {
+        if (opts.signal?.aborted) throw new SearchError("search cancelled by the client", 499);
+        const { credential, budgetBlocked } = reserveProviderCredential(
+          row,
+          0,
+          keyId => tried.has(keyId) || isOnCooldown(row.platform, row.model_id, keyId),
+        );
+        if (!credential) {
+          if (budgetBlocked) {
+            lastError = new SearchError("Monthly key budget exhausted", 429, "quota_exceeded");
+            hints.record(429, secondsUntilNextMonth() * 1000);
+          }
+          break;
         }
-        break;
+        tried.add(credential.id);
+        attempted++;
+        const started = Date.now();
+        try {
+          const out = await ADAPTERS[row.platform]!(credential, query, opts, maxResults);
+          if (out.results.length === 0) throw new SearchError("upstream returned no valid search hits", 502);
+          logSearch(row, credential.id, "ok", Date.now() - started, out.results.length, clientAgent, null);
+          return {
+            query,
+            ...(out.answer ? { answer: out.answer } : {}),
+            results: out.results,
+            provider: row.platform,
+            engine: row.model_id,
+          };
+        } catch (err: any) {
+          const e = err instanceof SearchError ? err : new SearchError(String(err?.message ?? err), 502);
+          logSearch(row, credential.id, "error", Date.now() - started, 0, clientAgent, e.message.slice(0, 300));
+          coolDown(row, credential.id, e);
+          lastError = e;
+          if (e.status !== 429) allRateLimited = false;
+          hints.record(e.status, e.retryAfterMs);
+          if (opts.signal?.aborted) throw new SearchError("search cancelled by the client", 499);
+          if (e.status === 400) break;
+        } finally {
+          credential.release();
+        }
       }
-      tried.add(credential.id);
-      attempted++;
-      const started = Date.now();
-      try {
-        const out = await ADAPTERS[row.platform]!(credential, query, opts, maxResults);
-        if (out.results.length === 0) throw new SearchError('upstream returned no valid search hits', 502);
-        logSearch(row, credential.id, 'ok', Date.now() - started, out.results.length, clientAgent, null);
-        return {
-          query,
-          ...(out.answer ? { answer: out.answer } : {}),
-          results: out.results,
-          provider: row.platform,
-          engine: row.model_id,
-        };
-      } catch (err: any) {
-        const e = err instanceof SearchError ? err : new SearchError(String(err?.message ?? err), 502);
-        logSearch(row, credential.id, 'error', Date.now() - started, 0, clientAgent, e.message.slice(0, 300));
-        coolDown(row, credential.id, e);
-        lastError = e;
-        hints.record(e.status, e.retryAfterMs);
-        if (opts.signal?.aborted) throw new SearchError('search cancelled by the client', 499);
-        // A query the engine rejected as malformed is the caller's problem,
-        // not this key's: try the next engine rather than every key.
-        if (e.status === 400) break;
-      } finally {
-        credential.release();
-      }
+      continue;
+    }
+
+    attempted++;
+    const started = Date.now();
+    try {
+      const cred = { id: 0, key: "", baseUrl: null, release: () => {} };
+      const out = await ADAPTERS[row.platform]!(cred, query, opts, maxResults);
+      if (out.results.length === 0) throw new SearchError("upstream returned no valid search hits", 502);
+      logSearch(row, 0, "ok", Date.now() - started, out.results.length, clientAgent, null);
+      return {
+        query,
+        ...(out.answer ? { answer: out.answer } : {}),
+        results: out.results,
+        provider: row.platform,
+        engine: row.model_id,
+      };
+    } catch (err: any) {
+      const e = err instanceof SearchError ? err : new SearchError(String(err?.message ?? err), 502);
+      logSearch(row, 0, "error", Date.now() - started, 0, clientAgent, e.message.slice(0, 300));
+      coolDown(row, 0, e);
+      lastError = e;
+      if (e.status !== 429) allRateLimited = false;
+      hints.record(e.status, e.retryAfterMs);
+      if (opts.signal?.aborted) throw new SearchError("search cancelled by the client", 499);
+      if (e.status === 400) break;
     }
   }
 
-  // Keyless fallback: the legacy DuckDuckGo/SearXNG walker (POST /v1/web-search)
-  // answers without any key, so a fresh install — or a fully benched key pool —
-  // still searches standalone. Skipped when the caller pinned a specific engine.
   let legacyError: string | null = null;
-  if (!opts.engine || opts.engine === 'auto') {
+  if (!opts.engine || opts.engine === "auto") {
     try {
       const legacy = await searchWeb(query, maxResults);
       return {
@@ -525,32 +711,29 @@ export async function runSearch(query: string, opts: SearchOptions = {}): Promis
       legacyError = String(err?.message ?? err).slice(0, 160);
     }
   }
-  const legacyNote = legacyError ? ` Keyless fallback: ${legacyError}.` : '';
+  const legacyNote = legacyError ? ` Keyless fallback: ${legacyError}.` : "";
 
   if (attempted === 0 && !lastError) {
-    // Keys exist but every one is benched (rate limited, out of credits or
-    // rejected recently): a retryable condition, not a setup problem.
     if (hasSearchKey()) {
       throw new SearchError(
         `Every search key is cooling down (rate limited or out of credits). Try again later or add another search key.${legacyNote}`,
         429,
-        'search_keys_cooling_down',
+        "search_keys_cooling_down",
       );
     }
     throw new SearchError(
       `No search key configured and the keyless fallback did not answer. Add a Tavily, Exa, Firecrawl or Linkup key on the Keys page.${legacyNote}`,
       503,
-      'no_search_keys',
+      "no_search_keys",
     );
   }
-  // Only statuses the caller can act on pass through (see media chainError):
-  // an upstream 401 means OUR provider key failed, not the caller's.
-  const status = lastError?.status === 429 ? 429 : 502;
+  const hasAttempts = attempted > 0 && allRateLimited;
+  const status = hasAttempts ? 429 : 502;
   throw new SearchError(
-    `All search engines failed${lastError ? ` (last: ${lastError.message.slice(0, 160)})` : ' (no usable keys)'}.${legacyNote}`,
+    `All search engines failed${lastError ? ` (last: ${lastError.message.slice(0, 160)})` : " (no usable keys)"}.${legacyNote}`,
     status,
     lastError?.code,
-    status === 429 ? hints.retryAfterMs() : undefined,
+    hasAttempts ? hints.retryAfterMs() : undefined,
   );
 }
 
@@ -569,7 +752,7 @@ export function searchRetryAfterSec(err: SearchError): number | undefined {
  *  and SearXNG only run through the legacy POST /v1/web-search walker, never
  *  the keyed chain, so a stored key can't apply to them. */
 export function isKeylessSearchPlatform(platform: string): boolean {
-  return platform === 'duckduckgo' || platform === 'searxng';
+  return platform === 'duckduckgo' || platform === 'parallel' || platform === 'searxng';
 }
 
 export interface SearchEngineView {
@@ -585,8 +768,10 @@ export interface SearchEngineView {
   premiumSince: string | null;
   /** premiumSince + 30 days: when a free install receives the engine. */
   freeFrom: string | null;
-  /** Runs with no key at all (duckduckgo, searxng) — never needs a slot. */
+  /** Runs with no key at all (duckduckgo, parallel) or has required config (searxng URL). */
   keyless: boolean;
+  /** True if the engine is configured and ready to run. */
+  configured: boolean;
   isCustom: boolean;
   keyCount: number;
   healthyKeyCount: number;
@@ -620,7 +805,9 @@ export function listSearchEngines(): SearchEngineView[] {
     const meta = parseSearchMeta(row.meta_json);
     const keys = row.platform === 'custom'
       ? keyRows.filter(k => k.id === row.key_id)
-      : keyRows.filter(k => k.platform === row.platform);
+      : row.platform === 'duckduckgo' || row.platform === 'parallel' || row.platform === 'searxng'
+        ? []  // Keyless platforms have no api_keys entries
+        : keyRows.filter(k => k.platform === row.platform);
     const premiumSince = typeof meta.premiumSince === 'string' ? meta.premiumSince : null;
     const premiumMs = premiumSince ? Date.parse(premiumSince) : NaN;
     return {
@@ -636,9 +823,39 @@ export function listSearchEngines(): SearchEngineView[] {
       premiumSince,
       freeFrom: Number.isFinite(premiumMs) ? new Date(premiumMs + FREE_LAG_MS).toISOString() : null,
       keyless: isKeylessSearchPlatform(row.platform),
+      configured: (() => {
+        if (row.platform === 'duckduckgo' || row.platform === 'parallel') return true;
+        if (row.platform === 'searxng') return getBaseUrl().length > 0;
+        const cfg = getWebSearchConfig();
+        switch (row.platform) {
+          case 'tinyfish': return cfg.hasTinyfishKey;
+          case 'brave': return cfg.hasBraveKey;
+          case 'tavily': return cfg.hasTavilyKey;
+          case 'exa': return cfg.hasExaKey;
+          case 'firecrawl': return cfg.hasFirecrawlKey;
+          case 'linkup': return cfg.hasLinkupKey;
+          case 'custom': return row.key_id != null;
+          default: return false;
+        }
+      })(),
       isCustom: row.platform === 'custom',
       keyCount: keys.length,
-      healthyKeyCount: keys.filter(healthy).length,
+      healthyKeyCount: (() => {
+        if (row.platform === "duckduckgo" || row.platform === "parallel" || row.platform === "searxng") {
+          return row.enabled === 1 ? 1 : 0;
+        }
+        const config = getWebSearchConfig();
+        switch (row.platform) {
+          case "tavily": return config.hasTavilyKey ? 1 : 0;
+          case "exa": return config.hasExaKey ? 1 : 0;
+          case "firecrawl": return config.hasFirecrawlKey ? 1 : 0;
+          case "linkup": return config.hasLinkupKey ? 1 : 0;
+          case "brave": return config.hasBraveKey ? 1 : 0;
+          case "tinyfish": return config.hasTinyfishKey ? 1 : 0;
+          case "custom": return keys.filter(healthy).length;
+          default: return 0;
+        }
+      })(),
       searchesThisMonth: (monthCounts.get(engineKey(row)) ?? 0)
         + (row.platform === 'custom' ? 0 : legacyMonthly[row.platform] ?? 0),
     };

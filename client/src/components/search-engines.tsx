@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Globe } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { apiFetch } from '@/lib/api'
 import { Switch } from '@/components/ui/switch'
 import { EmptyState } from '@/components/empty-state'
@@ -12,6 +13,46 @@ import { useI18n } from '@/i18n'
 import { engineChain, type SearchAnalytics, type SearchEngine } from '@/lib/search'
 
 const pill = 'text-[10px] rounded-full px-1.5 py-0.5 bg-muted text-muted-foreground'
+const keylessPill = 'text-[10px] rounded-full px-1.5 py-0.5 bg-emerald-600/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400'
+const warnPill = 'text-[10px] rounded-full px-1.5 py-0.5 bg-amber-600/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400'
+
+// The honest per-card status, straight from `configured`:
+// - duckduckgo/parallel are keyless and always ready;
+// - searxng is keyless but only answers once the operator's instance URL is
+//   stored, so its badge says which of the two it is;
+// - a keyed engine is either configured (no badge at all) or missing its key
+//   (amber badge plus a link to the Keys page section that stores it).
+// keyCount is deliberately not consulted — it measures the provider key pool,
+// not whether the settings key / instance URL this engine actually reads is set.
+function EngineStatus({ engine: e }: { engine: SearchEngine }) {
+  const { t } = useI18n()
+  if (e.keyless) {
+    return (
+      <>
+        <span className={keylessPill}>{t('search.keylessBadge')}</span>
+        {e.platform === 'searxng'
+          ? e.configured
+            ? <span className="text-[11px] text-emerald-700 dark:text-emerald-400">{t('search.statusConnected')}</span>
+            : <span className="text-[11px] text-amber-700 dark:text-amber-400">{t('search.statusSearxngNeedsInstance')}</span>
+          : <span className="text-[11px] text-muted-foreground">{t('search.statusReady')}</span>}
+      </>
+    )
+  }
+  if (!e.configured) {
+    return (
+      <>
+        <span className={warnPill}>{t('models.noKey')}</span>
+        <Link
+          to="/keys?tab=webSearch"
+          className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          {t('search.addKeyCta')}
+        </Link>
+      </>
+    )
+  }
+  return null
+}
 
 // One engine from the catalog's `searchEngines` section. Its position in the
 // failover order is shown as a number; the first enabled engine is the
@@ -70,15 +111,7 @@ function SearchEngineCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{e.displayName}</span>
-            {e.keyless ? (
-              <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-emerald-600/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
-                {t('search.keylessBadge')}
-              </span>
-            ) : e.keyCount === 0 && (
-              <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-amber-600/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400">
-                {t('models.noKey')}
-              </span>
-            )}
+            <EngineStatus engine={e} />
           </div>
           <div className="truncate text-[11px] text-muted-foreground">
             {[e.platform, e.quotaLabel].filter(Boolean).join(' · ')}

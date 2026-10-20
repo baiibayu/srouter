@@ -5,7 +5,7 @@ import { initDb, getSetting } from '../../db/index.js';
 import { mintDashboardToken } from '../helpers/auth.js';
 import {
   getWebSearchConfig, setWebSearchConfig,
-  WEB_SEARCH_BACKEND_KEY, WEB_SEARCH_BASE_URL_KEY, WEB_SEARCH_TAVILY_KEY, WEB_SEARCH_BRAVE_KEY,
+  WEB_SEARCH_BASE_URL_KEY, WEB_SEARCH_TAVILY_KEY, WEB_SEARCH_BRAVE_KEY,
   WEB_SEARCH_EXA_KEY, TINYFISH_API_KEY, WEB_SEARCH_FIRECRAWL_KEY, WEB_SEARCH_LINKUP_KEY,
 } from '../../services/web-search.js';
 
@@ -42,7 +42,7 @@ describe('/api/settings/web-search', () => {
 
   afterEach(() => {
     setWebSearchConfig({
-      backend: 'duckduckgo', baseUrl: null,
+      baseUrl: null,
       tavilyKey: null, braveKey: null, exaKey: null, tinyfishKey: null,
       firecrawlKey: null, linkupKey: null,
     });
@@ -52,7 +52,7 @@ describe('/api/settings/web-search', () => {
     const { status, body } = await request(app, 'GET', '/api/settings/web-search', undefined, token);
     expect(status).toBe(200);
     expect(body).toEqual({
-      backend: 'duckduckgo', baseUrl: '',
+      baseUrl: '',
       hasTavilyKey: false, hasBraveKey: false, hasExaKey: false, hasTinyfishKey: false,
       hasFirecrawlKey: false, hasLinkupKey: false,
       usage: { daily: {}, monthly: {} },
@@ -60,11 +60,9 @@ describe('/api/settings/web-search', () => {
   });
 
   it('stores and returns a partial update', async () => {
-    const put = await request(app, 'PUT', '/api/settings/web-search', { backend: 'searxng', baseUrl: 'http://localhost:8888' }, token);
+    const put = await request(app, 'PUT', '/api/settings/web-search', { baseUrl: 'http://localhost:8888' }, token);
     expect(put.status).toBe(200);
-    expect(put.body.backend).toBe('searxng');
     expect(put.body.baseUrl).toBe('http://localhost:8888');
-    expect(getSetting(WEB_SEARCH_BACKEND_KEY)).toBe('searxng');
     expect(getSetting(WEB_SEARCH_BASE_URL_KEY)).toBe('http://localhost:8888');
 
     const get = await request(app, 'GET', '/api/settings/web-search', undefined, token);
@@ -72,7 +70,7 @@ describe('/api/settings/web-search', () => {
   });
 
   it('keys are write-only and stored per backend: set shows presence, GET never echoes', async () => {
-    const put = await request(app, 'PUT', '/api/settings/web-search', { backend: 'tavily', tavilyKey: 'tvly-secret' }, token);
+    const put = await request(app, 'PUT', '/api/settings/web-search', { tavilyKey: 'tvly-secret' }, token);
     expect(put.status).toBe(200);
     expect(put.body.hasTavilyKey).toBe(true);
     expect(put.body.hasBraveKey).toBe(false);
@@ -134,7 +132,6 @@ describe('/api/settings/web-search', () => {
 
   it('rejects invalid configs', async () => {
     for (const bad of [
-      { backend: 'google' },
       { baseUrl: 'not-a-url' },
       { tavilyKey: 42 },
       { tinyfishKey: 42 },
@@ -143,7 +140,6 @@ describe('/api/settings/web-search', () => {
       expect(status).toBe(400);
     }
     // state untouched by the rejections
-    expect(getWebSearchConfig().backend).toBe('duckduckgo');
     expect(getWebSearchConfig().baseUrl).toBe('');
   });
 

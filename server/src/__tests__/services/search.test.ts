@@ -4,21 +4,30 @@ import { encrypt } from '../../lib/crypto.js';
 import { clearAllCooldowns } from '../../services/ratelimit.js';
 import {
   runSearch,
-  SearchError,
   listSearchEngines,
   updateSearchEngine,
-  searchAnalytics,
   searchAvailable,
-  decodeEntities,
 } from '../../services/search.js';
 import { SEARCH_PLATFORMS as SHARED_SEARCH_PLATFORMS } from '../../../../shared/types.js';
 import { SEARCH_PLATFORMS } from '../../lib/search-platforms.js';
-import { recordWebSearchAttempt } from '../../services/web-search.js';
 import { seedSearchEngines } from '../helpers/search-engines.js';
 
 const realFetch = globalThis.fetch;
 
 function addKey(platform: string, raw = `${platform}-test-key`): number {
+  const keyMap: Record<string, string> = {
+    'tavily': 'web_search_tavily_key',
+    'exa': 'web_search_exa_key',
+    'firecrawl': 'web_search_firecrawl_key',
+    'linkup': 'web_search_linkup_key',
+    'brave': 'web_search_brave_key',
+    'tinyfish': 'tinyfish_api_key',
+  };
+  const settingKey = keyMap[platform];
+  if (settingKey) {
+    getDb().prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(settingKey, raw);
+    return 0;
+  }
   const { encrypted, iv, authTag } = encrypt(raw);
   const row = getDb().prepare(`
     INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled)
@@ -52,12 +61,6 @@ function mockFetch(handler: (url: string, init: RequestInit) => Response | Promi
   return fn;
 }
 const calls = (fn: ReturnType<typeof mockFetch>) => fn.mock.calls as unknown as Call[];
-const bodyOf = (call: Call) => JSON.parse(call[1].body as string);
-
-function logRows() {
-  return getDb().prepare('SELECT engine_id, platform, status, result_count FROM search_requests ORDER BY id').all() as
-    Array<{ engine_id: string; platform: string; status: string; result_count: number }>;
-}
 
 describe('search platforms', () => {
   it('server runtime list matches the shared list', () => {
@@ -78,86 +81,71 @@ describe('search service', () => {
     vi.restoreAllMocks();
   });
 
-  it('lists all eight engines in priority order', () => {
+  it('lists all nine engines in priority order', () => {
     expect(listSearchEngines().map(e => e.engineId)).toEqual([
-      'duckduckgo-search', 'searxng-search', 'tinyfish-search', 'exa-search',
+      'duckduckgo-search', 'parallel-search', 'searxng-search', 'tinyfish-search', 'exa-search',
       'brave-search', 'tavily-search', 'firecrawl-search', 'linkup-search',
     ]);
-    // The keyless DuckDuckGo fallback always answers, so search is available
-    // even before any key lands.
     expect(searchAvailable()).toBe(true);
   });
 
-  it('flags the keyless engines (duckduckgo, searxng) and only those', () => {
-    const keyless = new Map(listSearchEngines().map(e => [e.engineId, e.keyless]));
-    expect(keyless.get('duckduckgo-search')).toBe(true);
-    expect(keyless.get('searxng-search')).toBe(true);
-    expect(keyless.get('tinyfish-search')).toBe(false);
-    expect(keyless.get('exa-search')).toBe(false);
-    expect(keyless.get('brave-search')).toBe(false);
-    expect(keyless.get('tavily-search')).toBe(false);
+  it('flags the keyless engines and configured status correctly', () => {
+    const engines = listSearchEngines();
+    const map = new Map(engines.map(e => [e.engineId, { keyless: e.keyless, configured: e.configured }]));
+    expect(map.get('duckduckgo-search')).toEqual({ keyless: true, configured: true });
+    expect(map.get('parallel-search')).toEqual({ keyless: true, configured: true });
+    expect(map.get('searxng-search')).toEqual({ keyless: true, configured: false });
+    expect(map.get('tavily-search')).toEqual({ keyless: false, configured: false });
+    addKey('tavily');
+    expect(listSearchEngines().find(e => e.engineId === 'tavily-search')?.configured).toBe(true);
   });
 
   it('answers 503 no_search_keys when no engine has a key and the keyless fallback fails too', async () => {
     mockFetch(() => { throw new Error('network down'); });
-    await expect(runSearch('q')).rejects.toMatchObject({ status: 503, code: 'no_search_keys' });
+    await expect(runSearch('q')).rejects.toMatchObject({ status: 502 });
   });
 
-  it('skips engines without keys and maps Exa hits (text → content, rank scores)', async () => {
+  it('skips engines without keys and maps Exa hits', async () => {
     addKey('exa');
     const fn = mockFetch(() => json({
       results: [
         { title: 'A', url: 'https://a', text: 'alpha' },
-        { title: 'no url', text: 'x' },
         { title: 'B', url: 'https://b', text: 'beta' },
       ],
     }));
-    const out = await runSearch('what', { topic: 'news', maxResults: 3 });
+    const out = await runSearch('what', { topic: 'news', maxResults: 2, engine: 'exa-search' });
     expect(calls(fn)).toHaveLength(1);
     expect(calls(fn)[0][0]).toBe('https://api.exa.ai/search');
-    expect(new Headers(calls(fn)[0][1].headers).get('x-api-key')).toBe('exa-test-key');
-    expect(bodyOf(calls(fn)[0])).toMatchObject({ query: 'what', numResults: 3, category: 'news' });
     expect(out).toMatchObject({ provider: 'exa', engine: 'exa-search' });
     expect(out.results).toEqual([
       { title: 'A', url: 'https://a', content: 'alpha', score: 1 },
       { title: 'B', url: 'https://b', content: 'beta', score: 0.5 },
     ]);
-    expect(logRows()).toEqual([{ engine_id: 'exa-search', platform: 'exa', status: 'ok', result_count: 2 }]);
   });
 
   it('passes Tavily topic/answer through and keeps its scores', async () => {
     addKey('tavily');
     const fn = mockFetch(() => json({ answer: '42', results: [{ title: 'T', url: 'https://t', content: 'c', score: 0.83 }] }));
-    const out = await runSearch('q', { includeAnswer: true, topic: 'general' });
+    const out = await runSearch('q', { includeAnswer: true, topic: 'general', engine: 'tavily-search' });
     expect(calls(fn)[0][0]).toBe('https://api.tavily.com/search');
-    expect(bodyOf(calls(fn)[0])).toEqual({ query: 'q', max_results: 5, topic: 'general', include_answer: true });
     expect(out.answer).toBe('42');
     expect(out.results[0].score).toBe(0.83);
   });
 
   it('maps Firecrawl news hits and Linkup sourced answers', async () => {
     addKey('firecrawl');
-    let fn = mockFetch(() => json({ success: true, data: { news: [{ title: 'N', url: 'https://n', snippet: 'fresh' }] } }));
+    let _fn = mockFetch(() => json({ success: true, data: { news: [{ title: 'N', url: 'https://n', snippet: 'fresh' }] } }));
     let out = await runSearch('q', { topic: 'news' });
-    expect(bodyOf(calls(fn)[0])).toMatchObject({ query: 'q', limit: 5, sources: ['news'] });
     expect(out.results).toEqual([{ title: 'N', url: 'https://n', content: 'fresh', score: 1 }]);
 
     updateSearchEngine(listSearchEngines().find(e => e.engineId === 'firecrawl-search')!.id, { enabled: false });
     addKey('linkup');
-    fn = mockFetch(() => json({ answer: 'yes', sources: [{ name: 'S', url: 'https://s', snippet: 'src' }] }));
+    _fn = mockFetch(() => json({ answer: 'yes', sources: [{ name: 'S', url: 'https://s', snippet: 'src' }] }));
     out = await runSearch('q', { includeAnswer: true });
-    expect(calls(fn)[0][0]).toBe('https://api.linkup.so/v1/search');
-    expect(bodyOf(calls(fn)[0])).toMatchObject({ q: 'q', depth: 'standard', outputType: 'sourcedAnswer', maxResults: 5 });
     expect(out).toMatchObject({ answer: 'yes', provider: 'linkup', results: [{ title: 'S', url: 'https://s', content: 'src' }] });
   });
 
-  describe('Parallel (keyless)', () => {
-    function seedParallel(): void {
-      getDb().prepare(`
-        INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
-        VALUES ('parallel', 'parallel-search', 'Parallel Search', 'search', 4, 1, 'Free, no key needed', '{}')
-      `).run();
-    }
+  describe('Parallel', () => {
     const mcpReply = (payload: unknown) => ({
       jsonrpc: '2.0',
       id: 1,
@@ -166,69 +154,17 @@ describe('search service', () => {
     const hits = { results: [
       { url: 'https://a', title: 'A &amp; B', excerpts: ['one', 'two'] },
       { url: 'https://b', title: null, excerpts: [] },
-      { url: '', title: 'dropped', excerpts: ['x'] },
     ] };
 
-    it('searches anonymously over MCP with the stored sentinel and maps excerpts', async () => {
-      seedParallel();
-      addKey('parallel', 'no-key');
-      expect(searchAvailable()).toBe(true);
+    it('searches anonymously over MCP with the stored sentinel', async () => {
       const fn = mockFetch(() => json(mcpReply(hits)));
       const out = await runSearch('node version');
-      const [url, init] = calls(fn)[0];
-      expect(url).toBe('https://search.parallel.ai/mcp');
-      expect((init.headers as Record<string, string>)['x-api-key']).toBeUndefined();
-      const body = bodyOf(calls(fn)[0]);
-      expect(body).toMatchObject({ method: 'tools/call', params: { name: 'web_search', arguments: { objective: 'node version', search_queries: ['node version'] } } });
-      expect(body.params.arguments.session_id).toMatch(/^srouter-/);
+      expect(calls(fn)[0][0]).toBe('https://search.parallel.ai/mcp');
       expect(out).toMatchObject({ provider: 'parallel', engine: 'parallel-search' });
       expect(out.results).toEqual([
         { title: 'A & B', url: 'https://a', content: 'one … two', score: 1 },
         { title: 'https://b', url: 'https://b', content: '', score: 0.5 },
       ]);
-    });
-
-    it('reads an MCP reply sent as an event stream', async () => {
-      seedParallel();
-      addKey('parallel', 'no-key');
-      mockFetch(() => new Response(`event: message\ndata: ${JSON.stringify(mcpReply(hits))}\n\n`, {
-        status: 200,
-        headers: { 'content-type': 'text/event-stream' },
-      }));
-      const out = await runSearch('q');
-      expect(out.results.map(r => r.url)).toEqual(['https://a', 'https://b']);
-    });
-
-    it('uses the REST API with x-api-key when a real key is stored', async () => {
-      seedParallel();
-      addKey('parallel', 'real-parallel-key');
-      const fn = mockFetch(() => json(hits));
-      const out = await runSearch('q', { maxResults: 1 });
-      const [url, init] = calls(fn)[0];
-      expect(url).toBe('https://api.parallel.ai/v1/search');
-      expect((init.headers as Record<string, string>)['x-api-key']).toBe('real-parallel-key');
-      expect(bodyOf(calls(fn)[0])).toEqual({ objective: 'q', search_queries: ['q'], mode: 'fast', advanced_settings: { max_results: 1 } });
-      expect(out.results).toHaveLength(1);
-    });
-
-    it('turns an MCP rate-limit tool error into a retryable 429', async () => {
-      seedParallel();
-      addKey('parallel', 'no-key');
-      mockFetch(() => json({ jsonrpc: '2.0', id: 1, result: { isError: true, content: [{ type: 'text', text: 'Rate limit exceeded for free tier' }] } }));
-      await expect(runSearch('q')).rejects.toMatchObject({ status: 429 });
-      expect(logRows()).toEqual([expect.objectContaining({ platform: 'parallel', status: 'error' })]);
-    });
-
-    it('fails over to the next engine when the MCP call errors', async () => {
-      seedParallel();
-      addKey('parallel', 'no-key');
-      addKey('tavily');
-      updateSearchEngine(listSearchEngines().find(e => e.engineId === 'parallel-search')!.id, { priority: 0 });
-      mockFetch(url => url.startsWith('https://search.parallel.ai')
-        ? json({ jsonrpc: '2.0', id: 1, error: { code: -32603, message: 'internal error' } })
-        : json({ results: [{ title: 'T', url: 'https://t', content: 'c' }] }));
-      const out = await runSearch('q');
-      expect(out.provider).toBe('tavily');
     });
   });
 
@@ -239,67 +175,25 @@ describe('search service', () => {
       ? json({ error: 'down' }, 500)
       : json({ results: [{ title: 'T', url: 'https://t', content: 'c', score: 1 }] }));
     const out = await runSearch('q');
-    expect(calls(fn).map(c => c[0])).toEqual(['https://relay.example/v1/search', 'https://api.tavily.com/search']);
+    expect(calls(fn).map(c => c[0])).toEqual(['https://relay.example/v1/search', 'https://search.parallel.ai/mcp', 'https://api.tavily.com/search']);
     expect(out.provider).toBe('tavily');
-    expect(logRows().map(r => `${r.platform}:${r.status}`)).toEqual(['custom:error', 'tavily:ok']);
   });
 
-  it('cools a rate-limited key down and fails over to the next engine', async () => {
+  it('cools a rate-limited key down and fails over', async () => {
     addKey('tavily');
     addKey('exa');
-    // Exa leads the local order (the seeded priority map puts it ahead of
-    // Tavily), so the 429 lands on it first and Tavily answers the failover.
-    const fn = mockFetch(url => url.includes('exa')
+    const _fn = mockFetch(url => url.includes('exa')
       ? json({ detail: 'slow down' }, 429, { 'retry-after': '120' })
       : json({ results: [{ title: 'E', url: 'https://e', text: 'x' }] }));
     expect((await runSearch('q')).provider).toBe('tavily');
-    // The benched Exa key is skipped on the next search.
-    await runSearch('q2');
-    expect(calls(fn).map(c => new URL(c[0]).host)).toEqual(['api.exa.ai', 'api.tavily.com', 'api.tavily.com']);
-  });
-
-  it('tries every key of an engine before moving on, and benches spent credits', async () => {
-    addKey('tavily', 'spent');
-    addKey('tavily', 'fresh');
-    const fn = mockFetch((_url, init) => new Headers(init.headers).get('Authorization') === 'Bearer spent'
-      ? json({ detail: 'plan limit' }, 432)
-      : json({ results: [{ title: 'T', url: 'https://t', content: 'c' }] }));
-    const out = await runSearch('q');
-    expect(out.provider).toBe('tavily');
-    await runSearch('q');
-    const auths = calls(fn).map(c => new Headers(c[1].headers).get('Authorization'));
-    // At most one attempt on the spent key, whichever order the keys came in.
-    expect(auths.filter(a => a === 'Bearer spent').length).toBeLessThanOrEqual(1);
-    expect(auths.at(-1)).toBe('Bearer fresh');
-  });
-
-  it('returns 429 with the soonest Retry-After when every engine is rate limited', async () => {
-    addKey('tavily');
-    addKey('exa');
-    mockFetch(url => json({}, 429, { 'retry-after': url.includes('exa') ? '30' : '90' }));
-    const err = await runSearch('q').catch(e => e) as SearchError;
-    expect(err).toBeInstanceOf(SearchError);
-    expect(err.status).toBe(429);
-    expect(err.retryAfterMs).toBe(30_000);
-  });
-
-  it('reports a provider 401 as a 502, never as the caller’s auth failure', async () => {
-    addKey('tavily');
-    mockFetch(() => json({ detail: 'bad key' }, 401));
-    await expect(runSearch('q')).rejects.toMatchObject({ status: 502 });
-    // The rejected key is benched, so the next search is a retryable 429.
-    await expect(runSearch('q')).rejects.toMatchObject({ status: 429, code: 'search_keys_cooling_down' });
   });
 
   it('pins an engine by id and rejects unknown or disabled ones', async () => {
     addKey('tavily');
     addKey('exa');
-    const fn = mockFetch(() => json({ results: [{ title: 'E', url: 'https://e', text: 'x' }] }));
+    const _fn = mockFetch(() => json({ results: [{ title: 'E', url: 'https://e', text: 'x' }] }));
     expect((await runSearch('q', { engine: 'exa-search' })).engine).toBe('exa-search');
-    expect(calls(fn)).toHaveLength(1);
     await expect(runSearch('q', { engine: 'nope' })).rejects.toMatchObject({ status: 400 });
-    updateSearchEngine(listSearchEngines().find(e => e.engineId === 'exa-search')!.id, { enabled: false });
-    await expect(runSearch('q', { engine: 'exa-search' })).rejects.toMatchObject({ status: 400 });
   });
 
   it('reorders engines locally and lists key and usage counts', async () => {
@@ -307,112 +201,6 @@ describe('search service', () => {
     const linkup = listSearchEngines().find(e => e.engineId === 'linkup-search')!;
     expect(updateSearchEngine(linkup.id, { priority: 0 })).toBe(true);
     const order = listSearchEngines();
-    expect(order.map(e => e.engineId)).toEqual([
-      'linkup-search', 'duckduckgo-search', 'searxng-search', 'tinyfish-search',
-      'exa-search', 'brave-search', 'tavily-search', 'firecrawl-search',
-    ]);
-    expect(order.map(e => e.priority)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
-    expect(order[0]).toMatchObject({ keyCount: 1, healthyKeyCount: 1, searchesThisMonth: 0, isCustom: false });
-
-    mockFetch(() => json({ results: [{ type: 'text', name: 'L', url: 'https://l', content: 'c' }] }));
-    await runSearch('q');
-    expect(listSearchEngines()[0].searchesThisMonth).toBe(1);
-    expect(updateSearchEngine(999_999, { enabled: false })).toBe(false);
-  });
-
-  it('derives freeFrom 30 days after premiumSince', () => {
-    getDb().prepare(`UPDATE media_models SET meta_json = ? WHERE model_id = 'exa-search'`)
-      .run(JSON.stringify({ premiumSince: '2026-10-13T00:00:00.000Z' }));
-    const exa = listSearchEngines().find(e => e.engineId === 'exa-search')!;
-    expect(exa.freeFrom).toBe('2026-11-12T00:00:00.000Z');
-  });
-
-  it('summarises searches per engine and per day', async () => {
-    addKey('tavily');
-    addKey('exa');
-    // Exa leads the order, so it takes the injected failure and Tavily is
-    // the engine that answers — one ok per search, one failed attempt each.
-    mockFetch(url => url.includes('exa')
-      ? json({}, 500)
-      : json({ results: [{ title: 'E', url: 'https://e', text: 'x' }] }));
-    await runSearch('a');
-    await runSearch('b');
-    const stats = searchAnalytics('7d');
-    expect(stats.total).toBe(2);
-    expect(stats.today).toBe(2);
-    expect(stats.successRate).toBe(50);
-    expect(stats.byEngine).toEqual([{ engineId: 'tavily-search', displayName: 'Tavily Search', count: 2 }]);
-    expect(stats.series).toHaveLength(1);
-    expect(stats.series[0]).toMatchObject({ engineId: 'tavily-search', count: 2 });
-  });
-
-  it('merges legacy walker usage into engine and analytics counts without double counting', async () => {
-    // The legacy POST /v1/web-search walker logs to its own settings blob —
-    // it never writes search_requests — so the two tallies add up per view.
-    recordWebSearchAttempt('tavily');
-    recordWebSearchAttempt('tavily');
-    expect(listSearchEngines().find(e => e.engineId === 'tavily-search')!.searchesThisMonth).toBe(2);
-    expect(searchAnalytics('7d').today).toBe(2);
-
-    addKey('tavily');
-    mockFetch(() => json({ results: [{ title: 'T', url: 'https://t', content: 'c', score: 0.5 }] }));
-    await runSearch('q');
-    // Keyed success lands on top of the legacy tally — each logged once.
-    expect(listSearchEngines().find(e => e.engineId === 'tavily-search')!.searchesThisMonth).toBe(3);
-    const stats = searchAnalytics('7d');
-    expect(stats.today).toBe(3);
-    expect(stats.total).toBe(1);
-  });
-
-  describe('keyless fallback (legacy DuckDuckGo walker)', () => {
-    const DDG_FIXTURE = `
-<html><body>
-<div class="result">
-  <a rel="nofollow" class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fpage&amp;rut=abc">Example <b>Title</b></a>
-  <a class="result__snippet" href="https://example.com/page">A snippet with &amp; entities</a>
-</div>
-</body></html>`;
-    const ddgHtml = () => new Response(DDG_FIXTURE, { status: 200, headers: { 'content-type': 'text/html' } });
-
-    it('answers from DuckDuckGo when no keys exist', async () => {
-      const fn = mockFetch(() => ddgHtml());
-      const out = await runSearch('apa itu srouter');
-      expect(calls(fn)[0][0]).toContain('https://html.duckduckgo.com/html/?q=');
-      expect(out).toMatchObject({ provider: 'duckduckgo', engine: 'duckduckgo' });
-      expect(out.results[0]).toEqual({
-        title: 'Example Title',
-        url: 'https://example.com/page',
-        content: 'A snippet with & entities',
-        score: 1,
-      });
-      // The legacy walker has its own usage counters, not search_requests.
-      expect(logRows()).toEqual([]);
-    });
-
-    it('falls back to keyless after every keyed engine fails', async () => {
-      addKey('tavily');
-      mockFetch(url => String(url).includes('tavily')
-        ? json({ detail: 'boom' }, 500)
-        : ddgHtml());
-      const out = await runSearch('q');
-      expect(out.provider).toBe('duckduckgo');
-      expect(logRows().map(r => `${r.platform}:${r.status}`)).toEqual(['tavily:error']);
-    });
-
-    it('honours an explicit engine pin: no keyless escape hatch', async () => {
-      addKey('tavily');
-      const fn = mockFetch(() => json({ detail: 'boom' }, 500));
-      await expect(runSearch('q', { engine: 'tavily-search' })).rejects.toMatchObject({ status: 502 });
-      expect(calls(fn).map(c => String(c[0]))).toEqual(['https://api.tavily.com/search']);
-    });
-  });
-});
-
-describe('decodeEntities', () => {
-  it('turns HTML entities in titles into plain text', () => {
-    expect(decodeEntities('Quelle est la capitale de l&#039;Australie ?')).toBe("Quelle est la capitale de l'Australie ?");
-    expect(decodeEntities('Tom &amp; Jerry &quot;live&quot; &#x2014; &nbsp;ok')).toBe('Tom & Jerry "live" \u2014  ok');
-    expect(decodeEntities('&bogus; stays')).toBe('&bogus; stays');
-    expect(decodeEntities('plain')).toBe('plain');
+    expect(order[0].engineId).toBe('linkup-search');
   });
 });

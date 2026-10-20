@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
-import { initDb, getDb, getUnifiedApiKey } from '../../db/index.js';
+import { initDb, getDb, getUnifiedApiKey, setSetting } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
 import { clearAllCooldowns } from '../../services/ratelimit.js';
 import { mintDashboardToken } from '../helpers/auth.js';
 import { seedSearchEngines } from '../helpers/search-engines.js';
+import { updateSearchEngine, listSearchEngines } from '../../services/search.js';
+import { WEB_SEARCH_TAVILY_KEY, WEB_SEARCH_EXA_KEY } from '../../services/web-search.js';
 
 // HTTP surface of web search (#1174): POST /v1/search and GET
 // /v1/search/engines for API callers, /api/search/engines and
@@ -15,7 +17,7 @@ import { seedSearchEngines } from '../helpers/search-engines.js';
 const realFetch = globalThis.fetch;
 let dashToken = '';
 
-function addKey(platform: string): number {
+function _addKey(platform: string): number {
   const { encrypted, iv, authTag } = encrypt(`${platform}-key`);
   const row = getDb().prepare(`
     INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled)
@@ -53,6 +55,15 @@ describe('search routes', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
     seedSearchEngines();
+    // The keyed chain runs ahead of the keyless fallback. Parallel is keyless
+    // and enabled by default, so it eats the first hop in every keyed test and
+    // returns 502 when the mock doesn't speak its MCP URL. Disable it (and
+    // DuckDuckGo) so the chain is the catalog engines the tests add keys for.
+    for (const e of [listSearchEngines()].flat()) {
+      if (e.platform === 'parallel' || e.platform === 'duckduckgo') {
+        updateSearchEngine(e.id, { enabled: false });
+      }
+    }
     clearAllCooldowns(Number.MAX_SAFE_INTEGER);
     app = createApp();
     dashToken = mintDashboardToken();
@@ -98,7 +109,7 @@ describe('search routes', () => {
   });
 
   it('POST /v1/search serves hits with provider and engine', async () => {
-    addKey('tavily');
+    setSetting(WEB_SEARCH_TAVILY_KEY, 'tavily-key');
     mockUpstream(() => new Response(JSON.stringify({ results: [{ title: 'T', url: 'https://t', content: 'c', score: 0.5 }] }), { status: 200 }));
     const { status, body } = await call(app, 'POST', '/v1/search', { body: { query: 'q', max_results: 2 } });
     expect(status).toBe(200);
@@ -111,7 +122,7 @@ describe('search routes', () => {
   });
 
   it('POST /v1/search forwards Retry-After when every engine is rate limited', async () => {
-    addKey('tavily');
+    setSetting(WEB_SEARCH_TAVILY_KEY, 'tavily-key');
     mockUpstream(() => new Response('{}', { status: 429, headers: { 'retry-after': '7' } }));
     const { status, headers, body } = await call(app, 'POST', '/v1/search', { body: { query: 'q' } });
     expect(status).toBe(429);
@@ -120,7 +131,7 @@ describe('search routes', () => {
   });
 
   it('GET /v1/search/engines lists the enabled engines and whether each is usable', async () => {
-    addKey('exa');
+    setSetting(WEB_SEARCH_EXA_KEY, 'exa-key');
     const { status, body } = await call(app, 'GET', '/v1/search/engines');
     expect(status).toBe(200);
     expect(body.data.map((e: any) => e.id)).toEqual([

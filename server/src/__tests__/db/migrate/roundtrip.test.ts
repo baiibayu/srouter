@@ -50,6 +50,7 @@ const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts
 const SEARCH_ENGINES_FILENAME = '20261013_000001_search_engines.ts';
 const DECISION_REQUESTS_FILENAME = '20261016_000001_decision_requests.ts';
 const SEED_LOCAL_SEARCH_ENGINES_FILENAME = '20261019_000001_seed_local_search_engines.ts';
+const SEED_PARALLEL_SEARCH_ENGINE_FILENAME = '20261019_000002_seed_parallel_search_engine.ts';
 
 interface SchemaRow {
   type: string;
@@ -146,6 +147,7 @@ describe('migration round trip', () => {
         SEARCH_ENGINES_FILENAME,
         DECISION_REQUESTS_FILENAME,
         SEED_LOCAL_SEARCH_ENGINES_FILENAME,
+        SEED_PARALLEL_SEARCH_ENGINE_FILENAME,
       ]);
     } finally {
       db.close();

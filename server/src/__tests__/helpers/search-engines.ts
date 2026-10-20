@@ -1,8 +1,12 @@
 import { getDb } from '../../db/index.js';
 
-// Search engines only ever arrive through the catalog's `searchEngines`
-// registry (nothing is bundled), so tests that exercise routing seed the four
-// engines the catalog publishes, in its priority order.
+// Search engines arrive through the catalog's `searchEngines` registry
+// (tavily, exa, firecrawl, linkup) and through the local migrations
+// (duckduckgo, parallel, searxng, tinyfish, brave). Tests that exercise
+// routing seed the four catalog engines here — `initDb` runs the migrations
+// first, so the five locally-seeded backends are already present — in the
+// dashboard's effective order, so the chain and the /v1/search/engines list
+// match what a fresh install sees.
 const ENGINES = [
   { platform: 'tavily', engineId: 'tavily-search', displayName: 'Tavily Search', quotaLabel: '1,000 credits/month, no card', meta: { creditsPerQuery: 1, features: { news: true, answer: true, fullContent: false } } },
   { platform: 'exa', engineId: 'exa-search', displayName: 'Exa Search', quotaLabel: '$10/month in credits', meta: { creditsPerQuery: null, features: { news: true, answer: false, fullContent: true } } },

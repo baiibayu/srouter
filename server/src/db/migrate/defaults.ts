@@ -45,6 +45,7 @@ import * as removeDeadPlatforms from '../migrations/20261009_000001_remove_dead_
 import * as searchEngines from '../migrations/20261013_000001_search_engines.js';
 import * as decisionRequests from '../migrations/20261016_000001_decision_requests.js';
 import * as seedLocalSearchEngines from '../migrations/20261019_000001_seed_local_search_engines.js';
+import * as seedParallelSearchEngine from '../migrations/20261019_000002_seed_parallel_search_engine.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -102,6 +103,7 @@ export const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platf
 export const SEARCH_ENGINES_FILENAME = '20261013_000001_search_engines.ts';
 export const DECISION_REQUESTS_FILENAME = '20261016_000001_decision_requests.ts';
 export const SEED_LOCAL_SEARCH_ENGINES_FILENAME = '20261019_000001_seed_local_search_engines.ts';
+export const SEED_PARALLEL_SEARCH_ENGINE_FILENAME = '20261019_000002_seed_parallel_search_engine.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -150,4 +152,5 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: SEARCH_ENGINES_FILENAME, module: searchEngines },
   { filename: DECISION_REQUESTS_FILENAME, module: decisionRequests },
   { filename: SEED_LOCAL_SEARCH_ENGINES_FILENAME, module: seedLocalSearchEngines },
+  { filename: SEED_PARALLEL_SEARCH_ENGINE_FILENAME, module: seedParallelSearchEngine },
 ];

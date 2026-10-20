@@ -21,6 +21,7 @@ const engine = (over: Partial<SearchEngine>): SearchEngine => ({
   features: null,
   premiumSince: null,
   keyless: false,
+  configured: true,
   keyCount: 1,
   healthyKeyCount: 1,
   searchesThisMonth: 0,
@@ -66,6 +67,18 @@ describe('engineChain', () => {
       engine({ id: 1, displayName: 'Tavily', priority: 0 }),
     ])
     expect(chain.map(e => e.displayName)).toEqual(['Tavily', 'Exa'])
+  })
+
+  it('keeps configured engines in the chain so callers can filter on readiness', () => {
+    // Fase B: `configured` is the readiness source; the chain itself is still
+    // purely about enabled + priority so a caller can show the whole order.
+    const chain = engineChain([
+      engine({ id: 1, displayName: 'DuckDuckGo', priority: 0, keyless: true, configured: true, keyCount: 0 }),
+      engine({ id: 2, displayName: 'Firecrawl', priority: 1, configured: false, keyCount: 0 }),
+      engine({ id: 3, displayName: 'Exa', priority: 2, configured: true, keyCount: 0 }),
+    ])
+    expect(chain.map(e => e.configured)).toEqual([true, false, true])
+    expect(chain.filter(e => e.configured).map(e => e.displayName)).toEqual(['DuckDuckGo', 'Exa'])
   })
 })
 

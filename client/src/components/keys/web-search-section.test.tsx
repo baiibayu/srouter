@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-// Keys → Web Search: eight engines in Models → Search order — DuckDuckGo and
-// SearXNG as keyless status rows, the six free-tier key slots behind them —
-// each writing its own field on PUT /api/settings/web-search.
+// Keys → Web search (Fase B): no backend picker any more; the list follows the
+// Models → Search engine order — DuckDuckGo and Parallel as keyless status
+// rows, SearXNG's own instance ADDRESS, then the six free-tier key slots —
+// each slot writing its own field on PUT /api/settings/web-search.
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -13,7 +14,6 @@ import { WebSearchSection } from './web-search-section'
 vi.mock('@/lib/api', () => ({ apiFetch: vi.fn() }))
 
 const CFG = {
-  backend: 'duckduckgo',
   baseUrl: '',
   hasTavilyKey: true,
   hasBraveKey: false,
@@ -53,41 +53,77 @@ function rowLabels(): string[] {
     .map(span => span.textContent ?? '')
 }
 
-it('orders the eight engines like Models → Search, keyless rows first', async () => {
+function row(label: string): Element {
+  return [...container.querySelectorAll('section .border-b')].find(r => r.textContent?.startsWith(label))!
+}
+
+it('orders the nine engines like Models → Search, with no backend picker', async () => {
   await mount()
   expect(rowLabels()).toEqual([
-    'Web search backend', 'DuckDuckGo', 'SearXNG', 'TinyFish', 'Exa', 'Brave', 'Tavily', 'Firecrawl', 'Linkup',
+    'DuckDuckGo', 'Parallel', 'SearXNG instance address', 'TinyFish', 'Exa', 'Brave', 'Tavily', 'Firecrawl', 'Linkup',
   ])
-  // The two keyless engines carry the green keyless badge, never an input.
-  const keyless = [...container.querySelectorAll('section span')].filter(s => s.textContent === 'keyless')
-  expect(keyless).toHaveLength(2)
+  // No backend picker: nothing is rendered as a radio group any more.
+  expect(container.querySelector('[role="radiogroup"]')).toBeNull()
+  expect(container.textContent).not.toContain('Web search backend')
+})
+
+it('marks DuckDuckGo and Parallel keyless and ready without an input', async () => {
+  await mount()
+  for (const label of ['DuckDuckGo', 'Parallel']) {
+    const r = row(label)
+    expect(r.textContent).toContain('keyless')
+    expect(r.textContent).toContain('ready to use')
+    expect(r.querySelector('input')).toBeNull()
+  }
   expect(container.querySelectorAll('input[type="password"]')).toHaveLength(6)
+})
+
+it('labels the SearXNG field as the instance address, not an API key', async () => {
+  await mount()
+  const r = row('SearXNG')
+  const input = r.querySelector('input[type="text"]') as HTMLInputElement
+  expect(input).not.toBeNull()
+  expect(input.getAttribute('aria-label')).toBe('SearXNG instance address')
+  expect(r.textContent).not.toContain('Key stored')
+})
+
+it('saves the SearXNG instance address to baseUrl', async () => {
+  await mount()
+  const input = row('SearXNG').querySelector('input[type="text"]') as HTMLInputElement
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!
+  act(() => {
+    setter.call(input, 'http://search.internal:8888')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  const save = [...row('SearXNG').querySelectorAll('button')].find(b => b.textContent === 'Save')!
+  act(() => save.click())
+  await flush()
+  const bodies = vi.mocked(apiFetch).mock.calls
+    .filter(([, init]) => init?.method === 'PUT')
+    .map(([, init]) => JSON.parse(String(init?.body)))
+  expect(bodies).toEqual([{ baseUrl: 'http://search.internal:8888' }])
 })
 
 it('reports filled and empty status per key slot from the presence flags', async () => {
   await mount()
-  const statusOf = (label: string) => {
-    const row = [...container.querySelectorAll('section .border-b')].find(r => r.textContent?.startsWith(label))!
-    return row.textContent ?? ''
-  }
-  expect(statusOf('TinyFish')).toContain('Key stored')
-  expect(statusOf('Tavily')).toContain('Key stored')
-  expect(statusOf('Brave')).toContain('No key yet')
-  expect(statusOf('Firecrawl')).toContain('No key yet')
-  expect(statusOf('Linkup')).toContain('No key yet')
+  expect(row('TinyFish').textContent).toContain('Key stored')
+  expect(row('Tavily').textContent).toContain('Key stored')
+  expect(row('Brave').textContent).toContain('No key yet')
+  expect(row('Firecrawl').textContent).toContain('No key yet')
+  expect(row('Linkup').textContent).toContain('No key yet')
 })
 
 it('saves each new slot to its own field on PUT /api/settings/web-search', async () => {
   await mount()
   const save = (label: string, value: string) => {
-    const row = [...container.querySelectorAll('section .border-b')].find(r => r.textContent?.startsWith(label))!
-    const input = row.querySelector('input[type="password"]')!
+    const slot = row(label)
+    const input = slot.querySelector('input[type="password"]')!
     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!
     act(() => {
       setter.call(input, value)
       input.dispatchEvent(new Event('input', { bubbles: true }))
     })
-    const button = [...row.querySelectorAll('button')].find(b => b.textContent === 'Save')!
+    const button = [...slot.querySelectorAll('button')].find(b => b.textContent === 'Save')!
     act(() => button.click())
   }
   save('Firecrawl', 'fc-test-key')

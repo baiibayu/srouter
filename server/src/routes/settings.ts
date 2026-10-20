@@ -411,22 +411,23 @@ settingsRouter.put('/complexity-gate', (req: Request, res: Response) => {
   }
 });
 
-// Web search backend (POST /v1/web-search): keyless-first pick — DuckDuckGo
-// default, SearXNG self-host, Tavily/Brave/Exa/TinyFish free-tier keys edited
-// on the Keys page (the TinyFish key also feeds the /v1/fetch chain).
-// Firecrawl/Linkup slots sit beside them (catalog engines, no walker backend
-// yet). The keys are write-only over the wire — GET reports only whether each
-// is stored.
-// Both verbs also report `usage` (attempt counts per backend, current day and
-// month) so the Web tab can show quota burn without a provider-side API.
-const webSearchView = () => ({ ...getWebSearchConfig(), usage: getWebSearchUsage() });
+// Web search key slots (the POST /v1/web-search route is gone; search now
+// runs through services/search.ts's unified chain). The keys are edited on the
+// Keys page and are write-only over the wire — GET reports only whether each
+// is stored. Both verbs also report `usage` (attempt counts per backend, current
+// day and month) so the Web tab can show quota burn without a provider-side API.
+// The view drops the legacy `backend` picker: the unified search chain in
+// services/search.ts no longer has an operator-chosen primary.
+const webSearchView = () => {
+  const rest = getWebSearchConfig();
+  return { ...rest, usage: getWebSearchUsage() };
+};
 
 settingsRouter.get('/web-search', (_req: Request, res: Response) => {
   res.json(webSearchView());
 });
 
 const webSearchPutSchema = z.object({
-  backend: z.enum(['duckduckgo', 'searxng', 'tavily', 'brave', 'exa', 'tinyfish']).optional(),
   baseUrl: z.string().url().nullable().optional(),
   tavilyKey: z.string().min(1).nullable().optional(),
   braveKey: z.string().min(1).nullable().optional(),
@@ -441,7 +442,7 @@ const webSearchPutSchema = z.object({
 settingsRouter.put('/web-search', (req: Request, res: Response) => {
   const parsed = webSearchPutSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: { message: 'Invalid web-search config: send {backend?, baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?, firecrawlKey?, linkupKey?}', type: 'invalid_request_error' } });
+    res.status(400).json({ error: { message: 'Invalid web-search config: send {baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?, firecrawlKey?, linkupKey?}', type: 'invalid_request_error' } });
     return;
   }
   try {

@@ -872,6 +872,7 @@ export const openapiSpec = {
           '401': { $ref: '#/components/responses/Unauthorized' },
           '502': { $ref: '#/components/responses/UpstreamError' },
         },
+        'x-optional-surface': true,
       },
     },
     '/v1/fetch': {

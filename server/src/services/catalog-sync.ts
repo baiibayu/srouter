@@ -3,7 +3,7 @@ import type { Db } from '../db/types.js';
 import { getDb, getSetting, setSetting } from '../db/index.js';
 import { hasProvider } from '../providers/index.js';
 import { MEDIA_PLATFORMS, TRANSCRIPTION_PLATFORMS, VIDEO_PLATFORMS } from './media.js';
-import { SEARCH_ENGINE_PLATFORMS, SEARCH_MODALITY } from './search.js';
+import { CATALOG_MANAGED_SEARCH_PLATFORMS, SEARCH_MODALITY } from './search.js';
 import { DECISION_MODALITY, DECISION_PLATFORMS } from './decision.js';
 import { EMBEDDING_PLATFORMS } from './embeddings.js';
 import type { Platform } from '@baiibayu/srouter-shared/types.js';
@@ -800,7 +800,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
     // dashboard's local engine order lives in settings, not in `priority`.
     if (catalog.searchEngines) {
       for (const e of catalog.searchEngines) {
-        if (!SEARCH_ENGINE_PLATFORMS.has(e.platform)) {
+        if (!CATALOG_MANAGED_SEARCH_PLATFORMS.has(e.platform)) {
           counts.skippedUnknownPlatform++;
           continue;
         }
@@ -1058,14 +1058,15 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
     }
 
     // Prune search engines only when the catalog carries the searchEngines
-    // snapshot. Custom search relays (platform 'custom') are the user's own
-    // and never pruned.
+    // snapshot. Custom search relays (platform 'custom') and locally-seeded
+    // backends (duckduckgo, parallel, searxng, tinyfish, brave) are the
+    // operator's own and never pruned by the upstream roster.
     if (catalog.searchEngines) {
       const searchCandidates = db
         .prepare('SELECT id, platform, model_id FROM media_models WHERE modality = ?')
         .all(SEARCH_MODALITY) as { id: number; platform: string; model_id: string }[];
       for (const c of searchCandidates) {
-        if (!SEARCH_ENGINE_PLATFORMS.has(c.platform)) continue;
+        if (!CATALOG_MANAGED_SEARCH_PLATFORMS.has(c.platform)) continue;
         if (!inSearchCatalog.has(`${c.platform}:${c.model_id}`)) {
           deleteMedia.run(c.id);
           counts.removed++;

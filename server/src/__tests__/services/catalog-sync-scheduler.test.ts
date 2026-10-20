@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { initDb } from '../../db/index.js';
 import { startCatalogSync, stopCatalogSync, syncCatalog, updateSyncSchedule } from '../../services/catalog-sync.js';
 import type { Scheduler } from '../../lib/scheduler.js';

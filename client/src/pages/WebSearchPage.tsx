@@ -7,10 +7,13 @@ import { CodeBlock } from '@/components/code-block'
 import { ModelsTabs } from '@/components/models-tabs'
 import { WebFetchCard } from '@/components/web-fetch-card'
 import { useI18n } from '@/i18n'
+import type { SearchEngine } from '@/lib/search'
 
 // Shape of GET /api/settings/web-search (server routes/settings.ts).
+// The `backend` field no longer exists on this API: /v1/search walks the
+// Models → Search engine list, so this page reports each engine's honest
+// `configured` state instead of a chosen backend.
 interface WebSearchConfig {
-  backend: 'duckduckgo' | 'searxng' | 'tavily' | 'brave' | 'exa' | 'tinyfish'
   baseUrl: string
   hasTavilyKey: boolean
   hasBraveKey: boolean
@@ -25,49 +28,47 @@ const CURL_EXAMPLE = `curl http://localhost:20268/v1/web-search \\
   -H "Content-Type: application/json" \\
   -d '{"query":"latest news","max_results":5}'`
 
-// Models → Web: the six /v1/web-search backends presented like a model list —
-// one row each, the active one highlighted, with local attempt counters
-// (quota burn; providers expose no "quota left" API). The picker and the
-// Tavily/Brave/Exa/TinyFish keys live on the Keys page (Web search tab),
-// stated here as a link rather than a second form.
+// Models → Web: the /v1/web-search surface over the same engine list the
+// Search tab shows — one row per engine, its honest readiness (keyless ready,
+// instance URL missing, key missing) and its local attempt counters (quota
+// burn; providers expose no "quota left" API). The keys and the SearXNG
+// address live on the Keys page (Web search tab), stated here as a link
+// rather than a second form.
 export default function WebSearchPage() {
   const { t } = useI18n()
   const { data: cfg } = useQuery<WebSearchConfig>({
     queryKey: ['web-search'],
     queryFn: () => apiFetch('/api/settings/web-search'),
   })
-
-  const active = (backend: WebSearchConfig['backend']) => cfg?.backend === backend
+  const { data: engines = [] } = useQuery<SearchEngine[]>({
+    queryKey: ['search-engines'],
+    queryFn: () => apiFetch('/api/search/engines'),
+  })
 
   // "N today · M this month", only once something was actually attempted.
-  const usageText = (backend: WebSearchConfig['backend']) => {
-    const daily = cfg?.usage?.daily?.[backend] ?? 0
-    const monthly = cfg?.usage?.monthly?.[backend] ?? 0
+  const usageText = (platform: string) => {
+    const daily = cfg?.usage?.daily?.[platform] ?? 0
+    const monthly = cfg?.usage?.monthly?.[platform] ?? 0
     if (!daily && !monthly) return undefined
     return t('models.webSearchUsage', { daily, monthly })
   }
 
-  const row = (options: {
-    name: string
-    detail?: string
-    backend: WebSearchConfig['backend']
-    usage?: string
-  }) => (
-    <div className="flex items-center gap-2 min-w-0 text-sm">
+  const row = (engine: SearchEngine) => (
+    <div key={engine.id} className="flex items-center gap-2 min-w-0 text-sm">
       <span
         className="size-2 rounded-sm shrink-0"
-        style={{ backgroundColor: active(options.backend) ? 'rgb(34,197,94)' : 'rgb(148,163,184)' }}
+        style={{ backgroundColor: engine.configured ? 'rgb(34,197,94)' : 'rgb(245,158,11)' }}
       />
-      <span className="truncate font-medium">{options.name}</span>
-      {options.detail && (
-        <span className="truncate text-muted-foreground/70 text-xs font-normal">{options.detail}</span>
-      )}
+      <span className="truncate font-medium">{engine.displayName}</span>
+      <span className="truncate text-muted-foreground/70 text-xs font-normal">
+        {engine.platform === 'searxng' && cfg?.baseUrl ? cfg.baseUrl : engine.quotaLabel}
+      </span>
       <span className="flex-1" />
-      {options.usage && (
-        <span className="shrink-0 text-xs tabular-nums text-muted-foreground/70">{options.usage}</span>
+      {usageText(engine.platform) && (
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground/70">{usageText(engine.platform)}</span>
       )}
-      <Badge variant={active(options.backend) ? 'default' : 'secondary'}>
-        {active(options.backend) ? t('models.badgeActive') : t('models.badgeStandby')}
+      <Badge variant={engine.configured ? 'default' : 'secondary'}>
+        {engine.configured ? t('models.badgeActive') : t('models.badgeStandby')}
       </Badge>
     </div>
   )
@@ -82,37 +83,7 @@ export default function WebSearchPage() {
         </div>
         <section className="rounded-3xl border bg-card p-5">
           <div className="space-y-3.5">
-            {row({ name: 'DuckDuckGo', detail: 'keyless · default', backend: 'duckduckgo', usage: usageText('duckduckgo') })}
-            {row({
-              name: 'SearXNG',
-              detail: cfg?.backend === 'searxng' && cfg.baseUrl ? cfg.baseUrl : 'keyless · own instance',
-              backend: 'searxng',
-              usage: usageText('searxng'),
-            })}
-            {row({
-              name: 'Tavily',
-              detail: cfg ? `${cfg.hasTavilyKey ? t('models.webSearchKeyStored') : t('models.webSearchKeyMissing')} · ${t('models.webSearchQuotaTavily')}` : undefined,
-              backend: 'tavily',
-              usage: usageText('tavily'),
-            })}
-            {row({
-              name: 'Brave',
-              detail: cfg ? `${cfg.hasBraveKey ? t('models.webSearchKeyStored') : t('models.webSearchKeyMissing')} · ${t('models.webSearchQuotaBrave')}` : undefined,
-              backend: 'brave',
-              usage: usageText('brave'),
-            })}
-            {row({
-              name: 'Exa',
-              detail: cfg ? `${cfg.hasExaKey ? t('models.webSearchKeyStored') : t('models.webSearchKeyMissing')} · ${t('models.webSearchQuotaExa')}` : undefined,
-              backend: 'exa',
-              usage: usageText('exa'),
-            })}
-            {row({
-              name: 'TinyFish',
-              detail: cfg ? `${cfg.hasTinyfishKey ? t('models.webSearchKeyStored') : t('models.webSearchKeyMissing')} · ${t('models.webSearchQuotaTinyfish')}` : undefined,
-              backend: 'tinyfish',
-              usage: usageText('tinyfish'),
-            })}
+            {engines.map(row)}
           </div>
           <p className="mt-4 border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
             {t('models.webSearchFallback')}

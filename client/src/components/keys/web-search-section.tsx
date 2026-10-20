@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ExternalLink } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
-import { Row, SectionHeader, OptionBar } from '@/components/config-rows'
+import { Row, SectionHeader } from '@/components/config-rows'
 
 // Shape of GET/PUT /api/settings/web-search (server routes/settings.ts).
-// Keys are write-only: the server reports presence per backend, never the
-// stored value.
+// Keys are write-only: the server reports presence per slot, never the
+// stored value. `backend` is gone from the API (Fase B: /v1/search walks the
+// Models → Search engine list, not a hand-picked backend), so this surface
+// only owns the slots those engines read.
 interface WebSearchConfig {
-  backend: 'duckduckgo' | 'searxng' | 'tavily' | 'brave' | 'exa' | 'tinyfish'
   baseUrl: string
   hasTavilyKey: boolean
   hasBraveKey: boolean
@@ -33,8 +34,9 @@ const KEY_SOURCES = {
 
 type KeyedBackend = 'tinyfish' | 'exa' | 'brave' | 'tavily' | 'firecrawl' | 'linkup'
 
-// Slots and keyless rows share the Models → Search engine order so the Keys
-// page reads top-to-bottom like the catalog does.
+// Labels here; the row order below follows the Models → Search engine list
+// (duckduckgo, parallel, searxng, tinyfish, exa, brave, tavily, firecrawl,
+// linkup) so the two pages read top-to-bottom the same way.
 const KEY_LABELS: Record<KeyedBackend, string> = {
   tinyfish: 'TinyFish',
   exa: 'Exa',
@@ -105,28 +107,31 @@ function KeyField({
   )
 }
 
-// DuckDuckGo and SearXNG answer with no key at all — a status row instead of
-// a slot, carrying the same keyless badge the Models → Search cards use.
+// DuckDuckGo and Parallel answer with no key and no setting at all — a status
+// row carrying the same keyless badge and "ready to use" note the Models →
+// Search cards show.
 function KeylessRow({ label }: { label: string }) {
   const { t } = useI18n()
   return (
     <Row
       label={label}
       control={(
-        <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-emerald-600/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
-          {t('search.keylessBadge')}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-emerald-600/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
+            {t('search.keylessBadge')}
+          </span>
+          <span className="text-xs text-muted-foreground">{t('keys.webSearchKeylessReady')}</span>
+        </div>
       )}
     />
   )
 }
 
-// Keys page → Providers: the /v1/web-search backend picker plus the free-tier
-// key slots (TinyFish/Exa/Brave/Tavily/Firecrawl/Linkup — TinyFish's key also
-// feeds the /v1/fetch reader chain) and the two keyless engines (DuckDuckGo,
-// SearXNG) as status rows. SearXNG's instance URL lives here too — this is the
-// whole "which backend answers the search" surface; the Models → Web tab only
-// reports the active state.
+// Keys page → Web search: the slot surface behind the Models → Search engine
+// list, in that list's order. DuckDuckGo and Parallel are keyless status rows;
+// SearXNG's own instance URL is the "address" field (not an API key); the six
+// free-tier key slots follow. There is no backend picker any more — the engine
+// list decides which provider answers.
 export function WebSearchSection() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
@@ -159,59 +164,37 @@ export function WebSearchSection() {
     <section className="rounded-3xl border bg-card p-5">
       <SectionHeader title={t('keys.webSearchSection')} description={t('keys.webSearchSectionDesc')} />
       <div className="space-y-0">
+        <KeylessRow label="DuckDuckGo" />
+        <KeylessRow label="Parallel" />
         <Row
-          label={t('settings.webSearchBackend')}
-          hint={t('settings.webSearchHelp')}
+          label={t('keys.webSearchSearxngInstance')}
+          hint={t('keys.webSearchSearxngInstanceHelp')}
           control={(
-            <OptionBar
-              value={cfg.backend}
-              onValueChange={backend => patch.mutate({ backend })}
-              options={([
-                { value: 'duckduckgo', label: 'DuckDuckGo' },
-                { value: 'searxng', label: 'SearXNG' },
-                { value: 'tavily', label: 'Tavily' },
-                { value: 'brave', label: 'Brave' },
-                { value: 'exa', label: 'Exa' },
-                { value: 'tinyfish', label: 'TinyFish' },
-              ] satisfies Array<{ value: WebSearchConfig['backend']; label: string }>)}
-              ariaLabel={t('settings.webSearchBackend')}
-              className="w-full grid-cols-2 sm:grid-cols-3 sm:w-96"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={urlDraft}
+                onChange={event => setUrlDraft(event.target.value)}
+                placeholder="http://localhost:8888"
+                aria-label={t('keys.webSearchSearxngInstance')}
+                className="h-9 w-72 rounded-lg border border-input bg-transparent px-3 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const trimmed = urlDraft.trim()
+                  patch.mutate({ baseUrl: trimmed === '' ? null : trimmed })
+                  setUrlSaved(true)
+                  setTimeout(() => setUrlSaved(false), 1500)
+                }}
+                disabled={patch.isPending || urlDraft.trim() === cfg.baseUrl}
+                className="h-9 shrink-0 rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {urlSaved ? t('settings.webSearchSaved') : t('common.save')}
+              </button>
+            </div>
           )}
         />
-        <KeylessRow label="DuckDuckGo" />
-        <KeylessRow label="SearXNG" />
-        {cfg.backend === 'searxng' && (
-          <Row
-            label={t('settings.webSearchSearxngUrl')}
-            hint={t('settings.webSearchUrlHelp')}
-            control={(
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={urlDraft}
-                  onChange={event => setUrlDraft(event.target.value)}
-                  placeholder="http://localhost:8888"
-                  aria-label={t('settings.webSearchSearxngUrl')}
-                  className="h-9 w-52 rounded-lg border border-input bg-transparent px-3 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const trimmed = urlDraft.trim()
-                    patch.mutate({ baseUrl: trimmed === '' ? null : trimmed })
-                    setUrlSaved(true)
-                    setTimeout(() => setUrlSaved(false), 1500)
-                  }}
-                  disabled={patch.isPending || urlDraft.trim() === cfg.baseUrl}
-                  className="h-9 shrink-0 rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {urlSaved ? t('settings.webSearchSaved') : t('common.save')}
-                </button>
-              </div>
-            )}
-          />
-        )}
         <KeyField
           backend="tinyfish"
           stored={cfg.hasTinyfishKey}

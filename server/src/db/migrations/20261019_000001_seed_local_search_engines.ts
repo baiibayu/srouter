@@ -16,8 +16,10 @@
 // the same reason (services/catalog-sync.ts) — a feed that never mentions
 // them can neither update nor remove them.
 //
-// `priority` (-4..-1) is the no-override fallback that keeps the keyless
+// `priority` (-5..-1) is the no-override fallback that keeps the keyless
 // backends ahead of the catalog rows if the settings map below is ever lost.
+// -4 is reserved for parallel-search (added by the follow-up migration), so the
+// fallback sort itself lands the nine engines in target order.
 // The real default order lives in `search_engine_priority`: a settings map
 // wins over the column, survives the catalog rewriting ITS rows' priorities,
 // and is rewritten wholesale on any local reorder (so seeding it cannot drift
@@ -44,16 +46,19 @@ interface SeedEngine {
 // operator opts into by storing one (they start on, the walker skips them
 // until a key lands).
 const ENGINES: readonly SeedEngine[] = [
-  { platform: 'duckduckgo', engineId: 'duckduckgo-search', displayName: 'DuckDuckGo Search', priority: -4, enabled: 0, quotaLabel: 'keyless · no account needed' },
+  { platform: 'duckduckgo', engineId: 'duckduckgo-search', displayName: 'DuckDuckGo Search', priority: -5, enabled: 0, quotaLabel: 'keyless · no account needed' },
   { platform: 'searxng', engineId: 'searxng-search', displayName: 'SearXNG Search', priority: -3, enabled: 0, quotaLabel: 'keyless · no account needed' },
   { platform: 'tinyfish', engineId: 'tinyfish-search', displayName: 'TinyFish Search', priority: -2, enabled: 1, quotaLabel: 'free account key' },
   { platform: 'brave', engineId: 'brave-search', displayName: 'Brave Search', priority: -1, enabled: 1, quotaLabel: 'free-tier key' },
 ];
 
-// The eight-engine default order the dashboard and the Keys page render:
-// keyless backends first, then the free-tier keys from the largest allowance
-// down (TinyFish 12k/day → Exa $10/mo → Brave 2k/mo → Tavily 1k/mo), then the
-// two catalog engines the legacy walker never reaches.
+// The seven-engine default order (before parallel-search is added) the
+// dashboard and the Keys page render: keyless backends first, then the free-tier
+// keys from the largest allowance down (TinyFish 12k/day → Exa $10/mo → Brave
+// 2k/mo → Tavily 1k/mo), then the two catalog engines the legacy walker never
+// reaches. parallel-search (priority -4) is added separately by the following
+// migration (20261019_000002) so the isSeededOrder guard can detect whether it
+// has already been injected.
 const DEFAULT_ORDER: Record<string, number> = {
   'duckduckgo:duckduckgo-search': 0,
   'searxng:searxng-search': 1,

@@ -19,7 +19,7 @@ import { profilesRouter } from './routes/profiles.js';
 import { embeddingsRouter } from './routes/embeddings.js';
 import { mediaRouter } from './routes/media.js';
 import { searchRouter } from './routes/search.js';
-import { fetchRouter } from './routes/fetch.js';
+import { fetchRouter, fetchConfigRouter } from './routes/fetch.js';
 import { decisionsRouter } from './routes/decisions.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { healthRouter } from './routes/health.js';
@@ -266,6 +266,7 @@ export function createApp(config?: Config) {
   app.use('/api/search', requireAuth, searchRouter);
   // Web/Search cards' read counters (routes/fetch.ts) — no config surface.
   app.use('/api/fetch', requireAuth, fetchRouter);
+  app.use('/api/fetch/config', requireAuth, fetchConfigRouter);
   app.use('/api/decisions', requireAuth, decisionsRouter);
   app.use('/api/analytics', requireAuth, analyticsRouter);
   app.use('/api/health', requireAuth, healthRouter);

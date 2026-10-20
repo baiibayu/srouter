@@ -771,19 +771,22 @@ describe('applyCatalog: generative media meta', () => {
 // Web search engines (#1174) ride their own optional registry into
 // media_models with modality 'search', on the same rules as video: a catalog
 // without the key keeps what is already there, one with it is a full snapshot.
-// DuckDuckGo, SearXNG, TinyFish and Brave are NOT registry engines — the
-// migration seeds them and every variant below must leave them untouched:
-// their platforms have no adapter in this binary, so insert and prune skip
-// them alike (services/catalog-sync.ts).
+// DuckDuckGo, Parallel, SearXNG, TinyFish and Brave are locally-seeded
+// backends: the migration plants each of them and the dashboard's local
+// reorder owns their order. They DO have adapters in this binary, so the
+// catalog must neither update nor prune their rows — insert and prune gate
+// on CATALOG_MANAGED_SEARCH_PLATFORMS (services/search.ts) instead, the way
+// VIDEO_PLATFORMS gates video rows.
 describe('applyCatalog: searchEngines', () => {
   type CatalogSearch = NonNullable<AnyCatalog['searchEngines']>[number];
 
-  const SEEDED = ['duckduckgo-search', 'searxng-search', 'tinyfish-search', 'brave-search'];
+  const SEEDED = ['duckduckgo-search', 'parallel-search', 'searxng-search', 'tinyfish-search', 'brave-search'];
 
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     process.env.CATALOG_BASE_URL = 'https://catalog.test';
     initDb(':memory:');
+    runMigrationsSync(getDb(), 'up');
   });
 
   function searchRoster(): CatalogSearch[] {
@@ -814,19 +817,21 @@ describe('applyCatalog: searchEngines', () => {
     `).all() as any;
   }
 
-  it('seeds the four local engines before any catalog arrives', () => {
+  it('seeds the five local engines before any catalog arrives', () => {
     expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual([
-      'duckduckgo:duckduckgo-search', 'searxng:searxng-search',
-      'tinyfish:tinyfish-search', 'brave:brave-search',
+      'duckduckgo:duckduckgo-search', 'parallel:parallel-search',
+      'searxng:searxng-search', 'tinyfish:tinyfish-search', 'brave:brave-search',
     ]);
-    expect(searchRows().map(r => r.enabled)).toEqual([0, 0, 1, 1]);
+    // duckduckgo (-5) ships disabled; parallel (-4) ships enabled (keyless);
+    // searxng (-3) ships disabled; tinyfish (-2) and brave (-1) ship enabled.
+    expect(searchRows().map(r => r.enabled)).toEqual([0, 1, 0, 1, 1]);
   });
 
   it('applies the registry as a full snapshot with metadata in meta_json', () => {
     applyCatalog(getDb(), searchCatalog(searchRoster()));
     expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual([
-      'duckduckgo:duckduckgo-search', 'searxng:searxng-search',
-      'tinyfish:tinyfish-search', 'brave:brave-search',
+      'duckduckgo:duckduckgo-search', 'parallel:parallel-search',
+      'searxng:searxng-search', 'tinyfish:tinyfish-search', 'brave:brave-search',
       'exa:exa-search', 'tavily:tavily-search',
     ]);
     expect(searchRows().find(r => r.model_id === 'exa-search')!.quota_label).toBe('$10/month in credits');
@@ -839,7 +844,7 @@ describe('applyCatalog: searchEngines', () => {
 
   it('keeps existing engines when a catalog omits the optional registry', () => {
     applyCatalog(getDb(), searchCatalog(undefined));
-    expect(searchRows()).toHaveLength(6);
+    expect(searchRows()).toHaveLength(7);
   });
 
   it('prunes only registry-owned engines when the registry is empty (a free catalog before an engine ages in)', () => {
@@ -847,10 +852,10 @@ describe('applyCatalog: searchEngines', () => {
     expect(counts.removed).toBeGreaterThanOrEqual(2);
     expect(searchRows().map(r => r.model_id)).toEqual(SEEDED);
     applyCatalog(getDb(), searchCatalog(searchRoster()));
-    expect(searchRows()).toHaveLength(6);
+    expect(searchRows()).toHaveLength(7);
   });
 
-  it('keeps the four locally seeded engines across every catalog variant', () => {
+  it('keeps the five locally seeded engines across every catalog variant', () => {
     applyCatalog(getDb(), searchCatalog(searchRoster()));
     expect(searchRows().map(r => r.model_id)).toEqual(expect.arrayContaining(SEEDED));
     applyCatalog(getDb(), searchCatalog([]));
@@ -859,7 +864,7 @@ describe('applyCatalog: searchEngines', () => {
     expect(searchRows().map(r => r.model_id)).toEqual(expect.arrayContaining(SEEDED));
     // End on the roster: later tests here expect the registry engines back.
     applyCatalog(getDb(), searchCatalog(searchRoster()));
-    expect(searchRows()).toHaveLength(6);
+    expect(searchRows()).toHaveLength(7);
   });
 
   it('keeps a local disable across catalog applies', () => {
