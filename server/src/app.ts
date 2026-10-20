@@ -12,6 +12,7 @@ import { logsRouter } from './routes/logs.js';
 import { modelsRouter } from './routes/models.js';
 import { proxyRouter } from './routes/proxy.js';
 import { responsesRouter } from './routes/responses.js';
+import { decisionRouter } from './routes/decision.js';
 import { toolsRouter } from './routes/tools.js';
 import { anthropicRouter } from './routes/anthropic.js';
 import { fallbackRouter } from './routes/fallback.js';
@@ -337,6 +338,10 @@ export function createApp(config?: Config) {
   app.use('/v1', moderationRouter);
   // OpenAI Responses API shim (Codex CLI requires wire_api="responses"; see #96)
   app.use('/v1', responsesRouter);
+  // Decision endpoint (System One / TypeSafe): mounted AFTER responses so it
+  // does not shadow the /v1/responses surface. Same unified-key auth + shared
+  // per-IP rate limiter as the rest of /v1. NOT on the proxy hot path.
+  app.use('/v1', decisionRouter);
   // Utility tools: web-search + URL fetch (same /v1 key + shared proxy limiter).
   app.use('/v1', toolsRouter);
 

@@ -181,7 +181,7 @@ function readStoredJevApiKey(): string | null {
 // Key resolution for scoring: a stored manual override wins; otherwise a
 // detected host BORROWS its linked provider key at call time (decrypted
 // server-side only — nothing is copied or persisted). Null = no key.
-function readJevApiKey(): string | null {
+export function readJevApiKey(): string | null {
   const stored = readStoredJevApiKey();
   if (stored !== null) return stored;
   const baseRaw = getSetting(COMPLEXITY_GATE_JEV_BASE_KEY);
