@@ -127,11 +127,23 @@ function KeylessRow({ label }: { label: string }) {
   )
 }
 
-// Keys page → Web search: the slot surface behind the Models → Search engine
-// list, in that list's order. DuckDuckGo and Parallel are keyless status rows;
-// SearXNG's own instance URL is the "address" field (not an API key); the six
-// free-tier key slots follow. There is no backend picker any more — the engine
-// list decides which provider answers.
+// Subsection divider used to visually separate Search keys from Fetch keys
+// within the single Web Tools card.
+function SubsectionHeading({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="pt-6 pb-2">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+    </div>
+  )
+}
+
+// Keys page → Web Tools: the single place for all web search AND fetch key
+// settings. Search section: DuckDuckGo and Parallel (keyless), SearXNG
+// (instance URL), then the six keyed search engines. Fetch section: Jina
+// Reader (keyless fallback) and TinyFish (uses the same key as above —
+// stored once, powers both search and /v1/fetch). There is no backend picker
+// any more — the engine list decides which provider answers.
 export function WebSearchSection() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
@@ -162,8 +174,13 @@ export function WebSearchSection() {
 
   return (
     <section className="rounded-3xl border bg-card p-5">
-      <SectionHeader title={t('keys.webSearchSection')} description={t('keys.webSearchSectionDesc')} />
+      <SectionHeader title={t('keys.webToolsSection')} description={t('keys.webSearchSectionDesc')} />
       <div className="space-y-0">
+        {/* — Search engines — */}
+        <SubsectionHeading
+          title={t('keys.webToolsSearchSubsection')}
+          description={t('keys.webToolsSearchSubsectionDesc')}
+        />
         <KeylessRow label="DuckDuckGo" />
         <KeylessRow label="Parallel" />
         <Row
@@ -230,6 +247,21 @@ export function WebSearchSection() {
           stored={cfg.hasLinkupKey}
           busy={patch.isPending}
           onSave={value => patch.mutate({ linkupKey: value })}
+        />
+
+        {/* — Fetch engines (POST /v1/fetch) — */}
+        <SubsectionHeading
+          title={t('keys.webToolsFetchSubsection')}
+          description={t('keys.webToolsFetchSubsectionDesc')}
+        />
+        {/* Jina Reader is always available with no key. TinyFish Fetch uses the
+            same key as TinyFish Search above — stored once, powers both. */}
+        <KeylessRow label="Jina Reader" />
+        <KeyField
+          backend="tinyfish"
+          stored={cfg.hasTinyfishKey}
+          busy={patch.isPending}
+          onSave={value => patch.mutate({ tinyfishKey: value })}
         />
       </div>
     </section>

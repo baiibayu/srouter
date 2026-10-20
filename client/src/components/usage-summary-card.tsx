@@ -17,8 +17,14 @@ export interface UsageRow {
   label: string
   platform: string | null
   quotaLabel?: string | null
-  /** Whichever unit this modality is metered in. */
-  amount: number
+  /**
+   * Whichever unit this modality is metered in. `null` where the server does
+   * not attribute usage per row — the /v1/fetch reader chain counts reads for
+   * the box as a whole, so a reader's own share is genuinely unknown. Those
+   * rows print an em dash and sit out the distribution bar rather than claim
+   * a number the server never measured.
+   */
+  amount: number | null
   requestsToday: number
 }
 
@@ -35,7 +41,7 @@ export function UsageSummaryCard({
   unit: 'tokens' | 'requests'
 }) {
   const { t } = useI18n()
-  const spent = rows.filter(r => r.amount > 0)
+  const spent = rows.filter((r): r is UsageRow & { amount: number } => (r.amount ?? 0) > 0)
   const fmt = (n: number) => (unit === 'tokens' ? formatTokens(n) : String(n))
 
   return (
@@ -53,8 +59,11 @@ export function UsageSummaryCard({
 
       {/* The track always renders. Hiding it at zero made the whole card read as
           missing on tabs with no traffic yet, which is exactly when a reader is
-          checking whether the feature is there at all. */}
-      {total > 0 ? (
+          checking whether the feature is there at all. A plain track also stands
+          in when no row carries an amount (the fetch reader chain, whose reads
+          are counted for the box rather than per reader): a distribution bar
+          there would be inventing one. */}
+      {total > 0 && spent.length > 0 ? (
         <div className="flex h-2.5 rounded-full overflow-hidden bg-muted">
           {spent.map((r, i) => (
             <div
@@ -83,7 +92,11 @@ export function UsageSummaryCard({
               <span className="truncate text-muted-foreground/70 font-normal">{r.quotaLabel}</span>
             )}
             <span className="flex-1" />
-            <span className="font-mono text-muted-foreground">{fmt(r.amount)}</span>
+            {r.amount === null
+              ? (
+                <span className="font-mono text-muted-foreground/50" title={t('models.usagePerSourceUnknown')}>—</span>
+              )
+              : <span className="font-mono text-muted-foreground">{fmt(r.amount)}</span>}
           </div>
         ))}
       </div>

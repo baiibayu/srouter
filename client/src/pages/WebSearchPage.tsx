@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/page-header'
 import { CodeBlock } from '@/components/code-block'
 import { ModelsTabs } from '@/components/models-tabs'
-import { WebFetchCard } from '@/components/web-fetch-card'
+import { FetchEngines } from '@/components/fetch-engines'
 import { useI18n } from '@/i18n'
 import type { SearchEngine } from '@/lib/search'
 
@@ -101,7 +101,7 @@ export default function WebSearchPage() {
           </div>
         </section>
         {/* Web Fetch lives here since 2026-10-10 (merged from its own tab). */}
-        <WebFetchCard />
+        <FetchEngines />
       </div>
     </div>
   )

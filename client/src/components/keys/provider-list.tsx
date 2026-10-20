@@ -47,7 +47,7 @@ import { ModelScopeDialog } from './model-scope-dialog'
 import { TestModelsDialog } from './test-models-dialog'
 import { AddModelDialog } from './add-model-dialog'
 import { groupHandle } from '@/lib/endpoint-groups'
-import { SEARCH_PROVIDERS, isSearchPlatform } from '@/lib/search'
+import { isSearchPlatform } from '@/lib/search'
 
 type StatusFilter = 'all' | 'healthy' | 'issues' | 'disabled'
 
@@ -343,10 +343,11 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
     }
     group.keys.push(k)
   }
-  // Search providers (#1174) come first, in their own section: their keys
-  // serve /v1/search and agent web search, never a chat completion.
+  // Search/fetch engine providers (tavily, exa, firecrawl, linkup, parallel)
+  // are managed exclusively from the Web Tools tab (WebSearchSection) to avoid
+  // key redundancy. They are excluded here so they never appear in the
+  // Providers list, while any already-stored keys remain functional.
   const grouped: ProviderGroup[] = [
-    ...SEARCH_PROVIDERS.map(p => ({ ...p, platform: p.value, search: true, keys: keys.filter(k => k.platform === p.value) })),
     ...PLATFORMS.map(p => ({ ...p, platform: p.value, keys: keys.filter(k => k.platform === p.value) })),
     ...[...customGroups.values()].sort((a, b) =>
       a.customGroup === null ? -1 : b.customGroup === null ? 1 : a.label.localeCompare(b.label)),

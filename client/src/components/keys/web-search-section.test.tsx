@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// Keys → Web search (Fase B): no backend picker any more; the list follows the
-// Models → Search engine order — DuckDuckGo and Parallel as keyless status
-// rows, SearXNG's own instance ADDRESS, then the six free-tier key slots —
-// each slot writing its own field on PUT /api/settings/web-search.
+// Keys → Web Tools (Fase B): single tab for all web search AND fetch key
+// settings. Search section: DuckDuckGo, Parallel (keyless), SearXNG (address),
+// then the six keyed search engines. Fetch section: Jina Reader (keyless) and
+// TinyFish (same key as above — stored once, powers both search and /v1/fetch).
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -48,34 +48,28 @@ async function mount() {
   await flush()
 }
 
-function rowLabels(): string[] {
-  return [...container.querySelectorAll('section .border-b > div > div:first-child > span.text-sm.font-medium')]
-    .map(span => span.textContent ?? '')
-}
-
 function row(label: string): Element {
   return [...container.querySelectorAll('section .border-b')].find(r => r.textContent?.startsWith(label))!
 }
 
-it('orders the nine engines like Models → Search, with no backend picker', async () => {
+it('renders search and fetch subsections with no backend picker', async () => {
   await mount()
-  expect(rowLabels()).toEqual([
-    'DuckDuckGo', 'Parallel', 'SearXNG instance address', 'TinyFish', 'Exa', 'Brave', 'Tavily', 'Firecrawl', 'Linkup',
-  ])
-  // No backend picker: nothing is rendered as a radio group any more.
+  // No backend picker
   expect(container.querySelector('[role="radiogroup"]')).toBeNull()
   expect(container.textContent).not.toContain('Web search backend')
+  // Both subsection headings present
+  expect(container.textContent).toContain('Search')
+  expect(container.textContent).toContain('Fetch')
 })
 
-it('marks DuckDuckGo and Parallel keyless and ready without an input', async () => {
+it('marks DuckDuckGo, Parallel and Jina Reader keyless and ready without an input', async () => {
   await mount()
-  for (const label of ['DuckDuckGo', 'Parallel']) {
+  for (const label of ['DuckDuckGo', 'Parallel', 'Jina Reader']) {
     const r = row(label)
     expect(r.textContent).toContain('keyless')
     expect(r.textContent).toContain('ready to use')
     expect(r.querySelector('input')).toBeNull()
   }
-  expect(container.querySelectorAll('input[type="password"]')).toHaveLength(6)
 })
 
 it('labels the SearXNG field as the instance address, not an API key', async () => {

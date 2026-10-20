@@ -465,6 +465,9 @@ auray:       '#635bff',
   firecrawl:   '#ef4444',
   linkup:      '#10b981',
   parallel:    '#0ea5e9',
+  // /v1/fetch readers (#1174 follow-up), so their usage rows keep one colour.
+  tinyfish:    '#0f766e',
+  jina:        '#7c3aed',
 }
 
 // ── Grouped (unified) rendering ──────────────────────────────────────────────

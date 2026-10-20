@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-// #1174: search provider keys get their own section at the top of the Keys
-// page, with a Search badge, and lose the model-only row actions. A page with
-// no search keys keeps its old, section-less layout.
+// Web search/fetch engine providers are managed exclusively via the Web Tools
+// tab (WebSearchSection). They are excluded from the Providers tab to avoid
+// key redundancy. A page with no search keys keeps its old, section-less
+// layout. Chat-only providers still render with their model actions.
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -47,17 +48,18 @@ async function mount(keys: ApiKey[]) {
 const headings = () => [...container.querySelectorAll('h2')].map(h => h.textContent)
 const providers = () => [...container.querySelectorAll('h3')].map(h => h.textContent)
 
-it('lists search keys first, under their own section, with a Search badge', async () => {
+it('excludes search engine keys from the Providers tab (managed in Web Tools)', async () => {
+  // Keys stored under search platforms (e.g. tavily) are no longer listed in
+  // the Providers tab; they are managed exclusively via the Web Tools tab.
   await mount([
     apiKey({ id: 1, platform: 'groq' }),
     apiKey({ id: 2, platform: 'tavily', label: 'Search key', maskedKey: 'tvly…9999' }),
   ])
-  expect(headings()).toEqual(['Search', 'Models'])
-  expect(providers()[0]).toMatch(/^Tavily/)
-  expect(container.textContent).toContain('never for chat')
-  // The badge sits next to the provider name, not on the chat provider.
-  const groqRow = [...container.querySelectorAll('h3')].find(h => h.textContent?.startsWith('Groq'))!.parentElement!
-  expect(groqRow.textContent).not.toContain('Search')
+  // Only the groq chat provider should appear; tavily is excluded.
+  expect(providers()).toEqual(expect.arrayContaining(['Groq']))
+  expect(providers().some(p => p?.startsWith('Tavily'))).toBe(false)
+  // No section headings when only chat providers are shown.
+  expect(headings()).toEqual([])
 })
 
 it('keeps the old layout when no search key exists', async () => {

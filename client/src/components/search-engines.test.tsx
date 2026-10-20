@@ -1,9 +1,14 @@
 // @vitest-environment jsdom
 // #1174 / Fase B: Models → Search lists the catalog's search engines in
 // failover order, marks the first enabled one as default, and reports each
-// card's honest status from the server's `configured` flag — keyless engines
-// ready, SearXNG waiting on its instance URL, keyed engines either ready or
-// badged "no key" with a link to the Keys page. keyCount is not consulted.
+// card's honest status from the server's `configured` flag. Status copy is
+// decided client-side: only duckduckgo/parallel carry the green "keyless"
+// badge, SearXNG never does (it needs the operator's instance URL, and says so
+// instead of the seeded "keyless · no account needed" label), every other
+// engine — TinyFish included — is a plain keyed engine (no badge once
+// configured, "no key" plus a link when not), and TinyFish and Brave print a
+// real quota in place of their placeholder server labels. keyCount is not
+// consulted.
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -38,8 +43,7 @@ async function flush() { for (let i = 0; i < 4; i++) await act(async () => { awa
 async function mount(engines: SearchEngine[]) {
   vi.mocked(apiFetch).mockReset().mockImplementation(async (path: string) => {
     if (path === '/api/search/engines') return engines
-    if (path === '/api/fetch/usage') return { monthly: 0, today: 0 }
-    if (path === '/api/fetch/config') return { primary: 'auto', effective: 'jina', tinyfishKey: false }
+    if (path === '/api/fetch/sources') return { preferred: 'auto', usage: { monthly: 0, today: 0 }, sources: [] }
     if (path.startsWith('/api/analytics/search')) return { total: 0, today: 3, successRate: 100, avgLatencyMs: 0, byEngine: [], series: [] }
     return {}
   })
@@ -101,22 +105,76 @@ it('drops the no-key badge once a keyed engine is configured', async () => {
 
 it('tells SearXNG apart by whether its instance URL is stored', async () => {
   await mount([
-    engine({ id: 6, platform: 'searxng', engineId: 'searxng-search', displayName: 'SearXNG', keyless: true, configured: false, keyCount: 0 }),
+    // The server still flags SearXNG keyless; the card must not — it cannot
+    // answer until an instance URL exists, so no badge and an honest meta.
+    engine({ id: 6, platform: 'searxng', engineId: 'searxng-search', displayName: 'SearXNG', keyless: true, configured: false, keyCount: 0, quotaLabel: 'keyless · no account needed' }),
     engine({ id: 7, platform: 'parallel', engineId: 'parallel-search', displayName: 'Parallel', keyless: true, configured: true, keyCount: 0, priority: 1 }),
   ])
   const searxng = cardOf('searxng-search')
-  expect(searxng.textContent).toContain('keyless')
-  expect(searxng.textContent).toContain('instance URL not set')
+  expect(searxng.textContent).not.toContain('keyless')
+  expect(searxng.textContent).toContain('needs instance URL, then enable')
+  expect(searxng.textContent).toContain('your own instance')
+  expect(searxng.textContent).not.toContain('no account needed')
   const parallel = cardOf('parallel-search')
+  expect(parallel.textContent).toContain('keyless')
   expect(parallel.textContent).toContain('ready to use')
 })
 
 it('shows a connected SearXNG once the instance URL is stored', async () => {
-  await mount([engine({ id: 6, platform: 'searxng', engineId: 'searxng-search', displayName: 'SearXNG', keyless: true, configured: true, keyCount: 0 })])
+  await mount([engine({ id: 6, platform: 'searxng', engineId: 'searxng-search', displayName: 'SearXNG', keyless: true, configured: true, keyCount: 0, quotaLabel: 'keyless · no account needed' })])
   const card = cardOf('searxng-search')
-  expect(card.textContent).toContain('keyless')
+  expect(card.textContent).not.toContain('keyless')
   expect(card.textContent).toContain('connected')
-  expect(card.textContent).not.toContain('instance URL not set')
+  expect(card.textContent).toContain('your own instance')
+  expect(card.textContent).not.toContain('needs instance URL, then enable')
+})
+
+it('treats a configured TinyFish exactly like Tavily: no status badge at all', async () => {
+  // Every TinyFish request carries an X-API-Key (docs.tinyfish.ai), so it is a
+  // plain keyed engine — same card as Tavily, only the quota differs. The
+  // placeholder server label ("free account key") is still replaced by the
+  // real search allowance (search only, not the /v1/fetch reader limits).
+  await mount([
+    engine({ id: 8, platform: 'tinyfish', engineId: 'tinyfish-search', displayName: 'TinyFish', keyless: false, configured: true, keyCount: 1, quotaLabel: 'free account key', searchesThisMonth: 7 }),
+    engine({ id: 1, platform: 'tavily', engineId: 'tavily-search', displayName: 'Tavily', configured: true, searchesThisMonth: 3 }),
+  ])
+  const card = cardOf('tinyfish-search')
+  expect(card.textContent).not.toContain('keyless')
+  expect(card.textContent).not.toContain('no key')
+  expect(card.textContent).not.toContain('free API key')
+  expect(card.textContent).not.toContain('ready to use')
+  expect(card.textContent).toContain('free 12,000 searches/day, resets 00:00 UTC')
+  expect(card.textContent).toContain('30/min, 500/hour')
+  expect(card.textContent).not.toContain('free account key')
+  // The fetch reader's own allowance is not part of the search quota label.
+  expect(card.textContent).not.toContain('1,000 URLs')
+  expect(card.textContent).not.toContain('150 URLs')
+  // Same status shape as Tavily: only the engine id, name and meta line.
+  expect(card.querySelector('a[href="/keys?tab=webSearch"]')).toBeNull()
+})
+
+it('badges a TinyFish with no key like any other keyed engine, never keyless', async () => {
+  await mount([
+    engine({ id: 8, platform: 'tinyfish', engineId: 'tinyfish-search', displayName: 'TinyFish', keyless: false, configured: false, keyCount: 0, quotaLabel: 'free account key' }),
+  ])
+  const card = cardOf('tinyfish-search')
+  expect(card.textContent).toContain('no key')
+  expect(card.textContent).toContain('add a key')
+  expect(card.querySelector('a[href="/keys?tab=webSearch"]')).not.toBeNull()
+  expect(card.textContent).not.toContain('keyless')
+  expect(card.textContent).toContain('free 12,000 searches/day, resets 00:00 UTC')
+})
+
+it('badges Brave as needing its key and still shows its quota', async () => {
+  await mount([
+    engine({ id: 9, platform: 'brave', engineId: 'brave-search', displayName: 'Brave', keyless: false, configured: false, keyCount: 0, quotaLabel: 'free-tier key' }),
+  ])
+  const card = cardOf('brave-search')
+  expect(card.textContent).toContain('no key')
+  expect(card.textContent).toContain('add a key')
+  expect(card.textContent).toContain('2,000 searches/month free tier')
+  expect(card.textContent).not.toContain('keyless')
+  expect(card.textContent).not.toContain('free-tier key')
 })
 
 it('promotes an engine to default with priority 0', async () => {

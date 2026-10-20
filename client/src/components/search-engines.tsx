@@ -8,7 +8,7 @@ import { CardSkeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/page-header'
 import { ModelsTabs } from '@/components/models-tabs'
 import { UsageSummaryCard } from '@/components/usage-summary-card'
-import { WebFetchCard } from '@/components/web-fetch-card'
+import { FetchEngines } from '@/components/fetch-engines'
 import { useI18n } from '@/i18n'
 import { engineChain, type SearchAnalytics, type SearchEngine } from '@/lib/search'
 
@@ -16,25 +16,54 @@ const pill = 'text-[10px] rounded-full px-1.5 py-0.5 bg-muted text-muted-foregro
 const keylessPill = 'text-[10px] rounded-full px-1.5 py-0.5 bg-emerald-600/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400'
 const warnPill = 'text-[10px] rounded-full px-1.5 py-0.5 bg-amber-600/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400'
 
-// The honest per-card status, straight from `configured`:
-// - duckduckgo/parallel are keyless and always ready;
-// - searxng is keyless but only answers once the operator's instance URL is
-//   stored, so its badge says which of the two it is;
-// - a keyed engine is either configured (no badge at all) or missing its key
-//   (amber badge plus a link to the Keys page section that stores it).
+// The engines the green "keyless" badge honestly describes: DuckDuckGo and
+// Parallel only. The server's `keyless` flag is deliberately NOT consulted —
+// it still lists SearXNG (which cannot answer until the operator stores an
+// instance URL, so it is not keyless). TinyFish is NOT keyless either: every
+// request carries an X-API-Key (docs.tinyfish.ai), so it is a keyed engine
+// with a free tier.
+const KEYLESS_PLATFORMS = new Set(['duckduckgo', 'parallel'])
+
+// Honest allowance per engine where the server's seeded `quota_label` is a
+// terse placeholder ("free account key", "free-tier key") or simply untrue
+// (SearXNG's "keyless · no account needed"). Printed in place of the server
+// label on the card meta line and in the month card, so TinyFish and Brave
+// state a real quota the way the catalog rows do — same feeds, no new fetch.
+const QUOTA_KEY: Record<string, string> = {
+  searxng: 'search.quotaSearxng',
+  tinyfish: 'search.quotaTinyfish',
+  brave: 'search.quotaBrave',
+}
+
+/** The engine's real allowance: client copy where the server label misleads. */
+function quotaMeta(e: SearchEngine, t: (key: string, vars?: Record<string, string | number>) => string): string {
+  const key = QUOTA_KEY[e.platform]
+  return key ? t(key) : e.quotaLabel
+}
+
+// The honest per-card status:
+// - searxng is not keyless: it answers only through the operator's own
+//   instance, so its status says it needs that URL (and "connected" once it
+//   is stored) — never a keyless badge;
+// - duckduckgo and parallel always answer, with no key and no setting;
+// - every other engine is keyed and gets the same treatment as Tavily, Exa,
+//   Firecrawl, Linkup and Brave: configured means no badge at all, missing its
+//   key means the amber badge plus a link to the Keys page section that stores
+//   it. TinyFish has no special path — its key is simply a free one.
 // keyCount is deliberately not consulted — it measures the provider key pool,
 // not whether the settings key / instance URL this engine actually reads is set.
 function EngineStatus({ engine: e }: { engine: SearchEngine }) {
   const { t } = useI18n()
-  if (e.keyless) {
+  if (e.platform === 'searxng') {
+    return e.configured
+      ? <span className="text-[11px] text-emerald-700 dark:text-emerald-400">{t('search.statusConnected')}</span>
+      : <span className="text-[11px] text-amber-700 dark:text-amber-400">{t('search.statusSearxngNeedsInstance')}</span>
+  }
+  if (KEYLESS_PLATFORMS.has(e.platform)) {
     return (
       <>
         <span className={keylessPill}>{t('search.keylessBadge')}</span>
-        {e.platform === 'searxng'
-          ? e.configured
-            ? <span className="text-[11px] text-emerald-700 dark:text-emerald-400">{t('search.statusConnected')}</span>
-            : <span className="text-[11px] text-amber-700 dark:text-amber-400">{t('search.statusSearxngNeedsInstance')}</span>
-          : <span className="text-[11px] text-muted-foreground">{t('search.statusReady')}</span>}
+        <span className="text-[11px] text-muted-foreground">{t('search.statusReady')}</span>
       </>
     )
   }
@@ -114,7 +143,7 @@ function SearchEngineCard({
             <EngineStatus engine={e} />
           </div>
           <div className="truncate text-[11px] text-muted-foreground">
-            {[e.platform, e.quotaLabel].filter(Boolean).join(' · ')}
+            {[e.platform, quotaMeta(e, t)].filter(Boolean).join(' · ')}
           </div>
         </div>
         <Switch
@@ -181,7 +210,7 @@ export function SearchEnginesView() {
             rows={ordered.map(e => ({
               label: e.displayName,
               platform: e.platform,
-              quotaLabel: e.quotaLabel,
+              quotaLabel: quotaMeta(e, t),
               amount: e.searchesThisMonth,
               requestsToday: 0,
             }))}
@@ -209,7 +238,7 @@ export function SearchEnginesView() {
           ))
         )}
 
-        <WebFetchCard />
+        <FetchEngines />
       </div>
     </div>
   )
