@@ -128,6 +128,9 @@ describe('assertPublicHttpUrl (SSRF guard)', () => {
 describe('/v1/fetch', () => {
   let app: Express;
   let token: string;
+  // One session for the whole file: createUser() rejects a second account with
+  // the same email, so the dashboard token is minted once and reused.
+  let dashToken: string;
 
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
@@ -136,6 +139,7 @@ describe('/v1/fetch', () => {
     // /v1 endpoints authenticate with the unified inference key, not the
     // dashboard session token (same as every other proxy route test).
     token = getUnifiedApiKey();
+    dashToken = mintDashboardToken();
   });
 
   afterEach(() => {
@@ -180,7 +184,7 @@ it('fetch blocks private targets BEFORE any network call', async () => {
     const before = getFetchUsage();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     await post(app, '/v1/fetch', { url: 'http://93.184.216.34/more' }, token);
-    const { status, body } = await get(app, '/api/fetch/usage', mintDashboardToken());
+    const { status, body } = await get(app, '/api/fetch/usage', dashToken);
     expect(status).toBe(200);
     expect(body).toEqual({ monthly: before.monthly + 1, today: before.daily + 1 });
   });
@@ -263,5 +267,50 @@ it('fetch blocks private targets BEFORE any network call', async () => {
     const { status, body } = await post(app, '/v1/fetch', { url: 'http://93.184.216.34/x' }, token);
     expect(status).toBe(502);
     expect(body.error.message).toContain('both rejected');
+  });
+
+  // The public counterpart of GET /v1/search/engines: the reader registry the
+  // dashboard cards show, published over the same inference key.
+  it('GET /v1/fetch/sources lists the seeded readers with their configured flag', async () => {
+    const { status, body } = await get(app, '/v1/fetch/sources', token);
+    expect(status).toBe(200);
+    expect(body.object).toBe('list');
+    expect(body.data.map((s: any) => s.id)).toEqual(['tinyfish-fetch', 'jina-reader']);
+    expect(body.data[0]).toMatchObject({
+      object: 'fetch_source',
+      provider: 'tinyfish',
+      name: 'TinyFish Fetch',
+      configured: false,
+      quota_label: 'free 1,000 URLs/day · 150 URLs/min',
+    });
+    // Jina answers anonymously — no key to store, so it is always configured.
+    expect(body.data[1]).toMatchObject({ provider: 'jina', configured: true });
+    expect(body.data[1].quota_label).toContain('20 RPM');
+  });
+
+  it('GET /v1/fetch/sources flips TinyFish to configured once its key is stored', async () => {
+    setWebSearchConfig({ tinyfishKey: 'tf-secret' });
+    const { body } = await get(app, '/v1/fetch/sources', token);
+    expect(body.data.find((s: any) => s.provider === 'tinyfish').configured).toBe(true);
+  });
+
+  it('GET /v1/fetch/sources requires the inference key', async () => {
+    const { status } = await get(app, '/v1/fetch/sources');
+    expect(status).toBe(401);
+  });
+
+  it('GET /api/fetch/sources says which reader is preferred and why', async () => {
+    const { status, body } = await get(app, '/api/fetch/sources', dashToken);
+    expect(status).toBe(200);
+    expect(body.preferred).toBe('auto');
+    expect(body.usage).toEqual({ monthly: expect.any(Number), today: expect.any(Number) });
+    const tinyfish = body.sources.find((s: any) => s.platform === 'tinyfish');
+    expect(tinyfish).toMatchObject({ id: 'tinyfish-fetch', enabled: true, configured: false, authKind: 'key' });
+    expect(body.sources.find((s: any) => s.platform === 'jina')).toMatchObject({ authKind: 'none', configured: true });
+  });
+
+  it('GET /api/fetch/sources requires the dashboard token', async () => {
+    const { status } = await get(app, '/api/fetch/sources', 'bad-token');
+    expect(status).toBe(401);
   });
 });

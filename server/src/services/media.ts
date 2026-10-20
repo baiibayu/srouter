@@ -214,12 +214,12 @@ export function listMediaModels(modality: MediaModality): MediaModelRow[] {
 }
 
 /** All media models (every media modality, including disabled) for the
- *  dashboard. Search engines and decision models share the table (modality
- *  'search' / 'decision') but have their own pages and APIs, so they are left
- *  out here. */
+ *  dashboard. Search engines, decision models and fetch sources share the
+ *  table (modality 'search' / 'decision' / 'fetch') but have their own pages
+ *  and APIs, so they are left out here. */
 export function listAllMediaModels(): MediaModelRow[] {
   return getDb()
-    .prepare("SELECT * FROM media_models WHERE modality NOT IN ('search', 'decision') ORDER BY modality, priority, id")
+    .prepare("SELECT * FROM media_models WHERE modality NOT IN ('search', 'decision', 'fetch') ORDER BY modality, priority, id")
     .all() as MediaModelRow[];
 }
 

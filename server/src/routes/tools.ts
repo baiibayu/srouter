@@ -6,6 +6,9 @@
 // endpoints, rate-limited by the shared /v1 proxy limiter (mounted in app.ts).
 //
 //   POST /v1/fetch       {url, max_bytes?}       → readable text, SSRF-guarded
+//   GET  /v1/fetch/sources                        → the reader registry, the
+//                                                   same shape GET
+//                                                   /v1/search/engines uses
 //
 // Fetch is an SSRF surface by definition (the caller hands us a URL to
 // request), so it only ever leaves toward PUBLIC http(s) addresses: literal
@@ -22,6 +25,7 @@ import { requireInferenceAuth } from './proxy.js';
 import { getTinyfishApiKey } from '../services/web-search.js';
 import { stripTags } from '../lib/html.js';
 import { recordFetchUsage } from '../services/fetch-usage.js';
+import { fetchChainOrder, listFetchSources } from '../services/fetch-sources.js';
 
 export const toolsRouter = Router();
 
@@ -156,15 +160,31 @@ const fetchSchema = z.object({
 });
 
 function readerChainOrder(): Array<'tinyfish' | 'jina'> {
-  // The fetch config (GET/PUT /api/fetch/config) names the primary reader; the
-  // effective reader is tinyfish when its key is stored, else jina. The chain
-  // tries the effective primary first and the other reader as the fallback.
-  const primary = (process.env.FETCH_PRIMARY ?? 'auto').trim();
-  const effective: 'tinyfish' | 'jina' = (primary === 'tinyfish' || primary === 'auto') && getTinyfishApiKey()
-    ? 'tinyfish'
-    : 'jina';
-  return effective === 'tinyfish' ? ['tinyfish', 'jina'] : ['jina', 'tinyfish'];
+  // The registry (media_models, modality='fetch') decides which readers are
+  // enabled and in what order; the legacy FETCH_PRIMARY hint still chooses
+  // the preferred one. services/fetch-sources.ts owns both rules.
+  return fetchChainOrder(process.env.FETCH_PRIMARY ?? 'auto');
 }
+
+// The reader registry, public over the inference key — the counterpart of
+// GET /v1/search/engines so agents can see which reader answers and whether
+// it is configured. Only enabled sources are listed, exactly like engines.
+toolsRouter.get('/fetch/sources', (req: Request, res: Response) => {
+  if (!requireInferenceAuth(req, res)) return;
+  res.json({
+    object: 'list',
+    data: listFetchSources()
+      .filter(source => source.enabled)
+      .map(source => ({
+        id: source.sourceId,
+        object: 'fetch_source',
+        provider: source.platform,
+        name: source.displayName,
+        quota_label: source.quotaLabel,
+        configured: source.configured,
+      })),
+  });
+});
 
 toolsRouter.post('/fetch', async (req: Request, res: Response) => {
   if (!requireInferenceAuth(req, res)) return;

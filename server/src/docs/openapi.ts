@@ -840,41 +840,6 @@ export const openapiSpec = {
         responses: { '200': { description: 'Ollama model list.' }, '401': { description: 'Invalid or revoked URL token.' } },
       },
     },
-    '/v1/web-search': {
-      post: {
-        tags: ['Tools'],
-        operationId: 'webSearch',
-        summary: 'Search the web',
-        description:
-          'Agentic web search over the configured backend (Dashboard → Keys page → Web search backend; ' +
-          'live status on Models → Web Search): ' +
-          'DuckDuckGo (keyless default), your own SearXNG instance, or a Tavily/Brave free-tier key. ' +
-          'Every non-DuckDuckGo backend falls back to DuckDuckGo when it is unreachable, and `provider` ' +
-          'reports whichever backend actually answered.',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/WebSearchRequest' },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Ranked results with the backend that served them.',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/WebSearchResponse' },
-              },
-            },
-          },
-          '400': { $ref: '#/components/responses/BadRequest' },
-          '401': { $ref: '#/components/responses/Unauthorized' },
-          '502': { $ref: '#/components/responses/UpstreamError' },
-        },
-        'x-optional-surface': true,
-      },
-    },
     '/v1/fetch': {
       post: {
         tags: ['Tools'],
@@ -882,8 +847,8 @@ export const openapiSpec = {
         summary: 'Fetch a page as readable text',
         description:
           'Fetches a public http(s) URL and returns readable text (HTML entities decoded, boilerplate ' +
-          'stripped). Falls back to the free Jina Reader tier when the direct fetch is blocked by a bot ' +
-          'wall. Private network addresses are rejected (SSRF guard).',
+          'stripped). Falls back to the reader chain — TinyFish Fetch when its key is stored, then the free ' +
+          'keyless Jina Reader. Private network addresses are rejected (SSRF guard).',
         requestBody: {
           required: true,
           content: {
@@ -904,6 +869,46 @@ export const openapiSpec = {
           '400': { $ref: '#/components/responses/BadRequest' },
           '401': { $ref: '#/components/responses/Unauthorized' },
           '502': { $ref: '#/components/responses/UpstreamError' },
+        },
+      },
+    },
+    '/v1/fetch/sources': {
+      get: {
+        tags: ['Tools'],
+        operationId: 'listFetchSources',
+        summary: 'List fetch sources',
+        description:
+          'The enabled readers behind POST /v1/fetch, in fallback order, and whether each can answer right ' +
+          'now. The counterpart of GET /v1/search/engines.',
+        responses: {
+          '200': {
+            description: 'Fetch sources.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    object: { type: 'string', example: 'list' },
+                    data: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', example: 'tinyfish-fetch' },
+                          object: { type: 'string', example: 'fetch_source' },
+                          provider: { type: 'string', example: 'tinyfish' },
+                          name: { type: 'string', example: 'TinyFish Fetch' },
+                          quota_label: { type: 'string', example: 'free 1,000 URLs/day · 150 URLs/min' },
+                          configured: { type: 'boolean', description: 'True when this reader can answer right now.' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' },
         },
       },
     },
@@ -997,7 +1002,7 @@ export const openapiSpec = {
         type: 'object',
         properties: {
           url: { type: 'string', description: 'Final URL after redirects.' },
-          via: { type: 'string', enum: ['direct', 'jina'], description: 'Direct fetch or the Jina Reader fallback.' },
+          via: { type: 'string', enum: ['direct', 'tinyfish', 'jina'], description: 'Direct fetch or the reader that served it.' },
           title: { type: 'string', nullable: true, description: 'HTML page title when available.' },
           text: { type: 'string', description: 'Readable page text (or markdown from the reader fallback).' },
           truncated: { type: 'boolean', description: 'True when the body hit the byte cap.' },
