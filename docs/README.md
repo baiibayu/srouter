@@ -43,10 +43,6 @@ SRouter Docs
 │   ├── Chat Completions (/v1/chat/completions)
 │   ├── Anthropic Messages (/v1/messages)
 │   ├── Native Gemini (/v1beta/models/*:generateContent)
-│   ├── Unified Web Search (/v1/search & /v1/search/engines)
-│   ├── Page Fetch & Extraction (/v1/fetch & /v1/fetch/sources)
-│   ├── Decision System One (/v1/decision & /v1/decisions)
-│   ├── Model Context Protocol (/mcp Streamable HTTP)
 │   ├── Ollama NDJSON Emulation
 │   └── Multimodal & Media (Vision, TTS, Video)
 │

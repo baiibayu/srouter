@@ -1874,7 +1874,7 @@ function migrateModelsV23FreeTierAudit(db: Db) {
  *     OpenRouter ultra route (which hangs: 0 tokens in 140s even streaming),
  *     Zen serves it from a dedicated vLLM endpoint in ~2s WITH structured
  *     tool_calls. Currently the biggest usable free model anywhere.
- *   - ADDED minimax-m3-free — requested in #242 (thanks @Naster17). Live
+ *   - ADDED minimax-m3-free — requested in #242. Live
  *     probe: 2s chat, finish_reason:tool_calls. CAVEAT: not in Zen's docs
  *     free table (same undocumented status qwen3.6-plus-free had before its
  *     promo ended), so it may transition without notice — watchlist.

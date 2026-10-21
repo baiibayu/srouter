@@ -131,10 +131,7 @@ export function isNewerVersion(latest: string, current: string): boolean {
  * Check for server updates and emit a notification if one is available.
  * Called on boot (via catalog-sync) and periodically via health checker.
  *
- * The repository is NOT defaulted: this fork replaces upstream and publishes
- * no releases of its own yet, so checking upstream would announce every
- * upstream tag (e.g. v0.13.4 > 0.3.1) as an endless "update available".
- * SROUTER_UPDATE_REPO must name the fork's own owner/repo before anything is
+ * SROUTER_UPDATE_REPO must name the repository owner/repo before anything is
  * checked — otherwise any stored update row is stale and gets dropped.
  */
 export async function checkUpdateAvailable(): Promise<void> {

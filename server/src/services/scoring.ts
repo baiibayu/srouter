@@ -337,8 +337,7 @@ export function expectedReliability(
 
 // ── Speed (throughput + TTFB blended into one [0,1] axis) ───────────────────
 // Throughput uses a saturating curve so one very fast tiny model can't make a
-// perfectly-fine larger model look "slow" (the global-max-normalization bug in
-// the fork). TTFB is a simple linear ramp from "instant" to "painfully slow".
+// perfectly-fine larger model look "slow". TTFB is a simple linear ramp from "instant" to "painfully slow".
 export const SPEED_SCALE_TOK_S = 60;   // tok/s at which throughput ≈ 0.63
 export const TTFB_BEST_MS = 300;       // ≤ this → full latency credit
 export const TTFB_WORST_MS = 5000;     // ≥ this → zero latency credit

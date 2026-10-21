@@ -51,10 +51,7 @@ This documentation hub covers everything you need to install, configure, and ope
   - Ollama Emulation (`/api/chat`, `/api/generate`)
   - Text Embeddings (`/v1/embeddings`)
   - Media Generation (`/v1/images/generations`, `/v1/audio/*`, `/v1/videos/*`)
-  - Unified Web Search & Page Fetch (`/v1/search`, `/v1/fetch`)
-  - Decision System One (`/v1/decision`, `/v1/decisions`)
-  - Model Context Protocol over Streamable HTTP (`/mcp`)
-  - Interactive Documentation (`/v1/docs`, `/v1/openapi.json`)
+  - Agent Web Search & Fetch (`/v1/web-search`, `/v1/fetch`)
 - **[Idempotency & Retry Semantics](api/02-idempotency.md):** Request deduping and safe retries across distributed providers.
 
 ### ✂️ 4. Prompt Compression & Token Saver

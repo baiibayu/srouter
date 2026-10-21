@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Unit tests for the request guardrails (ported from @coffcoe's fork): the
+// Unit tests for the request guardrails: the
 // per-request token budget (pre-flight reject / cap-absent-max_tokens) and
 // the consecutive-upstream-failure circuit breaker, plus the
 // setting → env → 0 precedence of both knobs.

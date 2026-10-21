@@ -10,10 +10,8 @@
 // deliberately NOT used: Node reserves it for the inspector — signaling it
 // opens a debugger port, which is the opposite of hardening.
 //
-// Ported from @Naster17's fork (Naster17/srouter-pro@4c43cf2a), trimmed to
-// what applies upstream: his inflight-slot TTL guards fork-only concurrency
-// machinery, and his SQLite ping/reconnect isn't needed for an in-process
-// better-sqlite3 handle (and would bypass connectDb's injected factory).
+// Host sleep detection via drift tick and system signals to refresh stale
+// connections and key cooldowns immediately upon wake.
 
 export interface WakeHooks {
   onWake: (event: WakeEvent) => void | Promise<void>;

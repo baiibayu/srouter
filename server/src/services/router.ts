@@ -728,7 +728,7 @@ export function getActiveRoutingWeights(): { weights: RoutingWeights | null; adj
 }
 
 // ── Analytics stats cache (decay-weighted) ──────────────────────────────────
-// Instead of the fork's flat 7-day window (where a model that degrades today
+// Rather than a flat 7-day window (where a model that degrades today
 // keeps a stale week-long average), each request is weighted by an exponential
 // decay so recent behavior dominates while older data still stabilizes the
 // estimate. We aggregate by (model, integer day age) in SQL — at most ~7 rows

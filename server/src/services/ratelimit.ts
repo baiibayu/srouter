@@ -1410,7 +1410,7 @@ export function getRateLimitStatus(
 // "...on tokens per minute (TPM): Limit 30000, Requested 33476" — we can learn
 // that ceiling and persist it so the canUseTokens / canMakeRequest pre-checks
 // stop us BEFORE the next 413 instead of re-discovering it on every request.
-// (Fork-validated: andersmmg's updateLimitsFromError parses the same Groq shape.)
+// Parses error details to capture and enforce dynamic provider rate limits.
 
 export type LearnedLimitKind = 'tpm' | 'tpd' | 'rpm' | 'rpd';
 export interface LearnedLimit { kind: LearnedLimitKind; limit: number; }

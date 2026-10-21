@@ -16,10 +16,9 @@
 //     doomed chain was 38.8s of serial retries; the wall-clock budget bounds
 //     the time, this bounds the wasted attempts/quota).
 //
-// Ported from @coffcoe's fork (coffcoe/srouter@e5024d53) and adapted to the
-// unified fallback loop: the original patched each surface's copy of the retry
-// loop; here the breaker is wired once in runFallbackLoop and the budget is a
-// shared pre-flight helper each surface renders in its own wire format.
+// Adapted for the unified fallback loop: the breaker is wired in
+// runFallbackLoop and the budget is a shared pre-flight helper each
+// surface renders in its own wire format.
 //
 // Precedence mirrors the response cache and the fallback time budget: the
 // settings-table value wins when present (runtime-tunable, no restart), then

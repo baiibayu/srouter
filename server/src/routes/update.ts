@@ -348,12 +348,8 @@ export function createUpdateRouter(options: UpdateRouterOptions = {}): Router {
   const selfUpdateConfigured = Boolean(selfUpdateUrl && selfUpdateToken);
   const canSelfUpdate = (installation: Installation) => installation === 'docker' && selfUpdateConfigured;
   /**
-   * The fork's own owner/repo, and the one valid comparison target. There is
-   * deliberately no upstream default: this fork replaced upstream, and
-   * checking upstream announced every upstream release (v0.13.4 > our 0.3.1)
-   * as an endless bogus "update available". Until SROUTER_UPDATE_REPO names a
-   * repository that actually carries releases for THIS install, every surface
-   * below reports disabled instead of phoning GitHub.
+   * The repository owner/repo comparison target. Until SROUTER_UPDATE_REPO names a
+   * repository that carries releases for this install, update checking reports disabled.
    */
   const repository = (env.SROUTER_UPDATE_REPO ?? '').trim();
   const repositoryMissing = repository.length === 0;

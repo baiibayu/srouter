@@ -1,5 +1,4 @@
-// Process-level safety net for late network transport errors (fork-validated:
-// jasnoorgill's safe-fetch / process-safety-net).
+// Process-level safety net for late network transport errors.
 //
 // The failure this guards against: undici resolves `fetch()` and we move on, but
 // the underlying HTTP/2 / TLS socket is later reset by a CDN edge (CloudFront,
