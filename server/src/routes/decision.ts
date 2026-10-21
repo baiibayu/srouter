@@ -13,12 +13,10 @@ import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { z } from 'zod';
 import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
-import { getComplexityGate, readJevApiKey, matchJevPreset, classifyComplexityHeuristic } from '../services/complexity-gate.js';
+import { getComplexityGate, readJevApiKey, matchJevPreset } from '../services/complexity-gate.js';
 import { extractApiToken, getRequestGroupId } from './proxy.js';
 import { resolveAuth } from '../lib/system-prompt.js';
 import { createProxyRateLimiter } from '../middleware/rateLimit.js';
-import { getFallbackTimeBudgetMs } from '../lib/fallback-loop.js';
-import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { getSetting, getDb } from '../db/index.js';
 import { decrypt } from '../lib/crypto.js';
 import { resolveProvider } from '../providers/index.js';
@@ -319,10 +317,6 @@ decisionRouter.post('/decision', createProxyRateLimiter(), async (req: Request, 
     res.status(422).json({ error: { message: `Invalid request: ${e.message}`, type: 'invalid_request_error' } });
     return;
   }
-
-  // Rate-limit ceiling: 20 req/min per IP (same as shared /v1 limiter)
-  const timeBudgetMs = getFallbackTimeBudgetMs();
-  const jevTimeoutMs = Math.min(2000, timeBudgetMs > 0 ? timeBudgetMs : 2000);
 
   // Get complexity gate config for Jev host selection
   const cfg = getComplexityGate();

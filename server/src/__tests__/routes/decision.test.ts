@@ -174,7 +174,7 @@ describe('POST /v1/decision', () => {
 
     // Seed a groq key that the chatJudge will find. We need decrypt to return
     // something, so we mock it by mocking the provider directly.
-    const { resolveProvider } = await import('../../providers/index.js');
+    await import('../../providers/index.js');
     const mockProvider = {
       chatCompletion: vi.fn().mockResolvedValue({
         choices: [{ message: { content: '{"answer":"moderate","score":7}' } }],
