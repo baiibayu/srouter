@@ -47,6 +47,7 @@ import * as decisionRequests from '../migrations/20261016_000001_decision_reques
 import * as seedLocalSearchEngines from '../migrations/20261019_000001_seed_local_search_engines.js';
 import * as seedParallelSearchEngine from '../migrations/20261019_000002_seed_parallel_search_engine.js';
 import * as seedLocalFetchSources from '../migrations/20261020_000001_seed_local_fetch_sources.js';
+import * as decisionChatJudge from '../migrations/20261021_000001_decision_chat_judge.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -106,6 +107,7 @@ export const DECISION_REQUESTS_FILENAME = '20261016_000001_decision_requests.ts'
 export const SEED_LOCAL_SEARCH_ENGINES_FILENAME = '20261019_000001_seed_local_search_engines.ts';
 export const SEED_PARALLEL_SEARCH_ENGINE_FILENAME = '20261019_000002_seed_parallel_search_engine.ts';
 export const SEED_LOCAL_FETCH_SOURCES_FILENAME = '20261020_000001_seed_local_fetch_sources.ts';
+export const DECISION_CHAT_JUDGE_FILENAME = '20261021_000001_decision_chat_judge.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -156,4 +158,5 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: SEED_LOCAL_SEARCH_ENGINES_FILENAME, module: seedLocalSearchEngines },
   { filename: SEED_PARALLEL_SEARCH_ENGINE_FILENAME, module: seedParallelSearchEngine },
   { filename: SEED_LOCAL_FETCH_SOURCES_FILENAME, module: seedLocalFetchSources },
+  { filename: DECISION_CHAT_JUDGE_FILENAME, module: decisionChatJudge },
 ];
