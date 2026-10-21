@@ -15,6 +15,12 @@
 | `d640d75` | 2026-10-21 | feat(client): web engine keys live only in Web Tools — add-key form and grouped list drop search providers. |
 | `0550461` | 2026-10-21 | merge: batch-c update & perbaikan (24 item, gate hijau). |
 | `b775264` | 2026-10-21 | merge: batch-b update & perbaikan (30 item, gate hijau). |
+| `b950647` | 2026-10-21 | fix: sync package-lock.json with workspace dependency additions (qrcode) so npm ci passes. |
+| `df54f41` | 2026-10-21 | fix: stamp desktop package-lock version to 0.1.12 so release CI passes. |
+| `d7eb273` | 2026-10-21 | fix(cli): pin REASONIX_HOME in generator tests so golden paths are host-agnostic. |
+| `6e6fd5a` | 2026-10-21 | fix(server): drop unused decision route locals and test import so lint passes. |
+| `fc0609a` | 2026-10-21 | fix(cli): pack mcp, update-check and update dist files so the tarball smoke-test boots. |
+| `0d0141e` | 2026-10-21 | docs(readme): refresh all READMEs with unified API endpoints table and clarified agent setup guides. |
 
 ## 2026-10-16 — 0.1.3
 
