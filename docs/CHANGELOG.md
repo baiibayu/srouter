@@ -2,19 +2,19 @@
 
 | Commit | Date | Summary |
 | --- | --- | --- |
-| `924c94a0` | 2026-10-21 | docs: README quickstart refresh, full endpoint table, Decision System One and Web Tools sections, breaker default-off note. |
-| `b26caf79` | 2026-10-21 | chore: align all package versions (server, client, cli, desktop, shared) to 0.1.12 with matching CLI update-check tests. |
-| `46aaa6e2` | 2026-10-21 | fix(repo): enforcement contact points to SRouter's own mailbox, drop upstream identity leak. |
-| `60ce8f9b` | 2026-10-21 | fix(api): chat-judge picks a real catalog model per platform — 'auto' 404s on provider APIs. |
-| `69e2e010` | 2026-10-21 | feat(api): decision chat-judge via cheapest linked provider key before heuristic fallback. |
-| `eda22706` | 2026-10-21 | feat(fetch): local fetch source registry (tinyfish-fetch, jina-reader) with usage-aware dashboard endpoints. |
-| `6b12fafd` | 2026-10-21 | feat(api): POST /v1/decision endpoint (System One) with heuristic fail-open and agent reliability timeline. |
-| `96ffc30c` | 2026-10-21 | fix(reliability): breaker off by default, SSE keepalive without header regression, coherent time budgets. |
-| `e210186` | 2026-10-21 | feat: unify search/fetch — single /v1/search, drop legacy backend. |
-| `e4532204` | 2026-10-21 | feat(client): web fetch/search engines UX — fetch cards, usage card, Web Tools keys section. |
-| `1bbb99e` | 2026-10-21 | feat(client): web engine keys live only in Web Tools — add-key form and grouped list drop search providers. |
-| `d74ccc3` | 2026-10-21 | merge: batch-c update & perbaikan (24 item, gate hijau). |
-| `7a78b8b` | 2026-10-21 | merge: batch-b update & perbaikan (30 item, gate hijau). |
+| `d43c57d` | 2026-10-21 | docs: README quickstart refresh, full endpoint table, Decision System One and Web Tools sections, breaker default-off note. |
+| `062ac99` | 2026-10-21 | chore: align all package versions (server, client, cli, desktop, shared) to 0.1.12 with matching CLI update-check tests. |
+| `e695b40` | 2026-10-21 | fix(repo): enforcement contact points to SRouter's own mailbox, drop upstream identity leak. |
+| `7730803` | 2026-10-21 | fix(api): chat-judge picks a real catalog model per platform — 'auto' 404s on provider APIs. |
+| `60386fd` | 2026-10-21 | feat(api): decision chat-judge via cheapest linked provider key before heuristic fallback. |
+| `d8f3f17` | 2026-10-21 | feat(fetch): local fetch source registry (tinyfish-fetch, jina-reader) with usage-aware dashboard endpoints. |
+| `ef681f2` | 2026-10-21 | feat(api): POST /v1/decision endpoint (System One) with heuristic fail-open and agent reliability timeline. |
+| `da4037d` | 2026-10-21 | fix(reliability): breaker off by default, SSE keepalive without header regression, coherent time budgets. |
+| `7edad89` | 2026-10-21 | feat: unify search/fetch — single /v1/search, drop legacy backend. |
+| `57fa845` | 2026-10-21 | feat(client): web fetch/search engines UX — fetch cards, usage card, Web Tools keys section. |
+| `d640d75` | 2026-10-21 | feat(client): web engine keys live only in Web Tools — add-key form and grouped list drop search providers. |
+| `0550461` | 2026-10-21 | merge: batch-c update & perbaikan (24 item, gate hijau). |
+| `b775264` | 2026-10-21 | merge: batch-b update & perbaikan (30 item, gate hijau). |
 
 ## 2026-10-16 — 0.1.3
 
