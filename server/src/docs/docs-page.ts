@@ -52,6 +52,17 @@ export const DOCS_HTML = `<!DOCTYPE html>
     .auth { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
       padding: 14px 16px; margin: 22px 0; }
     .auth h2 { margin: 0 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    .info-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 18px; margin: 20px 0; }
+    .info-card h2 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+    .info-card h3 { margin: 14px 0 6px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--fg); }
+    .info-card p, .info-card li { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 6px 0; }
+    .info-card ul { margin: 6px 0; padding-left: 20px; }
+    .table-spec { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+    .table-spec th, .table-spec td { border-top: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+    .table-spec th { font-weight: 600; color: var(--fg); background: var(--card); }
+    .tag-pill { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 999px;
+      background: var(--code-bg); border: 1px solid var(--border); color: var(--fg); font-weight: 500; }
     .group h2 { font-size: 16px; margin: 30px 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
     .op { border: 1px solid var(--border); border-radius: 10px; margin: 12px 0; overflow: hidden; }
     .op > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; gap: 12px;
@@ -272,6 +283,146 @@ export const DOCS_HTML = `<!DOCTYPE html>
         root.appendChild(authBox);
       }
 
+      // Reliability & Fault Tolerance Note
+      var relBox = el('div', 'info-card');
+      relBox.appendChild(el('h2', null, 'Reliability & Fault Tolerance'));
+      var relP = el('p', null,
+        'Circuit breaker threshold defaults to 0 (OFF / disabled). In SRouter multi-provider routing, upstream rate limits (429) or temporary outages trigger immediate per-key cooldown and next-model fallback without tripping a global circuit breaker that would freeze the gateway. ' +
+        'Streaming surfaces (OpenAI, Anthropic Messages, Responses) include proactive SSE keepalives to prevent intermediate reverse proxy or NAT idle timeouts without HTTP header regressions, coupled with coherent time budgets across fallback hops.'
+      );
+      relBox.appendChild(relP);
+      root.appendChild(relBox);
+
+      // Decision System One (POST /v1/decision) Section
+      var decBox = el('div', 'info-card');
+      decBox.appendChild(el('h2', null, 'Decision System One (POST /v1/decision)'));
+      var decP1 = el('p', null,
+        'The System One decision surface accepts prompt state alongside question schemas and returns low-latency classification scores (docs.typesafe.ai contract). Ideal for complexity gating, model tier selection, and agent routing decisions.'
+      );
+      decBox.appendChild(decP1);
+
+      decBox.appendChild(el('h3', null, 'Request Contract'));
+      var decPContract = el('p', null,
+        'Requires model (string), state (context string), and questions with choice criteria (up to 255 criteria, optional scoring weights 2..10 in options):'
+      );
+      decBox.appendChild(decPContract);
+
+      var decPre = el('pre', 'schema');
+      decPre.textContent = JSON.stringify({
+        model: 'auto',
+        state: 'Explain async/await under Node 22',
+        questions: {
+          complexity: {
+            type: 'choice',
+            instructions: 'Classify coding prompt complexity',
+            criteria: ['simple', 'moderate', 'complex'],
+            options: { simple: 3, moderate: 6, complex: 9 }
+          }
+        }
+      }, null, 2);
+      decBox.appendChild(decPre);
+
+      decBox.appendChild(el('h3', null, '3-Tier Resolution & Fail-Open Heuristic'));
+      var decUl = el('ul');
+      var li1 = el('li');
+      var s1 = el('strong', null, '1. Remote Jev Host: ');
+      li1.appendChild(s1);
+      li1.appendChild(document.createTextNode('Evaluated against the configured Jev host (JEV_HOST_PRESETS) within a strict 2000ms timeout window. Response source: '));
+      li1.appendChild(el('code', 'mono', '"jev"'));
+      li1.appendChild(document.createTextNode('.'));
+      decUl.appendChild(li1);
+
+      var li2 = el('li');
+      var s2 = el('strong', null, '2. Chat-Judge Fallback: ');
+      li2.appendChild(s2);
+      li2.appendChild(document.createTextNode('If Jev is unconfigured or unkeyed, SRouter issues a lightweight non-streaming classification prompt to the first active provider key defined in '));
+      li2.appendChild(el('code', 'mono', 'decision_chat_judge_order'));
+      li2.appendChild(document.createTextNode(' (default: ["groq", "google", "openrouter", "mistral"], toggleable via '));
+      li2.appendChild(el('code', 'mono', 'decision_chat_judge'));
+      li2.appendChild(document.createTextNode('). It picks a real small catalog model (e.g. 8b, 7b, nano, mini, flash) instead of router aliases. Budget: 2500ms. Response source: '));
+      li2.appendChild(el('code', 'mono', '"chatJudge"'));
+      li2.appendChild(document.createTextNode('.'));
+      decUl.appendChild(li2);
+
+      var li3 = el('li');
+      var s3 = el('strong', null, '3. Fail-Open Local Heuristic: ');
+      li3.appendChild(s3);
+      li3.appendChild(document.createTextNode('If both remote Jev and chat-judge fail or timeout, the gateway gracefully fails open by calculating scores via local heuristic analysis (scoreChoice). The caller never encounters an unhandled 5xx error. Response source: '));
+      li3.appendChild(el('code', 'mono', '"heuristic"'));
+      li3.appendChild(document.createTextNode('.'));
+      decUl.appendChild(li3);
+      decBox.appendChild(decUl);
+
+      root.appendChild(decBox);
+
+      // Web Tools (Search Engines & Fetch Sources) Section
+      var toolsBox = el('div', 'info-card');
+      toolsBox.appendChild(el('h2', null, 'Web Tools: Unified Search & Fetch'));
+      var toolsP1 = el('p', null,
+        'Built-in web intelligence tools providing real-time web retrieval and clean page fetching. These tools do not serve LLM chat; their API keys live exclusively in the Web Tools section under the Keys tab (Keys -> Web Tools), keeping them separate from chat provider credentials.'
+      );
+      toolsBox.appendChild(toolsP1);
+
+      toolsBox.appendChild(el('h3', null, 'Search Engines (POST /v1/search & GET /v1/search/engines)'));
+      var searchTable = el('table', 'table-spec');
+      var sth = el('tr');
+      sth.appendChild(el('th', null, 'Engine'));
+      sth.appendChild(el('th', null, 'Provider ID'));
+      sth.appendChild(el('th', null, 'Default Free Quota'));
+      sth.appendChild(el('th', null, 'Type'));
+      searchTable.appendChild(sth);
+
+      var searchEngines = [
+        { name: 'Parallel Search', id: 'parallel', quota: 'Unlimited / Community Keyless', type: 'Keyless (100% Free)' },
+        { name: 'Tavily', id: 'tavily', quota: '1,000 searches / month', type: 'API Key' },
+        { name: 'Exa', id: 'exa', quota: '$10 search credits / month', type: 'API Key' },
+        { name: 'Firecrawl', id: 'firecrawl', quota: '500 scrapes / month', type: 'API Key' },
+        { name: 'Linkup', id: 'linkup', quota: '1,000 queries / month', type: 'API Key' }
+      ];
+
+      searchEngines.forEach(function (e) {
+        var tr = el('tr');
+        var td1 = el('td'); td1.appendChild(el('strong', null, e.name));
+        var td2 = el('td', 'mono', e.id);
+        var td3 = el('td', null, e.quota);
+        var td4 = el('td'); td4.appendChild(el('span', 'tag-pill', e.type));
+        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+        searchTable.appendChild(tr);
+      });
+      toolsBox.appendChild(searchTable);
+
+      toolsBox.appendChild(el('h3', null, 'Fetch Sources (POST /v1/fetch & GET /v1/fetch/sources)'));
+      var fetchTable = el('table', 'table-spec');
+      var fth = el('tr');
+      fth.appendChild(el('th', null, 'Source'));
+      fth.appendChild(el('th', null, 'Source ID'));
+      fth.appendChild(el('th', null, 'Quota / Rate Limit'));
+      fth.appendChild(el('th', null, 'Type'));
+      fetchTable.appendChild(fth);
+
+      var fetchSources = [
+        { name: 'TinyFish Fetch', id: 'tinyfish-fetch', quota: 'Free 1,000 URLs/day · 150 URLs/min', type: 'API Key' },
+        { name: 'Jina Reader', id: 'jina-reader', quota: 'Free Keyless (20 req/min)', type: 'Keyless (100% Free)' }
+      ];
+
+      fetchSources.forEach(function (s) {
+        var tr = el('tr');
+        var td1 = el('td'); td1.appendChild(el('strong', null, s.name));
+        var td2 = el('td', 'mono', s.id);
+        var td3 = el('td', null, s.quota);
+        var td4 = el('td'); td4.appendChild(el('span', 'tag-pill', s.type));
+        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+        fetchTable.appendChild(tr);
+      });
+      toolsBox.appendChild(fetchTable);
+
+      var toolsP2 = el('p', null,
+        'Key Setup UX: Add your search and fetch credentials in the dashboard at Keys -> Web Tools. The main Provider List is strictly reserved for LLM chat models.'
+      );
+      toolsBox.appendChild(toolsP2);
+
+      root.appendChild(toolsBox);
+
       // Group operations by their first tag, in the order tags are declared.
       var tagOrder = (spec.tags || []).map(function (t) { return t.name; });
       var groups = {};
@@ -286,6 +437,89 @@ export const DOCS_HTML = `<!DOCTYPE html>
           groups[tag].push({ path: path, method: method.toUpperCase(), op: op });
         });
       });
+
+      // Ensure POST /v1/decision (System One) is represented under Decisions if omitted in spec
+      if (!spec.paths['/v1/decision']) {
+        if (!groups['Decisions']) {
+          groups['Decisions'] = [];
+          order.push('Decisions');
+        }
+        groups['Decisions'].unshift({
+          path: '/v1/decision',
+          method: 'POST',
+          op: {
+            tags: ['Decisions'],
+            operationId: 'createSystemOneDecision',
+            summary: 'System One decision endpoint (TypeSafe)',
+            description: 'Evaluate prompt state against choice criteria with 3-tier fallback: remote Jev host -> chat-judge (via decision_chat_judge_order) -> local heuristic fail-open.',
+            requestBody: {
+              required: true,
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    required: ['model', 'state', 'questions'],
+                    properties: {
+                      model: { type: 'string', description: 'Model identifier or auto.' },
+                      state: { type: 'string', description: 'Prompt context to be evaluated.' },
+                      questions: {
+                        type: 'object',
+                        properties: {
+                          complexity: {
+                            type: 'object',
+                            required: ['type', 'instructions', 'criteria'],
+                            properties: {
+                              type: { type: 'string', enum: ['choice'] },
+                              instructions: { type: 'string' },
+                              criteria: { type: 'array', items: { type: 'string' }, description: 'Up to 255 choice options.' },
+                              options: { type: 'object', description: 'Optional score weights per option (2..10).' }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            responses: {
+              '200': {
+                description: 'Decision response containing score, choice answer, and resolution source.',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string', example: 'dec_1729500000_1234' },
+                        object: { type: 'string', example: 'decision' },
+                        created: { type: 'integer' },
+                        model: { type: 'string', example: 'auto' },
+                        answers: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              question: { type: 'string', example: 'complexity' },
+                              answer: { type: 'string', example: 'simple' },
+                              score: { type: 'number', example: 4 }
+                            }
+                          }
+                        },
+                        source: { type: 'string', enum: ['jev', 'chatJudge', 'heuristic'], example: 'chatJudge' },
+                        host: { type: 'string', example: 'https://decision.typesafe.ai' },
+                        tookMs: { type: 'integer', example: 142 }
+                      }
+                    }
+                  }
+                }
+              },
+              '401': { description: 'Invalid or missing API key.' },
+              '422': { description: 'Invalid request body.' }
+            }
+          }
+        });
+      }
+
       order.sort(function (a, b) {
         var ia = tagOrder.indexOf(a), ib = tagOrder.indexOf(b);
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);

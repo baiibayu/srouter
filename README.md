@@ -19,6 +19,9 @@
 
 <p align="center">
   <a href="#-quick-start"><b>⚡ Quick Start</b></a> •
+  <a href="#-unified-api-endpoints--surfaces"><b>🔌 API Endpoints</b></a> •
+  <a href="#-managing-web-engine-keys-web-tools-vs-providers"><b>🔑 Web Tools</b></a> •
+  <a href="#️-mcp-server-setup--transport"><b>🛠️ MCP Setup</b></a> •
   <a href="#-why-srouter"><b>🤔 Why SRouter?</b></a> •
   <a href="#-how-it-works"><b>🔄 How It Works</b></a> •
   <a href="#-key-features"><b>✨ Key Features</b></a> •
@@ -157,17 +160,154 @@ Prefer a native application with a system tray menu?
 ### Option 4: Run from Source (Monorepo Development)
 
 ```bash
-# 1. Clone & install dependencies
+# 1. Clone repository
 git clone https://github.com/baiibayu/srouter.git
 cd srouter
-npm install
 
-# 2. Apply database migrations
+# 2. Install dependencies & run database migrations
+npm install
 npm run db:migration:up
 
 # 3. Start development server (Server :20268 + Client :5173 with HMR)
 npm run dev
 ```
+
+Open your browser and navigate to:
+👉 **`http://localhost:20268`** (Web Dashboard).
+
+---
+
+## 🔌 Unified API Endpoints & Surfaces
+
+All public gateway surfaces are unified under a single API key (`Bearer sr-xxx` or header `x-api-key: sr-xxx`). Retrieve your key anytime from the dashboard **Keys** tab.
+
+### 🌐 Complete Endpoint Reference
+
+| Method | Endpoint | Primary Surface | Description | Auth Header |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/v1/chat/completions` | **Chat Completions** | Full OpenAI-compatible chat surface. Supports streaming (`stream: true`), function/tool calling, vision, structured outputs, and automatic fallback routing. | `Bearer sr-xxx` |
+| `POST` | `/v1/completions` | **Legacy Completions** | OpenAI legacy text completion endpoint (`object: "text_completion"`). Ideal for editor ghost-text code completion engines. | `Bearer sr-xxx` |
+| `POST` | `/v1/responses` | **OpenAI Responses** | Native OpenAI Responses API wire format used by OpenAI Codex CLI (`wire_api="responses"`). | `Bearer sr-xxx` |
+| `POST` | `/v1/messages` | **Anthropic Messages** | Native Anthropic Messages API wire format for Claude Code, Cursor (Anthropic mode), and Anthropic SDKs. Supports `/v1/messages/count_tokens`. | `Bearer sr-xxx` or `x-api-key: sr-xxx` |
+| `POST` | `/v1/search` | **Web Search** | Unified web search routed across keyless Parallel Search or configured search providers (Tavily, Exa, Firecrawl, Linkup). | `Bearer sr-xxx` |
+| `GET` | `/v1/search/engines` | **Web Search** | Lists configured and enabled search engines along with availability and quotas. | `Bearer sr-xxx` |
+| `POST` | `/v1/decision` | **Decision (System One)** | Low-latency decision classification (TypeSafe contract) evaluating `state` and choice `questions`. 3-tier resolution: remote Jev host → chat-judge fallback → fail-open heuristic. | `Bearer sr-xxx` |
+| `POST` | `/v1/decisions` | **Decisions** | Multiclass rubric decision models (Cloudflare Clef Flash, OpenRouter Mercury Decide). | `Bearer sr-xxx` |
+| `GET` | `/v1/decisions/models` | **Decisions** | Lists available decision-scoring models. | `Bearer sr-xxx` |
+| `POST` | `/v1/fetch` | **Page Fetch** | Fetches clean, readable web content from URLs (HTML boilerplate stripped). Falls back through TinyFish Fetch and keyless Jina Reader. | `Bearer sr-xxx` |
+| `GET` | `/v1/fetch/sources` | **Page Fetch** | Lists fetch reader sources (`tinyfish-fetch`, `jina-reader`) with live configuration status. | `Bearer sr-xxx` |
+| `GET` | `/v1/models` | **Model Discovery** | OpenAI-compatible catalog listing all active models, fallback aliases (`auto`, `auto:fast`, `auto:smart`, `auto:cheap`), and Anthropic model negotiation. | `Bearer sr-xxx` |
+| `POST` | `/v1/embeddings` | **Embeddings** | Generates text embedding vectors across configured providers. | `Bearer sr-xxx` |
+| `POST` | `/v1/images/generations` | **Image Media** | Multimodal image generation routed through the media catalog. | `Bearer sr-xxx` |
+| `POST` | `/v1/audio/speech` | **Audio Media** | Text-to-speech audio synthesis. | `Bearer sr-xxx` |
+| `POST` | `/v1beta/models/*:generateContent` | **Gemini Native** | Native Google Gemini API wire format for Gemini CLI and native Google SDKs. | `Bearer sr-xxx` or `x-goog-api-key` |
+| `POST` | `/mcp` | **MCP Server** | Model Context Protocol over Streamable HTTP (stateless JSON-RPC). | `Bearer sr-xxx` |
+| `GET` | `/v1/docs` | **API Reference** | Self-contained, dependency-free interactive API reference viewer. | *None (Public)* |
+| `GET` | `/v1/openapi.json` | **OpenAPI Spec** | Full OpenAPI 3.0 specification for tools and code generation. | *None (Public)* |
+
+---
+
+### 🔍 Surface Details & Capabilities
+
+1. **`chat/completions` (OpenAI Wire Format)**
+   - The primary gateway surface. Route requests dynamically by setting `model: "auto"` (or `"auto:fast"`, `"auto:smart"`, `"auto:cheap"`), or target specific providers/models directly.
+   - Transparently handles tool calling, streaming chunk delivery, vision input, and automatic fallback on 429/5xx errors.
+
+2. **`responses` (Codex CLI Support)**
+   - Implements the OpenAI Responses API wire format required by `codex-cli`.
+   - Allows OpenAI Codex agents to run against open and free model tiers without protocol errors.
+
+3. **`anthropic` (Messages API `/v1/messages`)**
+   - Full native translation for Anthropic Messages API.
+   - Claude Code (`claude-code`) and Anthropic SDKs can target `http://localhost:20268` directly.
+   - Includes `/v1/messages/count_tokens` for precise client token management.
+
+4. **`search` (Unified Web Search)**
+   - Query the web through `POST /v1/search` with JSON payload `{"query": "your topic", "engine": "auto"}`.
+   - Automatically utilizes 100% free keyless **Parallel Search**, or falls back across paid/freemium engines (**Tavily**, **Exa**, **Firecrawl**, **Linkup**).
+
+5. **`decision` (System One Fast Classifier)**
+   - Implements the TypeSafe System One decision contract (`POST /v1/decision`).
+   - Evaluates context `state` against typed `choice` criteria (up to 255 options, scores 2..10).
+   - Features 3-tier resilient resolution:
+     - **Remote Jev Host:** Fast remote decision evaluation (< 2000ms). Source: `"jev"`.
+     - **Chat-Judge Fallback:** Lightweight non-streaming judgment using the first active provider key in `decision_chat_judge_order` (default: Groq → Google → OpenRouter → Mistral), picking lightweight catalog models (8b, 7b, nano, mini, flash). Budget: 2500ms. Source: `"chatJudge"`.
+     - **Fail-Open Local Heuristic:** Instant local scoring fallback (`scoreChoice`) guaranteeing zero downtime and no 5xx errors for downstream agents. Source: `"heuristic"`.
+
+6. **`fetch` (Clean Page Extraction)**
+   - Request clean markdown/text content for any public HTTP/HTTPS URL via `POST /v1/fetch` with `{"url": "https://..."}`.
+   - Automatically guards against SSRF / internal subnet probing.
+   - Falls back across configured readers: **TinyFish Fetch** and keyless **Jina Reader**. Inspect active readers via `GET /v1/fetch/sources`.
+
+7. **`models` (Catalog & Discovery)**
+   - Discovers all active, enabled models and synthetic router profiles.
+   - Supports HTTP content negotiation: returns Anthropic-shaped model arrays when `anthropic-version` header is present, and OpenAI-shaped lists otherwise.
+
+---
+
+## 🔑 Managing Web Engine Keys (Web Tools vs Providers)
+
+> [!IMPORTANT]
+> **Where do Search and Fetch API keys go?**
+>
+> Keys for Web Tools (**Tavily**, **Exa**, **Firecrawl**, **Linkup**, **TinyFish Fetch**) **do not belong in the general LLM Provider list** because they do not serve chat completions.
+>
+> 1. In the Dashboard, navigate to the **Keys** tab.
+> 2. Locate the **Web Tools** section (or the **Web Search** & **Web Fetch** cards).
+> 3. Enter your keys directly in their dedicated cards.
+> 4. Keyless engines (**Parallel Search**, **Jina Reader**) work automatically out of the box with zero configuration!
+
+---
+
+## 🛠️ MCP Server Setup & Transport
+
+SRouter provides a built-in **Model Context Protocol (MCP)** server over **Streamable HTTP** (stateless HTTP POST to `/mcp`), adhering to protocol revision `2025-06-18`.
+
+MCP allows coding assistants like Claude Desktop, Cursor, Cline, and Roo Code to query the router's live model availability, monitor quotas, inspect compression statistics, and switch routing strategies dynamically during a session.
+
+### Transport Specification
+- **Transport:** Stateless Streamable HTTP (`POST http://localhost:20268/mcp`). Single JSON-RPC 2.0 responses without complex multi-session overhead.
+- **Authentication:** Unified API key sent as `Authorization: Bearer sr-xxx` or `x-api-key: sr-xxx`.
+
+### Configuration Examples
+
+#### 1. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "srouter": {
+      "url": "http://localhost:20268/mcp",
+      "headers": {
+        "Authorization": "Bearer sr-your-unified-key"
+      }
+    }
+  }
+}
+```
+
+#### 2. Cursor / Cline / Windsurf MCP
+Add an HTTP / SSE MCP server in your tool's settings:
+- **Server Name:** `srouter`
+- **Server URL:** `http://localhost:20268/mcp`
+- **HTTP Headers:** `Authorization: Bearer sr-your-unified-key`
+
+### Available MCP Tools
+- `list_models`: Lists active and available LLM models and supported sampling parameters.
+- `check_health`: Returns real-time health and cooldown status of upstream providers.
+- `get_routing_scores`: Inspects bandit scores and latency metrics across models.
+- `set_routing_strategy`: Dynamically switches the active strategy (`auto`, `auto:fast`, `auto:smart`, `auto:cheap`).
+- `get_cache_stats` & `clear_cache`: Monitors prompt cache hit rates and saved token metrics.
+- `get_compression_stats`: Displays token savings achieved by the prompt compression engine.
+- `get_quota_outlook`: Returns projected monthly quota exhaustion and provider limits.
+- `ask_srouter`: Non-streaming fallback inference utility for MCP clients.
+
+---
+
+## 🛡️ Reliability & Fault Tolerance Defaults
+
+- **Circuit Breaker OFF by Default (`0`):** SRouter is designed for aggressive multi-provider fallback. The global circuit breaker threshold defaults to `0` (disabled) so that intermittent 429s or transient upstream timeouts cool down only that specific key/model while immediately routing requests to alternate providers, rather than tripping an entire gateway shutdown.
+- **SSE Keepalive:** Server-Sent Events (SSE) connections across OpenAI, Anthropic, and Responses routes transmit periodic heartbeat comments (`: keepalive\n\n`) to prevent intermediate reverse proxies (Nginx, Cloudflare) and NAT firewalls from dropping connections during long model reasoning turns, without HTTP header regressions.
+- **Coherent Time Budgets:** Attempt budgets align per-hop timeouts with overall streaming durations to prevent premature connection cancellations.
 
 ---
 
