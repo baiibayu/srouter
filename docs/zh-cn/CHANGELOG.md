@@ -1,27 +1,27 @@
-[English](../en/CHANGELOG.md) · **简体中文**
+[English](../en/CHANGELOG.md) Â· **ç®€ä½“ä¸­æ–‡**
 
-# 变更记录
+# å˜æ›´è®°å½•
 
-`docs/zh-cn/` 的文档修订历史（2026-09-05 之前位于 `docs/i18n/zh-CN/`）。最近的在前。
+`docs/zh-cn/` çš„æ–‡æ¡£ä¿®è®¢åŽ†å²ï¼ˆ2026-09-05 ä¹‹å‰ä½äºŽ `docs/i18n/zh-CN/`ï¼‰ã€‚æœ€è¿‘çš„åœ¨å‰ã€‚
 
 | Date | Commit | Change |
 | --- | --- | --- |
-| 2026-09-05 | [`ef1b9ce`](https://github.com/baiibayu/srouter/commit/ef1b9ce) | docs(zh-cn): 翻译四个占位页，重写中文索引，修正锚点与语言切换（#1167） |
-| 2026-09-05 | [`eab992f`](https://github.com/baiibayu/srouter/commit/eab992f) | docs: 按语言重排为 `docs/zh-cn/`，并翻译 cli、desktop、proxy、fallback、glossary、troubleshooting 六个域（#1164） |
-| 2026-08-23 | `36850e8` | docs(i18n): translate logs/ and architecture/ domains to zh-CN（经 #979 合入） |
+| 2026-09-05 | [`08bc5479`](https://github.com/baiibayu/srouter/commit/08bc5479) | docs(zh-cn): ç¿»è¯‘å››ä¸ªå ä½é¡µï¼Œé‡å†™ä¸­æ–‡ç´¢å¼•ï¼Œä¿®æ­£é”šç‚¹ä¸Žè¯­è¨€åˆ‡æ¢ï¼ˆ#1167ï¼‰ |
+| 2026-09-05 | [`6424a1ea`](https://github.com/baiibayu/srouter/commit/6424a1ea) | docs: æŒ‰è¯­è¨€é‡æŽ’ä¸º `docs/zh-cn/`ï¼Œå¹¶ç¿»è¯‘ cliã€desktopã€proxyã€fallbackã€glossaryã€troubleshooting å…­ä¸ªåŸŸï¼ˆ#1164ï¼‰ |
+| 2026-08-23 | `386f43e9` | docs(i18n): translate logs/ and architecture/ domains to zh-CNï¼ˆç» #979 åˆå…¥ï¼‰ |
 | 2026-08-23 | [`2331045`](https://github.com/baiibayu/srouter/commit/2331045) | docs(providers): add unorouter and xkiro to platform catalog |
-| 2026-08-23 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(providers): document xkiro 5M tokens/day and unorouter per-min RPM in quotas（经 #979 合入） |
-| 2026-08-23 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(env): add SROUTER_PROXY_LOCAL_DESTINATIONS, SERVER_LOGS_RETENTION_DAYS/MAX_ROWS（经 #979 合入） |
-| 2026-08-23 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(clients): add setup-dsh note in coding agents intro（经 #979 合入） |
-| 2026-08-23 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(compression): add early-exit protected-span check perf note（经 #979 合入） |
-| 2026-08-23 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(testing): add new test files note for August 2026 batch（经 #979 合入） |
-| 2026-08-22 | — | env/deployment/providers/testing 四个域的 zh-CN 镜像；翻译提交的哈希见 git log |
-| 2026-08-22 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(env): add runtime configuration reference domain —— 英文原文已镜像到 zh-CN（经 #979 合入） |
-| 2026-08-22 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(deployment): add Docker operations and maintenance domain —— 英文原文已镜像到 zh-CN（经 #979 合入） |
-| 2026-08-22 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(providers): add platform catalog and integration guides —— 英文原文已镜像到 zh-CN（经 #979 合入） |
-| 2026-08-22 | [`36850e8`](https://github.com/baiibayu/srouter/commit/36850e8) | docs(testing): add test matrix and compatibility-suite documentation —— 英文原文已镜像到 zh-CN（经 #979 合入） |
-| 2026-08-03 | [`5d51fec`](https://github.com/baiibayu/srouter/commit/5d51fec) | docs(docker): container/provider network mismatch note (#737) |
-| 2026-08-01 | [`93afdca`](https://github.com/baiibayu/srouter/commit/93afdca) | zh README 贡献者 heading alignment (#701) |
-| 2026-07-31 | [`76c3e6b`](https://github.com/baiibayu/srouter/commit/76c3e6b) | language toggle centering (#691) |
-| 2026-07-31 | [`3ea33cb`](https://github.com/baiibayu/srouter/commit/3ea33cb) | translate install.md and api.md into zh-CN (#690) |
-| 2026-07-31 | [`41527f2`](https://github.com/baiibayu/srouter/commit/41527f2) | initial translated-docs tree + zh-CN README (#689) |
+| 2026-08-23 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(providers): document xkiro 5M tokens/day and unorouter per-min RPM in quotasï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-23 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(env): add SROUTER_PROXY_LOCAL_DESTINATIONS, SERVER_LOGS_RETENTION_DAYS/MAX_ROWSï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-23 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(clients): add setup-dsh note in coding agents introï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-23 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(compression): add early-exit protected-span check perf noteï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-23 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(testing): add new test files note for August 2026 batchï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-22 | â€” | env/deployment/providers/testing å››ä¸ªåŸŸçš„ zh-CN é•œåƒï¼›ç¿»è¯‘æäº¤çš„å“ˆå¸Œè§ git log |
+| 2026-08-22 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(env): add runtime configuration reference domain â€”â€” è‹±æ–‡åŽŸæ–‡å·²é•œåƒåˆ° zh-CNï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-22 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(deployment): add Docker operations and maintenance domain â€”â€” è‹±æ–‡åŽŸæ–‡å·²é•œåƒåˆ° zh-CNï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-22 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(providers): add platform catalog and integration guides â€”â€” è‹±æ–‡åŽŸæ–‡å·²é•œåƒåˆ° zh-CNï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-22 | [`386f43e9`](https://github.com/baiibayu/srouter/commit/386f43e9) | docs(testing): add test matrix and compatibility-suite documentation â€”â€” è‹±æ–‡åŽŸæ–‡å·²é•œåƒåˆ° zh-CNï¼ˆç» #979 åˆå…¥ï¼‰ |
+| 2026-08-03 | [`bc3dd0ad`](https://github.com/baiibayu/srouter/commit/bc3dd0ad) | docs(docker): container/provider network mismatch note (#737) |
+| 2026-08-01 | [`d5dbf9e0`](https://github.com/baiibayu/srouter/commit/d5dbf9e0) | zh README è´¡çŒ®è€… heading alignment (#701) |
+| 2026-07-31 | [`c2fba4ad`](https://github.com/baiibayu/srouter/commit/c2fba4ad) | language toggle centering (#691) |
+| 2026-07-31 | [`d41ff3e4`](https://github.com/baiibayu/srouter/commit/d41ff3e4) | translate install.md and api.md into zh-CN (#690) |
+| 2026-07-31 | [`199d5bf0`](https://github.com/baiibayu/srouter/commit/199d5bf0) | initial translated-docs tree + zh-CN README (#689) |

@@ -1,7 +1,7 @@
-[English](../../en/install/CHANGELOG.md) · **简体中文**
+[English](../../en/install/CHANGELOG.md) Â· **ç®€ä½“ä¸­æ–‡**
 
-# 变更记录 —— install
+# å˜æ›´è®°å½• â€”â€” install
 
 | Commit | Date | Summary |
 | --- | --- | --- |
-| — | — | 占位，待翻译 |
+| â€” | â€” | å ä½ï¼Œå¾…ç¿»è¯‘ |

@@ -1,9 +1,9 @@
-[English](../../en/clients/CHANGELOG.md) · **简体中文**
+[English](../../en/clients/CHANGELOG.md) Â· **ç®€ä½“ä¸­æ–‡**
 
-# 客户端域 —— 变更日志
+# å®¢æˆ·ç«¯åŸŸ â€”â€” å˜æ›´æ—¥å¿—
 
-`docs/clients/` 的文档修订历史。最近的在前。
+`docs/clients/` çš„æ–‡æ¡£ä¿®è®¢åŽ†å²ã€‚æœ€è¿‘çš„åœ¨å‰ã€‚
 
-## 2026-08-23 —— 领域创建
+## 2026-08-23 â€”â€” é¢†åŸŸåˆ›å»º
 
-- **36850e8** `docs(clients): fold agent guide into clients domain` — `docs/clients.md` → `docs/clients/01-agent-clients.md`，补 `OVERVIEW.md` + `CHANGELOG.md`。（经 #979 合入）
+- **386f43e9** `docs(clients): fold agent guide into clients domain` â€” `docs/clients.md` â†’ `docs/clients/01-agent-clients.md`ï¼Œè¡¥ `OVERVIEW.md` + `CHANGELOG.md`ã€‚ï¼ˆç» #979 åˆå…¥ï¼‰

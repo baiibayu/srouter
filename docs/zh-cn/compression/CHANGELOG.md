@@ -1,9 +1,9 @@
-[English](../../en/compression/CHANGELOG.md) · **简体中文**
+[English](../../en/compression/CHANGELOG.md) Â· **ç®€ä½“ä¸­æ–‡**
 
-# 压缩域 —— 变更日志
+# åŽ‹ç¼©åŸŸ â€”â€” å˜æ›´æ—¥å¿—
 
-`docs/compression/` 的文档修订历史。最近的在前。
+`docs/compression/` çš„æ–‡æ¡£ä¿®è®¢åŽ†å²ã€‚æœ€è¿‘çš„åœ¨å‰ã€‚
 
-## 2026-08-23 —— 领域创建
+## 2026-08-23 â€”â€” é¢†åŸŸåˆ›å»º
 
-- **36850e8** `docs(compression): fold pipeline guide into compression domain` — `docs/compression.md` → `docs/en/compression/01-compression-pipeline.md`，补 `OVERVIEW.md` + `CHANGELOG.md`。（经 #979 合入）
+- **386f43e9** `docs(compression): fold pipeline guide into compression domain` â€” `docs/compression.md` â†’ `docs/en/compression/01-compression-pipeline.md`ï¼Œè¡¥ `OVERVIEW.md` + `CHANGELOG.md`ã€‚ï¼ˆç» #979 åˆå…¥ï¼‰

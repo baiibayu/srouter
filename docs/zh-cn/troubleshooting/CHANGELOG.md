@@ -1,16 +1,16 @@
-[English](../../en/troubleshooting/CHANGELOG.md) · **简体中文**
+[English](../../en/troubleshooting/CHANGELOG.md) Â· **ç®€ä½“ä¸­æ–‡**
 
-# 故障排查域 —— 变更日志
+# æ•…éšœæŽ’æŸ¥åŸŸ â€”â€” å˜æ›´æ—¥å¿—
 
-`docs/troubleshooting/` 的文档修订历史。最新在前。
+`docs/troubleshooting/` çš„æ–‡æ¡£ä¿®è®¢åŽ†å²ã€‚æœ€æ–°åœ¨å‰ã€‚
 
-| 提交 | 日期 | 摘要 |
+| æäº¤ | æ—¥æœŸ | æ‘˜è¦ |
 | --- | --- | --- |
-| `eab992f` | 2026-09-02 | 幂等 `409`—— 指纹 / TTL 已文档化（经 #1164 合入） |
-| `e852ff1` | 2026-08-23 | 空链权威 `400`—— `activeChainOrThrow` |
-| `86368ac` | 2026-09-01 | 系统代理自动探测 `scutil` / `registry` / `gsettings` |
-| `56eb257` | 2026-08-31 | Fetch Relay `PROXY_MODE` / `FETCH_RELAY_TOKEN` 环回防护 |
-| `46ea0de` | 2026-09-02 | `TRUST_PROXY` 转发头 |
-| `90aaa5b` | 2026-08-24 | 桌面端 `srouter.log` 密码重置可见性 |
+| `6424a1ea` | 2026-09-02 | å¹‚ç­‰ `409`â€”â€” æŒ‡çº¹ / TTL å·²æ–‡æ¡£åŒ–ï¼ˆç» #1164 åˆå…¥ï¼‰ |
+| `9961ab32` | 2026-08-23 | ç©ºé“¾æƒå¨ `400`â€”â€” `activeChainOrThrow` |
+| `ef2471b9` | 2026-09-01 | ç³»ç»Ÿä»£ç†è‡ªåŠ¨æŽ¢æµ‹ `scutil` / `registry` / `gsettings` |
+| `7d430f46` | 2026-08-31 | Fetch Relay `PROXY_MODE` / `FETCH_RELAY_TOKEN` çŽ¯å›žé˜²æŠ¤ |
+| `992bb833` | 2026-09-02 | `TRUST_PROXY` è½¬å‘å¤´ |
+| `d74512ba` | 2026-08-24 | æ¡Œé¢ç«¯ `srouter.log` å¯†ç é‡ç½®å¯è§æ€§ |
 
-重新生成：`git log --oneline -- docs/troubleshooting/`
+é‡æ–°ç”Ÿæˆï¼š`git log --oneline -- docs/troubleshooting/`

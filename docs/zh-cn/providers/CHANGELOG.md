@@ -1,21 +1,21 @@
-[English](../../en/providers/CHANGELOG.md) · **简体中文**
+[English](../../en/providers/CHANGELOG.md) Â· **ç®€ä½“ä¸­æ–‡**
 
-# 变更记录
+# å˜æ›´è®°å½•
 
-`docs/providers/` 的修订历史，列出塑造了本文档所述提供方层的上游提交。最新在前。
+`docs/providers/` çš„ä¿®è®¢åŽ†å²ï¼Œåˆ—å‡ºå¡‘é€ äº†æœ¬æ–‡æ¡£æ‰€è¿°æä¾›æ–¹å±‚çš„ä¸Šæ¸¸æäº¤ã€‚æœ€æ–°åœ¨å‰ã€‚
 
 | Commit | Date | Summary |
 | --- | --- | --- |
-| Unreleased | 2026-10-09 | 自定义端点分组：按端点的分组标签、分组开关、`custom:<model>#<group>` 路由（#1176）。 |
-| `df1000a` | 2026-08-20 | Qianfan/Volcengine Ark/LongCat/iFlytek Spark (#936) — four Chinese domestic OpenAI-compat platforms. |
-| `00268be` | 2026-08-18 | B.AI gateway (#918). |
-| `fba4b3d` | 2026-08-15 | OrcaRouter (#896). |
-| `5999d48` | 2026-08-11 | AnyAPI (#772). |
-| `6f13332` | 2026-08-10 | honor back-off from error body (#798). |
-| `24b5f9c` | 2026-06-26 | Routeway/BazaarLink/AINative (#385). |
-| `cba6ac8` | 2026-06-03 | keyless Kilo + Gemma 4 (#181). |
-| `6305924` | 2026-06-02 | OpenCode Zen 4 free models. |
-| `a89cc64` | 2026-05-31 | generic custom OpenAI-compat provider (#145). |
-| `694d75c` | 2026-04-26 | error handler crash + missing platforms + per-provider timeout (#7). |
+| Unreleased | 2026-10-09 | è‡ªå®šä¹‰ç«¯ç‚¹åˆ†ç»„ï¼šæŒ‰ç«¯ç‚¹çš„åˆ†ç»„æ ‡ç­¾ã€åˆ†ç»„å¼€å…³ã€`custom:<model>#<group>` è·¯ç”±ï¼ˆ#1176ï¼‰ã€‚ |
+| `8e68f593` | 2026-08-20 | Qianfan/Volcengine Ark/LongCat/iFlytek Spark (#936) â€” four Chinese domestic OpenAI-compat platforms. |
+| `05bc0d8b` | 2026-08-18 | B.AI gateway (#918). |
+| `9c0ef38c` | 2026-08-15 | OrcaRouter (#896). |
+| `6d78009a` | 2026-08-11 | AnyAPI (#772). |
+| `af1e4012` | 2026-08-10 | honor back-off from error body (#798). |
+| `0b4488b8` | 2026-06-26 | Routeway/BazaarLink/AINative (#385). |
+| `a8f121ea` | 2026-06-03 | keyless Kilo + Gemma 4 (#181). |
+| `e5481f38` | 2026-06-02 | OpenCode Zen 4 free models. |
+| `47f66d72` | 2026-05-31 | generic custom OpenAI-compat provider (#145). |
+| `c1aea796` | 2026-04-26 | error handler crash + missing platforms + per-provider timeout (#7). |
 
 Regenerate with `git log --oneline -- server/src/providers`.
