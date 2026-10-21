@@ -748,11 +748,12 @@ export function searchRetryAfterSec(err: SearchError): number | undefined {
 // ── Dashboard: engines ───────────────────────────────────────────────────────
 
 /** Backends that answer with no key and no account at all — their engine row
- *  never needs a key slot (the dashboard badges them `keyless`). DuckDuckGo
- *  and SearXNG only run through the legacy POST /v1/web-search walker, never
- *  the keyed chain, so a stored key can't apply to them. */
+ *  never needs a key slot (the dashboard badges them `keyless`). Only DuckDuckGo
+ *  and Parallel are keyless. SearXNG is NOT keyless — it answers only through the
+ *  operator's own instance URL. TinyFish is NOT keyless — its quota is
+ *  "free up to 1,000 URLs/day, 150 URLs/min per key" (docs.tinyfish.ai). */
 export function isKeylessSearchPlatform(platform: string): boolean {
-  return platform === 'duckduckgo' || platform === 'parallel' || platform === 'searxng';
+  return platform === 'duckduckgo' || platform === 'parallel';
 }
 
 export interface SearchEngineView {

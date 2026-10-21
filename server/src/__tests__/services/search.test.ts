@@ -94,7 +94,8 @@ describe('search service', () => {
     const map = new Map(engines.map(e => [e.engineId, { keyless: e.keyless, configured: e.configured }]));
     expect(map.get('duckduckgo-search')).toEqual({ keyless: true, configured: true });
     expect(map.get('parallel-search')).toEqual({ keyless: true, configured: true });
-    expect(map.get('searxng-search')).toEqual({ keyless: true, configured: false });
+    expect(map.get('searxng-search')).toEqual({ keyless: false, configured: false });
+    expect(map.get('tinyfish-search')).toEqual({ keyless: false, configured: false });
     expect(map.get('tavily-search')).toEqual({ keyless: false, configured: false });
     addKey('tavily');
     expect(listSearchEngines().find(e => e.engineId === 'tavily-search')?.configured).toBe(true);

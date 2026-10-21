@@ -1,0 +1,15 @@
+{
+  "name": "srouter-example-opencode-free",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal working example of the OpenCode zen free tier as an OpenAI-compatible client",
+  "type": "module",
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "scripts": {
+    "test": "node src/selftest.mjs",
+    "demo": "node src/demo.mjs",
+    "mock": "node src/mock-server.mjs"
+  }
+}
