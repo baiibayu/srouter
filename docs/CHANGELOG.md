@@ -13,8 +13,8 @@
 | `e210186` | 2026-10-21 | feat: unify search/fetch — single /v1/search, drop legacy backend. |
 | `e4532204` | 2026-10-21 | feat(client): web fetch/search engines UX — fetch cards, usage card, Web Tools keys section. |
 | `1bbb99e` | 2026-10-21 | feat(client): web engine keys live only in Web Tools — add-key form and grouped list drop search providers. |
-| `d74ccc3` | 2026-10-21 | merge: batch-c cherry-pick upstream srouter (24 picks + adaptation, green gates). |
-| `7a78b8b` | 2026-10-21 | merge: batch-b cherry-pick upstream srouter (30 commits, green gates). |
+| `d74ccc3` | 2026-10-21 | merge: batch-c update & perbaikan (24 item, gate hijau). |
+| `7a78b8b` | 2026-10-21 | merge: batch-b update & perbaikan (30 item, gate hijau). |
 
 ## 2026-10-16 — 0.1.3
 
