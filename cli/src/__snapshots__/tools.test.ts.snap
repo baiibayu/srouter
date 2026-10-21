@@ -951,13 +951,13 @@ api_key_env = "SROUTER_API_KEY"
 context_window = 131072
 price = { cache_hit = 0, input = 0, output = 0, currency = "$" }",
       "format": "toml",
-      "path": "C:/Users/Hype AMD/AppData/Roaming/reasonix/config.toml",
+      "path": "/home/tester/.reasonix/config.toml",
     },
     {
       "content": "SROUTER_API_KEY=srouter-test-key
 ",
       "format": "env",
-      "path": "C:/Users/Hype AMD/AppData/Roaming/reasonix/.env",
+      "path": "/home/tester/.reasonix/.env",
       "sensitive": true,
     },
   ],
@@ -966,7 +966,7 @@ price = { cache_hit = 0, input = 0, output = 0, currency = "$" }",
     "Try it with: reasonix -p "Say hello" — srouter/fast-coder is the default model.",
     "Every catalog model is in /model as srouter/<id>; other [[providers]] entries in config.toml are kept.",
     "Reasonix Studio lists only the providers in [desktop].provider_access when that list is set; add "srouter" there, or under Settings → Model → Access.",
-    "MCP: add to C:/Users/Hype AMD/AppData/Roaming/reasonix/config.toml: [mcp_servers.srouter] with url = "http://localhost:3000/mcp" and bearer_token_env_var = "SROUTER_API_KEY" (Streamable HTTP; export SROUTER_API_KEY first)",
+    "MCP: add to /home/tester/.reasonix/config.toml: [mcp_servers.srouter] with url = "http://localhost:3000/mcp" and bearer_token_env_var = "SROUTER_API_KEY" (Streamable HTTP; export SROUTER_API_KEY first)",
   ],
 }
 `;

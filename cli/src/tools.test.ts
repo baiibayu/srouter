@@ -68,6 +68,15 @@ function normalizeGenerationPaths<T extends { files: GeneratedFile[]; notes?: st
 }
 
 describe('tool generators', () => {
+  // reasonixHome() checks REASONIX_HOME before the Windows %APPDATA% fallback;
+  // pinning it keeps the golden paths identical on every host (#1392).
+  beforeEach(() => {
+    process.env.REASONIX_HOME = '/home/tester/.reasonix';
+  });
+  afterEach(() => {
+    delete process.env.REASONIX_HOME;
+  });
+
   it('defaults to auto, never fusion, when the live catalog lists virtual models first', () => {
     const liveContext: GenerateContext = {
       ...context,
@@ -589,12 +598,10 @@ describe('tool generators', () => {
     // .env beside it, which it loads itself. `default_model` is provider/model
     // and must sit in the root region, above the array entry.
     const [config, env] = tools.find(tool => tool.id === 'reasonix')!.generate(context).files;
-    // The home directory is platform-shaped: win32 resolves APPDATA first, so
-    // the expectation has to mirror that or the test only passes on POSIX CI.
-    const defaultHome = process.platform === 'win32'
-      ? path.join(process.env.APPDATA?.trim() || path.join('/home/tester', 'AppData', 'Roaming'), 'reasonix')
-      : path.join('/home/tester', '.reasonix');
-    expect(config.path).toBe(path.join(defaultHome, 'config.toml'));
+    // The describe() block pins REASONIX_HOME so the home path is stable
+    // across hosts — the expectation mirrors that pin.
+    const pinnedHome = process.env.REASONIX_HOME?.trim() || path.join('/home/tester', '.reasonix');
+    expect(config.path).toBe(path.join(pinnedHome, 'config.toml'));
     expect(config.format).toBe('toml');
     expect(config.sensitive).toBeUndefined();
     const lines = (config.content ?? '').split('\n');
@@ -609,7 +616,7 @@ describe('tool generators', () => {
     expect(lines).toContain('context_window = 131072');
     expect(config.content).not.toContain('srouter-test-key');
     expect(env).toEqual({
-      path: path.join(defaultHome, '.env'),
+      path: path.join(pinnedHome, '.env'),
       format: 'env',
       sensitive: true,
       content: 'SROUTER_API_KEY=srouter-test-key\n',
