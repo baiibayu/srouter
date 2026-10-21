@@ -12,6 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.18.0-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docs/zh-cn/install/01-install.md#docker-compose)
+[![GHCR](https://img.shields.io/badge/GHCR-ghcr.io-blue?logo=github&logoColor=white)](https://github.com/baiibayu/srouter/pkgs/container/srouter)
 [![Desktop App](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-blueviolet?logo=electron&logoColor=white)](desktop/)
 [![i18n Locales](https://img.shields.io/badge/i18n-60%20Languages-orange)](client/src/i18n/locale-config.ts)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
@@ -19,11 +20,13 @@
 
 <p align="center">
   <a href="#-快速开始"><b>⚡ 快速开始</b></a> •
+  <a href="#-编程智能体接入"><b>🤖 智能体接入</b></a> •
+  <a href="#-支持的提供方"><b>🔌 提供方</b></a> •
+  <a href="#-统一-api-端点"><b>🌐 API 端点</b></a> •
+  <a href="#️-mcp-协议配置"><b>🛠️ MCP 配置</b></a> •
   <a href="#-为什么选择-srouter"><b>🤔 为什么选择 SRouter?</b></a> •
   <a href="#-工作原理与架构"><b>🔄 工作原理</b></a> •
   <a href="#-核心特性"><b>✨ 核心特性</b></a> •
-  <a href="#-编程智能体接入"><b>🤖 智能体接入</b></a> •
-  <a href="#-支持的提供方"><b>🔌 提供方</b></a> •
   <a href="#-项目结构"><b>🏗️ 项目结构</b></a> •
   <a href="docs/zh-cn/README.md"><b>📚 文档中心</b></a>
 </p>
@@ -135,6 +138,9 @@ cd srouter
 # 2. 复制环境配置并启动容器
 cp .env.example .env
 docker compose up -d
+
+# 或直接通过 GHCR 镜像运行（无需克隆）：
+# docker run -d --name srouter -p 20268:20268 -v srouter-data:/app/server/data ghcr.io/baiibayu/srouter:latest
 ```
 
 - **仪表盘面板：** `http://localhost:20268`
@@ -157,7 +163,7 @@ docker compose up -d
 ### 方式 4：从源码运行（本地 Monorepo 开发）
 
 ```bash
-# 1. 克隆并安装依赖
+# 1. 克隆代码仓库并安装依赖
 git clone https://github.com/baiibayu/srouter.git
 cd srouter
 npm install
@@ -168,6 +174,9 @@ npm run db:migration:up
 # 3. 启动开发模式（服务端 :20268 与前端 :5173 均支持热重载）
 npm run dev
 ```
+
+在浏览器中打开：
+👉 **`http://localhost:20268`**（Web 仪表盘）。
 
 ---
 
@@ -343,6 +352,77 @@ SRouter 在单个 `/v1` 接口之后聚合了 **约 60 家提供方** 与 **1,20
 
 ### 4. 🔌 本地与自定义服务
 支持通过仪表盘中的密钥页面直接添加由 **Ollama**、**LM Studio**、**vLLM** 或 **llama.cpp** 本地托管的模型。
+
+---
+
+## 🌐 统一 API 端点
+
+所有网关接口均由单一统一密钥管理（`Bearer sr-xxx` 或请求头 `x-api-key: sr-xxx`）。您可以随时在控制面板的 **Keys** 标签页中获取该密钥。
+
+| 请求方式 | 端点地址 | 主要功能 | 详细说明 | 认证请求头 |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/v1/chat/completions` | **对话补全 (Chat)** | 完整兼容 OpenAI 规范。支持流式传输 (`stream: true`)、函数/工具调用、图像视觉输入、结构化输出与故障自动降级轮转。 | `Bearer sr-xxx` |
+| `POST` | `/v1/completions` | **传统补全 (Completions)** | OpenAI 传统文本补全接口 (`object: "text_completion"`)。非常适用于编辑器中的行内代码补全（Ghost-text）。 | `Bearer sr-xxx` |
+| `POST` | `/v1/responses` | **OpenAI Responses** | OpenAI Codex CLI 所需的 Responses API 原生报文格式 (`wire_api="responses"`). | `Bearer sr-xxx` |
+| `POST` | `/v1/messages` | **Anthropic Messages** | 专为 Claude Code、Cursor (Anthropic 模式) 及 Anthropic 官方 SDK 提供的 Messages 协议原生转换。支持 `/v1/messages/count_tokens`。 | `Bearer sr-xxx` 或 `x-api-key: sr-xxx` |
+| `POST` | `/v1/search` | **网络搜索 (Search)** | 统一网络搜索服务，在免密钥的 Parallel Search 与已配置的搜索服务（Tavily、Exa、Firecrawl、Linkup）之间自动调度。 | `Bearer sr-xxx` |
+| `GET` | `/v1/search/engines` | **网络搜索 (Search)** | 列出已配置及启用的搜索引擎及其配额与可用状态。 | `Bearer sr-xxx` |
+| `POST` | `/v1/decision` | **决策系统 (System One)** | 超低延迟的决策与复杂度门控分类接口（TypeSafe 规范），评估 `state` 上下文与 `choice` 选项。具备三层高可用架构：远端 Jev 主机 → Chat-Judge 判决降级 → 本地启发式零宕机保底。 | `Bearer sr-xxx` |
+| `POST` | `/v1/decisions` | **决策评估 (Decisions)** | 多类别细则评分决策模型接口（Cloudflare Clef Flash、OpenRouter Mercury Decide）。 | `Bearer sr-xxx` |
+| `GET` | `/v1/decisions/models` | **决策评估 (Decisions)** | 列出目录中可用的决策评分模型。 | `Bearer sr-xxx` |
+| `POST` | `/v1/fetch` | **网页解析提取 (Fetch)** | 抓取公开网页并提取纯净可读的 Markdown/文本内容（自动剥离无用 HTML 模板）。自动经由 TinyFish Fetch 与免密钥 Jina Reader 轮转。 | `Bearer sr-xxx` |
+| `GET` | `/v1/fetch/sources` | **网页解析提取 (Fetch)** | 列出网页解析源（`tinyfish-fetch`、`jina-reader`）及其实时启用状态。 | `Bearer sr-xxx` |
+| `GET` | `/v1/models` | **模型目录发现** | OpenAI 兼容格式的模型目录列表，包含当前所有激活模型、路由别名（`auto`、`auto:fast`、`auto:smart`、`auto:cheap`）及 Anthropic 协商能力。 | `Bearer sr-xxx` |
+| `POST` | `/v1/embeddings` | **文本向量 (Embeddings)** | 调用已配置的提供方生成高质量文本向量嵌入。 | `Bearer sr-xxx` |
+| `POST` | `/v1/images/generations` | **图像生成 (Images)** | 多模态文生图接口，经由媒体目录智能路由。 | `Bearer sr-xxx` |
+| `POST` | `/v1/audio/speech` | **语音合成 (TTS)** | 文本转语音合成接口。 | `Bearer sr-xxx` |
+| `POST` | `/v1beta/models/*:generateContent` | **Gemini 原生格式** | 专为 Google Gemini CLI 及 Google 官方 SDK 设计的原生 API 报文格式。 | `Bearer sr-xxx` 或 `x-goog-api-key` |
+| `POST` | `/mcp` | **MCP 协议服务** | 基于 Streamable HTTP 的 Model Context Protocol 服务（无状态 JSON-RPC 2.0）。 | `Bearer sr-xxx` |
+| `GET` | `/v1/docs` | **交互式 API 文档** | 零外部依赖、自包含的高性能交互式 API 接口文档查看器。 | *公开免认证* |
+| `GET` | `/v1/openapi.json` | **OpenAPI 规范文件** | 完整的 OpenAPI 3.0 标准定义，便于代码生成与第三方集成。 | *公开免认证* |
+
+> [!TIP]
+> - **决策系统 System One (`POST /v1/decision`):** 具备三层高可用保障：极速远端 Jev 评估 (< 2000ms) → 轻量级 Chat-Judge 判决（依据 `decision_chat_judge_order`） → 极速本地启发式保底打分 (`scoreChoice`)，为上层智能体实现零宕机保障。
+> - **网络工具密钥管理 (`Keys` $\to$ `Web Tools`):** 网页搜索与内容提取专用密钥（Tavily、Exa、Firecrawl、TinyFish）独立管理，不干扰 LLM 模型列表。免密钥服务（**Parallel Search**、**Jina Reader**）默认开箱即用。
+
+---
+
+## 🛠️ MCP 协议配置与传输
+
+SRouter 原生内建 **Model Context Protocol (MCP)** 服务，采用现代化 **Streamable HTTP** 传输机制（`POST http://localhost:20268/mcp`），严格遵循 `2025-06-18` 协议修订草案。
+
+Claude Desktop、Cursor、Cline 及 Roo Code 等智能体可通过 MCP 协议在会话中动态探查可用模型、读取配额用量、监控 Prompt 压缩收益，并即时调整全局路由策略。
+
+### 配置范例
+
+#### 1. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "srouter": {
+      "url": "http://localhost:20268/mcp",
+      "headers": {
+        "Authorization": "Bearer sr-your-unified-key"
+      }
+    }
+  }
+}
+```
+
+#### 2. Cursor / Cline / Windsurf MCP
+在编辑器的 MCP 设置中添加 HTTP 服务器：
+- **服务地址 (Server URL):** `http://localhost:20268/mcp`
+- **请求头 (HTTP Headers):** `Authorization: Bearer sr-your-unified-key`
+
+**内置 MCP 工具清单：** `list_models`, `check_health`, `get_routing_scores`, `set_routing_strategy`, `get_cache_stats`, `clear_cache`, `get_compression_stats`, `get_quota_outlook`, `ask_srouter`.
+
+---
+
+## 🛡️ 可靠性设计与故障容忍默认值
+
+- **熔断机制默认关闭（`0`）：** SRouter 的核心设计聚焦于激进的多渠道平滑回退。全局熔断阈值默认设为 `0`（禁用）。当某渠道触发 429 限流或网络异常时，仅对该密钥/模型执行独立冷却并瞬间切换至下一顺位，绝不会阻断整个网关。
+- **SSE 长连接保活 (Keepalive)：** 流式传输通道（OpenAI、Anthropic、Responses）周期性自动发送心跳注释（`: keepalive\n\n`），有效防止反向代理（Nginx、Cloudflare）或 NAT 路由器在模型长时间深度思考时中断长连接。
+- **一致性时间预算 (Coherent Time Budgets)：** 统一协调单跳超时与整体会话时长，杜绝因阶段耗时冲突导致的任务提前中断。
 
 ---
 

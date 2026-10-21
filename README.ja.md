@@ -12,6 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.18.0-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docs/en/install/01-install.md#docker-compose)
+[![GHCR](https://img.shields.io/badge/GHCR-ghcr.io-blue?logo=github&logoColor=white)](https://github.com/baiibayu/srouter/pkgs/container/srouter)
 [![Desktop App](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-blueviolet?logo=electron&logoColor=white)](desktop/)
 [![i18n Locales](https://img.shields.io/badge/i18n-60%20Languages-orange)](client/src/i18n/locale-config.ts)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
@@ -19,11 +20,13 @@
 
 <p align="center">
   <a href="#-クイックスタート"><b>⚡ クイックスタート</b></a> •
+  <a href="#-ai-エージェント接続"><b>🤖 エージェント接続</b></a> •
+  <a href="#-対応プロバイダー"><b>🔌 対応プロバイダー</b></a> •
+  <a href="#-統合-api-エンドポイント"><b>🌐 API エンドポイント</b></a> •
+  <a href="#️-mcp-サーバー設定"><b>🛠️ MCP 設定</b></a> •
   <a href="#-srouter-が選ばれる理由"><b>🤔 選ばれる理由</b></a> •
   <a href="#-アーキテクチャと動作の仕組み"><b>🔄 動作の仕組み</b></a> •
   <a href="#-主な機能"><b>✨ 主な機能</b></a> •
-  <a href="#-ai-エージェント接続"><b>🤖 エージェント接続</b></a> •
-  <a href="#-対応プロバイダー"><b>🔌 対応プロバイダー</b></a> •
   <a href="#-プロジェクト構造"><b>🏗️ プロジェクト構造</b></a> •
   <a href="docs/README.md"><b>📚 ドキュメント</b></a>
 </p>
@@ -135,6 +138,9 @@ cd srouter
 # 2. 環境変数ファイルをコピーしてコンテナを起動
 cp .env.example .env
 docker compose up -d
+
+# またはクローン不要で GHCR イメージから直接起動：
+# docker run -d --name srouter -p 20268:20268 -v srouter-data:/app/server/data ghcr.io/baiibayu/srouter:latest
 ```
 
 - **ダッシュボード：** `http://localhost:20268`
@@ -157,7 +163,7 @@ docker compose up -d
 ### 方法 4：ソースコードから開発実行
 
 ```bash
-# 1. クローンして依存関係をインストール
+# 1. リポジトリをクローンして依存関係をインストール
 git clone https://github.com/baiibayu/srouter.git
 cd srouter
 npm install
@@ -168,6 +174,9 @@ npm run db:migration:up
 # 3. 開発サーバーの起動（サーバー :20268 + UI :5173、HMR 対応）
 npm run dev
 ```
+
+ブラウザを開いてアクセスしてください：
+👉 **`http://localhost:20268`**（Web ダッシュボード）。
 
 ---
 
@@ -342,6 +351,77 @@ SRouter は **約60社のプロバイダー** と **1,200 以上のエンドポ�
 
 ### 4. 🔌 ローカルモデル & カスタムゲートウェイ
 **Ollama**、**LM Studio**、**vLLM**、**llama.cpp** でローカル実行しているモデルも、ダッシュボードの Keys 画面からワンクリックで追加できます。
+
+---
+
+## 🌐 統合 API エンドポイント
+
+すべてのゲートウェイ機能は単一の統合 API キー（`Bearer sr-xxx` またはヘッダー `x-api-key: sr-xxx`）で統一されており、ダッシュボードの **Keys** タブからいつでも取得できます。
+
+| メソッド | エンドポイント | 主なサーフェス | 説明 | 認証ヘッダー |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/v1/chat/completions` | **チャット補完 (Chat)** | OpenAI 完全互換サーフェス。ストリーミング (`stream: true`)、ツール/関数呼び出し、ビジョン入力、構造化出力、障害時の自動フォールバックに対応。 | `Bearer sr-xxx` |
+| `POST` | `/v1/completions` | **従来のテキスト補完** | OpenAI 旧来のテキスト補完仕様 (`object: "text_completion"`)。エディタのゴーストテキスト補完に最適。 | `Bearer sr-xxx` |
+| `POST` | `/v1/responses` | **OpenAI Responses** | OpenAI Codex CLI で必要な Responses API ネイティブワイヤーフォーマット (`wire_api="responses"`). | `Bearer sr-xxx` |
+| `POST` | `/v1/messages` | **Anthropic Messages** | Claude Code、Cursor (Anthropic モード)、Anthropic 公式 SDK 向けの Messages プロトコル変換。`/v1/messages/count_tokens` をサポート。 | `Bearer sr-xxx` または `x-api-key: sr-xxx` |
+| `POST` | `/v1/search` | **Web 検索 (Search)** | キー不要の Parallel Search または設定済み検索プロバイダー（Tavily、Exa、Firecrawl、Linkup）に自動ルーティングされる統合 Web 検索。 | `Bearer sr-xxx` |
+| `GET` | `/v1/search/engines` | **Web 検索 (Search)** | 設定・有効化されている検索エンジンの一覧、クォータ、利用可能状態を取得。 | `Bearer sr-xxx` |
+| `POST` | `/v1/decision` | **意思決定 (System One)** | 超低遅延な意思決定・複雑度ゲート分類（TypeSafe 仕様）。`state` と選択肢 `choice` を評価。3 階層フォールバック：リモート Jev ホスト → Chat-Judge 判定 → ローカルヒューリスティックによるゼロダウンタイム保底。 | `Bearer sr-xxx` |
+| `POST` | `/v1/decisions` | **多基準評価 (Decisions)** | マルチクラス評価モデル（Cloudflare Clef Flash、OpenRouter Mercury Decide）。 | `Bearer sr-xxx` |
+| `GET` | `/v1/decisions/models` | **多基準評価 (Decisions)** | 利用可能な意思決定スコアリングモデルの一覧。 | `Bearer sr-xxx` |
+| `POST` | `/v1/fetch` | **Web ページ抽出 (Fetch)** | 公開 URL からノイズのない Markdown / テキストを抽出（HTML の定型文を除去）。TinyFish Fetch とキー不要の Jina Reader によるフォールバック。 | `Bearer sr-xxx` |
+| `GET` | `/v1/fetch/sources` | **Web ページ抽出 (Fetch)** | ページリーダー取得元（`tinyfish-fetch`、`jina-reader`）と稼働ステータスの一覧。 | `Bearer sr-xxx` |
+| `GET` | `/v1/models` | **モデルカタログ取得** | OpenAI 互換のモデル一覧。アクティブな全モデル、フォールバックエイリアス（`auto`、`auto:fast`、`auto:smart`、`auto:cheap`）、Anthropic 形式ネゴシエーションに対応。 | `Bearer sr-xxx` |
+| `POST` | `/v1/embeddings` | **テキスト埋め込み** | 設定済みプロバイダーを経由したテキストベクトル生成。 | `Bearer sr-xxx` |
+| `POST` | `/v1/images/generations` | **画像生成** | メディアカタログ経由のマルチモーダル画像生成。 | `Bearer sr-xxx` |
+| `POST` | `/v1/audio/speech` | **音声合成 (TTS)** | テキストから音声への変換合成。 | `Bearer sr-xxx` |
+| `POST` | `/v1beta/models/*:generateContent` | **Gemini ネイティブ** | Gemini CLI および Google 公式 SDK 向けのネイティブ Google Gemini API ワイヤーフォーマット。 | `Bearer sr-xxx` または `x-goog-api-key` |
+| `POST` | `/mcp` | **MCP サーバー** | Streamable HTTP ベースの Model Context Protocol サーバー（ステートレス JSON-RPC 2.0）。 | `Bearer sr-xxx` |
+| `GET` | `/v1/docs` | **対話型 API ドキュメント** | 外部依存なしで高速に動作する自己完結型インタラクティブ API リファレンス。 | *公開（認証不要）* |
+| `GET` | `/v1/openapi.json` | **OpenAPI 仕様書** | コード生成や各種ツール統合に使える完全な OpenAPI 3.0 仕様。 | *公開（認証不要）* |
+
+> [!TIP]
+> - **意思決定 System One (`POST /v1/decision`):** 堅牢な 3 階層フォールバック構成：高速リモート判定 (< 2000ms) → 軽量 Chat-Judge 判定（`decision_chat_judge_order` に準拠） → 即時ローカルヒューリスティック保底 (`scoreChoice`) により、エージェント側の 5xx エラーを完全に防止します。
+> - **Web ツール用キーの管理 (`Keys` $\to$ `Web Tools`):** 検索・ページ抽出専用キー（Tavily、Exa、Firecrawl、TinyFish）は LLM プロバイダーとは別に専用カードで管理されます。キー不要エンジン（**Parallel Search**、**Jina Reader**）は設定不要でそのまま稼働します。
+
+---
+
+## 🛠️ MCP サーバー設定とプロトコル
+
+SRouter には **Streamable HTTP**（`POST http://localhost:20268/mcp`）による **Model Context Protocol (MCP)** サーバーが標準搭載されており、プロトコルリビジョン `2025-06-18` に準拠しています。
+
+Claude Desktop、Cursor、Cline、Roo Code などのコーディングアシスタントが、セッション中に利用可能なモデル一覧の確認、クォータ残量の監視、プロンプト圧縮によるトークン節約統計の取得、ルーティング戦略の動的変更を行うことができます。
+
+### 設定例
+
+#### 1. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "srouter": {
+      "url": "http://localhost:20268/mcp",
+      "headers": {
+        "Authorization": "Bearer sr-your-unified-key"
+      }
+    }
+  }
+}
+```
+
+#### 2. Cursor / Cline / Windsurf MCP
+お使いのツールの設定画面で HTTP MCP サーバーを追加：
+- **Server URL:** `http://localhost:20268/mcp`
+- **HTTP Headers:** `Authorization: Bearer sr-your-unified-key`
+
+**利用可能な MCP ツール一覧：** `list_models`, `check_health`, `get_routing_scores`, `set_routing_strategy`, `get_cache_stats`, `clear_cache`, `get_compression_stats`, `get_quota_outlook`, `ask_srouter`.
+
+---
+
+## 🛡️ 信頼性と耐障害性のデフォルト設定
+
+- **サーキットブレーカーは初期設定でオフ（`0`）：** 積極的なマルチプロバイダーフォールバックを重視して設計されています。一時的な 429 レート制限やタイムアウトが発生しても該当キー/モデルのみをクールダウンし、直ちに別プロバイダーへ切り替えます（ゲートウェイ全体が遮断されることはありません）。
+- **SSE Keepalive（接続維持）：** ストリーミング経路（OpenAI、Anthropic、Responses）では定期的にハートビートコメント（`: keepalive\n\n`）を送信し、モデルの長考時でもリバースプロキシや NAT ファイアウォールによる接続切断を防止します。
+- **一貫性のあるタイムバジェット (Coherent Time Budgets)：** ホップ単位のタイムアウト時間をストリーミング全体の許容時間と同期させ、不適切な早期切断を防ぎます。
 
 ---
 

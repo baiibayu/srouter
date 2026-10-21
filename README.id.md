@@ -12,6 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.18.0-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docs/en/install/01-install.md#docker-compose)
+[![GHCR](https://img.shields.io/badge/GHCR-ghcr.io-blue?logo=github&logoColor=white)](https://github.com/baiibayu/srouter/pkgs/container/srouter)
 [![Desktop App](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-blueviolet?logo=electron&logoColor=white)](desktop/)
 [![i18n Locales](https://img.shields.io/badge/i18n-60%20Bahasa-orange)](client/src/i18n/locale-config.ts)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
@@ -19,11 +20,13 @@
 
 <p align="center">
   <a href="#-quick-start"><b>⚡ Quick Start</b></a> •
+  <a href="#-integrasi-ai-coding-agents"><b>🤖 Coding Agents</b></a> •
+  <a href="#-provider-yang-didukung"><b>🔌 Provider</b></a> •
+  <a href="#-endpoint-api-universal"><b>🌐 API Endpoints</b></a> •
+  <a href="#️-setup-mcp-server"><b>🛠️ Setup MCP</b></a> •
   <a href="#-mengapa-srouter"><b>🤔 Mengapa SRouter?</b></a> •
   <a href="#-cara-kerja--arsitektur"><b>🔄 Cara Kerja</b></a> •
   <a href="#-fitur-unggulan"><b>✨ Fitur Unggulan</b></a> •
-  <a href="#-integrasi-ai-coding-agents"><b>🤖 Coding Agents</b></a> •
-  <a href="#-provider-yang-didukung"><b>🔌 Provider</b></a> •
   <a href="#-arsitektur-proyek"><b>🏗️ Struktur Proyek</b></a> •
   <a href="docs/README.md"><b>📚 Dokumentasi</b></a>
 </p>
@@ -135,6 +138,9 @@ cd srouter
 # 2. Salin template environment dan jalankan container
 cp .env.example .env
 docker compose up -d
+
+# Atau jalankan langsung via image GHCR (tanpa clone):
+# docker run -d --name srouter -p 20268:20268 -v srouter-data:/app/server/data ghcr.io/baiibayu/srouter:latest
 ```
 
 - **Akses Dashboard:** `http://localhost:20268`
@@ -157,7 +163,7 @@ Lebih suka aplikasi GUI mandiri dengan menu system tray / taskbar?
 ### Metode 4: Menjalankan dari Source Code (Pengembangan Lokal)
 
 ```bash
-# 1. Clone & pasang dependensi
+# 1. Clone repositori & pasang dependensi
 git clone https://github.com/baiibayu/srouter.git
 cd srouter
 npm install
@@ -168,6 +174,9 @@ npm run db:migration:up
 # 3. Jalankan server development (Server :20268 + Client :5173 dengan HMR)
 npm run dev
 ```
+
+Buka peramban Anda dan kunjungi:
+👉 **`http://localhost:20268`** (Web Dashboard).
 
 ---
 
@@ -344,6 +353,78 @@ SRouter menyatukan **~60 provider** dan **~1.200+ endpoint model** di balik satu
 
 ### 4. 🔌 Provider Lokal & Gateway Khusus
 Hubungkan model lokal Anda yang berjalan di **Ollama**, **LM Studio**, **vLLM**, atau **llama.cpp** secara langsung melalui tab Keys di dashboard.
+
+---
+
+## 🌐 Endpoint API Universal
+
+Seluruh layanan gateway disatukan di bawah satu API key tunggal (`Bearer sr-xxx` atau header `x-api-key: sr-xxx`), dapat diakses kapan saja melalui tab **Keys** pada dashboard.
+
+| Method | Endpoint | Permukaan Utama | Deskripsi | Header Autentikasi |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/v1/chat/completions` | **Chat Completions** | Kompatibel penuh dengan protokol OpenAI. Mendukung streaming (`stream: true`), function/tool calling, vision, structured outputs, dan auto-fallback routing. | `Bearer sr-xxx` |
+| `POST` | `/v1/completions` | **Legacy Completions** | Endpoint OpenAI legacy completion (`object: "text_completion"`). Ideal untuk ghost-text code completion pada editor kode. | `Bearer sr-xxx` |
+| `POST` | `/v1/responses` | **OpenAI Responses** | Format protokol native OpenAI Responses yang digunakan oleh OpenAI Codex CLI (`wire_api="responses"`). | `Bearer sr-xxx` |
+| `POST` | `/v1/messages` | **Anthropic Messages** | Format native Anthropic Messages untuk Claude Code, Cursor (mode Anthropic), dan SDK resmi Anthropic. Mendukung `/v1/messages/count_tokens`. | `Bearer sr-xxx` atau `x-api-key: sr-xxx` |
+| `POST` | `/v1/search` | **Web Search** | Layanan pencarian web terpadu dengan rotasi otomatis antara Parallel Search (keyless gratis) atau provider pencarian terkonfigurasi (Tavily, Exa, Firecrawl, Linkup). | `Bearer sr-xxx` |
+| `GET` | `/v1/search/engines` | **Web Search** | Menampilkan daftar mesin pencari yang aktif, status kuota, dan ketersediaannya. | `Bearer sr-xxx` |
+| `POST` | `/v1/decision` | **Decision (System One)** | Klasifikasi keputusan latensi sangat rendah (standar TypeSafe) yang mengevaluasi `state` dan pertanyaan kriteria `choice`. Resolusi 3-tier: remote Jev host → fallback chat-judge → fail-open heuristik lokal. | `Bearer sr-xxx` |
+| `POST` | `/v1/decisions` | **Decisions** | Model klasifikasi rubrik multikelas (Cloudflare Clef Flash, OpenRouter Mercury Decide). | `Bearer sr-xxx` |
+| `GET` | `/v1/decisions/models` | **Decisions** | Menampilkan model penskoran keputusan yang tersedia di katalog. | `Bearer sr-xxx` |
+| `POST` | `/v1/fetch` | **Page Fetch** | Mengambil konten halaman web publik yang bersih dan mudah dibaca (boilerplate HTML dipangkas). Fallback otomatis melalui TinyFish Fetch dan Jina Reader (keyless). | `Bearer sr-xxx` |
+| `GET` | `/v1/fetch/sources` | **Page Fetch** | Menampilkan daftar reader pembaca halaman (`tinyfish-fetch`, `jina-reader`) beserta status aktivasinya. | `Bearer sr-xxx` |
+| `GET` | `/v1/models` | **Model Discovery** | Katalog kompatibel OpenAI yang memuat seluruh model aktif, alias fallback (`auto`, `auto:fast`, `auto:smart`, `auto:cheap`), dan negosiasi format Anthropic. | `Bearer sr-xxx` |
+| `POST` | `/v1/embeddings` | **Embeddings** | Menghasilkan vektor embedding teks melalui provider yang terhubung. | `Bearer sr-xxx` |
+| `POST` | `/v1/images/generations` | **Image Media** | Pembuatan gambar multimodal yang diarahkan melalui katalog media. | `Bearer sr-xxx` |
+| `POST` | `/v1/audio/speech` | **Audio Media** | Sintesis suara teks-ke-ucapan (TTS). | `Bearer sr-xxx` |
+| `POST` | `/v1beta/models/*:generateContent` | **Gemini Native** | Format native Google Gemini untuk Gemini CLI dan SDK resmi Google. | `Bearer sr-xxx` atau `x-goog-api-key` |
+| `POST` | `/mcp` | **Server MCP** | Server Model Context Protocol berbasis Streamable HTTP (stateless JSON-RPC). | `Bearer sr-xxx` |
+| `GET` | `/v1/docs` | **Referensi API** | Antarmuka interaktif referensi API mandiri tanpa dependensi eksternal. | *Publik (Tanpa Auth)* |
+| `GET` | `/v1/openapi.json` | **Spesifikasi OpenAPI** | Spesifikasi OpenAPI 3.0 lengkap untuk keperluan integrasi dan generator kode. | *Publik (Tanpa Auth)* |
+
+> [!TIP]
+> - **Decision System One (`POST /v1/decision`):** Ketahanan 3-tier: evaluasi remote Jev super cepat (< 2000ms) → penilaian ringan chat-judge (via `decision_chat_judge_order`) → fail-open heuristik lokal instan (`scoreChoice`), menjamin nol downtime bagi agent.
+> - **Web Tools vs Providers (`Keys` $\to$ `Web Tools`):** Kunci API untuk pencarian dan ekstraksi web (Tavily, Exa, Firecrawl, TinyFish) dikelola terpisah dari provider model LLM. Mesin tanpa kunci (**Parallel Search**, **Jina Reader**) langsung aktif tanpa konfigurasi tambahan.
+
+---
+
+## 🛠️ Setup MCP Server & Transport
+
+SRouter menyertakan server bawaan **Model Context Protocol (MCP)** melalui protokol **Streamable HTTP** (`POST http://localhost:20268/mcp`), sesuai revisi protokol `2025-06-18`.
+
+Coding assistant seperti Claude Desktop, Cursor, Cline, dan Roo Code dapat memeriksa ketersediaan model aktif, memantau jatah kuota, melihat statistik kompresi token, dan mengubah strategi perutean secara dinamis.
+
+### Contoh Konfigurasi
+
+#### 1. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "srouter": {
+      "url": "http://localhost:20268/mcp",
+      "headers": {
+        "Authorization": "Bearer sr-kunci-unified-anda"
+      }
+    }
+  }
+}
+```
+
+#### 2. Cursor / Cline / Windsurf MCP
+Tambahkan server MCP berbasis HTTP di pengaturan editor Anda:
+- **Server Name:** `srouter`
+- **Server URL:** `http://localhost:20268/mcp`
+- **HTTP Headers:** `Authorization: Bearer sr-kunci-unified-anda`
+
+**Alat (Tools) MCP Bawaan:** `list_models`, `check_health`, `get_routing_scores`, `set_routing_strategy`, `get_cache_stats`, `clear_cache`, `get_compression_stats`, `get_quota_outlook`, `ask_srouter`.
+
+---
+
+## 🛡️ Standar Keandalan & Toleransi Gangguan (Reliability Defaults)
+
+- **Circuit Breaker Nonaktif Secara Default (`0`):** Dirancang untuk fallback multi-provider yang agresif. Kendala kuota 429 atau timeout hanya mendinginkan key/model yang bersangkutan dan langsung mengalihkan rute ke provider cadangan, alih-alih memutus seluruh sistem gateway.
+- **SSE Keepalive:** Jalur streaming (OpenAI, Anthropic, Responses) secara berkala mengirimkan komentar denyut jantung (`: keepalive\n\n`) untuk mencegah pemutusan koneksi sepihak oleh reverse proxy (Nginx, Cloudflare) atau firewall NAT saat model sedang berpikir panjang.
+- **Anggaran Waktu yang Koheren (Coherent Time Budgets):** Batas waktu timeout diselaraskan per lompatan (*hop*) fallback dengan durasi total streaming untuk mencegah pembatalan koneksi prematur.
 
 ---
 

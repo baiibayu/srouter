@@ -108,13 +108,27 @@ SRouter secara otomatis menerjemahkan request ke format asli yang dibutuhkan ole
 | Endpoint | Protokol | Kegunaan |
 | :--- | :--- | :--- |
 | `POST /v1/chat/completions` | OpenAI Wire | Standar chat completion untuk Cursor, Cline, SDK Python/Node. |
-| `POST /v1/messages` | Anthropic Wire | Format native Anthropic yang digunakan oleh Claude Code. |
+| `POST /v1/completions` | OpenAI Wire | Endpoint legacy completion untuk editor code ghost-text. |
+| `POST /v1/responses` | OpenAI Responses | Format OpenAI Responses native untuk OpenAI Codex CLI. |
+| `POST /v1/messages` | Anthropic Wire | Format native Anthropic yang digunakan oleh Claude Code. Mendukung `/v1/messages/count_tokens`. |
 | `POST /v1beta/models/*` | Gemini Wire | Format native Gemini CLI (`generateContent`). |
+| `POST /v1/search` | SRouter Wire | Layanan pencarian web terpadu (Parallel Search gratis & provider berbayar). |
+| `GET /v1/search/engines` | SRouter Wire | Daftar mesin pencari web dan status kuota/ketersediaan. |
+| `POST /v1/decision` | TypeSafe Wire | Klasifikasi keputusan cepat System One dengan 3-tier fallback (Jev → Chat-Judge → Heuristik). |
+| `POST /v1/decisions` | SRouter Wire | Evaluasi keputusan rubrik multikelas. |
+| `POST /v1/fetch` | SRouter Wire | Ekstraksi konten halaman web publik menjadi markdown/teks bersih (TinyFish Fetch, Jina Reader). |
+| `GET /v1/fetch/sources` | SRouter Wire | Daftar reader sumber pembaca web. |
+| `GET /v1/models` | OpenAI Wire | Katalog model aktif, alias fallback (`auto`, `auto:fast`), dan negosiasi Anthropic. |
 | `POST /api/chat` & `/api/generate` | Ollama NDJSON | Emulasi Ollama untuk editor seperti Zed dan JetBrains AI. |
 | `POST /v1/embeddings` | OpenAI Wire | Inferensi embedding teks. |
 | `POST /v1/images/generations` | OpenAI Wire | Pembuatan gambar via model AI visual. |
-| `POST /v1/web-search` | SRouter Wire | Fitur pencarian web untuk agent (DuckDuckGo, SearXNG, Tavily). |
-| `POST /v1/fetch` | SRouter Wire | Ekstraksi konten halaman web publik menjadi teks bersih. |
+| `POST /v1/audio/speech` | OpenAI Wire | Sintesis teks-ke-suara (TTS). |
+| `POST /mcp` | MCP Streamable HTTP | Server Model Context Protocol untuk Claude Desktop, Cursor, dan agent. |
+| `GET /v1/docs` | HTML | Dokumentasi API interaktif tanpa dependensi eksternal. |
+| `GET /v1/openapi.json` | JSON | Spesifikasi OpenAPI 3.0 lengkap. |
+
+> [!NOTE]
+> **Kunci Web Tools (Search & Fetch):** Kunci untuk Tavily, Exa, Firecrawl, Linkup, dan TinyFish Fetch dimasukkan melalui menu **Keys $\to$ Web Tools**, terpisah dari daftar Provider model LLM. Mesin keyless (Parallel Search & Jina Reader) aktif secara otomatis.
 
 *Panduan lengkap API: [docs/en/api/01-rest-api.md](../en/api/01-rest-api.md)*
 
