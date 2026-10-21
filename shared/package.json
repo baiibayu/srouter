@@ -1,6 +1,6 @@
 {
   "name": "@baiibayu/srouter-shared",
-  "version": "0.1.0",
+  "version": "0.1.12",
   "private": true,
   "main": "./types.ts",
   "types": "./types.ts"
