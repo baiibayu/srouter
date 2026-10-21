@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.18.0-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docs/en/install/01-install.md#docker-compose)
-[![GHCR](https://img.shields.io/badge/GHCR-ghcr.io-blue?logo=github&logoColor=white)](https://github.com/baiibayu/srouter/pkgs/container/srouter)
+[![GHCR](https://img.shields.io/badge/ghcr.io-srouter-blue?logo=github&logoColor=white)](https://github.com/baiibayu/srouter/pkgs/container/srouter)
 [![Desktop App](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-blueviolet?logo=electron&logoColor=white)](desktop/)
 [![i18n Locales](https://img.shields.io/badge/i18n-60%20Languages-orange)](client/src/i18n/locale-config.ts)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
@@ -357,6 +357,78 @@ SRouter aggregates **~60 providers** and **~1,200+ endpoints** behind one `/v1` 
 
 ### 4. 🔌 Custom Local & Remote Providers
 Connect local models from **Ollama**, **LM Studio**, **vLLM**, or **llama.cpp** directly via the Keys page in the dashboard.
+
+---
+
+## 🌐 Unified API Endpoints
+
+All gateway surfaces are unified under a single API key (`Bearer sr-xxx` or header `x-api-key: sr-xxx`), accessible anytime in the **Keys** tab of your dashboard.
+
+| Method | Endpoint | Primary Surface | Description | Auth Header |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/v1/chat/completions` | **Chat Completions** | Fully compatible with the OpenAI chat protocol. Supports streaming (`stream: true`), function/tool calling, vision, structured outputs, and auto-fallback routing. | `Bearer sr-xxx` |
+| `POST` | `/v1/completions` | **Legacy Completions** | Legacy OpenAI completions endpoint (`object: "text_completion"`). Ideal for ghost-text code completion in editors. | `Bearer sr-xxx` |
+| `POST` | `/v1/responses` | **OpenAI Responses** | Native OpenAI Responses protocol used by OpenAI Codex CLI (`wire_api="responses"`). | `Bearer sr-xxx` |
+| `POST` | `/v1/messages` | **Anthropic Messages** | Native Anthropic Messages format for Claude Code, Cursor (Anthropic mode), and official Anthropic SDKs. Supports `/v1/messages/count_tokens`. | `Bearer sr-xxx` or `x-api-key: sr-xxx` |
+| `POST` | `/v1/search` | **Web Search** | Unified web search with automatic failover between Parallel Search (free keyless) and configured search providers (Tavily, Exa, Firecrawl, Linkup). | `Bearer sr-xxx` |
+| `GET` | `/v1/search/engines` | **Web Search** | Lists registered search engines, quota statuses, and health availability. | `Bearer sr-xxx` |
+| `POST` | `/v1/decision` | **Decision (System One)** | Ultra-low latency TypeSafe decision classifier evaluating `state` and criterion `choice` prompts. 3-tier resolution: remote Jev host → fallback chat-judge → instant local heuristic fail-open. | `Bearer sr-xxx` |
+| `POST` | `/v1/decisions` | **Decisions** | Multiclass rubric scoring classification models (Cloudflare Clef Flash, OpenRouter Mercury Decide). | `Bearer sr-xxx` |
+| `GET` | `/v1/decisions/models` | **Decisions** | Lists available decision-scoring models registered in the catalog. | `Bearer sr-xxx` |
+| `POST` | `/v1/fetch` | **Page Fetch** | Fetches clean, reader-mode readable web page text (boilerplate HTML stripped). Automatic fallback via TinyFish Fetch and Jina Reader (keyless). | `Bearer sr-xxx` |
+| `GET` | `/v1/fetch/sources` | **Page Fetch** | Lists registered page fetch engines (`tinyfish-fetch`, `jina-reader`) and their activation states. | `Bearer sr-xxx` |
+| `GET` | `/v1/models` | **Model Discovery** | OpenAI-compatible catalog listing all active models, fallback aliases (`auto`, `auto:fast`, `auto:smart`, `auto:cheap`), and Anthropic model negotiation. | `Bearer sr-xxx` |
+| `POST` | `/v1/embeddings` | **Embeddings** | Generates text embedding vectors across connected providers. | `Bearer sr-xxx` |
+| `POST` | `/v1/images/generations` | **Image Media** | Multimodal image generation routed through the media catalog. | `Bearer sr-xxx` |
+| `POST` | `/v1/audio/speech` | **Audio Media** | Text-to-speech (TTS) voice synthesis. | `Bearer sr-xxx` |
+| `POST` | `/v1beta/models/*:generateContent` | **Gemini Native** | Native Google Gemini format for Gemini CLI and official Google SDKs. | `Bearer sr-xxx` or `x-goog-api-key` |
+| `POST` | `/mcp` | **MCP Server** | Streamable HTTP Model Context Protocol server (stateless JSON-RPC). | `Bearer sr-xxx` |
+| `GET` | `/v1/docs` | **API Reference** | Interactive self-contained API documentation viewer without external dependencies. | *Public (No Auth)* |
+| `GET` | `/v1/openapi.json` | **OpenAPI Spec** | Full OpenAPI 3.0 specification for integrations and code generators. | *Public (No Auth)* |
+
+> [!TIP]
+> - **Decision System One (`POST /v1/decision`):** 3-tier resilience: ultra-fast remote Jev evaluation (< 2000ms) → lightweight chat-judge evaluation (via `decision_chat_judge_order`) → instant local heuristic fail-open (`scoreChoice`), guaranteeing zero downtime for agents.
+> - **Web Tools vs Providers (`Keys` $\to$ `Web Tools`):** API keys for search and page extraction (Tavily, Exa, Firecrawl, TinyFish) are managed separately from LLM model providers. Keyless engines (**Parallel Search**, **Jina Reader**) work out-of-the-box with zero configuration.
+
+---
+
+## 🛠️ MCP Server Setup & Transport
+
+SRouter includes a built-in **Model Context Protocol (MCP)** server over **Streamable HTTP** (`POST http://localhost:20268/mcp`), following protocol revision `2025-06-18`.
+
+Coding assistants like Claude Desktop, Cursor, Cline, and Roo Code can inspect active models, monitor quota allowances, review token compression metrics, and dynamically adjust routing strategies.
+
+### Configuration Examples
+
+#### 1. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "srouter": {
+      "url": "http://localhost:20268/mcp",
+      "headers": {
+        "Authorization": "Bearer sr-your-unified-key"
+      }
+    }
+  }
+}
+```
+
+#### 2. Cursor / Cline / Windsurf MCP
+Add an HTTP-based MCP server in your editor's settings:
+- **Server Name:** `srouter`
+- **Server URL:** `http://localhost:20268/mcp`
+- **HTTP Headers:** `Authorization: Bearer sr-your-unified-key`
+
+**Built-in MCP Tools:** `list_models`, `check_health`, `get_routing_scores`, `set_routing_strategy`, `get_cache_stats`, `clear_cache`, `get_compression_stats`, `get_quota_outlook`, `ask_srouter`.
+
+---
+
+## 🛡️ Reliability Defaults & Fault Tolerance
+
+- **Circuit Breaker Disabled by Default (`0`):** Optimized for aggressive multi-provider fallback. 429 rate limit or timeout errors only cool down the affected key/model and instantly redirect traffic to the next fallback candidate, rather than tripping a global breaker.
+- **SSE Keepalive Heartbeats:** Streaming pipes (OpenAI, Anthropic, Responses) periodically send heartbeat comments (`: keepalive\n\n`) to prevent premature connection drops by reverse proxies (Nginx, Cloudflare) or NAT state tables during deep reasoning.
+- **Coherent Time Budgets:** Timeout allowances are aligned per fallback hop with the overall stream deadline to eliminate unexpected request cancellations.
 
 ---
 

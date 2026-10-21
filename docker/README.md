@@ -1,31 +1,75 @@
-# Docker Guide
+<div align="center">
 
-Docker Compose is the recommended way to run SRouter for personal use. The container serves the Express API and the built React dashboard from one process on port 20268, with SQLite persisted in a named volume.
+# 🐳 SRouter Docker Guide
 
-## Prerequisites
+### Self-Host SRouter AI Gateway with Docker & Docker Compose
 
-- Docker
-- Docker Compose
-- OpenSSL for generating `ENCRYPTION_KEY`
+**Deploy SRouter in seconds on home labs, VPS, or cloud servers with SQLite persistence and automated container updates.**
 
-## Quick Start
+[![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://github.com/baiibayu/srouter/blob/main/docs/en/install/01-install.md#docker-compose)
+[![GHCR](https://img.shields.io/badge/ghcr.io-srouter-blue?logo=github&logoColor=white)](https://github.com/baiibayu/srouter/pkgs/container/srouter)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/baiibayu/srouter/blob/main/LICENSE)
+[![Port: 20268](https://img.shields.io/badge/Port-20268-orange)](http://localhost:20268)
 
-Create a `.env` file with a 32-byte encryption key:
+<p align="center">
+  <a href="#-instant-one-liner-ghcr"><b>⚡ Instant One-Liner</b></a> •
+  <a href="#-docker-compose-recommended"><b>🚀 Docker Compose</b></a> •
+  <a href="#-example-api-call"><b>📡 API Call</b></a> •
+  <a href="#-common-operations"><b>⚙️ Operations</b></a> •
+  <a href="#-environment-variables"><b>📋 Environment Variables</b></a> •
+  <a href="#-declarative-configuration"><b>📄 Declarative Config</b></a>
+</p>
+
+</div>
+
+---
+
+## ⚡ Instant One-Liner (GHCR)
+
+Run SRouter immediately without cloning the git repository:
 
 ```bash
+docker run -d \
+  --name srouter \
+  -p 20268:20268 \
+  -v srouter-data:/app/server/data \
+  -e ENCRYPTION_KEY="$(openssl rand -hex 32)" \
+  --restart unless-stopped \
+  ghcr.io/baiibayu/srouter:latest
+```
+
+The Web Dashboard will be live at 👉 **`http://localhost:20268`**.
+
+---
+
+## 🚀 Docker Compose (Recommended)
+
+Docker Compose is the recommended deployment method for personal servers and home labs. The container bundles the Express gateway API and the built React dashboard into a single lightweight process.
+
+### Step 1: Clone Repository & Create `.env`
+
+```bash
+git clone https://github.com/baiibayu/srouter.git
+cd srouter
+
+# Generate 32-byte encryption key
 ENCRYPTION_KEY="$(openssl rand -hex 32)"
 printf "ENCRYPTION_KEY=%s\nPORT=20268\n" "$ENCRYPTION_KEY" > .env
 ```
 
-Start the app:
+### Step 2: Launch Containers
 
 ```bash
 docker compose up -d
 ```
 
-Open http://localhost:20268, add provider keys on the **Keys** page, then use the generated `srouter-...` key with any OpenAI-compatible client.
+Open `http://localhost:20268` in your browser. Configure your provider API keys under the **Keys** tab, or enjoy built-in keyless providers immediately.
 
-## Example API Call
+---
+
+## 📡 Example API Call
+
+Send a test chat completion through your Dockerized gateway:
 
 ```bash
 curl http://localhost:20268/v1/chat/completions \
@@ -33,92 +77,101 @@ curl http://localhost:20268/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "auto",
-    "messages": [{"role": "user", "content": "Say hello from SRouter."}]
+    "messages": [{"role": "user", "content": "Hello from Docker!"}]
   }'
 ```
 
-## Operations
+---
 
-Check status:
+## ⚙️ Common Operations
 
+### Check Service Status
 ```bash
 docker compose ps
 ```
 
-Tail logs:
-
+### Tail Server Logs
 ```bash
 docker compose logs -f srouter
 ```
 
-Stop the app:
-
+### Stop Service
 ```bash
 docker compose down
 ```
 
-Update to the latest GHCR image after a release:
-
+### Pull and Apply Image Updates
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-Rebuild locally from source:
-
+### Rebuild Locally from Source
 ```bash
 docker compose up -d --build
 ```
 
-## Configuration
+---
+
+## 📋 Environment Variables
 
 | Variable | Required | Default | Description |
-| --- | --- | --- | --- |
-| `ENCRYPTION_KEY` | Yes | None | 64-character hex key used to encrypt provider API keys at rest. Generate it once and keep it stable. |
-| `PORT` | No | `20268` | Host port exposed by Docker Compose. The container listens on port 20268. |
-| `SROUTER_DB_PATH` | No | `/app/server/data/srouter.db` | SQLite file path. Set this when your host only persists one mounted directory. |
-| `SROUTER_DB_BACKUP_PATH` | No | None | Local encrypted backup file. Restored on startup if the DB file is missing, then refreshed while the app runs. |
-| `SROUTER_DB_BACKUP_URL` | No | None | HTTP(S) encrypted backup target. Startup uses `GET`; periodic backups use `PUT`. |
-| `SROUTER_DB_BACKUP_TOKEN` | No | None | Optional bearer token for `SROUTER_DB_BACKUP_URL`. |
-| `SROUTER_DB_BACKUP_KEY` | No | `ENCRYPTION_KEY` | 64-character hex key for backup encryption. Use a separate stable key if possible. |
-| `SROUTER_CONFIG_PATH` | No | None | JSON config file applied idempotently after migrations on every boot. |
-| `SROUTER_CONFIG_JSON` | No | None | Inline JSON config. Takes precedence over `SROUTER_CONFIG_PATH`. |
+| :--- | :---: | :--- | :--- |
+| `ENCRYPTION_KEY` | **Yes** | *None* | 64-character hex key used to encrypt provider API keys at rest using AES-256-GCM. Keep this stable across restarts. |
+| `PORT` | No | `20268` | Host port mapped to the gateway server. |
+| `SROUTER_DB_PATH` | No | `/app/server/data/srouter.db` | Path to the SQLite database file inside the container. |
+| `SROUTER_DB_BACKUP_PATH` | No | *None* | Local encrypted backup file. Restored on startup if DB is missing, refreshed periodically. |
+| `SROUTER_DB_BACKUP_URL` | No | *None* | Remote HTTP(S) encrypted backup target (`GET` on startup, `PUT` on update). |
+| `SROUTER_DB_BACKUP_TOKEN` | No | *None* | Bearer token for `SROUTER_DB_BACKUP_URL`. |
+| `SROUTER_CONFIG_PATH` | No | *None* | Path to a declarative JSON config file applied idempotently on container startup. |
+| `SROUTER_CONFIG_JSON` | No | *None* | Inline JSON configuration string (overrides `SROUTER_CONFIG_PATH`). |
 
-The `srouter-data` volume stores SQLite data at `/app/server/data`. Keep the same volume and `ENCRYPTION_KEY` when upgrading, otherwise existing encrypted provider keys cannot be decrypted.
+> [!IMPORTANT]
+> The `srouter-data` named volume persists database state across container updates at `/app/server/data`. Always retain your `ENCRYPTION_KEY`; if changed, previously stored API keys cannot be decrypted.
 
-Example `srouter.config.json`:
+---
+
+## 📄 Declarative Configuration
+
+You can provision admin users, provider keys, and custom endpoints automatically upon boot by passing a configuration file (`srouter.config.json`):
 
 ```json
 {
-  "admin": { "email": "ops@example.com", "password": "change-me-min-8-chars" },
+  "admin": {
+    "email": "admin@example.com",
+    "password": "change-this-secure-password"
+  },
   "keys": [
     { "platform": "groq", "key": "gsk_...", "label": "main" }
   ],
   "customProviders": [
     {
       "baseUrl": "http://host.docker.internal:11434/v1",
-      "label": "Ollama",
+      "label": "Ollama Local",
       "models": [
         { "model": "llama3.1:8b", "displayName": "Local Llama", "supportsTools": true }
       ]
     }
   ],
-  "routing": { "strategy": "balanced" }
+  "routing": {
+    "strategy": "balanced"
+  }
 }
 ```
 
-The optional `admin` entry creates the first dashboard account while no account
-exists (ignored with a warning afterwards — a claimed install can't be taken
-over by config). The file carries plaintext secrets, so protect it like
-`ENCRYPTION_KEY`.
+---
 
-## Published Image
+## 📦 Container Registry
 
-Images are published to GitHub Container Registry:
+Official multi-arch container images (`linux/amd64`, `linux/arm64`) are published to GitHub Container Registry:
 
 ```bash
-# Replace <owner> with the GitHub user or org that publishes this repository.
-docker pull ghcr.io/<owner>/srouter:latest
+docker pull ghcr.io/baiibayu/srouter:latest
 ```
 
-The Docker workflow builds pull requests without pushing. After this repository receives the workflow on `main`, pushes to `main` and version tags publish images to GHCR automatically.
+---
+
+## 📄 License
+
+Open-source under the [MIT License](https://github.com/baiibayu/srouter/blob/main/LICENSE).
+Created and maintained by **[@baiibayu](https://github.com/baiibayu)** & community contributors.

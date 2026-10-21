@@ -1,73 +1,127 @@
-# SRouter Desktop
+<div align="center">
 
-Lean Electron menu-bar app for [SRouter](https://github.com/baiibayu/srouter):
-runs the whole router locally on `127.0.0.1:31415`, with a dark-glass tray
-popover (live 24h request chart, quick stats, copy URL/key) and the full
-dashboard in a native-feeling window.
+# 🖥️ SRouter Desktop
 
-Download an installer from [Releases](https://github.com/baiibayu/srouter/releases/latest),
-or build against the server and client sources in this checkout.
+### Native System Tray & Menu-Bar Application for SRouter AI Gateway
 
-On macOS, choose **arm64** for Apple Silicon (M-series) or **x64** for Intel.
-Both require **macOS 12 Monterey or later**. Each architecture has a DMG
-installer and a ZIP containing the app.
+**Run the complete SRouter gateway locally as a background native application with a sleek dark-glass tray popover, live request metrics, one-click API key copying, and instant dashboard access.**
 
-## Prerequisites
+[![Electron](https://img.shields.io/badge/Electron-38.x-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/baiibayu/srouter/blob/main/LICENSE)
+[![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20macOS%20%7C%20Linux-blueviolet)](https://github.com/baiibayu/srouter/releases/latest)
 
-- Node.js 20+
-- A native build toolchain for `better-sqlite3`:
-  - **macOS** — Xcode Command Line Tools (`xcode-select --install`) and Python 3
-  - **Windows** — Visual Studio Build Tools ("Desktop development with C++")
+<p align="center">
+  <a href="#-quick-download"><b>📥 Downloads</b></a> •
+  <a href="#-features"><b>✨ Features</b></a> •
+  <a href="#-prerequisites"><b>📋 Prerequisites</b></a> •
+  <a href="#-building-from-source"><b>🛠️ Building</b></a> •
+  <a href="#-development-loop"><b>💻 Development</b></a> •
+  <a href="#-storage--data-paths"><b>📂 Storage Paths</b></a>
+</p>
 
-## Build it yourself
+<p align="center">
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-Setup-win.exe"><img src="https://raw.githubusercontent.com/baiibayu/srouter/main/repo-assets/badges/windows.svg" height="42" alt="Download for Windows"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-mac-arm64.dmg"><img src="https://raw.githubusercontent.com/baiibayu/srouter/main/repo-assets/badges/macos-arm64.svg" height="42" alt="Download for macOS (Apple Silicon)"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter-mac-x64.dmg"><img src="https://raw.githubusercontent.com/baiibayu/srouter/main/repo-assets/badges/macos-x64.svg" height="42" alt="Download for macOS (Intel)"></a>
+  <a href="https://github.com/baiibayu/srouter/releases/latest/download/SRouter.AppImage"><img src="https://raw.githubusercontent.com/baiibayu/srouter/main/repo-assets/badges/linux.svg" height="42" alt="Download for Linux"></a>
+</p>
 
-From the **repo root** (one-time client build + package):
+</div>
+
+---
+
+## 📥 Quick Download
+
+Pre-compiled binary releases are available on the **[Releases Page](https://github.com/baiibayu/srouter/releases/latest)**:
+
+- **Windows:** `SRouter-Setup-x.x.x.exe` (Installer)
+- **macOS (Apple Silicon M-Series):** `SRouter-x.x.x-arm64.dmg` or `.zip` *(Requires macOS 12 Monterey or later)*
+- **macOS (Intel):** `SRouter-x.x.x-x64.dmg` or `.zip`
+- **Linux:** `SRouter-x.x.x.AppImage`
+
+> [!NOTE]
+> Locally built apps and release binaries run natively on loopback (`127.0.0.1:31415`). The desktop application signs into the local dashboard automatically with a local token — no account registration or password required.
+
+---
+
+## ✨ Features
+
+- **System Tray Popover:** Click the tray icon to view 24-hour request volume charts, active provider statuses, and copy your gateway URL (`http://127.0.0.1:31415/v1`) or unified API key in one click.
+- **Embedded Gateway Server:** Bundles the full Node.js + TypeScript gateway and SQLite database inside the native desktop lifecycle.
+- **Zero Configuration Login:** Automatically handles session tokens for local dashboard administration without manual password prompts.
+- **Automatic Port Conflict Resolution:** Binds to `127.0.0.1:31415` by default, automatically scanning up if the port is busy, and persisting the bound port across sessions.
+- **Background Persistence:** Runs quietly in your system tray or menu bar without cluttering your dock or taskbar when closed.
+
+---
+
+## 📋 Prerequisites
+
+To build the desktop application from source, ensure you have:
+
+- **Node.js:** `>= 20.18.0`
+- **Native C++ Build Toolchain** (required for `better-sqlite3` native compilation):
+  - **Windows:** Visual Studio Build Tools ("Desktop development with C++")
+  - **macOS:** Xcode Command Line Tools (`xcode-select --install`) and Python 3
+  - **Linux:** `build-essential`, `python3`, and standard development libraries
+
+---
+
+## 🛠️ Building from Source
+
+Build standalone installers from the **repository root**:
 
 ```bash
+# 1. Install all dependencies across workspaces
 npm install
-npm install --prefix desktop  # install desktop dependencies
-npm run desktop:dist          # macOS → desktop/dist-electron/SRouter-…-arm64.dmg
-npm run desktop:dist:mac:x64  # Intel Mac → desktop/dist-electron/SRouter-…-x64.dmg
-npm run desktop:dist:win      # Windows → desktop/dist-electron/SRouter-…-x64 installer
+npm install --prefix desktop
+
+# 2. Build for your target platform:
+npm run desktop:dist:win       # Windows → desktop/dist-electron/SRouter-Setup-win.exe
+npm run desktop:dist          # macOS Apple Silicon → desktop/dist-electron/SRouter-…-arm64.dmg
+npm run desktop:dist:mac:x64  # macOS Intel → desktop/dist-electron/SRouter-…-x64.dmg
+npm run desktop:dist:linux    # Linux → desktop/dist-electron/SRouter-….AppImage
 ```
 
-Both Mac commands also produce a ZIP. Prefer building on the matching Mac
-architecture so `better-sqlite3` can be rebuilt and tested natively. The release
-workflow does this in separate Apple Silicon and Intel jobs, signs/notarizes
-both, then verifies their final checksums and publishes one combined
-`latest-mac.yml`.
+> [!TIP]
+> Locally built desktop binaries do not carry quarantine attributes (macOS Gatekeeper or Windows Mark-of-the-Web), launching immediately without requiring code signing.
 
-> Locally built apps don't carry the macOS quarantine attribute or Windows
-> Mark-of-the-Web, so they launch without Gatekeeper/SmartScreen warnings —
-> no code signing needed.
->
-> The Windows build is config-complete but largely untested — issues and PRs
-> welcome.
+---
 
-## Develop
+## 💻 Development Loop
+
+To iterate on the desktop application locally with hot reload:
 
 ```bash
 cd desktop
-npm install
-npm run rebuild:native   # better-sqlite3 against Electron's ABI (dev loop only)
-npm run dev              # bundle + launch
+
+# 1. Rebuild better-sqlite3 against Electron's specific ABI
+npm run rebuild:native
+
+# 2. Bundle backend & preload scripts, then launch Electron
+npm run dev
 ```
 
-The dev run serves the repo's own `client/dist` — build it first
-(`npm run build -w client` from the root) or use `npm run desktop:dev` from
-the root, which does both. `SROUTER_REPO=/path/to/checkout` overrides the
-client/server source location if you ever need a different one.
+From the monorepo root, you can also run:
+```bash
+npm run desktop:dev
+```
+*(This automatically builds `client/dist` and boots the Electron harness).*
 
-UI iteration helpers (dev only): `SROUTER_SHOT=1 npx electron .` captures the
-popover + dashboard to /tmp and quits; `SROUTER_SHOT=hold` pins the popover
-open for real-screen captures.
+---
 
-## Notes
+## 📂 Storage & Data Paths
 
-- DB + config live in `~/Library/Application Support/SRouter/` (macOS) /
-  `%APPDATA%/SRouter/` (Windows).
-- The server binds loopback only; default port 31415, scan-up on conflict,
-  resolved port persisted.
-- Do not run plain `npm rebuild` here — it rebuilds better-sqlite3 for the
-  system Node ABI and breaks the Electron dev loop (`npm run rebuild:native`
-  fixes it). Packaging rebuilds natives itself.
+The desktop app stores its encrypted SQLite database (`srouter.db`) and logs locally:
+
+| OS | Configuration & Database Path |
+| :--- | :--- |
+| **Windows** | `%APPDATA%\SRouter\srouter.db` |
+| **macOS** | `~/Library/Application Support/SRouter/srouter.db` |
+| **Linux** | `~/.config/srouter/srouter.db` |
+
+---
+
+## 📄 License
+
+Open-source under the [MIT License](https://github.com/baiibayu/srouter/blob/main/LICENSE).
+Maintained by **[@baiibayu](https://github.com/baiibayu)** & community contributors.

@@ -1,32 +1,52 @@
-# Provider catalog
+<div align="center">
 
-One file, one direction of truth:
+# 🔌 Provider Catalog & Platform Registry
 
-- **`shared/providers/platforms.ts`** — the ONE hand-edited file: the provider
-  list (platform id, display label, signup URL, keyless). The Keys page imports
-  it directly. Routing behavior and base URLs live in the server registry
-  (`server/src/providers/`); budget/model data lives in the DB.
+### Single Source of Truth for Upstream AI Providers
 
-## Why one list
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Providers](https://img.shields.io/badge/Providers-~60%20Platforms-brightgreen)](platforms.ts)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/baiibayu/srouter/blob/main/LICENSE)
 
-Three places used to each carry part of the provider picture, and none carried
-all of it:
+</div>
 
-| Source | Had | Missing |
-|---|---|---|
-| `shared/providers/platforms.ts` (`PLATFORMS`) | display name, signup URL, keyless | base URL, budgets, model counts |
-| `server/src/providers/index.ts` (registry) | base URL, keyless, routing | display name, signup URL, budgets |
-| `server/data/srouter.db` (`models.monthly_token_budget`) | budget per model | name, URL, keyless |
+---
 
-The Keys page counts **64** providers because `PLATFORMS` has 64 entries
-(minus `custom` — no duplicates). The server registry covers all **64**, and the
-DB carries models for **33** of them.
+## 🧭 Architecture & Source of Truth
 
-## Field reference
+SRouter enforces a clean unidirectional architecture for AI provider definitions:
 
-| Field | Source | Example |
-|---|---|---|
-| `value` | `Platform` union | `xkiro` |
-| `label` | display name | `xKiro (free key)` |
-| `url` | signup / key-management page | `https://xkiro.com` |
-| `keyless` | usable without an API key | `true` |
+- **`shared/providers/platforms.ts` (`PLATFORMS`):** The single authoritative hand-edited registry containing platform IDs, user-facing display names, signup/dashboard URLs, and keyless availability.
+- **`server/src/providers/`:** Implements wire protocol adapters, request mapping, error normalization, and streaming parsers.
+- **`srouter.db` (`models` table):** Tracks token budgets, capability tiers, context windows, and real-time health scores.
+
+---
+
+## 📋 Field Reference (`platforms.ts`)
+
+Each provider entry in `PLATFORMS` conforms to the following schema:
+
+| Field | Type | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `value` | `Platform` (union) | Unique lowercase identifier matching server adapter keys | `"groq"` |
+| `label` | `string` | User-facing display title in dashboard and CLI tables | `"Groq (Llama 3.3 70B)"` |
+| `url` | `string` | Official signup or API key management console | `"https://console.groq.com/keys"` |
+| `keyless` | `boolean` | Indicates whether the provider can be used without an API key | `false` |
+
+---
+
+## ➕ Adding a New Provider
+
+To register a new upstream LLM provider:
+
+1. **Add entry to `shared/providers/platforms.ts`:** Append the platform definition with its slug, display name, and URL.
+2. **Implement server adapter in `server/src/providers/`:** Create the wire protocol handler (e.g. mapping OpenAI-compatible or proprietary endpoints).
+3. **Register models in DB migration:** Add seed models and default fallback priorities in a new migration under `server/src/db/migrations/`.
+4. **Run tests:** Ensure the adapter passes test coverage (`npm test`).
+
+---
+
+## 📄 License
+
+Open-source under the [MIT License](https://github.com/baiibayu/srouter/blob/main/LICENSE).
+Crafted by **[@baiibayu](https://github.com/baiibayu)** & community contributors.
