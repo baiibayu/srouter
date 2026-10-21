@@ -1,7 +1,8 @@
 // Web search (#1174): the dashboard side of POST /v1/search and the catalog's
 // `searchEngines` section. Search providers hold keys like any other platform,
-// but they never serve chat, so the Keys page, the add-key picker and the
-// Models tabs all treat them as their own group.
+// but they never serve chat: their keys live in the Web Tools tab
+// (`components/keys/web-search-section`), and both the Keys list and the
+// add-key picker exclude them so there is exactly one place to store one.
 
 import type { SearchPlatform as SharedSearchPlatform } from '@baiibayu/srouter-shared/types'
 
@@ -22,6 +23,8 @@ export function isSearchPlatform(platform: string): platform is SearchPlatform {
 // Same shape and job as PLATFORMS in components/keys/shared.tsx: the label
 // names the free allowance, `url` is where the key is created, and `keyless`
 // providers work with no key (a blank submit enables the anonymous tier).
+// Kept for the short display name below; the add-key picker deliberately does
+// NOT offer these — its keys are entered in the Web Tools tab.
 export const SEARCH_PROVIDERS: { value: SearchPlatform; label: string; url: string; keyless?: boolean }[] = [
   { value: 'tavily', label: 'Tavily (1,000 searches/month)', url: 'https://app.tavily.com/home' },
   { value: 'exa', label: 'Exa ($10 search credits/month)', url: 'https://dashboard.exa.ai/api-keys' },
