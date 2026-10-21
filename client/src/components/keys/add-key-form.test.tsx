@@ -80,3 +80,45 @@ it('still requires a key for a provider that needs one', async () => {
   await submit()
   expect(posted()).toBeUndefined()
 })
+
+// Web search/fetch engine keys are entered in the Web Tools tab only
+// (components/keys/web-search-section). Offering them here as well would be a
+// second place to store the same credential, so the picker lists chat, media
+// and custom providers and nothing else.
+async function openPicker() {
+  const trigger = container.querySelector<HTMLElement>('[aria-label="Platform"]')!
+  act(() => { trigger.click() })
+  for (let i = 0; i < 4; i++) await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+  return document.querySelector<HTMLElement>('[data-slot="popover-content"]')
+}
+
+it('offers no web search or fetch provider in the add-key picker', async () => {
+  mount(<AddKeyForm onSuccess={onSuccess} />)
+  const popup = (await openPicker())!
+  const text = popup.textContent ?? ''
+  for (const name of ['Tavily', 'Exa', 'Firecrawl', 'Linkup', 'Parallel']) {
+    expect(text).not.toContain(name)
+  }
+  // The retired Search group heading and its Models sibling are both gone: a
+  // single unlabelled list needs neither, and no heading is left stranded.
+  expect(popup.querySelectorAll('[class*="uppercase"]')).toHaveLength(0)
+  const headings = [...popup.querySelectorAll('div')]
+    .map(div => div.textContent)
+    .filter(text => text === 'Search' || text === 'Models')
+  expect(headings).toEqual([])
+  // Chat providers are still all there.
+  expect(text).toContain('Groq')
+  expect(text).toContain('Google AI Studio')
+})
+
+it('treats a forced search platform as an unknown provider', async () => {
+  // A platform handed in through `initialPlatform` is not in the picker, so it
+  // resolves to no provider entry: no search key shortcut, and the list it
+  // opens is still chat/media only. (The picker, not the URL, is the single
+  // home for engine credentials — Web Tools.)
+  mount(<AddKeyForm onSuccess={onSuccess} initialPlatform={'tavily' as Platform} />)
+  const popup = (await openPicker())!
+  expect(popup.textContent).not.toContain('Tavily')
+  expect(popup.textContent).toContain('Groq')
+  expect(container.querySelector('a[href*="tavily"]')).toBeNull()
+})

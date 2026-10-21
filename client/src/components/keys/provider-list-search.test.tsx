@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 // Web search/fetch engine providers are managed exclusively via the Web Tools
 // tab (WebSearchSection). They are excluded from the Providers tab to avoid
-// key redundancy. A page with no search keys keeps its old, section-less
-// layout. Chat-only providers still render with their model actions.
+// key redundancy, which means the list never renders a Search section — for
+// any input. Chat-only providers still render with their model actions, and a
+// box holding nothing but engine keys gets the first-key invitation rather
+// than a "no match" over rows that are deliberately hidden.
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -62,7 +64,9 @@ it('excludes search engine keys from the Providers tab (managed in Web Tools)', 
   expect(headings()).toEqual([])
 })
 
-it('keeps the old layout when no search key exists', async () => {
+it('renders no section heading above the provider groups', async () => {
+  // The Search/Models split belonged to the old grouped layout; with engine
+  // keys excluded there is only one kind of row left, so no heading is drawn.
   await mount([apiKey({ id: 1, platform: 'groq' })])
   expect(headings()).toEqual([])
 })
@@ -75,4 +79,30 @@ it('hides the edit-models action on a search key', async () => {
   root = createRoot(container)
   await mount([apiKey({ id: 1, platform: 'groq' })])
   expect(container.querySelector('[aria-label="Edit models"]')).not.toBeNull()
+})
+
+it('invites a first key when only search keys are stored', async () => {
+  // Every search/fetch engine key is owned by the Web Tools tab, so a box
+  // holding nothing else has no Providers row to show. Saying "no match" over
+  // keys that are deliberately not listed would send the operator hunting for
+  // a filter; the empty state's add button is the honest next step.
+  await mount([
+    apiKey({ id: 2, platform: 'tavily', label: 'Search key' }),
+    apiKey({ id: 3, platform: 'exa', label: 'Second search key' }),
+  ])
+  expect(providers()).toEqual([])
+  expect(container.textContent).toContain('No provider keys yet')
+  expect(container.querySelector('button')?.textContent).toContain('Add key')
+})
+
+it('offers no search provider anywhere in the Providers toolbar', async () => {
+  // The add-key form (add-key-form.test.tsx) is covered separately; here the
+  // point is that the Providers tab itself carries no search-engine entry
+  // point or section machinery left over from the old grouped layout.
+  await mount([apiKey({ id: 1, platform: 'groq' }), apiKey({ id: 2, platform: 'tavily' })])
+  const text = container.textContent ?? ''
+  for (const name of ['Tavily', 'Exa', 'Firecrawl', 'Linkup', 'Parallel']) {
+    expect(text).not.toContain(name)
+  }
+  expect(text).not.toContain('Web search keys')
 })

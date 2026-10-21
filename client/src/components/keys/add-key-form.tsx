@@ -12,7 +12,6 @@ import { useI18n } from '@/i18n'
 import { toast } from '@/lib/toast'
 import type { FallbackEntry } from '@/lib/routing'
 import { scopeCandidates, shouldOfferModelPicker, type ScopeCandidate } from '@/lib/model-scope-selection'
-import { SEARCH_PROVIDERS } from '@/lib/search'
 import { GetKeyLink, PLATFORMS } from './shared'
 
 /** A key that just landed, plus the models the picker should offer for it.
@@ -89,21 +88,19 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
     return { keyId, platformLabel: provider.label, candidates }
   }
 
-  // Search providers (#1174) lead the list under their own heading: they hold
-  // keys like any provider but never serve chat, so they must not read as one
-  // more model host further down.
+  // Chat, media and custom providers only. Web search and fetch engines
+  // (#1174) hold their keys in the Web Tools tab, where one section owns the
+  // whole engine list (`components/keys/web-search-section`); offering them
+  // here too would be a second, divergent place to store the same credential.
+  // A single, unlabelled list needs no group heading.
   const platformOptions = useMemo(
-    () => [
-      ...SEARCH_PROVIDERS.map(p => ({ ...p, group: t('search.pickerSearch') })),
-      ...PLATFORMS.map(p => ({ ...p, group: t('search.pickerModels') })),
-    ]
+    () => PLATFORMS
       // The selected provider always stays listed, so hiding added ones never
       // blanks out the trigger label.
       .filter(p => !hideAdded || !addedPlatforms.has(p.value) || p.value === platform)
       .map(p => ({
         value: p.value,
         label: p.label,
-        group: p.group,
         sub: addedPlatforms.has(p.value) ? t('keys.discoverAlreadyAdded') : undefined,
       })),
     [hideAdded, addedPlatforms, platform, t],
@@ -147,7 +144,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
   const needsAccountId = platform === 'cloudflare'
   // Key-optional providers (Kilo, OVH, AI Horde) work anonymously, but accept a
   // real key too (#1331): the field stays editable and may be left blank.
-  const isKeyless = [...SEARCH_PROVIDERS, ...PLATFORMS].find(p => p.value === platform)?.keyless ?? false
+  const isKeyless = PLATFORMS.find(p => p.value === platform)?.keyless ?? false
   // Cloudflare pairs each token with an account id, and a key-optional
   // provider keeps a single anonymous row, so neither takes a list.
   const canPasteSeveral = !isKeyless && !needsAccountId
@@ -218,7 +215,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
           />
           {addAttempted && <FieldError error={platformError} />}
           {(() => {
-            const sel = [...SEARCH_PROVIDERS, ...PLATFORMS].find(p => p.value === platform)
+            const sel = PLATFORMS.find(p => p.value === platform)
             return sel?.url ? <div className="pt-0.5"><GetKeyLink url={sel.url} /></div> : null
           })()}
         </div>
