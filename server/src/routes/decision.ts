@@ -197,6 +197,23 @@ function parseJudgeScore(text: string): number | null {
 // stored key, send a short non-stream chatCompletion prompt, and return scored
 // answers. Returns null on any error, timeout, or when no suitable provider exists.
 // Total wall-clock budget: CHAT_JUDGE_TIMEOUT_MS (well below 3000ms).
+
+// Preference patterns for a small/cheap judge model, evaluated against the
+// live model catalog (models.model_id) per platform. The literal 'auto' is a
+// SRouter router-level alias, NOT a real provider model id — sending it to a
+// provider API 404s (Groq: "The model `auto` does not exist").
+function pickJudgeModel(platform: string): string | null {
+  const db = getDb();
+  const row = db.prepare(
+    `SELECT model_id FROM models
+     WHERE platform = ? AND enabled = 1
+     ORDER BY (model_id LIKE '%8b%' OR model_id LIKE '%7b%' OR model_id LIKE '%nano%'
+       OR model_id LIKE '%mini%' OR model_id LIKE '%flash%' OR model_id LIKE '%small%'
+       OR model_id LIKE '%20b%') DESC, rowid ASC
+     LIMIT 1`,
+  ).get(platform) as { model_id: string } | undefined;
+  return row?.model_id ?? null;
+}
 async function chatJudge(
   req: DecisionRequest,
 ): Promise<DecisionAnswer[] | null> {
@@ -206,17 +223,20 @@ async function chatJudge(
 
   let pickedPlatform: string | null = null;
   let pickedKey: string | null = null;
+  let pickedModel: string | null = null;
 
   for (const platform of order) {
     const key = readFirstActiveKey(platform);
-    if (key) {
-      pickedPlatform = platform;
-      pickedKey = key;
-      break;
-    }
+    if (!key) continue;
+    const model = pickJudgeModel(platform);
+    if (!model) continue;
+    pickedPlatform = platform;
+    pickedKey = key;
+    pickedModel = model;
+    break;
   }
 
-  if (!pickedPlatform || !pickedKey) return null;
+  if (!pickedPlatform || !pickedKey || !pickedModel) return null;
 
   const provider = resolveProvider(pickedPlatform as any);
   if (!provider) return null;
@@ -241,8 +261,9 @@ async function chatJudge(
     const completion = await provider.chatCompletion(
       pickedKey,
       messages,
-      // Use a small, fast model per platform (provider picks a default if undefined)
-      'auto',
+      // Real catalog model id — 'auto' is a SRouter router alias that 404s
+      // against the raw provider API (see agent-reliability timeline).
+      pickedModel,
       {
         temperature: 0,
         max_tokens: 64,
