@@ -40,16 +40,16 @@ Pre-compiled binary releases are available on the **[Releases Page](https://gith
 - **Linux:** `SRouter-x.x.x.AppImage`
 
 > [!NOTE]
-> Locally built apps and release binaries run natively on loopback (`127.0.0.1:31415`). The desktop application signs into the local dashboard automatically with a local token — no account registration or password required.
+> Locally built apps and release binaries run natively on loopback (`127.0.0.1:20268`). The desktop application signs into the local dashboard automatically with a local token — no account registration or password required.
 
 ---
 
 ## ✨ Features
 
-- **System Tray Popover:** Click the tray icon to view 24-hour request volume charts, active provider statuses, and copy your gateway URL (`http://127.0.0.1:31415/v1`) or unified API key in one click.
+- **System Tray Popover:** Click the tray icon to view 24-hour request volume charts, active provider statuses, and copy your gateway URL (`http://127.0.0.1:20268/v1`) or unified API key in one click.
 - **Embedded Gateway Server:** Bundles the full Node.js + TypeScript gateway and SQLite database inside the native desktop lifecycle.
 - **Zero Configuration Login:** Automatically handles session tokens for local dashboard administration without manual password prompts.
-- **Automatic Port Conflict Resolution:** Binds to `127.0.0.1:31415` by default, automatically scanning up if the port is busy, and persisting the bound port across sessions.
+- **Automatic Port Conflict Resolution:** Binds to `127.0.0.1:20268` by default, automatically scanning up if the port is busy, and persisting the bound port across sessions.
 - **Background Persistence:** Runs quietly in your system tray or menu bar without cluttering your dock or taskbar when closed.
 
 ---

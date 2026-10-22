@@ -340,7 +340,7 @@ install. For the server (non-desktop) deployment, the equivalent state is the
 **Desktop app — there is no password.** The dashboard signs itself in with a
 hidden local account, so there is nothing to remember and nothing to reset. If
 you cannot see the dashboard, open it from the tray icon → **Open Dashboard**.
-A browser tab on the same computer (for example http://127.0.0.1:31415) signs in
+A browser tab on the same computer (for example http://127.0.0.1:20268) signs in
 the same way. Only another device reaching the app over LAN access is asked to
 sign in.
 

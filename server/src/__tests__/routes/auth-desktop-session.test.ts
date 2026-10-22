@@ -64,14 +64,14 @@ describe('POST /api/auth/desktop-session (#1399)', () => {
     const status = await call(app(), 'GET', '/api/auth/status');
     expect(status.body).toMatchObject({ authenticated: false, desktop: true });
 
-    const res = await call(app(), 'POST', '/api/auth/desktop-session', { 'sec-fetch-site': 'same-origin', origin: 'http://127.0.0.1:31415' });
+    const res = await call(app(), 'POST', '/api/auth/desktop-session', { 'sec-fetch-site': 'same-origin', origin: 'http://127.0.0.1:20268' });
     expect(res.status).toBe(200);
     expect(validateSession(res.body.token)?.email).toBe('desktop@localhost');
     expect(userCount()).toBe(1);
   });
 
   it('accepts localhost and [::1] host names', async () => {
-    for (const host of ['localhost:31415', '[::1]:31415']) {
+    for (const host of ['localhost:20268', '[::1]:20268']) {
       const res = await call(app(), 'POST', '/api/auth/desktop-session', { host });
       expect(res.status, host).toBe(200);
     }
@@ -94,7 +94,7 @@ describe('POST /api/auth/desktop-session (#1399)', () => {
   });
 
   it('refuses a DNS-rebinding page (non-local Host header)', async () => {
-    const res = await call(app(), 'POST', '/api/auth/desktop-session', { host: 'evil.example:31415' });
+    const res = await call(app(), 'POST', '/api/auth/desktop-session', { host: 'evil.example:20268' });
     expect(res.status).toBe(403);
   });
 

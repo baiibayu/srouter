@@ -27,7 +27,7 @@
 | 数据库 + 配置 | `<userData>/srouter.db` + `<userData>/config.json`（macOS 上为 `~/Library/Application Support/SRouter`，Windows 上为 `%APPDATA%/SRouter`） |
 | 日志文件 | `<userData>/logs/srouter.log`（1 MB，轮转至 `srouter.log.1`，同步分流 —— [`desktop/src/logger.ts`](../../../desktop/src/logger.ts)） |
 | 备份 | `<userData>/backups`（托盘 → 打开备份文件夹；服务端经 `services/backups.ts` 写入） |
-| 默认端口 | `31415` 于 `127.0.0.1`；冲突时扫描 `+50`，持久化到 `config.json`；`lanAccess` → `0.0.0.0`（需重启） |
+| 默认端口 | `20268` 于 `127.0.0.1`；冲突时扫描 `+50`，持久化到 `config.json`；`lanAccess` → `0.0.0.0`（需重启） |
 | 客户端包 | `Resources/client-dist`（已打包）或开发环境中来自 monorepo 的 `client/dist`（`SROUTER_REPO` 覆盖） |
 | 构建标识 | `bundle-server.mjs` `define: { 'process.env.SROUTER_COMMIT_SHA', 'process.env.SROUTER_INSTALL_METHOD' }` 由 `GITHUB_SHA`（40 位十六进制）戳记，并在 `server-host.ts` 中镜像进运行时的 `process.env`，以便 `routes/update.ts` 正确解析 |
 | 打包目标 | mac `dmg` `arm64`（已签名、已公证、已钉装）、win `nsis` + `zip` `x64`、linux `AppImage`+`deb`+`tar.xz`+`rpm` `x64`（`rpm` 自 #981 `d8fae97` 起） |

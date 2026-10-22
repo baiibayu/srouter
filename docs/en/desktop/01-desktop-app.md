@@ -21,7 +21,7 @@ bundle:server → build:main / build:preload → stage:client → electron-build
 | Path | Notes |
 | --- | --- |
 | `<userData>/srouter.db` | SQLite DB (`srouter.db` + WAL/`-shm`), same schema as Docker/Node |
-| `<userData>/config.json` | Port (`31415` default), `lanAccess`, theme/locale |
+| `<userData>/config.json` | Port (`20268` default), `lanAccess`, theme/locale |
 | `<userData>/logs/srouter.log` | 1 MB + `srouter.log.1` rotation (`desktop/src/logger.ts`) |
 | `<userData>/backups` | Server dumps (`services/backups.ts` `dataDir()`) |
 | `Resources/client-dist` | Packaged client; dev: `client/dist` via `SROUTER_REPO` |
@@ -34,7 +34,7 @@ bundle:server → build:main / build:preload → stage:client → electron-build
 
 Boot sequence mirrors `server/src/index.ts` step-for-step (`#949`); `__tests__/server-host-boot.test.ts` cross-checks the list so a new step added to `index.ts` fails a desktop test instead of silently never running (how `startBackupScheduler` was missed):
 
-`installLogRedaction` → `installProcessSafetyNet` → `initDb` → `ensureSessionToken` → `restoreProxySettings`/`flushProxyCache` → `startHealthChecker`/`checkAllKeys` → `startCatalogSync` → `startCooldownProbe` → `startCustomModelSync` → `startBackupScheduler` → `cleanupExpiredCooldowns` → `startWakeDetect` → `createApp` → `listenWithScan` (port `31415`, scan `+50` on conflict, persist to `config.json`).
+`installLogRedaction` → `installProcessSafetyNet` → `initDb` → `ensureSessionToken` → `restoreProxySettings`/`flushProxyCache` → `startHealthChecker`/`checkAllKeys` → `startCatalogSync` → `startCooldownProbe` → `startCustomModelSync` → `startBackupScheduler` → `cleanupExpiredCooldowns` → `startWakeDetect` → `createApp` → `listenWithScan` (port `20268`, scan `+50` on conflict, persist to `config.json`).
 
 Deliberately NOT mirrored: `restoreDbBackupIfNeeded`/`startDbBackupPump` (`SROUTER_DB_BACKUP_*` env-only, packaged app inherits no shell env).
 

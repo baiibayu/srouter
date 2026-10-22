@@ -21,7 +21,7 @@ bundle:server → build:main / build:preload → stage:client → electron-build
 | 路径 | 说明 |
 | --- | --- |
 | `<userData>/srouter.db` | SQLite 数据库（`srouter.db` + WAL/`-shm`），与 Docker/Node 同一 schema |
-| `<userData>/config.json` | 端口（默认 `31415`）、`lanAccess`、主题/语言 |
+| `<userData>/config.json` | 端口（默认 `20268`）、`lanAccess`、主题/语言 |
 | `<userData>/logs/srouter.log` | 1 MB + `srouter.log.1` 轮转（`desktop/src/logger.ts`） |
 | `<userData>/backups` | 服务端转储（`services/backups.ts` `dataDir()`） |
 | `Resources/client-dist` | 已打包客户端；开发环境：经 `SROUTER_REPO` 的 `client/dist` |
@@ -34,7 +34,7 @@ bundle:server → build:main / build:preload → stage:client → electron-build
 
 启动序列与 `server/src/index.ts` 逐步骤镜像（#949）；`__tests__/server-host-boot.test.ts` 交叉校验该列表，使 `index.ts` 新增的步骤不会在桌面端静默遗漏（`startBackupScheduler` 曾被遗漏）：
 
-`installLogRedaction` → `installProcessSafetyNet` → `initDb` → `ensureSessionToken` → `restoreProxySettings`/`flushProxyCache` → `startHealthChecker`/`checkAllKeys` → `startCatalogSync` → `startCooldownProbe` → `startCustomModelSync` → `startBackupScheduler` → `cleanupExpiredCooldowns` → `startWakeDetect` → `createApp` → `listenWithScan`（端口 `31415`，冲突时扫描 `+50`，持久化到 `config.json`）。
+`installLogRedaction` → `installProcessSafetyNet` → `initDb` → `ensureSessionToken` → `restoreProxySettings`/`flushProxyCache` → `startHealthChecker`/`checkAllKeys` → `startCatalogSync` → `startCooldownProbe` → `startCustomModelSync` → `startBackupScheduler` → `cleanupExpiredCooldowns` → `startWakeDetect` → `createApp` → `listenWithScan`（端口 `20268`，冲突时扫描 `+50`，持久化到 `config.json`）。
 
 刻意**未**镜像：`restoreDbBackupIfNeeded`/`startDbBackupPump`（`SROUTER_DB_BACKUP_*` 仅环境变量， 已打包应用不继承 shell 环境）。
 

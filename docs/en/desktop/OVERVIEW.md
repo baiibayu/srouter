@@ -27,7 +27,7 @@ For installation from the user's point of view — quick start, Docker vs local 
 | DB + config | `<userData>/srouter.db` + `<userData>/config.json` (`~/Library/Application Support/SRouter` on macOS, `%APPDATA%/SRouter` on Windows) |
 | Log file | `<userData>/logs/srouter.log` (1 MB, rotated to `srouter.log.1`, sync tee — [`desktop/src/logger.ts`](../../../desktop/src/logger.ts)) |
 | Backups | `<userData>/backups` (tray → Open Backups Folder; server writes via `services/backups.ts`) |
-| Default port | `31415` on `127.0.0.1`; scans `+50` on conflict, persisted to `config.json`; `lanAccess` → `0.0.0.0` (relaunch required) |
+| Default port | `20268` on `127.0.0.1`; scans `+50` on conflict, persisted to `config.json`; `lanAccess` → `0.0.0.0` (relaunch required) |
 | Client bundle | `Resources/client-dist` (packaged) or `client/dist` from the monorepo in dev (`SROUTER_REPO` override) |
 | Build identity | `bundle-server.mjs` `define: { 'process.env.SROUTER_COMMIT_SHA', 'process.env.SROUTER_INSTALL_METHOD' }` stamped from `GITHUB_SHA` (40-hex), mirrored into live `process.env` in `server-host.ts` so `routes/update.ts` resolves correctly |
 | Packaged targets | mac `dmg` `arm64` (signed, notarized, stapled), win `nsis` + `zip` `x64`, linux `AppImage`+`deb`+`tar.xz`+`rpm` `x64` (+ `rpm` since #981 `d8fae97`) |

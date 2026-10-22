@@ -136,7 +136,7 @@ function isLoopbackRemote(req: Request): boolean {
 // The desktop app's account is a hidden machine user with a random password
 // nobody knows. Its own window gets sessions over IPC, but the same dashboard
 // opened in a normal browser tab (the tray's "Open in browser", a bookmark,
-// http://127.0.0.1:31415) used to land on a Sign In form nobody could pass.
+// http://127.0.0.1:20268) used to land on a Sign In form nobody could pass.
 // On a desktop install, a request from this machine gets the session the
 // window would have got, so the form never shows.
 //
