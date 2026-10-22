@@ -95,7 +95,9 @@ export function ProxySettingsSection() {
   // Bulk actions cover the complete provider catalog, not just keys already added.
   // This also prevents newly added keys from silently inheriting a proxy route.
   const allProxyPlatforms = [...PLATFORMS, CUSTOM_GROUP]
-  const configuredProxyPlatforms = allProxyPlatforms.filter(p => keys.some(k => k.platform === p.value))
+  const configuredProxyPlatforms = allProxyPlatforms.filter(p =>
+    keys.some(k => k.platform === p.value) || ('keyless' in p && p.keyless)
+  )
   const bypassed = new Set(data?.bypassPlatforms ?? [])
   const everyPlatformBypassed = allProxyPlatforms.every(p => bypassed.has(p.value))
   const everyPlatformRouted = allProxyPlatforms.every(p => !bypassed.has(p.value))
@@ -216,10 +218,10 @@ export function ProxySettingsSection() {
         <p className="text-destructive text-xs mt-2">{(saveProxy.error as Error).message}</p>
       )}
 
-      {/* #825: visible per-platform route-via-proxy switches, one per platform
-          that has keys. checked = routed through the proxy (not in the bypass
-          list), matching the semantic of the old Providers-tab dropdown item. */}
-      {!isError && enabled && keys.length > 0 && (
+      {/* #825: visible per-platform route-via-proxy switches, one per configured
+          platform (has keys or keyless). checked = routed through the proxy (not
+          in the bypass list), matching the semantic of the old Providers-tab dropdown item. */}
+      {!isError && enabled && configuredProxyPlatforms.length > 0 && (
         <div className="mt-4 border-t pt-3">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-medium">{t('keys.routeViaProxy')}</p>
