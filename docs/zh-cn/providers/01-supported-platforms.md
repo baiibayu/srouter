@@ -2,7 +2,7 @@
 
 # 支持的平台
 
-[`shared/types.ts`（第 74 行）](../../../shared/types.ts) 中的 `Platform` 联合类型是平台身份的唯一事实来源；[`server/src/providers/index.ts`](../../../server/src/providers/index.ts) 中的运行时注册表必须与它保持一致。联合类型目前声明了 **65 个成员**：
+[`shared/types.ts`（第 74 行）](../../../shared/types.ts) 中的 `Platform` 联合类型是平台身份的唯一事实来源；[`server/src/providers/index.ts`](../../../server/src/providers/index.ts) 中的运行时注册表必须与它保持一致。联合类型目前声明了 **76 个成员**：
 
 - **63 个内置平台**，启动时注册为适配器；
 - 加上 **`custom`** 占位（一个按 API 密钥逐个构建的真实 OpenAI 兼容适配器，因为它的 base URL 由用户提供），注册表共 **64 个条目**；

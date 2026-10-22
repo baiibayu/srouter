@@ -23,9 +23,7 @@ const SRONLY_SLUGS = [
   'tavily', 'exa', 'firecrawl', 'linkup', 'parallel',
   // Legacy keyless / free-tier providers retained in keys.ts after
   // upstream removal, but deliberately not promoted to shared.
-  'cerebras', 'experiential', 'inferbase', 'simplellm', 'freeai', 'github',
-  // SRouter-specific chat provider added after the shared catalog split.
-  'auray',
+  'experiential', 'github',
   // OpenCode Free tier — the catalog lists it but keys.ts does not (it is
   // routed through the opencode-free.ts provider, not the standard key path).
   'opencode-free',

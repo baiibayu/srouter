@@ -68,7 +68,7 @@ describe('toStoredMessages', () => {
           latency: 42,
           fallbackAttempts: 1,
           fusionPanel: [{ platform: 'groq', model: 'a', status: 'ok', content: 'A' }],
-          fusionJudge: { platform: 'cerebras', model: 'j' },
+          fusionJudge: { platform: 'mistral', model: 'j' },
           fusionStreaming: true,
         },
       },
@@ -86,7 +86,7 @@ describe('toStoredMessages', () => {
         latency: 42,
         fallbackAttempts: 1,
         fusionPanel: [{ platform: 'groq', model: 'a', status: 'ok', content: 'A' }],
-        fusionJudge: { platform: 'cerebras', model: 'j' },
+        fusionJudge: { platform: 'mistral', model: 'j' },
       },
     })
     expect('streaming' in stored[1]).toBe(false)

@@ -2,7 +2,7 @@
 
 # Supported platforms
 
-The `Platform` union in [`shared/types.ts` (line 74)](../../../shared/types.ts) is the single source of truth for platform identity; the runtime registry in [`server/src/providers/index.ts`](../../../server/src/providers/index.ts) must match it. The union currently declares **65 members**:
+The `Platform` union in [`shared/types.ts` (line 74)](../../../shared/types.ts) is the single source of truth for platform identity; the runtime registry in [`server/src/providers/index.ts`](../../../server/src/providers/index.ts) must match it. The union currently declares **76 members**:
 
 - **63 built-in platforms** registered as adapters at startup,
 - plus the **`custom`** placeholder (a real OpenAI-compatible adapter built per API key, since its base URL is user-supplied), giving **64 entries** in the registry map,

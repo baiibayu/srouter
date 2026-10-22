@@ -39,7 +39,7 @@ function candidates(...ids: string[]): ScopeCandidate[] {
 describe('scopeCandidates (#657 post-add picker)', () => {
   const entries = [
     entry('groq', 'llama-3.3-70b'),
-    entry('cerebras', 'qwen-3-32b'),
+    entry('openrouter', 'qwen/qwen3.8-27b:free'),
     entry('groq', 'kimi-k2', { displayName: 'Kimi K2', sizeLabel: 'Frontier', contextWindow: 262144 }),
   ]
 

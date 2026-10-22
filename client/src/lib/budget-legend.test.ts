@@ -14,10 +14,10 @@ describe('sortByIntelligence', () => {
       model('groq', 'llama-70b', 12, 1),
       model('google', 'gemini-flash', 8, 1),
       model('google', 'gemma', 30, 1),
-      model('cerebras', 'qwen-235b', 5, 1),
+      model('openrouter', 'qwen/qwen3.8-27b:free', 5, 1),
     ]
     expect(sortByIntelligence(chainOrder).map(m => m.modelId)).toEqual([
-      'qwen-235b', 'gemini-flash', 'llama-70b', 'gemma', 'llama-8b',
+      'qwen/qwen3.8-27b:free', 'gemini-flash', 'llama-70b', 'gemma', 'llama-8b',
     ])
   })
 

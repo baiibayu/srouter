@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useI18n } from '@/i18n'
 import { apiFetch } from '@/lib/api'
@@ -18,9 +18,11 @@ export function ReliabilityFloorControl() {
   const { data } = useQuery({ queryKey: ['settings', 'min-reliability-floor'], queryFn: fetchFloor })
   const floor = data ?? null
 
-  const [text, setText] = useState(floor == null ? '' : String(floor))
-  // Re-sync when the server value changes under us (poll, or another tab).
-  useEffect(() => { setText(floor == null ? '' : String(floor)) }, [floor])
+  // Derive the field from the server value while untouched; a local draft only
+  // exists while the user is editing (no setState-on-effect needed).
+  const serverText = floor == null ? '' : String(floor)
+  const [draft, setDraft] = useState<string | null>(null)
+  const text = draft ?? serverText
 
   const mutation = useMutation({
     mutationFn: (value: number | null) =>
@@ -28,13 +30,16 @@ export function ReliabilityFloorControl() {
         method: 'PUT',
         body: JSON.stringify({ floor: value }),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['settings', 'min-reliability-floor'] }),
+    onSuccess: () => {
+      setDraft(null)
+      queryClient.invalidateQueries({ queryKey: ['settings', 'min-reliability-floor'] })
+    },
   })
 
   const invalid = text !== '' && (!/^0?\.\d+$|^1(\.0+)?$|^0$/.test(text) || Number(text) > 1)
 
   function commit(next: string) {
-    setText(next)
+    setDraft(next)
     if (next === '') { mutation.mutate(null); return }
     const n = Number(next)
     if (Number.isFinite(n) && n >= 0 && n <= 1) mutation.mutate(n)

@@ -74,7 +74,6 @@ export interface ImportSelectedResponse {
 export type Platform =
   | 'google'
   | 'groq'
-  | 'cerebras'
   | 'experiential'
   // Sail Research — native Responses API provider. $5 in free credits refreshes
   // monthly when a payment method is attached; usage beyond the grant is
@@ -86,10 +85,6 @@ export type Platform =
   | 'speka'
   // Built-in chat and embeddings share free monthly credits; catalog only.
   | 'auray'
-  // Ongoing free research API for chat and speech recognition; catalog only.
-  | 'typhoon'
-  // Permanent free chat aliases, shared fair-use quota; signed catalog only.
-  | 'plugsky'
   // Catalog-only free chat gateways; shared monthly/daily account allowances.
   | 'inferbase'
   | 'simplellm'
@@ -114,7 +109,6 @@ export type Platform =
   // Model rows arrive only through the signed, freshness-gated catalog.
   | 'freeai'
   | 'blaze'
-  | 'freeai'
   // Lucidity Composite, Api.Airforce and DreamPrompting expose daily free
   // allowances; Waterfall and Logfare publish community / fair-use tiers.
   | 'lucidity'
@@ -135,12 +129,9 @@ export type Platform =
   // with recurring account-level allowance and request/concurrency controls.
   | 'radeon'
   | 'nvidia'
-  | 'inferbase'
-  | 'simplellm'
   | 'mistral'
   | 'sambanova'
   | 'openrouter'
-  | 'github'
   | 'cohere'
   // Web search APIs (#1174), not chat providers. Their keys serve POST
   // /v1/search (and the agents' web_search tools) through the catalog's

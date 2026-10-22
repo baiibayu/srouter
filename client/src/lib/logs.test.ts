@@ -133,11 +133,11 @@ describe('toggleLevel', () => {
 describe('collectProviders', () => {
   it('accumulates and sorts, ignoring entries without a provider', () => {
     const providers = collectProviders(['groq'], [
-      entry(1, { provider: 'cerebras' }),
+      entry(1, { provider: 'mistral' }),
       entry(2),
       entry(3, { provider: 'groq' }),
     ])
-    expect(providers).toEqual(['cerebras', 'groq'])
+    expect(providers).toEqual(['groq', 'mistral'])
   })
 
   it('returns the same array when no new provider showed up', () => {

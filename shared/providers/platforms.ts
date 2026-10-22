@@ -25,6 +25,10 @@ export interface PlatformEntry {
 export const PLATFORMS: PlatformEntry[] = [
   { value: 'aclide', label: 'ACLIDE (shared monthly credits)', url: 'https://aclide.com/en/dashboard/api-keys' },
   { value: 'speka', label: 'Speka ($1 shared monthly credits)', url: 'https://speka.me/dashboard/keys' },
+  { value: 'auray', label: 'Auray (50 shared monthly credits)', url: 'https://app.auray.ai' },
+  { value: 'inferbase', label: 'Inferbase (shared monthly and daily allowance)', url: 'https://inferbase.ai' },
+  { value: 'simplellm', label: 'SimpleLLM (shared hourly and daily free quota)', url: 'https://app.simplellm.eu' },
+  { value: 'freeai', label: 'Free.ai (shared daily free TTS tokens)', url: 'https://free.ai/account/#api-keys' },
   { value: 'llmtr', label: 'LLMTR (zero-priced routes, daily/rolling quotas)', url: 'https://llmtr.com' },
   { value: 'gizmo', label: 'Gizmo (monthly free-model requests)', url: 'https://gizmoplatforms.com/developers' },
   { value: 'blockrun', label: 'BlockRun (zero-priced models)', url: 'https://user.blockrun.ai/dashboard/keys' },
