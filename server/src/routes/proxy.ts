@@ -441,17 +441,22 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         unavailable_reason: autoContextWindow != null ? null : 'no_models',
       },
       ...claudeFamilyEntries,
-      ...profileRows.map(p => ({
-        id: `auto:${p.name.toLowerCase()}`,
-        object: 'model',
-        created: 0,
-        owned_by: 'srouter',
-        name: `Auto: ${p.name}`,
-        context_window: p.max_ctx,
-        context_length: p.max_ctx,
-        available: p.usable === 1,
-        unavailable_reason: p.usable === 1 ? null : 'no_models',
-      })),
+      ...profileRows.map(p => {
+        const profileCtx = p.max_ctx != null
+          ? Math.min(p.max_ctx, autoContextWindow ?? 200_000)
+          : autoContextWindow;
+        return {
+          id: `auto:${p.name.toLowerCase()}`,
+          object: 'model',
+          created: 0,
+          owned_by: 'srouter',
+          name: `Auto: ${p.name}`,
+          context_window: profileCtx,
+          context_length: profileCtx,
+          available: p.usable === 1,
+          unavailable_reason: p.usable === 1 ? null : 'no_models',
+        };
+      }),
       // Built-in global-sort axes (#router). Each forces a routing mode that
       // bypasses the operator's Routing strategy — the opposite of plain `auto`,
       // which follows whatever strategy is set in the web UI. `cheap` is skipped:

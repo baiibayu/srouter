@@ -129,8 +129,13 @@ export function buildModelListing(): ModelListing {
   const availableContextWindows = allListed
     .filter(m => m.available === 1 && m.contextWindow != null)
     .map(m => m.contextWindow as number);
+  // Cap virtual model context window (default: 200k tokens, standard for Claude
+  // Sonnet and frontier coding agents). Without a cap, outlier models with 10M+
+  // context (e.g. Vast 10M) cause AI clients (OpenClaude, Continue) to advertise
+  // 10M ctx and avoid prompt compaction, failing upstream models.
+  const maxCap = Number(process.env.AUTO_MAX_CONTEXT_WINDOW) || 200_000;
   const autoContextWindow = availableContextWindows.length > 0
-    ? Math.max(...availableContextWindows)
+    ? Math.min(Math.max(...availableContextWindows), maxCap)
     : null;
 
   return { models: allListed, autoContextWindow };
