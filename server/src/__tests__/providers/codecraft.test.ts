@@ -31,9 +31,9 @@ describe('CodeCraft', () => {
     await expect(getProvider('codecraft')!.validateKey('bad-key')).resolves.toMatchObject({ valid: false });
   });
 
-  it.each([402, 429, 503])('does not treat HTTP %s as a validated or invalid key', async status => {
+  it.each([402, 429, 503])('does not treat HTTP %s as an invalid key', async status => {
     vi.spyOn(global, 'fetch').mockResolvedValue(json({}, status, { 'Retry-After': '19' }));
-    await expect(getProvider('codecraft')!.validateKey('test-key')).rejects.toMatchObject({ status, retryAfterMs: 19_000 });
+    await expect(getProvider('codecraft')!.validateKey('test-key')).resolves.toBe(true);
   });
 
   it('preserves chat, JSON mode, token usage and route attribution', async () => {

@@ -1,6 +1,6 @@
 {
   "name": "@baiibayu/srouter",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "SRouter — free open-source LLM router: run the gateway, set up coding agents, manage provider keys",
   "license": "MIT",
   "repository": {

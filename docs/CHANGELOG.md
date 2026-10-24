@@ -1,3 +1,23 @@
+## 2026-10-25 — 0.1.13
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `01c941c` | 2026-10-24 | feat(router): escalate model on stubborn loops, header-inject loop guard, and prioritize smart unmeasured exploration. |
+| `4c25a55` | 2026-10-24 | feat(router): add tool-call loop breaker and session affinity for agentic workflows. |
+| `12b371f` | 2026-10-24 | fix(dashboard): remove srouter subtext and wire automatic agent classification in live routing. |
+| `e402765` | 2026-10-24 | feat(dashboard): live routing strip with agent classification, mode bypass & clean backend-tail status. |
+| `5e565ad` | 2026-10-24 | feat(proxy): default webshare cluster to active pool and dynamic node enrollment. |
+| `6fff435` | 2026-10-24 | feat(proxy): two-tier clustered node, conditional routing & clean pool row UI. |
+| `b7dcbb7` | 2026-10-23 | feat(client): include keyless providers in outbound proxy switches. |
+| `d20ccbd` | 2026-10-23 | fix(server): cap auto context window to 200k to prevent oversized client context. |
+| `3ae2b2d` | 2026-10-22 | fix(server): correct the decision chat judge default order. |
+| `1b3a7f1` | 2026-10-22 | refactor: retire cerebras and clean client lint. |
+| `e4e26a8` | 2026-10-22 | fix(desktop): default server port to 20268. |
+| `c9b03df` | 2026-10-22 | fix(server): correct keyless search platforms (only duckduckgo + parallel); feat(examples): opencode-free example with passing selftest. |
+| `910d2ee` | 2026-10-22 | chore: probe commit email attribution mapping (noreply). |
+| `e81b230` | 2026-10-22 | docs(changelog): append v0.1.12 CI hardening and README refresh commits. |
+| `fd59bc3` | 2026-10-21 | docs(readme): refresh all READMEs with unified API endpoints table and clarified agent setup guides. |
+
 ## 2026-10-21 — 0.1.12
 
 | Commit | Date | Summary |

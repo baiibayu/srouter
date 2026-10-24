@@ -1,6 +1,6 @@
 {
   "name": "@baiibayu/srouter-desktop",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "SRouter menu-bar app — local OpenAI-compatible LLM router",
   "author": {
     "name": "baiibayu",
