@@ -15,6 +15,8 @@ export const CLIENT_AGENTS = [
   'deepseek-harness',
   'mimo-code',
   'atomcode',
+  'openclaude',
+  'zcode',
   'openclaw',
   'hermes-agent',
   'pi',
@@ -82,6 +84,8 @@ export function classifyClientAgent(req: Request): ClientAgent {
 
   // Reasonix sends `Reasonix/<version>` to every endpoint on its own.
   if (/^reasonix\//.test(ua)) return 'reasonix';
+  if (/openclaude/.test(ua)) return 'openclaude';
+  if (/zcode/.test(ua)) return 'zcode';
   if (/opencode/.test(ua)) return 'opencode';
   if (/\bcline\b/.test(ua)) return 'cline';
   // The Roo Code extension and CLI send `RooCode/<version>`.

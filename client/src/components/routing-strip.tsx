@@ -47,6 +47,8 @@ const AGENT_LABELS: Record<string, string> = {
   'mimo-code': 'MiMo Code',
   'atomcode': 'AtomCode',
   'openclaw': 'OpenClaw',
+  'openclaude': 'OpenClaude',
+  'zcode': 'Zcode',
   'hermes-agent': 'Hermes Agent',
   'pi': 'Pi',
   'reasonix': 'Reasonix',
@@ -62,7 +64,38 @@ const AGENT_LABELS: Record<string, string> = {
 
 function agentLabel(agent?: string | null): string {
   if (!agent) return 'API Client'
-  return AGENT_LABELS[agent] ?? agent
+  if (AGENT_LABELS[agent]) return AGENT_LABELS[agent]
+
+  const lower = agent.toLowerCase()
+  if (/claude[- ]?code|\bclaude-cli\b/.test(lower)) return 'Claude Code'
+  if (/openclaude/.test(lower)) return 'OpenClaude'
+  if (/zcode/.test(lower)) return 'Zcode'
+  if (/opencode/.test(lower)) return 'OpenCode'
+  if (/codex/.test(lower)) return 'Codex'
+  if (/cursor/.test(lower)) return 'Cursor'
+  if (/cline/.test(lower)) return 'Cline'
+  if (/roo/.test(lower)) return 'Roo Code'
+  if (/aider/.test(lower)) return 'Aider'
+  if (/continue/.test(lower)) return 'Continue'
+  if (/kilo/.test(lower)) return 'Kilo Code'
+  if (/crush/.test(lower)) return 'Crush'
+  if (/deepseek/.test(lower)) return 'DeepSeek Harness'
+  if (/mimo/.test(lower)) return 'MiMo Code'
+  if (/zed/.test(lower)) return 'Zed'
+  if (/vscode/.test(lower)) return 'VS Code'
+  if (/intellij|pycharm|webstorm|jetbrains/.test(lower)) return 'JetBrains'
+  if (/curl/.test(lower)) return 'cURL'
+  if (/python/.test(lower)) return 'Python SDK'
+  if (/node/.test(lower)) return 'Node.js'
+  if (/openai/.test(lower)) return 'OpenAI SDK'
+  if (/anthropic/.test(lower)) return 'Anthropic SDK'
+
+  const clean = agent.split('/')[0].trim()
+  if (clean && clean.length <= 16 && !['mozilla', 'http'].includes(clean.toLowerCase())) {
+    return clean
+  }
+
+  return 'API Client'
 }
 
 function platformLabel(platform: string): string {
@@ -279,7 +312,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto">
-        <StripNode sub="Gateway" label="SRouter" icon={<LogoMark className="size-4 shrink-0" />} />
+        <StripNode label="SRouter" icon={<LogoMark className="size-4 shrink-0" />} />
         <StripLine processing={processing} />
 
         {branching ? (

@@ -1,3 +1,5 @@
+import { traceRouteEvent } from './proxy.js';
+import { classifyClientAgent } from '../lib/client-classifier.js';
 import crypto from 'crypto';
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
@@ -1083,6 +1085,15 @@ async function streamCompletion(
     res.end();
 
     recordUpstreamSuccess(route, ctx.estimatedInputTokens + outputTokens, ctx.state);
+    traceRouteEvent('Proxy', {
+      event: 'ok',
+      requestId: ctx.sessionId || `req_${Date.now().toString(36)}`,
+      attempt: ctx.attempt,
+      platform: route.platform,
+      model: route.modelId,
+      requestedModel: ctx.requestedModel,
+      latencyMs: Date.now() - ctx.start,
+    });
     if (!ctx.pinned || ctx.stickyScope) setStickyModel(messages, route.modelDbId, ctx.sessionId, ctx.stickyScope ?? ctx.strategyKey);
     logRequest(route.platform, route.modelId, route.keyId, 'success', ctx.estimatedInputTokens, outputTokens, Date.now() - ctx.start, null, null, ctx.pinnedModelId, null, 'http');
   clearInterval(keepaliveId);

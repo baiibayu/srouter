@@ -1,4 +1,5 @@
 import { classifyClientAgent } from '../lib/client-classifier.js';
+import { getClientContext } from '../lib/client-context.js';
 import crypto from 'crypto';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
@@ -148,6 +149,14 @@ export function traceRouteEvent(
     error?: string;
   },
 ) {
+  const ctx = getClientContext();
+  if (!opts.clientAgent) {
+    if (ctx.agent && ctx.agent !== 'unknown') {
+      opts.clientAgent = ctx.agent;
+    } else if (ctx.userAgent) {
+      opts.clientAgent = ctx.userAgent;
+    }
+  }
   const parts = [
     `[${scope}]`,
     new Date().toISOString().slice(11, 19),
@@ -2391,6 +2400,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
       platform: route.platform,
       model: route.modelId,
       requestedModel: attempt === 0 ? requestedModelLabel : undefined,
+      clientAgent: attempt === 0 ? clientAgent : undefined,
     });
     let outboundMessages = messages;
     // #797: thinking trace accumulated from this turn's streamed deltas, then
