@@ -24,6 +24,7 @@ import { convertDocumentBlock, documentRejectionMessage } from '../lib/anthropic
 import { isClientAbortError, newClientAbortError, newHedgeAbortError, isUpstreamClassificationOutput } from '../lib/error-classify.js';
 import { logRequest } from '../lib/request-log.js';
 import { extractApiToken, timingSafeStringEqual, getStickyModel, setStickyModel } from './proxy.js';
+import { breakLoop } from '../services/loop-breaker.js';
 import { runFallbackLoop, newFallbackState, fallbackRoutingTokens, recordUpstreamSuccess, type ExhaustionBody, setFallbackHeaders, setExhaustionHeaders, type AttemptRecord, type FallbackState } from '../lib/fallback-loop.js';
 import { routedViaValue } from '../lib/header-value.js';
 import { applyTokenBudget, tokenBudgetMessage } from '../lib/guardrails.js';
@@ -535,8 +536,24 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
   const max_tokens = clientMaxTokens
     ?? (budgetCheck.maxTokens != null ? Math.min(DEFAULT_MAX_TOKENS, budgetCheck.maxTokens) : DEFAULT_MAX_TOKENS);
 
+  const clientAgent = classifyClientAgent(req);
+  const loopBreaker = breakLoop({
+    messages,
+    temperature,
+    clientAgent,
+  });
+
+  if (loopBreaker.detected) {
+    res.setHeader('X-SRouter-Loop-Breaker', `detected=${loopBreaker.kind};count=${loopBreaker.repetitionCount};target=${encodeURIComponent(loopBreaker.targetName ?? '')}`);
+  }
+
+  const effectiveTemperature = loopBreaker.detected ? loopBreaker.temperature : temperature;
+  if (loopBreaker.detected) {
+    messages = loopBreaker.messages;
+  }
+
   const completionOptions = {
-    temperature, max_tokens, top_p, top_k: body.top_k ?? undefined, tools, tool_choice,
+    temperature: effectiveTemperature, max_tokens, top_p, top_k: body.top_k ?? undefined, tools, tool_choice,
     // Native `thinking: {type, budget_tokens}` → the same internal knob the
     // OpenAI surface's reasoning_effort feeds; absent when the client sent none.
     reasoning_effort: effortFromAnthropicThinking(body.thinking),
@@ -580,7 +597,13 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
   // Session affinity: Claude Code stamps every request in a session with
   // X-Claude-Code-Session-Id. When auto-routing, stick the whole session to one
   // model so it doesn't flap between free providers mid-conversation.
-  const rawSession = req.headers['x-claude-code-session-id'] ?? req.headers['x-session-id'];
+  const rawSession = req.headers['x-claude-code-session-id']
+    ?? req.headers['x-session-id']
+    ?? req.headers['x-opencode-session-id']
+    ?? req.headers['x-client-session-id']
+    ?? req.headers['x-conversation-id']
+    ?? req.headers['conversation-id']
+    ?? req.headers['session-id'];
   const sessionId = Array.isArray(rawSession) ? rawSession[0] : rawSession;
 
   // Same-model cross-provider failover (#932). A pin resolves to ONE catalog

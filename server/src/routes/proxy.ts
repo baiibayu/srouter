@@ -26,6 +26,7 @@ import { invalidToolArgumentsError, invalidToolCallReasons, isToolArgumentValida
 import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
 import { rescueInlineToolCalls, startsWithDialectMarker, couldBecomeDialectMarker, containsDialectMarker } from '../lib/tool-call-rescue.js';
 import { getContextHandoffMode, recordIncomingMessages, maybeInjectContextHandoff, recordSuccessfulModel, hasPriorModel, HANDOFF_MAX_TOKENS } from '../services/context-handoff.js';
+import { breakLoop } from '../services/loop-breaker.js';
 import { isFusionModel, runFusion, fusionConfigSchema, FusionError, FUSION_MODEL_ID } from '../services/fusion.js';
 import { isRetryableError, isPaymentRequiredError, isModelNotFoundError, isModelAccessForbiddenError, isClientAbortError, newClientAbortError, newHedgeAbortError, isUpstreamClassificationOutput } from '../lib/error-classify.js';
 import { logRequest } from '../lib/request-log.js';
@@ -2221,8 +2222,35 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
   // Optional client-managed session affinity (see getSessionKey). Express
   // lower-cases header names; a repeated header arrives as an array — take
   // the first value.
-  const rawSessionId = req.headers['x-session-id'];
+  const rawSessionId = req.headers['x-session-id']
+    ?? req.headers['x-opencode-session-id']
+    ?? req.headers['x-claude-code-session-id']
+    ?? req.headers['x-client-session-id']
+    ?? req.headers['x-conversation-id']
+    ?? req.headers['conversation-id']
+    ?? req.headers['session-id'];
   const sessionIdHeader = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId;
+
+  const loopBreaker = breakLoop({
+    messages,
+    temperature,
+    frequency_penalty: samplingParams.frequency_penalty,
+    presence_penalty: samplingParams.presence_penalty,
+    clientAgent,
+  });
+
+  if (loopBreaker.detected) {
+    res.setHeader('X-SRouter-Loop-Breaker', `detected=${loopBreaker.kind};count=${loopBreaker.repetitionCount};target=${encodeURIComponent(loopBreaker.targetName ?? '')}`);
+  }
+
+  const effectiveTemperature = loopBreaker.detected ? loopBreaker.temperature : temperature;
+  const effectiveSamplingParams = loopBreaker.detected
+    ? {
+        ...samplingParams,
+        frequency_penalty: loopBreaker.frequency_penalty,
+        presence_penalty: loopBreaker.presence_penalty,
+      }
+    : samplingParams;
 
   let resolvedChain: ResolvedChain | undefined;
   let strategyKey: string | undefined;
@@ -2402,7 +2430,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
       requestedModel: attempt === 0 ? requestedModelLabel : undefined,
       clientAgent: attempt === 0 ? clientAgent : undefined,
     });
-    let outboundMessages = messages;
+    let outboundMessages = loopBreaker.detected ? loopBreaker.messages : messages;
     // #797: thinking trace accumulated from this turn's streamed deltas, then
     // remembered per-session so a follow-up whose client stripped the field
     // can have it restored (see restore block above).
@@ -2413,7 +2441,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
     // which already counts the injected message.
     let injectedHandoffTokens = 0;
     if (handoffMode !== 'off' && sessionKey) {
-      const handoff = maybeInjectContextHandoff({ mode: handoffMode, sessionKey, messages, selectedModelKey: modelKey });
+      const handoff = maybeInjectContextHandoff({ mode: handoffMode, sessionKey, messages: outboundMessages, selectedModelKey: modelKey });
       if (handoff.injected) console.log(`[Proxy] Context handoff injected (session ${sessionKey.slice(0, 8)}…, model switch detected)`);
       outboundMessages = handoff.messages;
       injectedHandoffTokens = handoff.injectedTokens;
@@ -2525,7 +2553,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
         try {
           const gen = route.provider.streamChatCompletion(
             route.apiKey, outboundMessages, route.modelId,
-            { temperature, max_tokens, top_p, stop, tools, tool_choice, parallel_tool_calls, stream_options: parsed.data.stream_options, ...samplingParams, contextBudget, signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]) },
+            { temperature: effectiveTemperature, max_tokens, top_p, stop, tools, tool_choice, parallel_tool_calls, stream_options: parsed.data.stream_options, ...effectiveSamplingParams, contextBudget, signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]) },
             quotaContextForRoute(route, 'chat/completions'),
           );
 
@@ -2914,7 +2942,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
       } else {
         const result = await route.provider.chatCompletion(
           route.apiKey, outboundMessages, route.modelId,
-          { temperature, max_tokens, top_p, stop, tools, tool_choice, parallel_tool_calls, ...samplingParams, contextBudget, signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]) },
+          { temperature: effectiveTemperature, max_tokens, top_p, stop, tools, tool_choice, parallel_tool_calls, ...effectiveSamplingParams, contextBudget, signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]) },
           quotaContextForRoute(route, 'chat/completions'),
         );
 
