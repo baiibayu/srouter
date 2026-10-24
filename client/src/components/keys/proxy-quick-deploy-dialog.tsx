@@ -207,7 +207,7 @@ export function ProxyQuickDeployDialog({ open, onOpenChange }: ProxyQuickDeployD
   const [webshareProtocol, setWebshareProtocol] = useState<'socks5' | 'http'>('socks5');
   const [webshareRawText, setWebshareRawText] = useState('');
   const [webshareImportMode, setWebshareImportMode] = useState<'api' | 'text'>('api');
-  const [webshareRole, setWebshareRole] = useState<'primary' | 'fallback' | 'targeted'>('fallback');
+  const [webshareRole, setWebshareRole] = useState<'primary' | 'fallback' | 'targeted'>('primary');
   const [webshareTargetedPlatformsStr, setWebshareTargetedPlatformsStr] = useState('openai, anthropic');
   const [webshareSuccessResult, setWebshareSuccessResult] = useState<{ count: number } | null>(null);
 
@@ -849,9 +849,9 @@ export function ProxyQuickDeployDialog({ open, onOpenChange }: ProxyQuickDeployD
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="fallback" label="Fallback (Saves 1GB Quota)">Fallback (Saves 1GB Quota)</SelectItem>
+                            <SelectItem value="primary" label="Standard Pool (Equal Share)">Standard Pool (Equal Share)</SelectItem>
+                            <SelectItem value="fallback" label="Fallback (Only on Failure)">Fallback (Only on Failure)</SelectItem>
                             <SelectItem value="targeted" label="Targeted (Specific Platforms)">Targeted (Specific Platforms)</SelectItem>
-                            <SelectItem value="primary" label="Primary (Standard Pool)">Primary (Standard Pool)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -931,9 +931,9 @@ export function ProxyQuickDeployDialog({ open, onOpenChange }: ProxyQuickDeployD
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="fallback" label="Fallback (Saves 1GB Quota)">Fallback (Saves 1GB Quota)</SelectItem>
+                            <SelectItem value="primary" label="Standard Pool (Equal Share)">Standard Pool (Equal Share)</SelectItem>
+                            <SelectItem value="fallback" label="Fallback (Only on Failure)">Fallback (Only on Failure)</SelectItem>
                             <SelectItem value="targeted" label="Targeted (Specific Platforms)">Targeted (Specific Platforms)</SelectItem>
-                            <SelectItem value="primary" label="Primary (Standard Pool)">Primary (Standard Pool)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

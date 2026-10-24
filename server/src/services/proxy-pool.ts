@@ -988,7 +988,7 @@ export async function importWebshareProxies(params: {
 }): Promise<{ ok: boolean; count: number; nodes: ProxyPoolNode[]; error?: string }> {
   const apiKey = params.apiKey.trim();
   const protocol = params.protocol || 'socks5';
-  const role: ProxyPoolRole = params.role || 'fallback';
+  const role: ProxyPoolRole = params.role || 'primary';
   if (!apiKey) {
     return { ok: false, count: 0, nodes: [], error: 'Webshare API key is required' };
   }
