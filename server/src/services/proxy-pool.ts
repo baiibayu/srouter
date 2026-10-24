@@ -1,5 +1,4 @@
 import { getDb } from '../db/index.js';
-import zlib from 'node:zlib';
 import type { ProxyPoolNode, ProxyPoolProtocol, ProxyPoolStatus, ProxyPoolStrategy, ProxyPoolRole } from '@baiibayu/srouter-shared/types.js';
 import { probeProxyUrl, registerProxyNodeSelector } from '../lib/proxy.js';
 import { PROXY_POOLS_STRATEGY_SETTING } from '../db/migrations/20261023_000001_proxy_pools.js';
