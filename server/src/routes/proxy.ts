@@ -2240,7 +2240,8 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
   });
 
   if (loopBreaker.detected) {
-    res.setHeader('X-SRouter-Loop-Breaker', `detected=${loopBreaker.kind};count=${loopBreaker.repetitionCount};target=${encodeURIComponent(loopBreaker.targetName ?? '')}`);
+    const esc = loopBreaker.escalateModel ? ';escalated=true' : '';
+    res.setHeader('X-SRouter-Loop-Breaker', `detected=${loopBreaker.kind};count=${loopBreaker.repetitionCount};target=${encodeURIComponent(loopBreaker.targetName ?? '')}${esc}`);
   }
 
   const effectiveTemperature = loopBreaker.detected ? loopBreaker.temperature : temperature;
@@ -2304,7 +2305,8 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
   let stickyStrategyKey: string | undefined = strategyKey;
 
   if (isAutoModel(requestedModel)) {
-    preferredModel = resolveStickyPreference(getStickyModel(messages, sessionIdHeader, strategyKey), resolvedChain?.chain);
+    const stickyId = loopBreaker.escalateModel ? undefined : getStickyModel(messages, sessionIdHeader, strategyKey);
+    preferredModel = resolveStickyPreference(stickyId, resolvedChain?.chain);
   } else if (requestedModel) {
     const db = getDb();
     // Unify ON: a requested id (canonical slug OR any provider's model_id) maps
@@ -2383,6 +2385,13 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
   // context-handoff injection, group/unified-chain routing, and the OpenAI
   // stream turn-integrity framing.
   const state = newFallbackState();
+  if (loopBreaker.escalateModel) {
+    const stickyId = getStickyModel(messages, sessionIdHeader, strategyKey);
+    if (stickyId != null) {
+      state.skipModels.add(stickyId);
+      console.warn(`[LoopBreaker] Escalating model: skipped stuck model ${stickyId} to fail over to smarter candidate.`);
+    }
+  }
   // Lets the failover loop learn which models reject tool calls (#1230).
   state.wantsTools = wantsTools;
   const attemptLog: AttemptRecord[] = [];

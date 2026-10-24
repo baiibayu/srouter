@@ -90,7 +90,7 @@ describe('Loop Breaker Service', () => {
     expect(result.repetitionCount).toBe(2);
   });
 
-  it('breaks loop by bumping temperature and injecting system guard', () => {
+  it('breaks loop with header guard and escalating temperature for 2 repeats', () => {
     const messages: ChatMessage[] = [
       { role: 'user', content: 'check files' },
       {
@@ -118,19 +118,58 @@ describe('Loop Breaker Service', () => {
     });
 
     expect(broken.detected).toBe(true);
-    expect(broken.temperature).toBe(0.45);
+    expect(broken.temperature).toBe(0.50);
     expect(broken.frequency_penalty).toBe(0.3);
     expect(broken.presence_penalty).toBe(0.3);
     expect(broken.guardInjected).toBe(true);
+    expect(broken.escalateModel).toBe(false);
 
-    // Verify last message received loop guard
+    // Verify last message wrapped with header & footer guards
     const lastMsg = broken.messages[broken.messages.length - 1];
     expect(typeof lastMsg.content).toBe('string');
-    expect(lastMsg.content).toContain('[System Guard: Loop Detected]');
+    expect(lastMsg.content).toContain('[CRITICAL SYSTEM GUARD: REPETITIVE TOOL LOOP DETECTED]');
     expect(lastMsg.content).toContain('run_command');
+    expect(lastMsg.content).toContain('modified: app.ts');
 
     // Original messages array was not mutated
     expect(messages[messages.length - 1].content).toBe('modified: app.ts');
+  });
+
+  it('escalates model and increases temperature to 0.70 when repetition reaches 3', () => {
+    const messages: ChatMessage[] = [
+      { role: 'user', content: 'check files' },
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [{ id: '1', type: 'function', function: { name: 'read', arguments: '{"path":"file.md"}' } }],
+      },
+      { role: 'tool', tool_call_id: '1', content: 'contents' },
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [{ id: '2', type: 'function', function: { name: 'read', arguments: '{"path":"file.md"}' } }],
+      },
+      { role: 'tool', tool_call_id: '2', content: 'contents' },
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [{ id: '3', type: 'function', function: { name: 'read', arguments: '{"path":"file.md"}' } }],
+      },
+      { role: 'tool', tool_call_id: '3', content: 'contents' },
+    ];
+
+    const broken = breakLoop({
+      messages,
+      temperature: 0,
+      clientAgent: 'opencode',
+    });
+
+    expect(broken.detected).toBe(true);
+    expect(broken.repetitionCount).toBe(3);
+    expect(broken.temperature).toBe(0.70);
+    expect(broken.frequency_penalty).toBe(0.5);
+    expect(broken.presence_penalty).toBe(0.5);
+    expect(broken.escalateModel).toBe(true);
   });
 
   it('respects SROUTER_LOOP_BREAKER=off', () => {
@@ -165,5 +204,6 @@ describe('Loop Breaker Service', () => {
     expect(broken.detected).toBe(false);
     expect(broken.guardInjected).toBe(false);
     expect(broken.temperature).toBe(0);
+    expect(broken.escalateModel).toBe(false);
   });
 });

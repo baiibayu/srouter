@@ -26,6 +26,7 @@ export interface LoopBreakResult {
   frequency_penalty?: number;
   presence_penalty?: number;
   guardInjected: boolean;
+  escalateModel: boolean;
 }
 
 function sortObjectKeys(obj: unknown): unknown {
@@ -140,15 +141,19 @@ export function detectLoop(messages: ChatMessage[]): LoopDetectionResult {
   return { detected: false, repetitionCount: 0 };
 }
 
-function appendGuardText(content: ChatContent, guardText: string): ChatContent {
+function wrapWithGuard(content: ChatContent, headerGuard: string, footerGuard: string): ChatContent {
   if (typeof content === 'string') {
-    return content + guardText;
+    return `${headerGuard}\n\n${content}\n\n${footerGuard}`;
   }
   if (Array.isArray(content)) {
-    return [...content, { type: 'text', text: guardText } as ChatContentBlock];
+    return [
+      { type: 'text', text: `${headerGuard}\n\n` } as ChatContentBlock,
+      ...content,
+      { type: 'text', text: `\n\n${footerGuard}` } as ChatContentBlock,
+    ];
   }
   if (content == null) {
-    return guardText.trim();
+    return `${headerGuard}\n\n${footerGuard}`.trim();
   }
   return content;
 }
@@ -160,9 +165,10 @@ export function isLoopBreakerEnabled(): boolean {
 
 /**
  * Detects loops and automatically breaks greedy determinism by:
- * 1. Bumping temperature (jitter to >= 0.45)
- * 2. Adding presence / frequency penalties
- * 3. Injecting an ephemeral system guard directive onto the latest message outbound
+ * 1. Escalating temperature (0.50 -> 0.70 -> 0.85)
+ * 2. Escalating presence / frequency penalties
+ * 3. Prominently injecting system guard directives at BOTH TOP (Header) and BOTTOM (Footer) of the latest outbound message
+ * 4. Signaling model escalation (escalateModel: true) when repetition count >= 3
  */
 export function breakLoop(options: LoopBreakOptions): LoopBreakResult {
   const { messages, temperature, frequency_penalty, presence_penalty, clientAgent } = options;
@@ -176,6 +182,7 @@ export function breakLoop(options: LoopBreakOptions): LoopBreakResult {
       frequency_penalty,
       presence_penalty,
       guardInjected: false,
+      escalateModel: false,
     };
   }
 
@@ -189,45 +196,60 @@ export function breakLoop(options: LoopBreakOptions): LoopBreakResult {
       frequency_penalty,
       presence_penalty,
       guardInjected: false,
+      escalateModel: false,
     };
   }
 
-  // Jitter temperature to break greedy determinism
+  // Escalating temperature & penalties based on repetition count
+  let minTemp = 0.50;
+  let penalty = 0.3;
+  if (detection.repetitionCount === 3) {
+    minTemp = 0.70;
+    penalty = 0.5;
+  } else if (detection.repetitionCount >= 4) {
+    minTemp = 0.85;
+    penalty = 0.7;
+  }
+
   let adjustedTemperature = temperature;
-  if (adjustedTemperature == null || adjustedTemperature < 0.45) {
-    adjustedTemperature = 0.45;
+  if (adjustedTemperature == null || adjustedTemperature < minTemp) {
+    adjustedTemperature = minTemp;
   }
 
-  // Adjust penalties to discourage token repetition
-  const adjustedFrequencyPenalty = frequency_penalty != null && frequency_penalty > 0
+  const adjustedFrequencyPenalty = frequency_penalty != null && frequency_penalty >= penalty
     ? frequency_penalty
-    : 0.3;
-  const adjustedPresencePenalty = presence_penalty != null && presence_penalty > 0
+    : penalty;
+  const adjustedPresencePenalty = presence_penalty != null && presence_penalty >= penalty
     ? presence_penalty
-    : 0.3;
+    : penalty;
 
-  // Build guard prompt
-  let guardDirective = '';
+  // Prominent Header & Footer guards so both prefix and suffix attention mechanisms notice immediately
+  let headerGuard = '';
+  let footerGuard = '';
   if (detection.kind === 'tool_call') {
-    guardDirective = `\n\n[System Guard: Loop Detected]\nYou have executed the tool "${detection.targetName}" with identical parameters ${detection.repetitionCount} times consecutively. Repeating this tool call with the same parameters will not change the outcome.\nPlease analyze the output you already received and take the NEXT action (e.g. choose a different tool, modify your parameters, or report your findings).`;
+    headerGuard = `[CRITICAL SYSTEM GUARD: REPETITIVE TOOL LOOP DETECTED]\nYou have called "${detection.targetName}" ${detection.repetitionCount} times in a row with the exact same parameters.\nDO NOT execute "${detection.targetName}" with these arguments again.\nInspect the output below, proceed with the NEXT logical action, or reply to the user.\n================================================================================`;
+    footerGuard = `================================================================================\n[CRITICAL REMINDER: Do NOT call "${detection.targetName}" with identical arguments again. Proceed with next step.]`;
   } else {
-    guardDirective = `\n\n[System Guard: Loop Detected]\nYou repeated the exact same response ${detection.repetitionCount} times consecutively. Do not repeat the same text. Please adjust your approach, explain your findings, or summarize progress.`;
+    headerGuard = `[CRITICAL SYSTEM GUARD: TEXT REPETITION DETECTED]\nYou repeated the exact same response ${detection.repetitionCount} times consecutively. Do not output this text again. Adjust your approach or summarize progress.\n================================================================================`;
+    footerGuard = `================================================================================\n[CRITICAL REMINDER: Provide a fresh and distinct answer.]`;
   }
 
-  // Clone messages and inject guard into the last message outbound
+  // Clone messages and wrap the last message outbound
   const outbound = messages.map(m => ({ ...m }));
   let guardInjected = false;
 
   if (outbound.length > 0) {
     const lastIndex = outbound.length - 1;
     const lastMsg = { ...outbound[lastIndex] };
-    lastMsg.content = appendGuardText(lastMsg.content, guardDirective);
+    lastMsg.content = wrapWithGuard(lastMsg.content, headerGuard, footerGuard);
     outbound[lastIndex] = lastMsg;
     guardInjected = true;
   }
 
+  const escalateModel = detection.repetitionCount >= 3;
+
   console.warn(
-    `[LoopBreaker] Breaking ${detection.kind} loop for ${clientAgent ?? 'agent'} (target: "${detection.targetName}", repeats: ${detection.repetitionCount}, temp: ${adjustedTemperature})`
+    `[LoopBreaker] Breaking ${detection.kind} loop for ${clientAgent ?? 'agent'} (target: "${detection.targetName}", repeats: ${detection.repetitionCount}, temp: ${adjustedTemperature}, escalate: ${escalateModel})`
   );
 
   return {
@@ -240,5 +262,6 @@ export function breakLoop(options: LoopBreakOptions): LoopBreakResult {
     frequency_penalty: adjustedFrequencyPenalty,
     presence_penalty: adjustedPresencePenalty,
     guardInjected,
+    escalateModel,
   };
 }

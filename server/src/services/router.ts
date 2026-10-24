@@ -467,7 +467,7 @@ export function setTaskWeightShare(value: number | null): void {
  *  exploration toggle is on. The bandit's Thompson sampling already explores
  *  automatically; this guarantees a floor so models with no reliability/speed
  *  data still get sampled instead of being starved by prior-heavy rivals. */
-export const EXPLORE_CHANCE = 0.1;
+export const EXPLORE_CHANCE = 0.25;
 /** A model counts as "has data" once its decay-weighted success+failure
  *  pseudo-count reaches this many samples. */
 export const EXPLORE_MIN_SAMPLES = 5;
@@ -2158,7 +2158,14 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
       return true;
     });
     if (unmeasured.length > 0) {
-      const probe = unmeasured[Math.floor(Math.random() * unmeasured.length)];
+      // Prioritize smartest unmeasured models so frontier models get explored first
+      unmeasured.sort((a, b) => {
+        const intelA = intelligenceComposite(a.size_label, a.intelligence_rank);
+        const intelB = intelligenceComposite(b.size_label, b.intelligence_rank);
+        return intelB - intelA;
+      });
+      const topPool = unmeasured.slice(0, Math.min(3, unmeasured.length));
+      const probe = topPool[Math.floor(Math.random() * topPool.length)];
       const idx = sortedChain.findIndex(e => e.model_db_id === probe.model_db_id);
       if (idx > 0) {
         const [probeRow] = sortedChain.splice(idx, 1);
