@@ -13,6 +13,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   bai: 'Bai',
   bazaarlink: 'Bazaarlink',
   cohere: 'Cohere',
+  codecraft: 'CodeCraft',
   custom: 'Custom',
   google: 'Google',
   groq: 'Groq',

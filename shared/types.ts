@@ -3,6 +3,30 @@
 /** How the global outbound proxy URL is interpreted. Per-key proxies always
  * use the traditional forward-proxy transport. */
 export type ProxyMode = 'forward' | 'fetch-relay';
+
+export type ProxyPoolProtocol = 'http' | 'socks5' | 'fetch-relay';
+export type ProxyPoolStatus = 'active' | 'error' | 'untested';
+export type ProxyPoolStrategy = 'round-robin' | 'random' | 'forward';
+export type ProxyPoolRole = 'primary' | 'fallback' | 'targeted';
+
+export interface ProxyPoolNode {
+  id: string;
+  name: string;
+  url: string;
+  protocol: ProxyPoolProtocol;
+  authToken?: string | null;
+  enabled: boolean;
+  status: ProxyPoolStatus;
+  latencyMs?: number | null;
+  lastTestedAt?: string | null;
+  lastError?: string | null;
+  role?: ProxyPoolRole;
+  targetedPlatforms?: string[] | null;
+  endpoints?: string[] | null;
+  clusterIndex?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
 /** Per-key budget window: UTC day, ISO week (Monday) or calendar month —
  *  chosen to match the provider's quota reset cycle. `'auto'` follows the
  *  provider's catalog declaration (resolved to a concrete window). */
@@ -298,6 +322,12 @@ export type Platform =
   // model grants a one-time 1M-token free quota valid 90 days. The console's
   // "Free Quota Only" toggle must stay ON, otherwise calls bill pay-as-you-go.
   | 'alibaba'
+  // CodeCraft — OpenAI-compatible aggregator (https://codecraftapi.com/v1).
+  // No-card free tier: 1M tokens/month shared across the whole 33-model
+  // roster; paid tiers start at $1.20/mo. /v1/models requires auth, so the
+  // default OpenAI-compat key validation works. Rows arrive via built-in
+  // discovery / catalog, never seeded here.
+  | 'codecraft'
   // User-configured OpenAI-compatible endpoint (llama.cpp, LM Studio, vLLM,
   // Ollama, any base_url). The endpoint URL lives on the api_keys row; see #117.
   | 'custom';

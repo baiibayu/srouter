@@ -279,6 +279,18 @@ function noProxyMatches(hostname: string): boolean {
   return false;
 }
 
+export interface SelectedProxyNode {
+  url: string;
+  protocol: string;
+  authToken?: string | null;
+}
+
+let _proxyNodeSelector: ((platform?: string) => SelectedProxyNode | null) | null = null;
+
+export function registerProxyNodeSelector(fn: (platform?: string) => SelectedProxyNode | null): void {
+  _proxyNodeSelector = fn;
+}
+
 // Module-level proxy URL.
 let _proxyUrl = '';
 let _proxyUrlSource = 'none';
@@ -904,6 +916,20 @@ async function dispatchFetch(
     return fetch(url, init);
   }
 
+  const poolNode = _proxyNodeSelector?.(platform);
+  if (poolNode) {
+    if (poolNode.protocol === 'fetch-relay') {
+      return fetchRelayFetch(poolNode.url, url, init, poolNode.authToken ?? '');
+    }
+    const resolved = await resolvePerKeyDispatcher(poolNode.url);
+    if (resolved) {
+      if (resolved.isSocks) {
+        return socksFetch(url, init, resolved.dispatcher as http.Agent, platform, requestType, timeoutMs);
+      }
+      return fetch(url, { ...init, dispatcher: resolved.dispatcher } as unknown as RequestInit);
+    }
+  }
+
   if (_proxyMode === 'fetch-relay' && _proxyUrl) {
     return fetchRelayFetch(_proxyUrl, url, init, _fetchRelayToken);
   }
@@ -943,6 +969,7 @@ async function fetchRelayFetch(
   headers.delete('host');
   headers.delete('content-length');
   headers.set(FETCH_RELAY_TARGET_HEADER, targetUrl);
+  headers.set('x-relay-target', targetUrl);
   // Always overwrite caller-supplied Relay control headers. They belong to
   // this hop and must not let an upstream request choose another target or
   // credential. An empty token supports deliberately unauthenticated relays.
@@ -995,7 +1022,7 @@ async function resolvePerKeyDispatcher(proxyUrl: string): Promise<{ dispatcher: 
  */
 export function isProxyActive(): boolean {
   if (!_initialized) applyProxyUrl('');
-  return _proxyEnabled && !!_proxyUrl;
+  return _proxyEnabled && (!!_proxyUrl || Boolean(_proxyNodeSelector?.()));
 }
 
 /** Force-rebuild the outbound connection pools on the next request. Called on

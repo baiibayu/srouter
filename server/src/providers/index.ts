@@ -649,6 +649,16 @@ register(new OpenAICompatProvider({
   baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
 }));
 
+// CodeCraft — no-card free gateway (codecraftapi.com/v1); 1M free tokens per
+// month across all 33 models, paid tiers from $1.20/mo. /v1/models requires
+// auth (401 without/with an invalid key), so default key validation works.
+// Model rows arrive via the built-in discovery allowlist / catalog, never here.
+register(new OpenAICompatProvider({
+  platform: 'codecraft',
+  name: 'CodeCraft',
+  baseUrl: 'https://codecraftapi.com/v1',
+}));
+
 // Placeholder so getProvider('custom')/hasProvider('custom')/getAllProviders()
 // behave — but the real instance is built per-key by resolveProvider(), since
 // a custom provider's base URL is user-supplied and lives on the api_keys row.

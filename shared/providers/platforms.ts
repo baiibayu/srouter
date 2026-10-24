@@ -38,6 +38,7 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'plugsky', label: 'Plugsky (free key)', url: 'https://plugsky.com' },
   { value: 'tokenharbor', label: 'Token Harbor (free routes need dashboard opt-in)', url: 'https://tokenharbor.ai/dashboard/api-keys' },
   { value: 'alibaba', label: 'Alibaba Model Studio (free quota, intl site)', url: 'https://modelstudio.console.alibabacloud.com' },
+  { value: 'codecraft', label: 'CodeCraft (1M free monthly tokens)', url: 'https://codecraftapi.com' },
   { value: 'google', label: 'Google AI Studio', url: 'https://aistudio.google.com/apikey' },
   { value: 'groq', label: 'Groq', url: 'https://console.groq.com/keys' },
   { value: 'sail', label: 'Sail Research ($5 monthly with payment method)', url: 'https://app.sailresearch.com' },

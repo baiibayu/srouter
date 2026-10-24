@@ -65,7 +65,7 @@ const PLATFORMS = [
   'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'ovh', 'agnes', 'reka', 'siliconflow',
   'routeway', 'bazaarlink', 'ainative', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
   'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'custom',
-  'nous', 'typhoon', 'plugsky', 'tokenharbor', 'alibaba',
+  'nous', 'typhoon', 'plugsky', 'tokenharbor', 'alibaba', 'codecraft',
 ] as const;
 
 const ALLOWED_IMPORT_EXTENSIONS = new Set(['.env', '.json', '.jsonc', '.md', '.txt', '.csv']);

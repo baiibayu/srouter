@@ -4,7 +4,22 @@ import { getUnifiedApiKey, regenerateUnifiedKey, getSetting, setSetting, getDb }
 import { applyProxyUrl, applyProxyMode, applyProxyEnabled, applyProxyBypass, applyFetchRelayToken, encodeFetchRelayToken, isProxyActive, getProxyUrl, getProxyMode, getFetchRelayToken, isProxyEnabled, getProxyBypassPlatforms, probeProxyUrl, fetchRelayUrlError, DEFAULT_PROXY_PROBE_TARGET, PROXY_MODES, PROXY_SCHEMES } from '../lib/proxy.js';
 import { getProvider } from '../providers/index.js';
 import type { Platform } from '@baiibayu/srouter-shared/types.js';
-import type { ProxyMode } from '@baiibayu/srouter-shared/types.js';
+import type { ProxyMode, ProxyPoolStrategy } from '@baiibayu/srouter-shared/types.js';
+import {
+  getProxyPoolNodes,
+  getProxyPoolStrategy,
+  setProxyPoolStrategy,
+  addProxyPoolNode,
+  updateProxyPoolNode,
+  deleteProxyPoolNode,
+  testProxyPoolNode,
+  deployCloudflareRelay,
+  deployVercelRelay,
+  deployDenoRelay,
+  deployNetlifyRelay,
+  importWebshareProxies,
+  importProxyListText,
+} from '../services/proxy-pool.js';
 import { getSavedFusionConfig, setSavedFusionConfig, savedFusionConfigSchema, getFusionMaxK } from '../services/fusion.js';
 import { isUnifyEnabled, setUnifyEnabled, getUnifyOverrides, setUnifyOverrides, unifyOverridesSchema } from '../services/model-groups.js';
 import { getClaudeModelMap, setClaudeModelMap } from '../services/anthropic-map.js';
@@ -688,6 +703,183 @@ settingsRouter.post('/proxy/test', async (req: Request, res: Response) => {
       : getFetchRelayToken(),
   });
   res.json(result);
+});
+
+// ── Proxy Pools ────────────────────────────────────────────────
+
+settingsRouter.get('/proxy/pools', (_req: Request, res: Response) => {
+  res.json({
+    pools: getProxyPoolNodes(),
+    strategy: getProxyPoolStrategy(),
+  });
+});
+
+settingsRouter.put('/proxy/pools/strategy', (req: Request, res: Response) => {
+  const { strategy } = (req.body ?? {}) as { strategy?: string };
+  if (strategy !== 'round-robin' && strategy !== 'random' && strategy !== 'forward') {
+    res.status(400).json({ error: { message: 'Strategy must be round-robin, random, or forward', type: 'invalid_request_error' } });
+    return;
+  }
+  setProxyPoolStrategy(strategy as ProxyPoolStrategy);
+  res.json({ strategy: getProxyPoolStrategy() });
+});
+
+settingsRouter.post('/proxy/pools', (req: Request, res: Response) => {
+  const { name, url, protocol, authToken, enabled, role, targetedPlatforms, endpoints } = (req.body ?? {}) as {
+    name?: string;
+    url?: string;
+    protocol?: 'http' | 'socks5' | 'fetch-relay';
+    authToken?: string;
+    enabled?: boolean;
+    role?: any;
+    targetedPlatforms?: string[];
+    endpoints?: string[];
+  };
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    res.status(400).json({ error: { message: 'Proxy URL is required', type: 'invalid_request_error' } });
+    return;
+  }
+  const node = addProxyPoolNode({
+    name: typeof name === 'string' ? name : '',
+    url,
+    protocol,
+    authToken,
+    enabled,
+    role,
+    targetedPlatforms,
+    endpoints,
+  });
+  res.status(201).json(node);
+});
+
+settingsRouter.put('/proxy/pools/:id', (req: Request, res: Response) => {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const updated = updateProxyPoolNode(id, req.body ?? {});
+  if (!updated) {
+    res.status(404).json({ error: { message: 'Proxy pool node not found', type: 'not_found' } });
+    return;
+  }
+  res.json(updated);
+});
+
+settingsRouter.delete('/proxy/pools/:id', (req: Request, res: Response) => {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const deleted = deleteProxyPoolNode(id);
+  res.json({ success: deleted });
+});
+
+settingsRouter.post('/proxy/pools/:id/test', async (req: Request, res: Response) => {
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const result = await testProxyPoolNode(id);
+  res.json(result);
+});
+
+settingsRouter.post('/proxy/pools/deploy/cloudflare', async (req: Request, res: Response) => {
+  const { accountId, apiToken, projectName, subdomain } = (req.body ?? {}) as {
+    accountId?: string;
+    apiToken?: string;
+    projectName?: string;
+    subdomain?: string;
+  };
+  if (!accountId || !apiToken) {
+    res.status(400).json({ error: { message: 'Cloudflare Account ID and API Token are required', type: 'invalid_request_error' } });
+    return;
+  }
+  const result = await deployCloudflareRelay({ accountId, apiToken, projectName, subdomain });
+  if (!result.ok) {
+    res.status(400).json({ error: { message: result.error || 'Cloudflare deployment failed', type: 'deployment_error' } });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+settingsRouter.post('/proxy/pools/deploy/vercel', async (req: Request, res: Response) => {
+  const { vercelToken, projectName } = (req.body ?? {}) as {
+    vercelToken?: string;
+    projectName?: string;
+  };
+  if (!vercelToken) {
+    res.status(400).json({ error: { message: 'Vercel API token is required', type: 'invalid_request_error' } });
+    return;
+  }
+  const result = await deployVercelRelay({ vercelToken, projectName });
+  if (!result.ok) {
+    res.status(400).json({ error: { message: result.error || 'Vercel deployment failed', type: 'deployment_error' } });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+settingsRouter.post('/proxy/pools/deploy/deno', async (req: Request, res: Response) => {
+  const { denoToken, appName } = (req.body ?? {}) as {
+    denoToken?: string;
+    appName?: string;
+  };
+  if (!denoToken) {
+    res.status(400).json({ error: { message: 'Deno Deploy API token is required', type: 'invalid_request_error' } });
+    return;
+  }
+  const result = await deployDenoRelay({ denoToken, appName });
+  if (!result.ok) {
+    res.status(400).json({ error: { message: result.error || 'Deno deployment failed', type: 'deployment_error' } });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+settingsRouter.post('/proxy/pools/deploy/netlify', async (req: Request, res: Response) => {
+  const { netlifyToken, siteName } = (req.body ?? {}) as {
+    netlifyToken?: string;
+    siteName?: string;
+  };
+  if (!netlifyToken) {
+    res.status(400).json({ error: { message: 'Netlify Personal Access Token is required', type: 'invalid_request_error' } });
+    return;
+  }
+  const result = await deployNetlifyRelay({ netlifyToken, siteName });
+  if (!result.ok) {
+    res.status(400).json({ error: { message: result.error || 'Netlify deployment failed', type: 'deployment_error' } });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+settingsRouter.post('/proxy/pools/import/webshare', async (req: Request, res: Response) => {
+  const { apiKey, protocol, role, targetedPlatforms } = (req.body ?? {}) as {
+    apiKey?: string;
+    protocol?: 'socks5' | 'http';
+    role?: any;
+    targetedPlatforms?: string[];
+  };
+  if (!apiKey) {
+    res.status(400).json({ error: { message: 'Webshare API key is required', type: 'invalid_request_error' } });
+    return;
+  }
+  const result = await importWebshareProxies({ apiKey, protocol, role, targetedPlatforms });
+  if (!result.ok) {
+    res.status(400).json({ error: { message: result.error || 'Failed to import Webshare proxies', type: 'import_error' } });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+settingsRouter.post('/proxy/pools/import/text', (req: Request, res: Response) => {
+  const { rawText, defaultProtocol, role, asCluster } = (req.body ?? {}) as {
+    rawText?: string;
+    defaultProtocol?: 'socks5' | 'http';
+    role?: any;
+    asCluster?: boolean;
+  };
+  if (!rawText) {
+    res.status(400).json({ error: { message: 'Proxy list text is required', type: 'invalid_request_error' } });
+    return;
+  }
+  const result = importProxyListText({ rawText, defaultProtocol, role, asCluster });
+  if (!result.ok) {
+    res.status(400).json({ error: { message: result.error || 'Failed to parse proxy text', type: 'import_error' } });
+    return;
+  }
+  res.status(201).json(result);
 });
 
 // ── Sync schedule ─────────────────────────────────────────────

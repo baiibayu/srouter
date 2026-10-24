@@ -49,6 +49,8 @@ import * as seedParallelSearchEngine from '../migrations/20261019_000002_seed_pa
 import * as seedLocalFetchSources from '../migrations/20261020_000001_seed_local_fetch_sources.js';
 import * as decisionChatJudge from '../migrations/20261021_000001_decision_chat_judge.js';
 import * as fixDecisionChatJudgeOrder from '../migrations/20261022_000001_fix_decision_chat_judge_order.js';
+import * as proxyPools from '../migrations/20261023_000001_proxy_pools.js';
+import * as proxyConditionalRouting from '../migrations/20261024_000001_proxy_conditional_routing.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -110,6 +112,8 @@ export const SEED_PARALLEL_SEARCH_ENGINE_FILENAME = '20261019_000002_seed_parall
 export const SEED_LOCAL_FETCH_SOURCES_FILENAME = '20261020_000001_seed_local_fetch_sources.ts';
 export const DECISION_CHAT_JUDGE_FILENAME = '20261021_000001_decision_chat_judge.ts';
 export const FIX_DECISION_CHAT_JUDGE_ORDER_FILENAME = '20261022_000001_fix_decision_chat_judge_order.ts';
+export const PROXY_POOLS_FILENAME = '20261023_000001_proxy_pools.ts';
+export const PROXY_CONDITIONAL_ROUTING_FILENAME = '20261024_000001_proxy_conditional_routing.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -162,4 +166,6 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: SEED_LOCAL_FETCH_SOURCES_FILENAME, module: seedLocalFetchSources },
   { filename: DECISION_CHAT_JUDGE_FILENAME, module: decisionChatJudge },
   { filename: FIX_DECISION_CHAT_JUDGE_ORDER_FILENAME, module: fixDecisionChatJudgeOrder },
+  { filename: PROXY_POOLS_FILENAME, module: proxyPools },
+  { filename: PROXY_CONDITIONAL_ROUTING_FILENAME, module: proxyConditionalRouting },
 ];

@@ -619,6 +619,8 @@ describe('OpenAICompatProvider - platform instances', () => {
     { platform: 'plugsky',    name: 'Plugsky',       baseUrl: 'https://plugsky.com/v1' },
     { platform: 'tokenharbor', name: 'Token Harbor', baseUrl: 'https://tokenharbor.ai/v1' },
     { platform: 'alibaba',    name: 'Alibaba Model Studio', baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' },
+    { platform: 'codecraft',  name: 'CodeCraft',        baseUrl: 'https://codecraftapi.com/v1' },
+    { platform: 'codecraft',  name: 'CodeCraft',         baseUrl: 'https://codecraftapi.com/v1' },
     { platform: 'anyapi',     name: 'AnyAPI',        baseUrl: 'https://api.anyapi.ai/v1' },
     { platform: 'radeon',     name: 'AMD Radeon Cloud', baseUrl: 'https://developer.amd.com.cn/radeon/api/v1' },
     { platform: 'nvidia',     name: 'NVIDIA NIM',    baseUrl: 'https://integrate.api.nvidia.com/v1' },
