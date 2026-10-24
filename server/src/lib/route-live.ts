@@ -20,6 +20,7 @@ interface Entry {
   model: string;
   attempt: number;
   requestedModel?: string;
+  clientAgent?: string;
   startedAt: number;
 }
 
@@ -28,6 +29,7 @@ export interface LiveActiveRoute {
   model: string;
   attempt: number;
   requestedModel: string | null;
+  clientAgent: string | null;
   ageMs: number;
 }
 
@@ -58,6 +60,7 @@ export function recordRouteTrace(opts: {
   platform: string;
   model: string;
   requestedModel?: string;
+  clientAgent?: string;
   latencyMs?: number;
 }): void {
   const now = Date.now();
@@ -69,11 +72,13 @@ export function recordRouteTrace(opts: {
       platform: opts.platform,
       model: opts.model,
       attempt: opts.attempt,
+      clientAgent: opts.clientAgent,
     };
     entry.platform = opts.platform;
     entry.model = opts.model;
     entry.attempt = opts.attempt;
     if (opts.requestedModel) entry.requestedModel = opts.requestedModel;
+    if (opts.clientAgent) entry.clientAgent = opts.clientAgent;
     active.set(opts.requestId, entry);
     trim(now);
     return;
@@ -90,6 +95,7 @@ export function recordRouteTrace(opts: {
     model: opts.model,
     attempt: opts.attempt,
     requestedModel: opts.requestedModel ?? existing?.requestedModel,
+    clientAgent: opts.clientAgent ?? existing?.clientAgent,
     startedAt,
     outcome: opts.event,
     finishedAt: now,
@@ -117,6 +123,7 @@ export function getLiveRoutes(): LiveRoutesResponse {
       model: entry.model,
       attempt: entry.attempt,
       requestedModel: entry.requestedModel ?? null,
+      clientAgent: entry.clientAgent ?? null,
       ageMs: now - entry.startedAt,
     })),
     last: last
@@ -125,6 +132,7 @@ export function getLiveRoutes(): LiveRoutesResponse {
           model: last.model,
           attempt: last.attempt,
           requestedModel: last.requestedModel ?? null,
+          clientAgent: last.clientAgent ?? null,
           ageMs: now - last.finishedAt,
           outcome: last.outcome,
           latencyMs: last.latencyMs,

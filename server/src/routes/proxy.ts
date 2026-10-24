@@ -1,3 +1,4 @@
+import { classifyClientAgent } from '../lib/client-classifier.js';
 import crypto from 'crypto';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
@@ -140,6 +141,7 @@ export function traceRouteEvent(
     platform: string;
     model: string;
     requestedModel?: string;
+    clientAgent?: string;
     latencyMs?: number;
     inputTokens?: number;
     outputTokens?: number;
@@ -156,6 +158,7 @@ export function traceRouteEvent(
     '-',
     opts.model,
   ];
+  if (opts.clientAgent) parts.push(`agent=${opts.clientAgent}`);
   if (opts.requestedModel) parts.push(`req=${opts.requestedModel}`);
   if (opts.latencyMs != null) parts.push(`lat=${opts.latencyMs}ms`);
   if (opts.inputTokens != null) parts.push(`in=${opts.inputTokens}`);
@@ -1286,6 +1289,7 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
 
   const { model: requestedModel, prompt, suffix, temperature, top_p, stream } = parsed.data;
   const requestedModelLabel = requestedModel ?? 'auto';
+  const clientAgent = classifyClientAgent(req);
   const max_tokens = parsed.data.max_tokens != null && parsed.data.max_tokens > 0
     ? parsed.data.max_tokens : 128;
   const stop = providerSafeStop(parsed.data.stop);
@@ -1431,6 +1435,7 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
         platform: route.platform,
         model: route.modelId,
         requestedModel: attempt === 0 ? requestedModelLabel : undefined,
+        clientAgent: attempt === 0 ? clientAgent : undefined,
       });
 
       const dispatchMessages = messages;
@@ -1733,6 +1738,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
 
   const { model: requestedModel, temperature, top_p, stream } = parsed.data;
   const requestedModelLabel = requestedModel ?? 'auto';
+  const clientAgent = classifyClientAgent(req);
   // Agent-tolerant knob normalization (#200): max_tokens <= 0 means "no
   // limit" in several clients → unset; tool_choice 'any' is OpenAI's
   // 'required'; tool definitions get their 'function' type re-defaulted.
