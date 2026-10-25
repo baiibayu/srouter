@@ -93,12 +93,11 @@ export interface ImportSelectedResponse {
 // in V13 via the router.huggingface.co Inference Providers meta-router.
 // SambaNova was dropped in V23 (free tier permanently retired — 402
 // "payment method required" once the one-time $5 trial credit lapses).
-// xAI, Cerebras, GitHub Models, NavyAI and Experiential were dropped in
+// xAI, Cerebras, NavyAI were dropped in
 // 2026-10 (paid/exhausted or retracted free tiers — see providers/index.ts).
 export type Platform =
   | 'google'
   | 'groq'
-  | 'experiential'
   // Sail Research — native Responses API provider. $5 in free credits refreshes
   // monthly when a payment method is attached; usage beyond the grant is
   // pay-as-you-go. Background polling is required for its flex-only models.
@@ -177,8 +176,6 @@ export type Platform =
   // 2026-10-07, hub-docs PR #2865, but grandfathered accounts still receive
   // the monthly credit — RETAINED.)
   | 'huggingface'
-  // GitHub Models — requires a fine-grained PAT with `models:read` scope.
-  | 'github'
   // OpenCode Zen — OpenAI-compatible gateway. Free promotional models require a
   // free (no-card) account key from opencode.ai/auth; see migrateModelsV18.
   | 'opencode'

@@ -30,7 +30,7 @@ import { extractThinkFromMessage } from '../lib/think-tags.js';
 
 const UPSTREAM_BASE = 'https://opencode.ai/zen/v1';
 
-const USER_AGENT = 'opencode/latest/2.0.26/cli';
+const USER_AGENT = 'opencode/1.19.0';
 
 // -- Session / Request ID generation ----------------------------------------
 
@@ -156,6 +156,11 @@ export class OpenCodeFreeProvider extends BaseProvider {
     apiKey: string,
     _quotaContext?: QuotaObservationContext,
   ): Promise<KeyValidationResult> {
+    const hasCustomKey = Boolean(apiKey && apiKey.trim() && apiKey !== 'keyless' && !apiKey.startsWith('sr-'));
+    if (!hasCustomKey) {
+      // Keyless path: always valid so the platform remains active
+      return true;
+    }
     try {
       const res = await this.fetchWithTimeout(
         `${UPSTREAM_BASE}/models`,
@@ -169,9 +174,7 @@ export class OpenCodeFreeProvider extends BaseProvider {
       }
       return true;
     } catch (e: any) {
-      // Keyless provider: a network/DNS failure must NOT disable the platform.
-      // The free tier stays enabled and is retried on the next request; only
-      // an explicit upstream rejection (401/403) should mark it invalid.
+      // Network/DNS failure must NOT disable the platform.
       console.warn(`[opencode-free] validateKey network error (keeping keyless platform enabled): ${e?.message ?? e}`);
       return true;
     }

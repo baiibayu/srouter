@@ -20,7 +20,7 @@ import type { Scheduler } from '../lib/scheduler.js';
 
 const UPSTREAM_BASE = 'https://opencode.ai/zen/v1';
 
-const USER_AGENT = 'opencode/latest/2.0.26/cli';
+const USER_AGENT = 'opencode/1.19.0';
 
 const BASE62 =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';

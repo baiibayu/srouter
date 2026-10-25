@@ -21,9 +21,6 @@ const SRONLY_SLUGS = [
   // Web search engines (#1465): registered in server/src/providers/ but
   // not yet part of shared/providers/platforms.ts (catalog sync handles them).
   'tavily', 'exa', 'firecrawl', 'linkup', 'parallel',
-  // Legacy keyless / free-tier providers retained in keys.ts after
-  // upstream removal, but deliberately not promoted to shared.
-  'experiential', 'github',
   // OpenCode Free tier — the catalog lists it but keys.ts does not (it is
   // routed through the opencode-free.ts provider, not the standard key path).
   'opencode-free',
