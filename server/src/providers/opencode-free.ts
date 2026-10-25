@@ -30,8 +30,7 @@ import { extractThinkFromMessage } from '../lib/think-tags.js';
 
 const UPSTREAM_BASE = 'https://opencode.ai/zen/v1';
 
-const USER_AGENT =
-  'opencode/1.18.31 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14';
+const USER_AGENT = 'opencode/latest/2.0.26/cli';
 
 // -- Session / Request ID generation ----------------------------------------
 
@@ -131,12 +130,18 @@ export class OpenCodeFreeProvider extends BaseProvider {
 
   // -- Auth headers ------------------------------------------------------
 
-  private identityHeaders(): Record<string, string> {
+  private identityHeaders(apiKey?: string): Record<string, string> {
+    const auth = (apiKey && apiKey.trim() && apiKey !== 'keyless' && !apiKey.startsWith('sr-'))
+      ? (apiKey.startsWith('Bearer ') ? apiKey.trim() : `Bearer ${apiKey.trim()}`)
+      : 'Bearer public';
+
+    const sessionId = genSessionId();
     return {
-      'Authorization': 'Bearer public',
+      'Authorization': auth,
       'User-Agent': USER_AGENT,
-      'x-opencode-client': 'desktop',
-      'x-opencode-session': genSessionId(),
+      'x-opencode-client': 'cli',
+      'x-opencode-session': sessionId,
+      'x-opencode-session-id': sessionId,
       'x-opencode-request': genRequestId(),
       'x-opencode-project': 'global',
       'Accept': 'text/event-stream',
@@ -148,18 +153,21 @@ export class OpenCodeFreeProvider extends BaseProvider {
   // network connectivity to the upstream.
 
   async validateKey(
-    _apiKey: string,
+    apiKey: string,
     _quotaContext?: QuotaObservationContext,
   ): Promise<KeyValidationResult> {
     try {
       const res = await this.fetchWithTimeout(
         `${UPSTREAM_BASE}/models`,
-        { method: 'GET', headers: this.identityHeaders() },
+        { method: 'GET', headers: this.identityHeaders(apiKey) },
         10_000,
         { timeoutBounds: 'request' },
       );
-      if (res.ok || res.status === 404) return true;
-      return { valid: false, error: `OpenCode Free models probe returned HTTP ${res.status}` };
+      if (res.ok || (res.status >= 300 && res.status < 400) || res.status === 404 || res.status === 429) return true;
+      if (res.status === 401 || res.status === 403) {
+        return { valid: false, error: `OpenCode Free authentication failed (${res.status})` };
+      }
+      return true;
     } catch (e: any) {
       // Keyless provider: a network/DNS failure must NOT disable the platform.
       // The free tier stays enabled and is retried on the next request; only
@@ -201,6 +209,7 @@ export class OpenCodeFreeProvider extends BaseProvider {
   private async fetchChat(
     body: Record<string, unknown>,
     options?: CompletionOptions,
+    apiKey?: string,
   ): Promise<Response> {
     const timeout = options?.timeoutMs ?? CHAT_TIMEOUT_MS;
     const res = await this.fetchWithTimeout(
@@ -208,7 +217,7 @@ export class OpenCodeFreeProvider extends BaseProvider {
       {
         method: 'POST',
         headers: {
-          ...this.identityHeaders(),
+          ...this.identityHeaders(apiKey),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -233,14 +242,14 @@ export class OpenCodeFreeProvider extends BaseProvider {
   // Reads the SSE stream, assembles a single response.
 
   async chatCompletion(
-    _apiKey: string,
+    apiKey: string,
     messages: ChatMessage[],
     modelId: string,
     options?: CompletionOptions,
     quotaContext?: QuotaObservationContext,
   ): Promise<ChatCompletionResponse> {
     const body = this.buildBody(messages, modelId, options);
-    const res = await this.fetchChat(body, options);
+    const res = await this.fetchChat(body, options, apiKey);
 
     recordQuotaObservationsFromResponse(res, {
       platform: this.platform,
@@ -261,14 +270,14 @@ export class OpenCodeFreeProvider extends BaseProvider {
   // -- Streaming completion ----------------------------------------------
 
   async *streamChatCompletion(
-    _apiKey: string,
+    apiKey: string,
     messages: ChatMessage[],
     modelId: string,
     options?: CompletionOptions,
     quotaContext?: QuotaObservationContext,
   ): AsyncGenerator<ChatCompletionChunk> {
     const body = this.buildBody(messages, modelId, options);
-    const res = await this.fetchChat(body, options);
+    const res = await this.fetchChat(body, options, apiKey);
 
     recordQuotaObservationsFromResponse(res, {
       platform: this.platform,

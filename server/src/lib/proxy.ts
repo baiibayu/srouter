@@ -1131,13 +1131,13 @@ export async function probeProxyUrl(
     // makes a misconfigured token look like a working relay, so fail it and
     // name the hop. A provider that genuinely answers 401 through a good relay
     // is the rare false negative, and the reason still points at the token.
-    if (relayMode && (response.status === 401 || response.status === 403)) {
+    if (relayMode && (response.status === 401 || response.status === 403 || response.status === 404 || response.status >= 500)) {
       return {
         ok: false,
         latencyMs: Date.now() - started,
         status: response.status,
         target,
-        error: `relay rejected the token (${response.status})`,
+        error: `relay failed with HTTP ${response.status}`,
       };
     }
     // Any other HTTP response proves the proxy route works; the upstream may

@@ -20,8 +20,7 @@ import type { Scheduler } from '../lib/scheduler.js';
 
 const UPSTREAM_BASE = 'https://opencode.ai/zen/v1';
 
-const USER_AGENT =
-  'opencode/1.18.31 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14';
+const USER_AGENT = 'opencode/latest/2.0.26/cli';
 
 const BASE62 =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -56,11 +55,13 @@ function genRequestId(): string {
 }
 
 function identityHeaders(): Record<string, string> {
+  const sessionId = genSessionId();
   return {
     Authorization: 'Bearer public',
     'User-Agent': USER_AGENT,
-    'x-opencode-client': 'desktop',
-    'x-opencode-session': genSessionId(),
+    'x-opencode-client': 'cli',
+    'x-opencode-session': sessionId,
+    'x-opencode-session-id': sessionId,
     'x-opencode-request': genRequestId(),
     'x-opencode-project': 'global',
   };
@@ -261,6 +262,19 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
 
       result.added++;
       result.models.push(m.id);
+    }
+
+    // Disable any opencode-free models that are no longer available upstream
+    const activeIds = new Set(freeModels.map((m) => m.id));
+    const allDbModels = db.prepare('SELECT id, model_id, enabled FROM models WHERE platform = ?').all(platform) as Array<{
+      id: number;
+      model_id: string;
+      enabled: number;
+    }>;
+    for (const m of allDbModels) {
+      if (!activeIds.has(m.model_id) && m.enabled === 1) {
+        db.prepare('UPDATE models SET enabled = 0 WHERE id = ?').run(m.id);
+      }
     }
   })();
 

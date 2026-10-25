@@ -157,7 +157,7 @@ function StripLine({
   return (
     <div
       aria-hidden="true"
-      className={`relative flex items-center h-7 min-w-8 flex-1 max-w-28 shrink-0 ${className}`}
+      className={`relative flex items-center h-7 min-w-8 flex-1 ${className}`}
     >
       <svg
         viewBox="0 0 64 20"
@@ -521,7 +521,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
 
         {isBranching && modeGroups.length === 1 ? (
           /* Single shared mode: branch directly to provider lanes */
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <StripNode
               sub={modeGroups[0].modeInfo.sub}
               label={modeGroups[0].modeInfo.label}
@@ -529,9 +529,9 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
               icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
             />
             <BranchTreeConnector count={modeGroups[0].lanes.length} processing={processing} />
-            <div className="flex min-w-0 flex-col gap-2 py-0.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
               {modeGroups[0].lanes.map((lane, i) => (
-                <div key={i} className="flex min-w-0 items-center gap-2">
+                <div key={i} className="flex min-w-0 flex-1 items-center gap-2">
                   <ProviderModelNode platform={lane.platform} model={lane.model} />
                   <StripLine processing={isLaneActive(lane)} />
                   <AgentStatusNode
@@ -553,11 +553,11 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
           </div>
         ) : isBranching && modeGroups.length > 1 ? (
           /* Multiple different modes active */
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <BranchTreeConnector count={modeGroups.length} processing={processing} />
-            <div className="flex min-w-0 flex-col gap-2 py-0.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
               {modeGroups.map((group, gi) => (
-                <div key={gi} className="flex min-w-0 items-center gap-2">
+                <div key={gi} className="flex min-w-0 flex-1 items-center gap-2">
                   <StripNode
                     sub={group.modeInfo.sub}
                     label={group.modeInfo.label}
@@ -567,9 +567,9 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                   {group.lanes.length > 1 ? (
                     <>
                       <BranchTreeConnector count={group.lanes.length} processing={processing} />
-                      <div className="flex min-w-0 flex-col gap-2 py-0.5">
+                      <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
                         {group.lanes.map((lane, li) => (
-                          <div key={li} className="flex min-w-0 items-center gap-2">
+                          <div key={li} className="flex min-w-0 flex-1 items-center gap-2">
                             <ProviderModelNode platform={lane.platform} model={lane.model} />
                             <StripLine processing={isLaneActive(lane)} />
                             <AgentStatusNode
