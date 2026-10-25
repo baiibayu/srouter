@@ -167,6 +167,13 @@ interface AnthropicMessageResponse {
 }
 
 function sendError(res: Response, status: number, errorType: string, message: string): void {
+  if (res.headersSent) {
+    try {
+      writeSse(res, 'error', { type: 'error', error: { type: errorType, message } });
+      res.end();
+    } catch {}
+    return;
+  }
   res.status(status).json({ type: 'error', error: { type: errorType, message } });
 }
 
@@ -189,6 +196,21 @@ function anthropicErrorType(body: ExhaustionBody): string {
 // type/message and stamping the matching Retry-After header. Extra keys on the
 // error object are ignored by Anthropic SDKs, so this stays wire-compatible.
 function sendExhaustion(res: Response, body: ExhaustionBody): void {
+  if (res.headersSent) {
+    try {
+      writeSse(res, 'error', {
+        type: 'error',
+        error: {
+          type: anthropicErrorType(body),
+          message: body.message,
+          ...(body.code ? { code: body.code } : {}),
+          ...(body.retryAtMs != null ? { retryAtMs: body.retryAtMs } : {}),
+        },
+      });
+      res.end();
+    } catch {}
+    return;
+  }
   setExhaustionHeaders(res, body);
   res.status(body.status).json({
     type: 'error',
@@ -936,10 +958,8 @@ async function streamCompletion(
   try {
     const gen = route.provider.streamChatCompletion(route.apiKey, messages, route.modelId, options);
     keepaliveId = setInterval(() => {
-      if (!messageStarted) {
-        ctx.disarmHedge();
-        writeSse(res, 'ping', { type: 'ping' });
-      }
+      ensureMessageStart();
+      writeSse(res, 'ping', { type: 'ping' });
     }, 5_000);
     keepaliveId.unref?.();
 
@@ -1119,7 +1139,6 @@ async function streamCompletion(
     });
     if (!ctx.pinned || ctx.stickyScope) setStickyModel(messages, route.modelDbId, ctx.sessionId, ctx.stickyScope ?? ctx.strategyKey);
     logRequest(route.platform, route.modelId, route.keyId, 'success', ctx.estimatedInputTokens, outputTokens, Date.now() - ctx.start, null, null, ctx.pinnedModelId, null, 'http');
-  clearInterval(keepaliveId);
   } catch (err: any) {
     if (err instanceof StreamAlreadyStarted) throw err;
     // Client abort mid-stream: the pump's own `if (ctx.clientGone()) break`
@@ -1138,6 +1157,8 @@ async function streamCompletion(
     }
     // Headers never sent — bubble to the outer loop for failover.
     throw err;
+  } finally {
+    if (keepaliveId) clearInterval(keepaliveId);
   }
 }
 

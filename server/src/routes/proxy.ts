@@ -3190,6 +3190,10 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
     },
     onFatal: (route, err, attempt) => {
       // Non-retryable error (bare 4xx, etc.): don't retry.
+      if (res.headersSent) {
+        try { res.write('data: [DONE]\n\n'); res.end(); } catch {}
+        return;
+      }
       setFallbackHeaders(res, attempt, attemptLog);
       res.status(502).json({
         error: {
@@ -3201,11 +3205,19 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
     },
     onRoutingExhausted: (lastError, routeErr, exhaustion, info) => {
       // No more models available.
+      if (res.headersSent) {
+        try { res.write('data: [DONE]\n\n'); res.end(); } catch {}
+        return;
+      }
       setFallbackHeaders(res, info.attempts.length, info.attempts);
       setExhaustionHeaders(res, exhaustion);
       res.status(exhaustion.status).json({ error: exhaustionErrorPayload(exhaustion), execution_id: requestGroupId });
     },
     onExhausted: (exhaustion, info) => {
+      if (res.headersSent) {
+        try { res.write('data: [DONE]\n\n'); res.end(); } catch {}
+        return;
+      }
       setFallbackHeaders(res, info.attempts.length, info.attempts);
       setExhaustionHeaders(res, exhaustion);
       res.status(exhaustion.status).json({ error: exhaustionErrorPayload(exhaustion), execution_id: requestGroupId });

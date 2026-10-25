@@ -835,6 +835,7 @@ export function setFallbackHeaders(
   failedAttempts: number,
   trail: AttemptRecord[] | undefined,
 ): void {
+  if ('headersSent' in res && (res as any).headersSent) return;
   if (failedAttempts > 0) res.setHeader('X-Fallback-Attempts', String(failedAttempts));
   if (trail && trail.length > 0) {
     const value = trail
@@ -898,6 +899,7 @@ export function setExhaustionHeaders(
   body: ExhaustionBody,
   now = Date.now(),
 ): void {
+  if ('headersSent' in res && (res as any).headersSent) return;
   if (body.retryAtMs == null) return;
   res.setHeader('Retry-After', String(Math.max(0, Math.ceil((body.retryAtMs - now) / 1000))));
 }
