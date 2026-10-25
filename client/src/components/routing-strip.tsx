@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { GitBranch, Loader2, Server } from 'lucide-react'
 import { useI18n } from '@/i18n'
@@ -140,12 +141,160 @@ function resolveModeInfo(
   }
 }
 
-function StripLine({ processing }: { processing: boolean }) {
+const CARD_HEIGHT = 54
+const CARD_GAP = 8
+
+function StripLine({
+  processing,
+  className = '',
+}: {
+  processing: boolean
+  className?: string
+}) {
+  const width = 56
+  const height = 20
+  const yCenter = 10
+  const wavePath = `M 0 ${yCenter} C 18 2, 38 18, ${width} ${yCenter}`
+
   return (
-    <span
+    <div
       aria-hidden="true"
-      className={`h-0.5 min-w-5 flex-1 rounded-full ${processing ? 'sr-flow-line text-primary' : 'bg-border'}`}
-    />
+      style={{ width: `${width}px` }}
+      className={`relative flex items-center h-7 shrink-0 ${className}`}
+    >
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="w-full h-5 overflow-visible"
+      >
+        <defs>
+          <filter id="sr-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* Anchor point start */}
+        <circle cx={0} cy={yCenter} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
+
+        {/* Background track with gentle wave curve */}
+        <path
+          d={wavePath}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={processing ? 'text-border/80' : 'text-border'}
+        />
+
+        {processing && (
+          <>
+            {/* Animated flowing wave dashed line */}
+            <path
+              d={wavePath}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeDasharray="5 5"
+              className="text-primary sr-svg-flow-path"
+            />
+            {/* Glowing particle packet traveling along the wave */}
+            <circle r="3" className="fill-primary" filter="url(#sr-glow)">
+              <animateMotion
+                path={wavePath}
+                dur="1.3s"
+                repeatCount="indefinite"
+              />
+            </circle>
+          </>
+        )}
+
+        {/* Anchor point end */}
+        <circle cx={width} cy={yCenter} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
+      </svg>
+    </div>
+  )
+}
+
+function BranchTreeConnector({
+  count,
+  processing = true,
+}: {
+  count: number
+  processing?: boolean
+}) {
+  const totalHeight = count * CARD_HEIGHT + (count - 1) * CARD_GAP
+  const yCenter = totalHeight / 2
+  const svgWidth = 56
+
+  const paths = Array.from({ length: count }, (_, i) => {
+    const yDest = i * (CARD_HEIGHT + CARD_GAP) + CARD_HEIGHT / 2
+    return {
+      d: `M 0 ${yCenter} C ${svgWidth * 0.45} ${yCenter}, ${svgWidth * 0.55} ${yDest}, ${svgWidth} ${yDest}`,
+      key: i,
+    }
+  })
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{ height: `${totalHeight}px`, width: `${svgWidth}px` }}
+      className="relative flex items-center shrink-0 my-0.5"
+    >
+      <svg
+        viewBox={`0 0 ${svgWidth} ${totalHeight}`}
+        className="w-full h-full overflow-visible"
+      >
+        <defs>
+          <filter id="sr-branch-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* Origin junction point at the Mode card */}
+        <circle cx={0} cy={yCenter} r={3} className={processing ? 'fill-primary' : 'fill-border'} />
+
+        {paths.map(({ d, key }) => (
+          <g key={key}>
+            {/* Background static curved branch track */}
+            <path
+              d={d}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={processing ? 'text-border/80' : 'text-border'}
+            />
+            {processing && (
+              <>
+                {/* Foreground animated flowing dash stream */}
+                <path
+                  d={d}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeDasharray="6 6"
+                  className="text-primary sr-svg-flow-path"
+                />
+                {/* Glowing pulse particle traveling along each branch */}
+                <circle r="3" className="fill-primary" filter="url(#sr-branch-glow)">
+                  <animateMotion
+                    path={d}
+                    dur={`${1.2 + key * 0.15}s`}
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              </>
+            )}
+            {/* Terminal junction point entering the Provider card */}
+            <circle
+              cx={svgWidth}
+              cy={key * (CARD_HEIGHT + CARD_GAP) + CARD_HEIGHT / 2}
+              r={2.5}
+              className={processing ? 'fill-primary' : 'fill-border'}
+            />
+          </g>
+        ))}
+      </svg>
+    </div>
   )
 }
 
@@ -281,6 +430,12 @@ function AgentStatusNode({
   )
 }
 
+interface ModeGroup {
+  modeKey: string
+  modeInfo: { sub: string; label: string; tone?: string }
+  lanes: LiveRoute[]
+}
+
 export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
   const { t } = useI18n()
   const { data } = useQuery<LiveRoutes>({
@@ -293,11 +448,24 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
   const last = data?.last ?? null
   const processing = active.length > 0
   const current = active[active.length - 1] ?? last
-  const branching = active.length > 1
   const lanes = active.slice(0, MAX_LANES)
   const hiddenLanes = active.length - lanes.length
 
+  const modeGroups = useMemo<ModeGroup[]>(() => {
+    const map = new Map<string, ModeGroup>()
+    for (const lane of lanes) {
+      const info = resolveModeInfo(lane.requestedModel, strategy, t)
+      const key = `${info.sub}:::${info.label}`
+      if (!map.has(key)) {
+        map.set(key, { modeKey: key, modeInfo: info, lanes: [] })
+      }
+      map.get(key)!.lanes.push(lane)
+    }
+    return Array.from(map.values())
+  }, [lanes, strategy, t])
+
   const currentModeInfo = resolveModeInfo(current?.requestedModel, strategy, t)
+  const isBranching = active.length > 1
 
   return (
     <section className="rounded-3xl border bg-card p-4 sm:p-5" aria-label={t('routingStrip.title')}>
@@ -315,19 +483,19 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         <StripNode label="SRouter" icon={<LogoMark className="size-4 shrink-0" />} />
         <StripLine processing={processing} />
 
-        {branching ? (
-          <div className="flex min-w-0 flex-col gap-2 py-0.5 border-l-2 border-border/80 pl-3">
-            {lanes.map((lane, i) => {
-              const laneModeInfo = resolveModeInfo(lane.requestedModel, strategy, t)
-              return (
+        {isBranching && modeGroups.length === 1 ? (
+          /* Single shared mode: branch directly to provider lanes */
+          <div className="flex min-w-0 items-center gap-2">
+            <StripNode
+              sub={modeGroups[0].modeInfo.sub}
+              label={modeGroups[0].modeInfo.label}
+              tone={modeGroups[0].modeInfo.tone}
+              icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
+            />
+            <BranchTreeConnector count={modeGroups[0].lanes.length} processing={true} />
+            <div className="flex min-w-0 flex-col gap-2 py-0.5">
+              {modeGroups[0].lanes.map((lane, i) => (
                 <div key={i} className="flex min-w-0 items-center gap-2">
-                  <StripNode
-                    sub={laneModeInfo.sub}
-                    label={laneModeInfo.label}
-                    tone={laneModeInfo.tone}
-                    icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
-                  />
-                  <StripLine processing={true} />
                   <ProviderModelNode platform={lane.platform} model={lane.model} />
                   <StripLine processing={true} />
                   <AgentStatusNode
@@ -336,15 +504,67 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                     isProcessing={true}
                   />
                 </div>
-              )
-            })}
-            {hiddenLanes > 0 && (
-              <span className="self-start rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
-                +{hiddenLanes}
-              </span>
-            )}
+              ))}
+              {hiddenLanes > 0 && (
+                <span className="self-start rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                  +{hiddenLanes}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : isBranching && modeGroups.length > 1 ? (
+          /* Multiple different modes active */
+          <div className="flex min-w-0 items-center gap-2">
+            <BranchTreeConnector count={modeGroups.length} processing={true} />
+            <div className="flex min-w-0 flex-col gap-2.5 py-0.5">
+              {modeGroups.map((group, gi) => (
+                <div key={gi} className="flex min-w-0 items-center gap-2">
+                  <StripNode
+                    sub={group.modeInfo.sub}
+                    label={group.modeInfo.label}
+                    tone={group.modeInfo.tone}
+                    icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
+                  />
+                  {group.lanes.length > 1 ? (
+                    <>
+                      <BranchTreeConnector count={group.lanes.length} processing={true} />
+                      <div className="flex min-w-0 flex-col gap-2 py-0.5">
+                        {group.lanes.map((lane, li) => (
+                          <div key={li} className="flex min-w-0 items-center gap-2">
+                            <ProviderModelNode platform={lane.platform} model={lane.model} />
+                            <StripLine processing={true} />
+                            <AgentStatusNode
+                              agent={lane.clientAgent}
+                              ageMs={lane.ageMs}
+                              isProcessing={true}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <StripLine processing={true} />
+                      <ProviderModelNode platform={group.lanes[0].platform} model={group.lanes[0].model} />
+                      <StripLine processing={true} />
+                      <AgentStatusNode
+                        agent={group.lanes[0].clientAgent}
+                        ageMs={group.lanes[0].ageMs}
+                        isProcessing={true}
+                      />
+                    </>
+                  )}
+                </div>
+              ))}
+              {hiddenLanes > 0 && (
+                <span className="self-start rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                  +{hiddenLanes}
+                </span>
+              )}
+            </div>
           </div>
         ) : (
+          /* Single request or idle */
           <>
             <StripNode
               sub={currentModeInfo.sub}

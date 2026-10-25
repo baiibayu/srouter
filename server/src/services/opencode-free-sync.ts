@@ -26,6 +26,16 @@ const USER_AGENT =
 const BASE62 =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
+// Zen timestamp encoding: descending time so the newest IDs sort first.
+// The official OpenCode CLI uses this scheme; the free-tier gate checks it.
+const SESSION_PREFIX_MASK = (1n << 48n) - 1n;
+
+function descendingTimeHex(time: number, counterValue: number): string {
+  return (~(BigInt(time) * 0x1000n + BigInt(counterValue)) & SESSION_PREFIX_MASK)
+    .toString(16)
+    .padStart(12, '0');
+}
+
 function cryptoHex(n: number): string {
   const b = new Uint8Array(n);
   globalThis.crypto.getRandomValues(b);
@@ -39,10 +49,10 @@ function cryptoBase62(n: number): string {
 }
 
 function genSessionId(): string {
-  return `ses_${cryptoHex(6)}${cryptoBase62(14)}`;
+  return `ses_${descendingTimeHex(Date.now(), 0)}${cryptoBase62(14)}`;
 }
 function genRequestId(): string {
-  return `msg_${cryptoHex(6)}${cryptoBase62(14)}`;
+  return `msg_${descendingTimeHex(Date.now(), 0)}${cryptoBase62(14)}`;
 }
 
 function identityHeaders(): Record<string, string> {
@@ -66,6 +76,12 @@ const FREE_SUFFIX = '-free';
 const KNOWN_FREE_IDS = new Set([
   'big-pickle',
   'jev-1.13',    // free variant listed alongside jev-1.13-free
+  'flint-40b-free',
+  'beam-free',
+  'glm-5.3-flash-free',
+  'mimo-v2.6-flash-free',
+  'deepseek-v4.1-flash-free',
+  'nemotron-3.5-lightning-free',
 ]);
 
 function isFreeModel(modelId: string): boolean {

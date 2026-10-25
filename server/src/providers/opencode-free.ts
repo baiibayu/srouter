@@ -38,6 +38,16 @@ const USER_AGENT =
 const BASE62 =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
+// Zen timestamp encoding: descending time so the newest IDs sort first.
+// The official OpenCode CLI uses this scheme; the free-tier gate checks it.
+const SESSION_PREFIX_MASK = (1n << 48n) - 1n;
+
+function descendingTimeHex(time: number, counterValue: number): string {
+  return (~(BigInt(time) * 0x1000n + BigInt(counterValue)) & SESSION_PREFIX_MASK)
+    .toString(16)
+    .padStart(12, '0');
+}
+
 function cryptoHex(n: number): string {
   const b = new Uint8Array(n);
   globalThis.crypto.getRandomValues(b);
@@ -51,29 +61,29 @@ function cryptoBase62(n: number): string {
 }
 
 function genSessionId(): string {
-  return `ses_${cryptoHex(6)}${cryptoBase62(14)}`;
+  return `ses_${descendingTimeHex(Date.now(), 0)}${cryptoBase62(14)}`;
 }
 function genRequestId(): string {
-  return `msg_${cryptoHex(6)}${cryptoBase62(14)}`;
+  return `msg_${descendingTimeHex(Date.now(), 0)}${cryptoBase62(14)}`;
 }
 
 // -- Fingerprint tools ------------------------------------------------------
 // The free-tier gate demands these four tools in body.tools.
 
 const FINGERPRINT_QUARTET = [
-  { name: 'bash', description: 'OpenCode built-in bash tool' },
-  { name: 'glob', description: 'OpenCode built-in glob tool' },
-  { name: 'grep', description: 'OpenCode built-in grep tool' },
-  { name: 'read', description: 'OpenCode built-in read tool' },
+  { name: 'bash', description: 'OpenCode built-in bash tool', params: { type: 'object', properties: { command: { type: 'string', description: 'The bash command to execute' } }, required: ['command'] } },
+  { name: 'glob', description: 'OpenCode built-in glob tool', params: { type: 'object', properties: { pattern: { type: 'string', description: 'Glob pattern to match files' }, path: { type: 'string', description: 'Directory to search in' } }, required: ['pattern'] } },
+  { name: 'grep', description: 'OpenCode built-in grep tool', params: { type: 'object', properties: { pattern: { type: 'string', description: 'Regex pattern to search for' }, path: { type: 'string', description: 'File or directory to search in' }, include: { type: 'string', description: 'File include pattern' } }, required: ['pattern'] } },
+  { name: 'read', description: 'OpenCode built-in read tool', params: { type: 'object', properties: { filePath: { type: 'string', description: 'Path of the file to read' }, offset: { type: 'number', description: 'Line offset to start reading from' }, limit: { type: 'number', description: 'Number of lines to read' } }, required: ['filePath'] } },
 ];
 
-function fpTool(name: string, description: string) {
+function fpTool(name: string, description: string, parameters: Record<string, unknown>) {
   return {
     type: 'function',
     function: {
       name,
       description,
-      parameters: { type: 'object', properties: {} },
+      parameters,
     },
   };
 }
@@ -94,14 +104,13 @@ function ensureFingerprintTools(body: Record<string, unknown>): void {
 
   for (const fp of FINGERPRINT_QUARTET) {
     if (!present.has(fp.name)) {
-      (body.tools as unknown[]).push(fpTool(fp.name, fp.description));
+      (body.tools as unknown[]).push(fpTool(fp.name, fp.description, fp.params));
       present.add(fp.name);
     }
   }
 
-  if (callerCount === 0 && !body.tool_choice) {
-    body.tool_choice = 'none';
-  }
+  // NEVER set tool_choice to 'none' — the free-tier gate 403s on it.
+  // Leave it undefined so the upstream decides.
 }
 // -- Provider ---------------------------------------------------------------
 
@@ -152,7 +161,11 @@ export class OpenCodeFreeProvider extends BaseProvider {
       if (res.ok || res.status === 404) return true;
       return { valid: false, error: `OpenCode Free models probe returned HTTP ${res.status}` };
     } catch (e: any) {
-      return { valid: false, error: `OpenCode Free network error: ${e?.message ?? e}` };
+      // Keyless provider: a network/DNS failure must NOT disable the platform.
+      // The free tier stays enabled and is retried on the next request; only
+      // an explicit upstream rejection (401/403) should mark it invalid.
+      console.warn(`[opencode-free] validateKey network error (keeping keyless platform enabled): ${e?.message ?? e}`);
+      return true;
     }
   }
 

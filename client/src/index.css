@@ -283,6 +283,13 @@ html {
   animation: sr-flow 0.5s linear infinite;
 }
 
+@keyframes sr-svg-flow {
+  to { stroke-dashoffset: -20; }
+}
+.sr-svg-flow-path {
+  animation: sr-svg-flow 0.9s linear infinite;
+}
+
 /* ── Code block polish ────────────────────────────────────────────────── */
 .code-highlight .hljs-emphasis { font-style: italic; }
 .code-highlight .hljs-strong { font-weight: 600; }
