@@ -457,7 +457,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
       const combined: LiveRoute[] = [...active]
       for (const r of recent) {
         if (combined.length >= MAX_LANES) break
-        if (!activeIds.has(`${r.platform}:${r.model}:${r.attempt}`)) {
+        if (r.outcome === 'ok' && !activeIds.has(`${r.platform}:${r.model}:${r.attempt}`)) {
           combined.push(r)
         }
       }
@@ -465,6 +465,8 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
     }
 
     if (recent.length > 0) {
+      const okRoutes = recent.filter(r => r.outcome === 'ok')
+      if (okRoutes.length > 0) return okRoutes.slice(0, MAX_LANES)
       return recent.slice(0, MAX_LANES)
     }
 
@@ -553,7 +555,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
           /* Multiple different modes active */
           <div className="flex min-w-0 items-center gap-2">
             <BranchTreeConnector count={modeGroups.length} processing={processing} />
-            <div className="flex min-w-0 flex-col gap-2.5 py-0.5">
+            <div className="flex min-w-0 flex-col gap-2 py-0.5">
               {modeGroups.map((group, gi) => (
                 <div key={gi} className="flex min-w-0 items-center gap-2">
                   <StripNode
