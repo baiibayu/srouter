@@ -134,13 +134,21 @@ describe('GET /api/analytics/live', () => {
   it('returns the tracked state behind the dashboard gate', async () => {
     const empty = await request(app, '/api/analytics/live', dashToken);
     expect(empty.status).toBe(200);
-    expect(empty.body).toEqual({ active: [], last: null });
+    expect(empty.body).toEqual({ active: [], last: null, recent: [] });
 
     recordRouteTrace(START);
     const busy = await request(app, '/api/analytics/live', dashToken);
     expect(busy.status).toBe(200);
     expect(busy.body.active).toHaveLength(1);
     expect(busy.body.active[0].platform).toBe('groq');
+
+    recordRouteTrace({ ...START, event: 'ok', latencyMs: 320 });
+    const completed = await request(app, '/api/analytics/live', dashToken);
+    expect(completed.status).toBe(200);
+    expect(completed.body.active).toHaveLength(0);
+    expect(completed.body.last).toMatchObject({ outcome: 'ok', latencyMs: 320 });
+    expect(completed.body.recent).toHaveLength(1);
+    expect(completed.body.recent[0]).toMatchObject({ outcome: 'ok', latencyMs: 320 });
   });
 
   it('rejects a request without a session', async () => {

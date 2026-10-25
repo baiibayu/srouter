@@ -41,17 +41,26 @@ export interface LiveLastRoute extends LiveActiveRoute {
 export interface LiveRoutesResponse {
   active: LiveActiveRoute[];
   last: LiveLastRoute | null;
+  recent?: LiveLastRoute[];
 }
 
 /** An entry older than this never reported an outcome: drop it from view. */
 const MAX_AGE_MS = 10 * 60_000;
 /** In-flight entries tracked before the oldest is evicted. */
 const MAX_ACTIVE = 32;
+/** Retain recent completions for up to 20s so operators can see successful routes. */
+const MAX_RECENT_AGE_MS = 20_000;
+const MAX_RECENT = 8;
+
+type CompletedEntry = Entry & {
+  outcome: 'ok' | 'fail' | 'canceled';
+  finishedAt: number;
+  latencyMs: number;
+};
 
 const active = new Map<string, Entry>();
-let last:
-  | (Entry & { outcome: 'ok' | 'fail' | 'canceled'; finishedAt: number; latencyMs: number })
-  | null = null;
+let last: CompletedEntry | null = null;
+const recentCompleted: CompletedEntry[] = [];
 
 export function recordRouteTrace(opts: {
   event: RouteTraceEvent;
@@ -101,6 +110,8 @@ export function recordRouteTrace(opts: {
     finishedAt: now,
     latencyMs: opts.latencyMs ?? now - startedAt,
   };
+  recentCompleted.unshift(last);
+  if (recentCompleted.length > MAX_RECENT) recentCompleted.length = MAX_RECENT;
 }
 
 function trim(now: number): void {
@@ -111,6 +122,11 @@ function trim(now: number): void {
     const oldest = active.keys().next().value;
     if (oldest === undefined) break;
     active.delete(oldest);
+  }
+  for (let i = recentCompleted.length - 1; i >= 0; i--) {
+    if (now - recentCompleted[i]!.finishedAt > MAX_RECENT_AGE_MS) {
+      recentCompleted.splice(i, 1);
+    }
   }
 }
 
@@ -138,6 +154,16 @@ export function getLiveRoutes(): LiveRoutesResponse {
           latencyMs: last.latencyMs,
         }
       : null,
+    recent: recentCompleted.map(item => ({
+      platform: item.platform,
+      model: item.model,
+      attempt: item.attempt,
+      requestedModel: item.requestedModel ?? null,
+      clientAgent: item.clientAgent ?? null,
+      ageMs: now - item.finishedAt,
+      outcome: item.outcome,
+      latencyMs: item.latencyMs,
+    })),
   };
 }
 
@@ -145,4 +171,5 @@ export function getLiveRoutes(): LiveRoutesResponse {
 export function resetRouteLiveForTest(): void {
   active.clear();
   last = null;
+  recentCompleted.length = 0;
 }

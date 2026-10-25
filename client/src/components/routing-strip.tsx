@@ -14,11 +14,14 @@ interface LiveRoute {
   requestedModel: string | null
   clientAgent?: string | null
   ageMs: number
+  outcome?: 'ok' | 'fail' | 'canceled'
+  latencyMs?: number
 }
 
 interface LiveRoutes {
   active: LiveRoute[]
   last: (LiveRoute & { outcome: 'ok' | 'fail' | 'canceled'; latencyMs: number }) | null
+  recent?: (LiveRoute & { outcome: 'ok' | 'fail' | 'canceled'; latencyMs: number })[]
 }
 
 const STRATEGY_TKEY: Record<RoutingStrategy, string> = {
@@ -151,19 +154,14 @@ function StripLine({
   processing: boolean
   className?: string
 }) {
-  const width = 56
-  const height = 20
-  const yCenter = 10
-  const wavePath = `M 0 ${yCenter} C 18 2, 38 18, ${width} ${yCenter}`
-
   return (
     <div
       aria-hidden="true"
-      style={{ width: `${width}px` }}
-      className={`relative flex items-center h-7 shrink-0 ${className}`}
+      className={`relative flex items-center h-7 min-w-8 flex-1 max-w-28 shrink-0 ${className}`}
     >
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox="0 0 64 20"
+        preserveAspectRatio="none"
         className="w-full h-5 overflow-visible"
       >
         <defs>
@@ -174,32 +172,34 @@ function StripLine({
         </defs>
 
         {/* Anchor point start */}
-        <circle cx={0} cy={yCenter} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
+        <circle cx={0} cy={10} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
 
         {/* Background track with gentle wave curve */}
         <path
-          d={wavePath}
+          d="M 0 10 C 20 2, 44 18, 64 10"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           className={processing ? 'text-border/80' : 'text-border'}
+          vectorEffect="non-scaling-stroke"
         />
 
         {processing && (
           <>
             {/* Animated flowing wave dashed line */}
             <path
-              d={wavePath}
+              d="M 0 10 C 20 2, 44 18, 64 10"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
               strokeDasharray="5 5"
               className="text-primary sr-svg-flow-path"
+              vectorEffect="non-scaling-stroke"
             />
             {/* Glowing particle packet traveling along the wave */}
             <circle r="3" className="fill-primary" filter="url(#sr-glow)">
               <animateMotion
-                path={wavePath}
+                path="M 0 10 C 20 2, 44 18, 64 10"
                 dur="1.3s"
                 repeatCount="indefinite"
               />
@@ -208,7 +208,7 @@ function StripLine({
         )}
 
         {/* Anchor point end */}
-        <circle cx={width} cy={yCenter} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
+        <circle cx={64} cy={10} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
       </svg>
     </div>
   )
@@ -445,11 +445,41 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
   })
 
   const active = data?.active ?? []
+  const recent = data?.recent ?? []
   const last = data?.last ?? null
   const processing = active.length > 0
-  const current = active[active.length - 1] ?? last
-  const lanes = active.slice(0, MAX_LANES)
-  const hiddenLanes = active.length - lanes.length
+
+  // Combine active lanes with recent completed lanes so completed requests
+  // don't vanish immediately, but stay visible for up to 20 seconds!
+  const displayedLanes = useMemo<LiveRoute[]>(() => {
+    if (active.length > 0) {
+      const activeIds = new Set(active.map(a => `${a.platform}:${a.model}:${a.attempt}`))
+      const combined: LiveRoute[] = [...active]
+      for (const r of recent) {
+        if (combined.length >= MAX_LANES) break
+        if (!activeIds.has(`${r.platform}:${r.model}:${r.attempt}`)) {
+          combined.push(r)
+        }
+      }
+      return combined.slice(0, MAX_LANES)
+    }
+
+    if (recent.length > 0) {
+      return recent.slice(0, MAX_LANES)
+    }
+
+    if (last) {
+      return [last]
+    }
+
+    return []
+  }, [active, recent, last])
+
+  const lanes = displayedLanes
+  const hiddenLanes = (active.length > 0 ? active.length : recent.length) - lanes.length
+  const current = lanes[lanes.length - 1] ?? last
+  const isBranching = lanes.length > 1
+  const isLaneActive = (lane: LiveRoute) => !lane.outcome && processing
 
   const modeGroups = useMemo<ModeGroup[]>(() => {
     const map = new Map<string, ModeGroup>()
@@ -465,21 +495,25 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
   }, [lanes, strategy, t])
 
   const currentModeInfo = resolveModeInfo(current?.requestedModel, strategy, t)
-  const isBranching = active.length > 1
 
   return (
     <section className="rounded-3xl border bg-card p-4 sm:p-5" aria-label={t('routingStrip.title')}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-sm font-medium">{t('routingStrip.title')}</h2>
-        {processing && (
+        {processing ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
             <Loader2 className="size-3 animate-spin" />
             {t('routingStrip.activeCount', { n: active.length })}
           </span>
-        )}
+        ) : recent.length > 0 ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            {recent.length} recent
+          </span>
+        ) : null}
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto">
+      <div className="flex items-center gap-2 overflow-x-auto w-full py-1">
         <StripNode label="SRouter" icon={<LogoMark className="size-4 shrink-0" />} />
         <StripLine processing={processing} />
 
@@ -492,16 +526,19 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
               tone={modeGroups[0].modeInfo.tone}
               icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
             />
-            <BranchTreeConnector count={modeGroups[0].lanes.length} processing={true} />
+            <BranchTreeConnector count={modeGroups[0].lanes.length} processing={processing} />
             <div className="flex min-w-0 flex-col gap-2 py-0.5">
               {modeGroups[0].lanes.map((lane, i) => (
                 <div key={i} className="flex min-w-0 items-center gap-2">
                   <ProviderModelNode platform={lane.platform} model={lane.model} />
-                  <StripLine processing={true} />
+                  <StripLine processing={isLaneActive(lane)} />
                   <AgentStatusNode
                     agent={lane.clientAgent}
+                    status={isLaneActive(lane) ? null : (lane.outcome ?? 'ok')}
+                    latencyMs={lane.latencyMs}
+                    attempt={lane.attempt}
                     ageMs={lane.ageMs}
-                    isProcessing={true}
+                    isProcessing={isLaneActive(lane)}
                   />
                 </div>
               ))}
@@ -515,7 +552,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         ) : isBranching && modeGroups.length > 1 ? (
           /* Multiple different modes active */
           <div className="flex min-w-0 items-center gap-2">
-            <BranchTreeConnector count={modeGroups.length} processing={true} />
+            <BranchTreeConnector count={modeGroups.length} processing={processing} />
             <div className="flex min-w-0 flex-col gap-2.5 py-0.5">
               {modeGroups.map((group, gi) => (
                 <div key={gi} className="flex min-w-0 items-center gap-2">
@@ -527,16 +564,19 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                   />
                   {group.lanes.length > 1 ? (
                     <>
-                      <BranchTreeConnector count={group.lanes.length} processing={true} />
+                      <BranchTreeConnector count={group.lanes.length} processing={processing} />
                       <div className="flex min-w-0 flex-col gap-2 py-0.5">
                         {group.lanes.map((lane, li) => (
                           <div key={li} className="flex min-w-0 items-center gap-2">
                             <ProviderModelNode platform={lane.platform} model={lane.model} />
-                            <StripLine processing={true} />
+                            <StripLine processing={isLaneActive(lane)} />
                             <AgentStatusNode
                               agent={lane.clientAgent}
+                              status={isLaneActive(lane) ? null : (lane.outcome ?? 'ok')}
+                              latencyMs={lane.latencyMs}
+                              attempt={lane.attempt}
                               ageMs={lane.ageMs}
-                              isProcessing={true}
+                              isProcessing={isLaneActive(lane)}
                             />
                           </div>
                         ))}
@@ -544,13 +584,16 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                     </>
                   ) : (
                     <>
-                      <StripLine processing={true} />
-                      <ProviderModelNode platform={group.lanes[0].platform} model={group.lanes[0].model} />
-                      <StripLine processing={true} />
+                      <StripLine processing={isLaneActive(group.lanes[0]!)} />
+                      <ProviderModelNode platform={group.lanes[0]!.platform} model={group.lanes[0]!.model} />
+                      <StripLine processing={isLaneActive(group.lanes[0]!)} />
                       <AgentStatusNode
-                        agent={group.lanes[0].clientAgent}
-                        ageMs={group.lanes[0].ageMs}
-                        isProcessing={true}
+                        agent={group.lanes[0]!.clientAgent}
+                        status={isLaneActive(group.lanes[0]!) ? null : (group.lanes[0]!.outcome ?? 'ok')}
+                        latencyMs={group.lanes[0]!.latencyMs}
+                        attempt={group.lanes[0]!.attempt}
+                        ageMs={group.lanes[0]!.ageMs}
+                        isProcessing={isLaneActive(group.lanes[0]!)}
                       />
                     </>
                   )}
@@ -580,8 +623,8 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
             <StripLine processing={processing} />
             <AgentStatusNode
               agent={current?.clientAgent}
-              status={processing ? null : last?.outcome}
-              latencyMs={last?.latencyMs}
+              status={processing ? null : (current?.outcome ?? last?.outcome)}
+              latencyMs={current?.latencyMs ?? last?.latencyMs}
               attempt={current?.attempt}
               ageMs={current?.ageMs}
               isProcessing={processing}
