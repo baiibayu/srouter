@@ -1263,6 +1263,13 @@
     "installFirst": "Instal agen terlebih dahulu",
     "installGuide": "Panduan instalasi",
     "viewGuide": "Lihat panduan",
+    "configFile": "File konfigurasi",
+    "configFileDesc": "Lokasi dan status koneksi",
+    "tooltipConnected": "Terhubung & aktif — riwayat request terdeteksi dalam 7 hari terakhir",
+    "tooltipConfigured": "Terkonfigurasi — file konfigurasi sudah mengarah ke SRouter (siap digunakan)",
+    "tooltipNotConfigured": "Terinstal di sistem, namun belum dikonfigurasi untuk SRouter",
+    "tooltipNotInstalled": "Belum terinstal di komputer ini",
+    "tooltipGuide": "Panduan penyiapan manual",
     "close": "Tutup",
     "sheetTitle": "Hubungkan {name}",
     "sheetDescription": "Satu perintah untuk mengonfigurasi alat ini ke gateway Anda."

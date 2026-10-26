@@ -920,6 +920,13 @@
     "installFirst": "Install agent first",
     "installGuide": "Install guide",
     "viewGuide": "View guide",
+    "configFile": "Config file",
+    "configFileDesc": "Location and connection status",
+    "tooltipConnected": "Connected & active — traffic detected in the last 7 days",
+    "tooltipConfigured": "Configured — config file points to SRouter (ready to use)",
+    "tooltipNotConfigured": "Installed on system, but not configured for SRouter yet",
+    "tooltipNotInstalled": "Not installed on this computer",
+    "tooltipGuide": "Manual setup guide",
     "close": "Close",
     "sheetTitle": "Connect {name}",
     "sheetDescription": "One command configures this tool for your gateway."

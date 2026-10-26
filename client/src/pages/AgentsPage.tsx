@@ -197,7 +197,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1"
-        title="Terhubung & aktif — ada riwayat lalu lintas request dalam 7 hari terakhir"
+        title={getLabel('agents.tooltipConnected', 'Connected & active — traffic detected in the last 7 days')}
       >
         <CheckCircle2 className="size-3" />
         {getLabel('agents.connected', 'Connected')}
@@ -209,7 +209,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-amber-500/30 text-amber-600 dark:text-amber-400"
-        title="Terkonfigurasi — file konfigurasi sudah mengarah ke SRouter (siap digunakan)"
+        title={getLabel('agents.tooltipConfigured', 'Configured — config file points to SRouter (ready to use)')}
       >
         {getLabel('agents.configured', 'Configured')}
       </Badge>
@@ -220,7 +220,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-amber-500/30 text-amber-600 dark:text-amber-400"
-        title="Terinstal di sistem, namun konfigurasinya belum diarahkan ke SRouter"
+        title={getLabel('agents.tooltipNotConfigured', 'Installed on system, but not configured for SRouter yet')}
       >
         {getLabel('agents.notConfigured', 'Not configured')}
       </Badge>
@@ -231,7 +231,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-sky-500/30 text-sky-600 dark:text-sky-400"
-        title="Panduan penyiapan manual"
+        title={getLabel('agents.tooltipGuide', 'Manual setup guide')}
       >
         {getLabel('agents.guide', 'Guide')}
       </Badge>
@@ -241,7 +241,7 @@ function statusBadge({
     <Badge
       variant="outline"
       className="border-muted-foreground/30 text-muted-foreground"
-      title="Belum terinstal di komputer ini"
+      title={getLabel('agents.tooltipNotInstalled', 'Not installed on this computer')}
     >
       {getLabel('agents.notInstalled', 'Not installed')}
     </Badge>

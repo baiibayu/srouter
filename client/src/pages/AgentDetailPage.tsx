@@ -153,64 +153,6 @@ export default function AgentDetailPage() {
       </header>
 
       <div className="container max-w-4xl space-y-6 py-6 px-4">
-        {/* Status context note */}
-        <section>
-          <Card className={
-            status === 'connected'
-              ? 'border-emerald-500/20 bg-emerald-500/5'
-              : status === 'configured'
-              ? 'border-amber-500/20 bg-amber-500/5'
-              : status === 'not-configured'
-              ? 'border-amber-500/20 bg-amber-500/5'
-              : 'border-muted-foreground/20 bg-muted/30'
-          }>
-            <CardContent className="py-3 flex items-start gap-2.5">
-              {status === 'connected' ? (
-                <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
-              ) : (
-                <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
-              )}
-              <div className="text-xs space-y-0.5">
-                <span className="font-semibold text-foreground">
-                  {status === 'connected'
-                    ? 'Status: Terhubung (Active & Connected)'
-                    : status === 'configured'
-                    ? 'Status: Terkonfigurasi (Configured & Ready)'
-                    : status === 'not-configured'
-                    ? 'Status: Belum Dikonfigurasi (Installed, Needs Setup)'
-                    : status === 'guide'
-                    ? 'Status: Panduan Penyiapan Manual'
-                    : 'Status: Belum Terinstal (Not Installed)'}
-                </span>
-                <p className="text-muted-foreground">
-                  {status === 'connected'
-                    ? `Agen aktif terhubung ke gateway SRouter (≈ ${traffic?.requests.toLocaleString() ?? 0} request).`
-                    : status === 'configured'
-                    ? 'File konfigurasi agen di disk sudah mengarah ke gateway SRouter (port 20268). Agen siap digunakan — jalankan perintah dari terminal agen Anda untuk mulai mengirim request.'
-                    : status === 'not-configured'
-                    ? 'Agen terdeteksi di komputer Anda, namun konfigurasinya belum diarahkan ke SRouter. Klik "Terapkan penyiapan otomatis" untuk menghubungkannya.'
-                    : status === 'guide'
-                    ? 'Agen ini menggunakan penyiapan manual di dalam aplikasi. Ikuti panduan dokumentasi resmi di bawah.'
-                    : `Agen ${tool.name} belum terpasang di komputer Anda. Silakan instal agen terlebih dahulu sebelum melakukan penyiapan.`}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Web Search Tool Integration Note */}
-        {WEB_SEARCH_TOOL_KEYS[tool.id] && (
-          <section>
-            <Card className="border-sky-500/20 bg-sky-500/5">
-              <CardContent className="py-3 flex items-center gap-2 text-sky-700 dark:text-sky-300">
-                <Globe className="size-4 shrink-0" />
-                <span className="text-xs font-medium">
-                  {t(WEB_SEARCH_TOOL_KEYS[tool.id])}
-                </span>
-              </CardContent>
-            </Card>
-          </section>
-        )}
         {/* Quick Setup */}
         <section>
           <Card>
@@ -307,13 +249,27 @@ export default function AgentDetailPage() {
           </Card>
         </section>
 
+        {/* Web Search Tool Integration Note */}
+        {WEB_SEARCH_TOOL_KEYS[tool.id] && (
+          <section>
+            <Card className="border-sky-500/20 bg-sky-500/5">
+              <CardContent className="py-3 flex items-center gap-2 text-sky-700 dark:text-sky-300">
+                <Globe className="size-4 shrink-0" />
+                <span className="text-xs font-medium">
+                  {t(WEB_SEARCH_TOOL_KEYS[tool.id])}
+                </span>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
         {/* Config File Status */}
         {detection.configPath && (
           <section>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Config file</CardTitle>
-                <CardDescription className="text-xs">Location and connection status</CardDescription>
+                <CardTitle className="text-sm">{t('agents.configFile')}</CardTitle>
+                <CardDescription className="text-xs">{t('agents.configFileDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-xs font-mono break-all">{detection.configPath}</p>
@@ -329,7 +285,7 @@ export default function AgentDetailPage() {
         <section>
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Documentation</CardTitle>
+              <CardTitle className="text-sm">{t('agents.documentation')}</CardTitle>
             </CardHeader>
             <CardContent>
               <a
@@ -398,7 +354,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1"
-        title="Terhubung & aktif — ada riwayat lalu lintas request dalam 7 hari terakhir"
+        title={getLabel('agents.tooltipConnected', 'Connected & active — traffic detected in the last 7 days')}
       >
         <CheckCircle2 className="size-3" />
         {getLabel('agents.connected', 'Connected')}
@@ -410,7 +366,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-amber-500/30 text-amber-600 dark:text-amber-400"
-        title="Terkonfigurasi — file konfigurasi sudah mengarah ke SRouter (siap digunakan)"
+        title={getLabel('agents.tooltipConfigured', 'Configured — config file points to SRouter (ready to use)')}
       >
         {getLabel('agents.configured', 'Configured')}
       </Badge>
@@ -421,7 +377,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-amber-500/30 text-amber-600 dark:text-amber-400"
-        title="Terinstal di sistem, namun konfigurasinya belum diarahkan ke SRouter"
+        title={getLabel('agents.tooltipNotConfigured', 'Installed on system, but not configured for SRouter yet')}
       >
         {getLabel('agents.notConfigured', 'Not configured')}
       </Badge>
@@ -432,7 +388,7 @@ function statusBadge({
       <Badge
         variant="outline"
         className="border-sky-500/30 text-sky-600 dark:text-sky-400"
-        title="Panduan penyiapan manual"
+        title={getLabel('agents.tooltipGuide', 'Manual setup guide')}
       >
         {getLabel('agents.guide', 'Guide')}
       </Badge>
@@ -442,7 +398,7 @@ function statusBadge({
     <Badge
       variant="outline"
       className="border-muted-foreground/30 text-muted-foreground"
-      title="Belum terinstal di komputer ini"
+      title={getLabel('agents.tooltipNotInstalled', 'Not installed on this computer')}
     >
       {getLabel('agents.notInstalled', 'Not installed')}
     </Badge>
