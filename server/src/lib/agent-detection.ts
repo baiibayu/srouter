@@ -40,7 +40,7 @@ function envPath(name: string): string | undefined {
 }
 
 /** The config file each file-based agent writes, or null for env/guide agents. */
-function configPathFor(id: string): string | null {
+export function configPathFor(id: string): string | null {
   const home = envHome();
   switch (id) {
     case 'claude':
@@ -169,6 +169,8 @@ function binaryNameFor(id: string): string | null {
       return 'reasonix';
     case 'openclaude':
       return 'openclaude';
+    case 'kilo':
+      return 'kilo';
     default:
       return null;
   }
@@ -180,7 +182,7 @@ function isBinaryInPath(name: string): boolean {
   const dirs = pathEnv.split(path.delimiter);
   const extensions =
     process.platform === 'win32'
-      ? (process.env.PATHEXT ? process.env.PATHEXT.split(';') : ['.EXE', '.CMD', '.BAT', ''])
+      ? (process.env.PATHEXT ? [...process.env.PATHEXT.split(';'), ''] : ['.EXE', '.CMD', '.BAT', ''])
       : [''];
 
   for (const dir of dirs) {
@@ -254,8 +256,11 @@ export function detectAgent(id: string): AgentDetection {
     }
   }
 
-  const installed = appInstalled || configFileExists;
-  const configured = configFileExists ? mentionsSrouter(configPath!) : false;
+  const isCli = binaryNameFor(id) !== null;
+  // For CLI tools, the binary executable must exist in PATH to be considered installed.
+  // Having a stray config file when the binary is missing does not mean it's installed.
+  const installed = isCli ? appInstalled : (appInstalled || configFileExists);
+  const configured = installed && configFileExists ? mentionsSrouter(configPath!) : false;
 
   return {
     id,

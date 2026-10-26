@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, ExternalLink, Zap, CheckCircle2, AlertCircle, Globe } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, ExternalLink, Zap, CheckCircle2, AlertCircle, Globe, Loader2 } from 'lucide-react'
 import { useI18n } from '@/i18n'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -90,6 +90,31 @@ export default function AgentDetailPage() {
   const { data: keyData } = useQuery<KeyResponse>({
     queryKey: ['api-key'],
     queryFn: () => apiFetch('/api/settings/api-key'),
+  })
+
+  const queryClient = useQueryClient()
+  const agentName = tool?.name ?? id ?? ''
+
+  const setupMutation = useMutation({
+    mutationFn: () => apiFetch(`/api/agents/${id}/setup`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents', 'detection'] })
+      toast.success(t('agents.setupSuccess', { name: agentName }))
+    },
+    onError: (err: Error) => {
+      toast.error(t('agents.setupFailed', { error: err.message || 'Error' }))
+    },
+  })
+
+  const resetMutation = useMutation({
+    mutationFn: () => apiFetch(`/api/agents/${id}/reset`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents', 'detection'] })
+      toast.success(t('agents.resetSuccess', { name: agentName }))
+    },
+    onError: (err: Error) => {
+      toast.error(t('agents.resetFailed', { error: err.message || 'Error' }))
+    },
   })
 
   if (!id || !tool) return <div>Agent not found</div>
@@ -205,35 +230,35 @@ export default function AgentDetailPage() {
                   <Button
                     variant="default"
                     className="flex-1 justify-center"
-                    onClick={() => {
-                      navigator.clipboard.writeText(command)
-                      toast.success(t('common.copied'))
-                    }}
+                    disabled={setupMutation.isPending}
+                    onClick={() => setupMutation.mutate()}
                   >
-                    {t('agents.applyAuto')}
+                    {setupMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+                    {setupMutation.isPending ? t('agents.applying') : t('agents.applyAuto')}
                   </Button>
                 ) : (
                   <>
                     <Button
                       variant={status === 'connected' ? 'outline' : 'secondary'}
-                      disabled={status === 'connected'}
+                      disabled={status === 'connected' || setupMutation.isPending}
                       className="flex-1 justify-center"
-                      onClick={() => {
-                        navigator.clipboard.writeText(command)
-                        toast.success(t('common.copied'))
-                      }}
+                      onClick={() => setupMutation.mutate()}
                     >
-                      {status === 'connected' ? t('agents.connected') : t('agents.reapply')}
+                      {setupMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+                      {setupMutation.isPending
+                        ? t('agents.applying')
+                        : status === 'connected'
+                          ? t('agents.connected')
+                          : t('agents.reapply')}
                     </Button>
                     <Button
                       variant="ghost"
                       className="h-8"
-                      onClick={() => {
-                        toast.info(t('agents.reset'))
-                        navigator.clipboard.writeText(command)
-                      }}
+                      disabled={resetMutation.isPending}
+                      onClick={() => resetMutation.mutate()}
                     >
-                      {t('agents.reset')}
+                      {resetMutation.isPending && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
+                      {resetMutation.isPending ? t('agents.resetting') : t('agents.reset')}
                     </Button>
                   </>
                 )}
