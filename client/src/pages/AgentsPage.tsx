@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, ExternalLink, Globe } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
@@ -26,6 +27,13 @@ interface ClientAnalytics {
 
 interface KeyResponse {
   apiKey: string
+}
+
+interface AgentDetectionItem {
+  id: string
+  installed: boolean
+  configured: boolean
+  configPath: string | null
 }
 
 const analyticsIds: Record<string, string> = {
@@ -74,6 +82,10 @@ export default function AgentsPage() {
   const { data: byClient = [] } = useQuery<ClientAnalytics[]>({
     queryKey: ['analytics', 'by-client', '30d'],
     queryFn: () => apiFetch('/api/analytics/by-client?range=30d'),
+  })
+  const { data: detectionData } = useQuery<{ agents: AgentDetectionItem[] }>({
+    queryKey: ['agents', 'detection'],
+    queryFn: () => apiFetch('/api/agents/detection'),
   })
   // "Seen recently" means traffic within the last 7 days, not merely any row
   // in the fetched 30-day window. Read once at mount via lazy state init —
@@ -124,6 +136,29 @@ export default function AgentsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {toolCatalog.map(tool => {
           const traffic = seen.get(analyticsIds[tool.id] ?? tool.id)
+          const detection = detectionData?.agents?.find(a => a.id === tool.id) ?? {
+            id: tool.id,
+            installed: false,
+            configured: false,
+            configPath: null,
+          }
+          const isInstalled = detection.installed
+          const isConfigured = detection.configured
+
+          type AgentStatus = 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
+          let status: AgentStatus = 'not-installed'
+          if (tool.configType === 'guide') {
+            status = 'guide'
+          } else if (traffic) {
+            status = 'connected'
+          } else if (isConfigured) {
+            status = 'configured'
+          } else if (isInstalled) {
+            status = 'not-configured'
+          } else {
+            status = 'not-installed'
+          }
+
           const command = `npx @baiibayu/srouter ${tool.command} --url ${origin}`
           const endpoint = tool.baseUrlSupport === 'root' ? origin : `${origin}/v1`
           // The copied snippet is pasted into config files — keep it
@@ -140,19 +175,18 @@ export default function AgentsPage() {
             <Card key={tool.id} size="sm">
               <CardHeader>
                 <AgentIcon id={tool.id} name={tool.name} className="mb-1.5" />
-                <CardTitle>{tool.name}</CardTitle>
+                <CardTitle>
+                  <Link to={`/agents/${tool.id}`} className="hover:underline">
+                    {tool.name}
+                  </Link>
+                </CardTitle>
                 <CardDescription className="text-xs">
                   {description === descriptionKey
                     ? `${tool.protocol} · ${tool.baseUrlSupport}`
                     : description}
                 </CardDescription>
                 <CardAction>
-                  {traffic && (
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 />
-                      {t('agents.seenRecently')}
-                    </Badge>
-                  )}
+                  {statusBadge({ status, t })}
                 </CardAction>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-4">
@@ -207,5 +241,48 @@ export default function AgentsPage() {
         })}
       </div>
     </div>
+  )
+}
+
+function statusBadge({
+  status,
+  t,
+}: {
+  status: 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
+  t: ReturnType<typeof useI18n>['t']
+}) {
+  if (status === 'connected') {
+    return (
+      <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1">
+        <CheckCircle2 className="size-3" />
+        {t('agents.connected')}
+      </Badge>
+    )
+  }
+  if (status === 'configured') {
+    return (
+      <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400">
+        {t('agents.configured')}
+      </Badge>
+    )
+  }
+  if (status === 'not-configured') {
+    return (
+      <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400">
+        {t('agents.notConfigured')}
+      </Badge>
+    )
+  }
+  if (status === 'guide') {
+    return (
+      <Badge variant="outline" className="border-sky-500/30 text-sky-600 dark:text-sky-400">
+        {t('agents.guide')}
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground">
+      {t('agents.notInstalled')}
+    </Badge>
   )
 }

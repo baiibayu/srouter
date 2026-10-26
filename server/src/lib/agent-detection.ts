@@ -117,21 +117,94 @@ function mentionsSrouter(filePath: string): boolean {
   }
 }
 
+/** CLI executable name for terminal-based agents to check PATH availability. */
+function binaryNameFor(id: string): string | null {
+  switch (id) {
+    case 'claude':
+      return 'claude';
+    case 'codex':
+      return 'codex';
+    case 'aider':
+      return 'aider';
+    case 'opencode':
+      return 'opencode';
+    case 'goose':
+      return 'goose';
+    case 'qwen':
+      return 'qwen';
+    case 'crush':
+      return 'crush';
+    case 'dsh':
+      return 'dsh';
+    case 'mimo':
+      return 'mimocode';
+    case 'omp':
+      return 'omp';
+    case 'openclaw':
+      return 'openclaw';
+    case 'hermes':
+      return 'hermes';
+    case 'pi':
+      return 'pi';
+    case 'droid':
+      return 'droid';
+    case 'reasonix':
+      return 'reasonix';
+    case 'openclaude':
+      return 'openclaude';
+    default:
+      return null;
+  }
+}
+
+/** Check if binary executable exists in any system PATH directory. */
+function isBinaryInPath(name: string): boolean {
+  const pathEnv = process.env.PATH || '';
+  const dirs = pathEnv.split(path.delimiter);
+  const extensions =
+    process.platform === 'win32'
+      ? (process.env.PATHEXT ? process.env.PATHEXT.split(';') : ['.EXE', '.CMD', '.BAT', ''])
+      : [''];
+
+  for (const dir of dirs) {
+    if (!dir) continue;
+    for (const ext of extensions) {
+      const fullPath = path.join(dir, ext ? `${name}${ext}` : name);
+      try {
+        if (fs.existsSync(fullPath)) {
+          return true;
+        }
+      } catch {
+        // Ignore permission or file system errors
+      }
+    }
+  }
+  return false;
+}
+
 export function detectAgent(id: string): AgentDetection {
   const configPath = configPathFor(id);
-  if (!configPath) {
-    return { id, installed: false, configured: false, configPath: null };
+  const binaryName = binaryNameFor(id);
+  const binaryFound = binaryName ? isBinaryInPath(binaryName) : false;
+
+  let configFileExists = false;
+  if (configPath) {
+    try {
+      configFileExists = fs.existsSync(configPath);
+    } catch {
+      configFileExists = false;
+    }
   }
-  let installed = false;
-  try {
-    installed = fs.existsSync(configPath);
-  } catch {
-    installed = false;
-  }
-  if (!installed) {
-    return { id, installed: false, configured: false, configPath };
-  }
-  return { id, installed: true, configured: mentionsSrouter(configPath), configPath };
+
+  const installed = binaryFound || configFileExists;
+  const configured = configFileExists ? mentionsSrouter(configPath!) : false;
+
+  return {
+    id,
+    installed,
+    configured,
+    configPath,
+  };
 }
 
 /** The full catalog of agents the dashboard renders, in display order. */

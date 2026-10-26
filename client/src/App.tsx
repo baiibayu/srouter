@@ -50,6 +50,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import LogsPage from '@/pages/LogsPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import AgentsPage from '@/pages/AgentsPage'
+import AgentDetailPage from '@/pages/AgentDetailPage'
 import SystemOnePage from '@/pages/SystemOnePage'
 import WebSearchPage from '@/pages/WebSearchPage'
 
@@ -599,6 +600,7 @@ function App() {
                       <Route path="/playground" element={<PlaygroundPage />} />
                       <Route path="/keys" element={<KeysPage />} />
                       <Route path="/agents" element={<AgentsPage />} />
+                      <Route path="/agents/:id" element={<AgentDetailPage />} />
                       <Route path="/fallback" element={<Navigate to="/models/chat" replace />} />
                       <Route path="/analytics" element={<AnalyticsPage />} />
                       <Route path="/logs" element={<LogsPage />} />
