@@ -50,6 +50,18 @@ export async function setupAgent(
       timeout: 60000,
       env: process.env,
     });
+    if (id === 'droid') {
+      const droidSettings = path.join(os.homedir(), '.factory', 'settings.json');
+      if (fs.existsSync(droidSettings)) {
+        try {
+          const raw = fs.readFileSync(droidSettings, 'utf8');
+          const data = JSON.parse(raw);
+          const custom = data.customModels?.[0]?.model ?? 'auto';
+          data.model = `custom:${custom}`;
+          fs.writeFileSync(droidSettings, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+        } catch {}
+      }
+    }
     const detection = detectAgent(id);
     return {
       success: true,
@@ -551,6 +563,9 @@ export async function resetAgent(id: string): Promise<SetupResult> {
           try {
             const raw = fs.readFileSync(droidSettings, 'utf8');
             const data = JSON.parse(raw);
+            if (typeof data.model === 'string' && data.model.startsWith('custom:')) {
+              delete data.model;
+            }
             if (Array.isArray(data.customModels)) {
               data.customModels = data.customModels.filter(
                 (cm: Record<string, unknown>) =>
