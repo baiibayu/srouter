@@ -86,6 +86,18 @@ describe('client agent classification', () => {
     }))).not.toBe('pi');
   });
 
+  it('recognizes Factory Droid without misclassifying Android browsers', () => {
+    expect(classifyClientAgent(request('/v1/chat/completions', {
+      'user-agent': 'droid/0.1.0',
+    }))).toBe('droid');
+    expect(classifyClientAgent(request('/v1/chat/completions', {
+      'user-agent': 'factory-droid/1.2.3',
+    }))).toBe('droid');
+    expect(classifyClientAgent(request('/v1/chat/completions', {
+      'user-agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8)',
+    }))).not.toBe('droid');
+  });
+
 
   it('recognizes Reasonix by the UA it sends to every endpoint', () => {
     expect(classifyClientAgent(request('/v1/chat/completions', {

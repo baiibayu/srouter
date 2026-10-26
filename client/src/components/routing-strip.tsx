@@ -55,6 +55,7 @@ const AGENT_LABELS: Record<string, string> = {
   'zcode': 'Zcode',
   'hermes-agent': 'Hermes Agent',
   'pi': 'Pi',
+  'droid': 'Factory Droid',
   'reasonix': 'Reasonix',
   'cursor': 'Cursor',
   'gemini-cli': 'Gemini CLI',
@@ -84,6 +85,7 @@ function agentLabel(agent?: string | null): string {
   if (/kilo/.test(lower)) return 'Kilo Code'
   if (/crush/.test(lower)) return 'Crush'
   if (/deepseek/.test(lower)) return 'DeepSeek Harness'
+  if (!/android/.test(lower) && (/\bdroid\b|factory/.test(lower))) return 'Factory Droid'
   if (/mimo/.test(lower)) return 'MiMo Code'
   if (/zed/.test(lower)) return 'Zed'
   if (/vscode/.test(lower)) return 'VS Code'

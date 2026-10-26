@@ -20,6 +20,7 @@ export const CLIENT_AGENTS = [
   'openclaw',
   'hermes-agent',
   'pi',
+  'droid',
 
   'reasonix',
   'cursor',
@@ -81,6 +82,10 @@ export function classifyClientAgent(req: Request): ClientAgent {
   // header sends `pi-coding-agent`, and Pi's own UA is
   // `pi/<version> (<platform>; node/<version>; <arch>)`.
   if (/\bpi-coding-agent\b|^pi\/\d/.test(ua)) return 'pi';
+
+  // Factory Droid sends `droid/<version>` or `factory-droid/<version>`.
+  // Explicitly ignore Android mobile browser UAs which also contain the word android.
+  if (!/android/.test(ua) && (/\bdroid\b|factory[- ]?droid/.test(ua))) return 'droid';
 
   // Reasonix sends `Reasonix/<version>` to every endpoint on its own.
   if (/^reasonix\//.test(ua)) return 'reasonix';
