@@ -992,8 +992,12 @@ async function streamCompletion(
   try {
     const gen = route.provider.streamChatCompletion(route.apiKey, messages, route.modelId, options);
     keepaliveId = setInterval(() => {
-      ensureMessageStart();
-      writeSse(res, 'ping', { type: 'ping' });
+      // Keep-alive ping must ONLY be emitted once message_start has naturally gone out.
+      // Calling ensureMessageStart() here prematurely committed the response before
+      // the first token arrived, breaking seamless failover on slow or reasoning models.
+      if (messageStarted) {
+        writeSse(res, 'ping', { type: 'ping' });
+      }
     }, 5_000);
     keepaliveId.unref?.();
 
@@ -1091,7 +1095,12 @@ async function streamCompletion(
         }
         console.log(`[Anthropic] Rescued ${rescue.calls.length} inline tool call(s) from ${route.displayName} into tool_use`);
       } else {
-        emitText(heldText);
+        // If the held text is ONLY whitespace and no tool calls exist, emitting it
+        // would commit a bogus empty assistant response ("\n\n\n") to Claude Code.
+        // Don't emit whitespace-only text unless meaningful text or tool calls already exist.
+        if (heldText.trim().length > 0 || textBlockOpen || completedCalls.length > 0) {
+          emitText(heldText);
+        }
       }
       heldText = '';
     }

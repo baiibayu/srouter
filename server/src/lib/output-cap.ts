@@ -82,7 +82,10 @@ export function routeOutputBudget(
   route: { platform: string; modelId: string; contextWindow?: number | null; endpointScope?: string | null },
   estimatedInputTokens: number,
 ): number | undefined {
-  const windowLeft = route.contextWindow != null ? route.contextWindow - estimatedInputTokens : undefined;
+  // If remaining context window is below MIN_LEARNED_OUTPUT_CAP, do not clamp max_tokens
+  // to an unusable micro-budget that truncates output mid-sentence.
+  const rawWindowLeft = route.contextWindow != null ? route.contextWindow - estimatedInputTokens : undefined;
+  const windowLeft = rawWindowLeft != null && rawWindowLeft < MIN_LEARNED_OUTPUT_CAP ? undefined : rawWindowLeft;
   const cap = learnedOutputCap(route.platform, route.modelId, route.endpointScope);
   if (cap == null) return windowLeft;
   return windowLeft == null ? cap : Math.min(windowLeft, cap);

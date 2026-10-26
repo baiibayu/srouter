@@ -303,6 +303,14 @@ let _noProxyRules: string[] = [];
 let _proxyLocalDestinations = false;
 let _initialized = false;
 
+// Relay Pool — multiple Cloudflare Worker URLs with rotation strategy
+let _relayPoolUrls: string[] = [];
+let _relayPoolIndex = 0;
+let _relayStrategy: 'round-robin' | 'random' = 'round-robin';
+
+// Per-provider routing: 'proxy-pool' | 'relay-pool' | 'direct' | null (use global)
+const _providerRouting = new Map<string, 'proxy-pool' | 'relay-pool' | 'direct' | null>();
+
 // Cache.
 let cached: {
   dispatcher: unknown | undefined;
@@ -406,6 +414,21 @@ export function restoreProxySettings(): void {
   applyFetchRelayToken(decodeFetchRelayToken(getSetting('fetch_relay_token') ?? ''));
   applyProxyEnabled(getSetting('proxy_enabled') !== '0'); // default: enabled
   applyProxyBypass(getSetting('proxy_bypass') ?? '');
+  applyRelayPool(getSetting('relay_pool_urls') ?? '');
+  applyRelayStrategy((getSetting('relay_strategy') ?? 'round-robin') as 'round-robin' | 'random');
+  // Restore provider routing
+  const routingJson = getSetting('provider_routing');
+  if (routingJson) {
+    try {
+      const routing = JSON.parse(routingJson) as Record<string, 'proxy-pool' | 'relay-pool' | 'direct' | null>;
+      clearProviderRouting();
+      for (const [platform, mode] of Object.entries(routing)) {
+        setProviderRouting(platform, mode);
+      }
+    } catch {
+      console.warn('[proxy] Failed to parse provider_routing JSON');
+    }
+  }
 }
 
 export function getProxyUrl(): string {
@@ -484,6 +507,85 @@ export function getProxyBypassPlatforms(): string[] {
   return [..._bypassPlatforms];
 }
 
+/** Relay Pool — multiple Cloudflare Worker URLs with rotation strategy. */
+export function applyRelayPool(urlsCsv: string): void {
+  _relayPoolUrls = urlsCsv
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => {
+      try { new URL(s); return true; } catch { return false; }
+    });
+  _relayPoolIndex = 0;
+  console.log(`[proxy] Relay pool: ${_relayPoolUrls.length} URL(s)`);
+}
+
+export function getRelayPoolUrls(): string[] {
+  return [..._relayPoolUrls];
+}
+
+export function applyRelayStrategy(strategy: 'round-robin' | 'random'): void {
+  _relayStrategy = strategy;
+  _relayPoolIndex = 0;
+}
+
+export function getRelayStrategy(): 'round-robin' | 'random' {
+  return _relayStrategy;
+}
+
+/** Get the next relay URL based on the configured strategy. */
+export function getNextRelayUrl(): string | null {
+  if (_relayPoolUrls.length === 0) return null;
+  if (_relayPoolUrls.length === 1) return _relayPoolUrls[0];
+  if (_relayStrategy === 'random') {
+    return _relayPoolUrls[Math.floor(Math.random() * _relayPoolUrls.length)];
+  }
+  // round-robin
+  const url = _relayPoolUrls[_relayPoolIndex % _relayPoolUrls.length];
+  _relayPoolIndex = (_relayPoolIndex + 1) % _relayPoolUrls.length;
+  return url;
+}
+
+/** Per-provider routing: 'proxy-pool' | 'relay-pool' | 'direct' | null (use global) */
+export function setProviderRouting(platform: string, mode: 'proxy-pool' | 'relay-pool' | 'direct' | null): void {
+  const key = platform.toLowerCase();
+  if (mode === null) {
+    _providerRouting.delete(key);
+  } else {
+    _providerRouting.set(key, mode);
+  }
+}
+
+export function getProviderRouting(platform: string): 'proxy-pool' | 'relay-pool' | 'direct' | null {
+  return _providerRouting.get(platform.toLowerCase()) ?? null;
+}
+
+export function getAllProviderRouting(): Record<string, 'proxy-pool' | 'relay-pool' | 'direct'> {
+  const out: Record<string, 'proxy-pool' | 'relay-pool' | 'direct'> = {};
+  for (const [k, v] of _providerRouting) {
+    if (v !== null) out[k] = v;
+  }
+  return out;
+}
+
+export function clearProviderRouting(): void {
+  _providerRouting.clear();
+}
+
+/** Determine if a platform should use the relay pool. */
+export function shouldUseRelayPool(platform?: string): boolean {
+  if (!platform) return false;
+  const routing = getProviderRouting(platform);
+  return routing === 'relay-pool';
+}
+
+/** Determine if a platform should bypass all proxy/relay. */
+export function shouldBypassAllProxy(platform?: string): boolean {
+  if (!platform) return false;
+  const routing = getProviderRouting(platform);
+  if (routing === 'direct') return true;
+  return false;
+}
+
 /** The NO_PROXY rules currently in effect (parsed from the env at apply time). */
 export function getNoProxyRules(): string[] {
   return [..._noProxyRules];
@@ -513,6 +615,9 @@ export function getNoProxyRules(): string[] {
 function shouldBypassProxy(url: string, platform?: string): boolean {
   if (!_proxyEnabled) return true;
   if (platform && _bypassPlatforms.has(platform.toLowerCase())) return true;
+
+  // Per-provider routing: 'direct' means bypass all proxy/relay
+  if (platform && shouldBypassAllProxy(platform)) return true;
 
   let hostname: string;
   try {
@@ -914,6 +1019,16 @@ async function dispatchFetch(
   // reach (#951).
   if (shouldBypassProxy(url, platform)) {
     return fetch(url, init);
+  }
+
+  // Per-provider routing: check if this platform should use the relay pool
+  if (platform && shouldUseRelayPool(platform)) {
+    const relayUrl = getNextRelayUrl();
+    if (relayUrl) {
+      // Use the fetch relay token from settings (same as global fetch-relay)
+      return fetchRelayFetch(relayUrl, url, init, _fetchRelayToken);
+    }
+    // No relay pool URLs configured, fall through to other methods
   }
 
   const poolNode = _proxyNodeSelector?.(platform);
