@@ -43,8 +43,11 @@ function envPath(name: string): string | undefined {
 export function configPathFor(id: string): string | null {
   const home = envHome();
   switch (id) {
-    case 'claude':
+    case 'claude': {
+      const claudeSettings = path.join(home, '.claude', 'settings.json');
+      if (fs.existsSync(claudeSettings)) return claudeSettings;
       return path.join(home, '.claude.json');
+    }
     case 'codex':
       return path.join(home, '.codex', 'config.toml');
     case 'cline':
@@ -83,8 +86,12 @@ export function configPathFor(id: string): string | null {
           ?? path.join(home, '.openclaw'),
         'openclaw.json',
       );
-    case 'hermes':
+    case 'hermes': {
+      const localAppData = envPath('LOCALAPPDATA') ?? path.join(home, 'AppData', 'Local');
+      const hermesLocal = path.join(localAppData, 'hermes', 'config.yaml');
+      if (fs.existsSync(hermesLocal)) return hermesLocal;
       return path.join(envPath('HERMES_HOME') ?? path.join(home, '.hermes'), 'config.yaml');
+    }
     case 'pi':
       return path.join(
         envPath('PI_CODING_AGENT_DIR') ?? path.join(home, '.pi', 'agent'),
@@ -99,8 +106,11 @@ export function configPathFor(id: string): string | null {
     }
     case 'droid':
       return path.join(home, '.factory', 'settings.json');
-    case 'openclaude':
-      return path.join(home, '.openclaude', 'settings.json');
+    case 'openclaude': {
+      const openclaudeSettings = path.join(home, '.openclaude', 'settings.json');
+      if (fs.existsSync(openclaudeSettings)) return openclaudeSettings;
+      return path.join(home, '.openclaude.json');
+    }
     case 'cursor': {
       const appData = envPath('APPDATA') ?? path.join(home, 'AppData', 'Roaming');
       const settingsPath = path.join(appData, 'Cursor', 'User', 'settings.json');
@@ -124,11 +134,23 @@ export function configPathFor(id: string): string | null {
   }
 }
 
-/** True when the file's text mentions srouter, gateway port 20268, or unified sr-* key. */
+/** True when the file's text mentions srouter gateway port, unified key, or provider declarations. */
 function mentionsSrouter(filePath: string): boolean {
   try {
     const text = fs.readFileSync(filePath, 'utf8');
-    return /srouter|20268|sr-[a-f0-9]{16}/i.test(text);
+    // Check for gateway port 20268, unified key sr-*, or explicit environment vars
+    if (/20268|sr-[a-f0-9]{16}|SROUTER_API_KEY|SROUTER_URL/i.test(text)) {
+      return true;
+    }
+    // Check for explicit srouter provider, model prefix, or MCP configuration
+    if (/["']srouter["']|["']model["']:\s*["']srouter\/|\[(?:model_)?providers?\.srouter\]|\[mcp_servers\.srouter\]/i.test(text)) {
+      return true;
+    }
+    // Check for YAML/TOML provider settings
+    if (/(?:^|\n)\s*(?:default_)?provider(?:\s*=|:)\s*["']?srouter["']?/im.test(text)) {
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -260,7 +282,37 @@ export function detectAgent(id: string): AgentDetection {
   // For CLI tools, the binary executable must exist in PATH to be considered installed.
   // Having a stray config file when the binary is missing does not mean it's installed.
   const installed = isCli ? appInstalled : (appInstalled || configFileExists);
-  const configured = installed && configFileExists ? mentionsSrouter(configPath!) : false;
+
+  let configured = false;
+  if (installed) {
+    if (configFileExists && mentionsSrouter(configPath!)) {
+      configured = true;
+    } else if (id === 'claude') {
+      const home = envHome();
+      const mcpPath = path.join(home, '.claude.json');
+      if (fs.existsSync(mcpPath)) {
+        try {
+          const data = JSON.parse(fs.readFileSync(mcpPath, 'utf8'));
+          if (data.mcpServers?.srouter) configured = true;
+        } catch {}
+      }
+    } else if (id === 'continue') {
+      const home = envHome();
+      const envFilePath = path.join(home, '.continue', '.env');
+      if (fs.existsSync(envFilePath) && mentionsSrouter(envFilePath)) {
+        configured = true;
+      }
+    } else if (id === 'openclaude') {
+      const home = envHome();
+      const mcpPath = path.join(home, '.openclaude.json');
+      if (fs.existsSync(mcpPath)) {
+        try {
+          const data = JSON.parse(fs.readFileSync(mcpPath, 'utf8'));
+          if (data.mcpServers?.srouter) configured = true;
+        } catch {}
+      }
+    }
+  }
 
   return {
     id,

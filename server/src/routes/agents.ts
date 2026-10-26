@@ -38,7 +38,7 @@ agentsRouter.post('/:id/setup', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: unknown) {
     const err = error as Error;
-    res.status(500).json({ error: err.message || 'Setup failed' });
+    res.status(500).json({ error: { message: err.message || 'Setup failed' } });
   }
 });
 
@@ -46,7 +46,7 @@ agentsRouter.post('/:id/setup', async (req: Request, res: Response) => {
 agentsRouter.post('/:id/reset', async (req: Request, res: Response) => {
   const { id } = req.params;
   if (!id || typeof id !== 'string') {
-    res.status(400).json({ error: 'Agent ID is required' });
+    res.status(400).json({ error: { message: 'Agent ID is required' } });
     return;
   }
 
@@ -55,6 +55,6 @@ agentsRouter.post('/:id/reset', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: unknown) {
     const err = error as Error;
-    res.status(500).json({ error: err.message || 'Reset failed' });
+    res.status(500).json({ error: { message: err.message || 'Reset failed' } });
   }
 });

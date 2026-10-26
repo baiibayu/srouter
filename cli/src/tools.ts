@@ -1080,12 +1080,56 @@ function jetbrains(ctx: GenerateContext): Generation {
 }
 
 function openclaude(ctx: GenerateContext): Generation {
+  const model = primaryModel(ctx.models, ctx.requestedModelId);
+  const directory = ctx.profile === 'default'
+    ? posixPath(ctx.homeDir, '.openclaude')
+    : posixPath(ctx.homeDir, '.openclaude', 'profiles', ctx.profile);
+  const mcpPath = ctx.profile === 'default'
+    ? posixPath(ctx.homeDir, '.openclaude.json')
+    : posixPath(directory, '.openclaude.json');
   return {
-    files: [],
+    files: [
+      {
+        path: posixPath(directory, 'settings.json'),
+        format: 'json',
+        sensitive: true,
+        value: {
+          env: {
+            ANTHROPIC_BASE_URL: rootUrl(ctx.url),
+            ANTHROPIC_AUTH_TOKEN: ctx.apiKey,
+            OPENAI_BASE_URL: v1Url(ctx.url),
+            OPENAI_API_KEY: ctx.apiKey,
+            ANTHROPIC_MODEL: model.id,
+            ANTHROPIC_DEFAULT_OPUS_MODEL: model.id,
+            ANTHROPIC_DEFAULT_SONNET_MODEL: model.id,
+            ANTHROPIC_DEFAULT_HAIKU_MODEL: model.id,
+            CLAUDE_CODE_AUTO_COMPACT_WINDOW: String(contextWindow(model)),
+            CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY: '1',
+          },
+        },
+      },
+      {
+        path: mcpPath,
+        format: 'json',
+        sensitive: true,
+        value: {
+          mcpServers: {
+            srouter: {
+              type: 'http',
+              url: `${rootUrl(ctx.url)}/mcp`,
+              headers: {
+                Authorization: `Bearer ${ctx.apiKey}`,
+              },
+            },
+          },
+        },
+      },
+    ],
     notes: [
-      'OpenClaude is a Claude-compatible CLI that routes through an OpenAI-compatible gateway.',
-      `Set OPENAI_BASE_URL=${v1Url(ctx.url)} and OPENAI_API_KEY to your unified key.`,
-      'OpenClaude then speaks Claude-style tool calls through the gateway, which translates them to the upstream provider.',
+      ctx.profile === 'default'
+        ? 'OpenClaude will read this configuration automatically.'
+        : `Launch with OPENCLAUDE_CONFIG_DIR=${directory} openclaude`,
+      `MCP: wrote mcpServers.srouter -> ${mcpPath}`,
     ],
   };
 }
@@ -1208,7 +1252,7 @@ const metadata = [
   ['zed', 'Zed', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-zed', 'https://zed.dev/docs', 'default', zed],
   ['jetbrains', 'JetBrains', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-jetbrains', 'https://www.jetbrains.com/help/ai/ai-assistant.html', 'default', jetbrains],
   ['openclaude', 'OpenClaude', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-openclaude', 'https://openclaude.twigpine.com/docs/quickstart/', 'default', openclaude],
-  ['atomcode', 'AtomCode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atom.io', 'default', atomcode],
+  ['atomcode', 'AtomCode', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-atomcode', 'https://atom.io', 'default', atomcode],
   ['generic', 'Generic OpenAI client', 'agent', 'guide', 'OpenAI Chat', '/v1', 'setup-generic', 'https://platform.openai.com/docs/api-reference/chat', 'default', generic],
 ] as const;
 

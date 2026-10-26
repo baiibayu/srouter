@@ -128,16 +128,14 @@ export default function AgentDetailPage() {
 
   type AgentStatus = 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
   let status: AgentStatus = 'not-installed'
-  if (tool.id === 'generic') {
+  if (tool.id === 'generic' || tool.configType === 'guide') {
     status = 'guide'
-  } else if (traffic) {
-    status = 'connected'
-  } else if (isConfigured) {
-    status = 'configured'
-  } else if (isInstalled) {
-    status = tool.configType === 'guide' ? 'guide' : 'not-configured'
-  } else {
+  } else if (!isInstalled) {
     status = 'not-installed'
+  } else if (isConfigured) {
+    status = traffic ? 'connected' : 'configured'
+  } else {
+    status = 'not-configured'
   }
 
   const descriptionKey = `agents.descriptions.${tool.id}`
@@ -240,16 +238,12 @@ export default function AgentDetailPage() {
                   <>
                     <Button
                       variant={status === 'connected' ? 'outline' : 'secondary'}
-                      disabled={status === 'connected' || setupMutation.isPending}
+                      disabled={setupMutation.isPending}
                       className="flex-1 justify-center"
                       onClick={() => setupMutation.mutate()}
                     >
                       {setupMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-                      {setupMutation.isPending
-                        ? t('agents.applying')
-                        : status === 'connected'
-                          ? t('agents.connected')
-                          : t('agents.reapply')}
+                      {setupMutation.isPending ? t('agents.applying') : t('agents.reapply')}
                     </Button>
                     <Button
                       variant="ghost"

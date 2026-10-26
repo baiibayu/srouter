@@ -132,16 +132,14 @@ export default function AgentsPage() {
 
           type AgentStatus = 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
           let status: AgentStatus = 'not-installed'
-          if (tool.id === 'generic') {
+          if (tool.id === 'generic' || tool.configType === 'guide') {
             status = 'guide'
-          } else if (traffic) {
-            status = 'connected'
-          } else if (isConfigured) {
-            status = 'configured'
-          } else if (isInstalled) {
-            status = tool.configType === 'guide' ? 'guide' : 'not-configured'
-          } else {
+          } else if (!isInstalled) {
             status = 'not-installed'
+          } else if (isConfigured) {
+            status = traffic ? 'connected' : 'configured'
+          } else {
+            status = 'not-configured'
           }
 
           const descriptionKey = `agents.descriptions.${tool.id}`

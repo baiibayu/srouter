@@ -1,9 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import YAML from 'yaml';
 import { configPathFor, detectAgent, type AgentDetection } from './agent-detection.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const execFileAsync = promisify(execFile);
 
@@ -43,7 +47,7 @@ export async function setupAgent(
 
   try {
     const { stdout, stderr } = await execFileAsync(process.execPath, args, {
-      timeout: 20000,
+      timeout: 60000,
       env: process.env,
     });
     const detection = detectAgent(id);
@@ -54,8 +58,13 @@ export async function setupAgent(
       output: (stdout || stderr).trim(),
     };
   } catch (error: unknown) {
-    const err = error as { message?: string; stdout?: string; stderr?: string };
-    const errDetails = err.stderr || err.stdout || err.message || 'Unknown error';
+    const err = error as { message?: string; stdout?: string; stderr?: string; killed?: boolean; signal?: string };
+    if (err.killed && err.signal === 'SIGTERM') {
+      throw new Error(`Setup timed out after 60 seconds for ${id}`);
+    }
+    const filteredStderr = (err.stderr || '').replace(/Warning: Ignoring extra certs from[^\r\n]*\r?\n?/g, '').trim();
+    const filteredStdout = (err.stdout || '').replace(/Warning: Ignoring extra certs from[^\r\n]*\r?\n?/g, '').trim();
+    const errDetails = filteredStderr || filteredStdout || err.message || 'Unknown error';
     throw new Error(`Failed to apply setup for ${id}: ${errDetails}`);
   }
 }
@@ -97,11 +106,15 @@ function removeTomlProviders(filePath: string): void {
     text = text.replace(/#\s*srouter:start[\s\S]*?#\s*srouter:end\r?\n?/g, '');
     // Remove [model_providers.srouter*] tables
     text = text.replace(/\[\s*model_providers\.srouter[^\s\]]*\s*\][\s\S]*?(?=\n\[|\n# srouter|$)/g, '');
+    // Remove [mcp_servers.srouter*] tables
+    text = text.replace(/\[\s*mcp_servers\.srouter[^\s\]]*\s*\][\s\S]*?(?=\n\[|\n# srouter|$)/g, '');
+    // Remove [providers.srouter*] tables
+    text = text.replace(/\[\s*providers\.srouter[^\s\]]*\s*\][\s\S]*?(?=\n\[|\n# srouter|$)/g, '');
     // Remove [[providers]] where name = "srouter*"
     text = text.replace(/\[\[\s*providers\s*\]\][\s\S]*?name\s*=\s*"srouter[^"]*"[\s\S]*?(?=\n\[\[|\n\[|$)/g, '');
     // Remove dangling model_provider = "srouter" or default_model = "srouter/*"
-    text = text.replace(/^\s*model_provider\s*=\s*"srouter.*"\r?\n?/gm, '');
-    text = text.replace(/^\s*default_model\s*=\s*"srouter.*"\r?\n?/gm, '');
+    text = text.replace(/^\s*model_provider\s*=\s*['"]srouter.*['"]\r?\n?/gm, '');
+    text = text.replace(/^\s*default_model\s*=\s*['"]srouter.*['"]\r?\n?/gm, '');
     fs.writeFileSync(filePath, text, 'utf8');
   } catch {
     // Ignore
@@ -200,7 +213,31 @@ export async function resetAgent(id: string): Promise<SetupResult> {
       }
 
       case 'continue': {
-        removeSrouterMarkers(path.join(home, '.continue', 'config.yaml'));
+        const continueYaml = path.join(home, '.continue', 'config.yaml');
+        if (fs.existsSync(continueYaml)) {
+          removeSrouterMarkers(continueYaml);
+          try {
+            const raw = fs.readFileSync(continueYaml, 'utf8');
+            const doc = YAML.parseDocument(raw, { uniqueKeys: false });
+            const models = doc.get('models') as any;
+            if (models && models.items) {
+              models.items = models.items.filter((item: any) => {
+                const j = item.toJSON();
+                return !(
+                  j?.name === 'SRouter' ||
+                  String(j?.apiBase || '').includes('20268') ||
+                  String(j?.apiKey || '').includes('SROUTER_API_KEY')
+                );
+              });
+              if (models.items.length === 0) {
+                doc.delete('models');
+              }
+              fs.writeFileSync(continueYaml, doc.toString(), 'utf8');
+            }
+          } catch {
+            // Ignore parse errors on reset
+          }
+        }
         removeLinesMatching(path.join(home, '.continue', '.env'), /^SROUTER_API_KEY=/);
         break;
       }
@@ -334,10 +371,26 @@ export async function resetAgent(id: string): Promise<SetupResult> {
         if (fs.existsSync(settingsPath)) {
           try {
             const raw = fs.readFileSync(settingsPath, 'utf8');
-            // Remove srouter providers block under llm-pi-ai
-            const cleaned = raw.replace(/\s+srouter(?:-[a-z0-9-]+)?:\s*\n(?:\s+.*\n)*/g, '\n');
+            const doc = YAML.parseDocument(raw, { uniqueKeys: false });
+            const providers = doc.getIn(['llm-pi-ai', 'providers']) as any;
+            if (providers && typeof providers.delete === 'function') {
+              providers.delete('srouter');
+            }
+            const defaultModel = doc.get('agent-default-model') as any;
+            if (
+              defaultModel &&
+              (defaultModel.get?.('provider') === 'srouter' ||
+                defaultModel.toJSON?.()?.provider === 'srouter')
+            ) {
+              doc.delete('agent-default-model');
+            }
+            fs.writeFileSync(settingsPath, doc.toString(), 'utf8');
+          } catch {
+            const raw = fs.readFileSync(settingsPath, 'utf8');
+            let cleaned = raw.replace(/\s+srouter(?:-[a-z0-9-]+)?:\s*\n(?:\s+.*\n)*/g, '\n');
+            cleaned = cleaned.replace(/agent-default-model:\s*\n\s+provider:\s*srouter[\s\S]*?(?=\n\S|$)/g, '');
             fs.writeFileSync(settingsPath, cleaned, 'utf8');
-          } catch {}
+          }
         }
         removeLinesMatching(path.join(dshHome, '.env'), /^SROUTER_API_KEY=/);
         break;
@@ -388,18 +441,44 @@ export async function resetAgent(id: string): Promise<SetupResult> {
       }
 
       case 'hermes': {
-        const hermesHome = process.env.HERMES_HOME?.trim() || path.join(home, '.hermes');
-        const configYaml = path.join(hermesHome, 'config.yaml');
-        if (fs.existsSync(configYaml)) {
-          try {
-            const raw = fs.readFileSync(configYaml, 'utf8');
-            // Remove custom model or srouter providers
-            let cleaned = raw.replace(/model:\s*\n\s+provider:\s*['"]?custom['"]?[\s\S]*?(?=\n\S|$)/g, 'model: ""\n');
-            cleaned = cleaned.replace(/\s+srouter(?:-[a-z0-9-]+)?:\s*\n(?:\s+.*\n)*/g, '\n');
-            fs.writeFileSync(configYaml, cleaned, 'utf8');
-          } catch {}
+        const localAppData = process.env.LOCALAPPDATA ?? path.join(home, 'AppData', 'Local');
+        const hermesDirs = [
+          process.env.HERMES_HOME?.trim(),
+          path.join(localAppData, 'hermes'),
+          path.join(home, '.hermes'),
+        ].filter(Boolean) as string[];
+
+        for (const dir of hermesDirs) {
+          const configYaml = path.join(dir, 'config.yaml');
+          if (fs.existsSync(configYaml)) {
+            try {
+              const raw = fs.readFileSync(configYaml, 'utf8');
+              const doc = YAML.parseDocument(raw, { uniqueKeys: false });
+              const model = doc.get('model') as any;
+              if (model) {
+                const j = model.toJSON ? model.toJSON() : model;
+                if (
+                  String(j?.base_url || '').includes('20268') ||
+                  String(j?.api_key || '').includes('SROUTER_API_KEY') ||
+                  j?.provider === 'custom'
+                ) {
+                  doc.delete('model');
+                }
+              }
+              const providers = doc.get('providers') as any;
+              if (providers && typeof providers.delete === 'function') {
+                providers.delete('srouter');
+              }
+              fs.writeFileSync(configYaml, doc.toString(), 'utf8');
+            } catch {
+              const raw = fs.readFileSync(configYaml, 'utf8');
+              let cleaned = raw.replace(/model:\s*\n[\s\S]*?20268[\s\S]*?(?=\n\S|$)/g, '');
+              cleaned = cleaned.replace(/\s+srouter(?:-[a-z0-9-]+)?:\s*\n(?:\s+.*\n)*/g, '\n');
+              fs.writeFileSync(configYaml, cleaned, 'utf8');
+            }
+          }
+          removeLinesMatching(path.join(dir, '.env'), /^SROUTER_API_KEY=/);
         }
-        removeLinesMatching(path.join(hermesHome, '.env'), /^SROUTER_API_KEY=/);
         break;
       }
 
@@ -479,6 +558,66 @@ export async function resetAgent(id: string): Promise<SetupResult> {
               );
               fs.writeFileSync(droidSettings, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
             }
+          } catch {}
+        }
+        break;
+      }
+
+      case 'openclaude': {
+        const settingsPath = path.join(home, '.openclaude', 'settings.json');
+        if (fs.existsSync(settingsPath)) {
+          try {
+            const raw = fs.readFileSync(settingsPath, 'utf8');
+            const data = JSON.parse(raw);
+            if (data.env && typeof data.env === 'object') {
+              delete data.env.ANTHROPIC_BASE_URL;
+              delete data.env.ANTHROPIC_AUTH_TOKEN;
+              delete data.env.OPENAI_BASE_URL;
+              delete data.env.OPENAI_API_KEY;
+              delete data.env.OPENAI_MODEL;
+              delete data.env.ANTHROPIC_MODEL;
+              delete data.env.ANTHROPIC_DEFAULT_OPUS_MODEL;
+              delete data.env.ANTHROPIC_DEFAULT_SONNET_MODEL;
+              delete data.env.ANTHROPIC_DEFAULT_HAIKU_MODEL;
+              delete data.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW;
+              delete data.env.CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY;
+              if (Object.keys(data.env).length === 0) {
+                delete data.env;
+              }
+            }
+            if (
+              typeof data.additionalModelOptionsCacheScope === 'string' &&
+              /20268|srouter/i.test(data.additionalModelOptionsCacheScope)
+            ) {
+              delete data.additionalModelOptionsCacheScope;
+              delete data.additionalModelOptionsCache;
+            }
+            if (Object.keys(data).length === 0) {
+              fs.unlinkSync(settingsPath);
+            } else {
+              fs.writeFileSync(settingsPath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+            }
+          } catch {}
+        }
+        const mcpPath = path.join(home, '.openclaude.json');
+        if (fs.existsSync(mcpPath)) {
+          try {
+            const raw = fs.readFileSync(mcpPath, 'utf8');
+            const data = JSON.parse(raw);
+            if (data.mcpServers?.srouter) {
+              delete data.mcpServers.srouter;
+              if (Object.keys(data.mcpServers).length === 0) {
+                delete data.mcpServers;
+              }
+            }
+            if (
+              typeof data.additionalModelOptionsCacheScope === 'string' &&
+              /20268|srouter/i.test(data.additionalModelOptionsCacheScope)
+            ) {
+              delete data.additionalModelOptionsCacheScope;
+              delete data.additionalModelOptionsCache;
+            }
+            fs.writeFileSync(mcpPath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
           } catch {}
         }
         break;

@@ -257,7 +257,7 @@
     "id": "atomcode",
     "name": "AtomCode",
     "category": "code",
-    "configType": "file",
+    "configType": "guide",
     "protocol": "OpenAI Chat",
     "baseUrlSupport": "/v1",
     "command": "setup-atomcode",

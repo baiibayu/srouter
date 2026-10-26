@@ -515,9 +515,22 @@ export function buildResponseObject(opts: {
   promptTokens: number;
   completionTokens: number;
   reasoningTokens?: number;
+  reasoningText?: string;
   metadata?: Record<string, string>;
 }) {
   const output: any[] = [];
+  // Reasoning items precede the message/function_call items in output order,
+  // matching the order the streaming path emits them. Codex (Responses API)
+  // expects `reasoning` items with a `content` array of `reasoning_text` parts,
+  // mirroring the input `reasoningItemSchema` above.
+  if (opts.reasoningText && opts.reasoningText.length > 0) {
+    output.push({
+      type: 'reasoning',
+      id: newId('r'),
+      status: 'completed',
+      content: [{ type: 'reasoning_text', text: opts.reasoningText }],
+    });
+  }
   if (opts.text.length > 0) {
     output.push({
       type: 'message',
@@ -580,6 +593,7 @@ function buildFusionResponseObject(id: string, result: FusionResult): Record<str
     promptTokens: usage?.prompt_tokens ?? 0,
     completionTokens: usage?.completion_tokens ?? 0,
     reasoningTokens: usage?.completion_tokens_details?.reasoning_tokens,
+    reasoningText: completionReasoningText({ choices: [{ message }] } as any) || undefined,
     metadata: fusionResponseMetadata(fusionResponse),
   }) as Record<string, unknown>;
 
@@ -1212,6 +1226,44 @@ export async function handleResponses(req: Request, res: Response): Promise<void
         // a null speed for every /v1/responses turn.
         let ttfbMs: number | null = null;
 
+        // Reasoning output item state. Codex (Responses API) expects thinking
+        // traces to appear as `type: 'reasoning'` items in `output`, streamed
+        // via response.output_item.added / response.reasoning_text.delta /
+        // response.output_item.done. Without this the trace is counted for
+        // ttfb and token accounting but never reaches the client.
+        let reasoningItemId: string | null = null;
+        let reasoningText = '';          // buffered, flushed on each delta
+        let reasoningAccum = '';         // full trace, kept for final response
+        let reasoningOutputIndex = 0;
+        let reasoningStarted = false;
+        const flushReasoning = () => {
+          if (reasoningText.length === 0) return;
+          reasoningAccum += reasoningText;
+          if (!reasoningStarted) {
+            commit();
+            reasoningItemId = newId('r');
+            reasoningOutputIndex = outputIndex++;
+            reasoningStarted = true;
+            sse('response.output_item.added', {
+              output_index: reasoningOutputIndex,
+              item: { id: reasoningItemId, type: 'reasoning', status: 'in_progress', content: [] },
+            });
+            sse('response.content_part.added', {
+              item_id: reasoningItemId!,
+              output_index: reasoningOutputIndex,
+              content_index: 0,
+              part: { type: 'reasoning_text', text: '' },
+            });
+          }
+          sse('response.reasoning_text.delta', {
+            item_id: reasoningItemId!,
+            output_index: reasoningOutputIndex,
+            content_index: 0,
+            delta: reasoningText,
+          });
+          reasoningText = '';
+        };
+
         // Inline-dialect hold window (#231): first text is held until it
         // either matches a tool-call dialect marker (held to the end and
         // rescued into function_call items) or provably cannot (flushed and
@@ -1321,9 +1373,19 @@ export async function handleResponses(req: Request, res: Response): Promise<void
             if (ttfbMs === null && (text.length > 0 || reasoning.length > 0)) {
               ttfbMs = Date.now() - start;
             }
+            if (reasoning.length > 0) {
+              // #764: stream the thinking trace as a `reasoning` output item
+              // (Responses API). Count it for ttfb and output tokens, and
+              // buffer it so the reasoning item is opened/flushed at the right
+              // point relative to text and tool calls.
+              totalOutputTokens += Math.ceil(reasoning.length / 4);
+              totalReasoningTokens += Math.ceil(reasoning.length / 4);
+              reasoningText += reasoning;
+            }
             if (text) {
+              // Flush any accumulated reasoning before the first text delta.
+              flushReasoning();
               totalOutputTokens += Math.ceil((text.length + reasoning.length) / 4);
-              if (reasoning.length > 0) totalReasoningTokens += Math.ceil(reasoning.length / 4);
               if (dialectMode === 'passthrough') {
                 if (msgItemId === null) openTextItem('');
                 sse('response.output_text.delta', {
@@ -1343,10 +1405,6 @@ export async function handleResponses(req: Request, res: Response): Promise<void
                   }
                 }
               }
-            } else if (reasoning.length > 0) {
-              // #764: thinking-only chunk (no visible text yet) — count tokens.
-              totalOutputTokens += Math.ceil(reasoning.length / 4);
-              totalReasoningTokens += Math.ceil(reasoning.length / 4);
             }
 
             // Tool-call deltas → function_call item + argument deltas.
@@ -1355,6 +1413,9 @@ export async function handleResponses(req: Request, res: Response): Promise<void
               let acc = toolAcc.get(idx);
               if (!acc) {
                 // First time we see this tool call: open a new output item.
+                // Flush any buffered reasoning first — the reasoning item must
+                // precede the function_call item in output order.
+                flushReasoning();
                 commit();
                 if (msgItemId !== null && msgText.length > 0) {
                   // close the text item (at its own output index) before starting a function_call item
@@ -1416,6 +1477,11 @@ export async function handleResponses(req: Request, res: Response): Promise<void
             }
             heldText = '';
           }
+          // Flush any residual reasoning (a thinking-only turn, or reasoning
+          // that arrived after the last text/tool delta). Must happen before
+          // the empty-completion check so a reasoning-only turn is not treated
+          // as "nothing produced".
+          flushReasoning();
           if (keepaliveId) clearInterval(keepaliveId);
 
           // Empty completion — the provider returned 200 with no text AND no
@@ -1423,7 +1489,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
           // contexts: transport-level "success", zero usable output. Nothing has
           // been committed yet (the skeleton is lazy), so throwing lets the
           // shared loop fail over to the next model on the same SSE connection.
-          if (msgText.length === 0 && toolAcc.size === 0) {
+          if (msgText.length === 0 && toolAcc.size === 0 && !reasoningStarted) {
             // Disconnect before the commit point: the break above fired with
             // nothing accumulated — CLIENT behavior, not a provider failure.
             // Falling through to the empty-completion throw benched a healthy
@@ -1480,10 +1546,17 @@ export async function handleResponses(req: Request, res: Response): Promise<void
             finalToolCalls.push({ id: acc.callId, type: 'function', function: { name: acc.name, arguments: repairedArgs } });
           }
 
+          // Finalize the reasoning item (if any) before response.completed.
+          if (reasoningStarted) {
+            sse('response.content_part.done', { item_id: reasoningItemId!, output_index: reasoningOutputIndex, content_index: 0, part: { type: 'reasoning_text', text: reasoningAccum } });
+            sse('response.output_item.done', { output_index: reasoningOutputIndex, item: { id: reasoningItemId!, type: 'reasoning', status: 'completed', content: [{ type: 'reasoning_text', text: reasoningAccum }] } });
+          }
+
           const finalResponse = buildResponseObject({
             id: responseId, model: route.modelId, text: msgText,
             toolCalls: finalToolCalls, promptTokens: estimatedInputTokens, completionTokens: totalOutputTokens,
             reasoningTokens: totalReasoningTokens,
+            reasoningText: reasoningStarted ? reasoningAccum : undefined,
           });
           sse('response.completed', { response: finalResponse });
           res.end();
@@ -1547,6 +1620,9 @@ export async function handleResponses(req: Request, res: Response): Promise<void
         ...tc,
         function: { ...tc.function, arguments: repairToolArguments(tc.function.arguments, toolSchemas.get(tc.function.name)) },
       }));
+      // #764: extract the thinking trace so it can be surfaced as a Responses
+      // `reasoning` output item (Codex expects it in `output`).
+      const reasoningText = completionReasoningText(result);
 
       // Inline tool-call dialect rescue (#231) — see /chat/completions.
       if (wantsTools && toolCalls.length === 0 && text) {
@@ -1584,8 +1660,10 @@ export async function handleResponses(req: Request, res: Response): Promise<void
         ?? Math.ceil(completionReasoningText(result).length / 4);
 
       // Empty completion → fail over via the shared loop (see the streaming
-      // path); finish_reason 'length' skips the cooldown/penalty.
-      if (!text && toolCalls.length === 0) {
+      // path); finish_reason 'length' skips the cooldown/penalty. A turn that
+      // produced only a reasoning trace is NOT empty — surface it as a
+      // reasoning output item instead of failing over.
+      if (!text && toolCalls.length === 0 && !reasoningText) {
         throw Object.assign(
           new Error(`empty completion from ${route.displayName}`),
           result.choices[0]?.finish_reason === 'length' ? { skipBench: true } : {},
@@ -1621,7 +1699,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
       setFallbackHeaders(res, attempt, attemptLog);
       res.json(buildResponseObject({
         id: responseId, model: route.modelId, text, toolCalls,
-        promptTokens, completionTokens, reasoningTokens,
+        promptTokens, completionTokens, reasoningTokens, reasoningText,
       }));
 
       traceRouteEvent('Responses', {

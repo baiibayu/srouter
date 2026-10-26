@@ -39,7 +39,7 @@ function mergeJson(existing: string, value: Record<string, unknown>): string {
     for (const [key, next] of Object.entries(patch)) {
       const current = base[key];
       const propertyPath = [...parentPath, key];
-      if (isRecord(current) && isRecord(next)) {
+      if (key !== 'models' && isRecord(current) && isRecord(next)) {
         applyPatch(current, next, propertyPath);
         continue;
       }
@@ -69,7 +69,7 @@ function mergeYamlDocument(existing: string, value: Record<string, unknown>): st
     const fresh = new Document(JSON.parse(JSON.stringify(value)));
     return fresh.toString({ lineWidth: 0 });
   }
-  const doc = parseDocument(existing);
+  const doc = parseDocument(existing, { uniqueKeys: false });
   if (doc.errors.length) {
     throw new Error(`Existing YAML cannot be parsed safely: ${doc.errors[0].message}`);
   }
