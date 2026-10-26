@@ -34,6 +34,7 @@ import { docsRouter } from './routes/docs.js';
 import { mcpRouter } from './routes/mcp.js';
 import { statusRouter, providersRouter } from './routes/status.js';
 import { geminiRouter } from './routes/gemini.js';
+import { agentsRouter } from './routes/agents.js';
 import { syncCatalog, getSyncState } from './services/catalog-sync.js';
 import { ollamaRouter } from './routes/ollama.js';
 import { urlTokenRouter } from './routes/url-tokens.js';
@@ -273,6 +274,10 @@ export function createApp(config?: Config) {
   app.use('/api/health', requireAuth, healthRouter);
   app.use('/api/free-tier', requireAuth, freeTierRouter);
   app.use('/api/settings', requireAuth, settingsRouter);
+  // Agent config-file detection for the dashboard's Agents page. Reads the
+  // same paths the CLI generators write, so the grid can badge each agent as
+  // connected / configured / not installed without running the CLI.
+  app.use('/api/agents', requireAuth, agentsRouter);
   // Database dumps and restores. Dashboard-session gated: the dump files carry
   // encrypted provider keys and every routing setting, so the unified /v1 key
   // must not open this surface.

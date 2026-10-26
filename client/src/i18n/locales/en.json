@@ -908,7 +908,14 @@
       "reasonix": "A DeepSeek-native terminal coding agent, built around prefix caching so long sessions stay cheap."
     },
     "modelNoteFull": "Setup brings in every model (auto, auto:*, fusion)",
-    "modelNoteDefault": "Setup brings in only auto — pick other models in the agent UI"
+    "modelNoteDefault": "Setup brings in only auto — pick other models in the agent UI",
+    "connected": "Connected",
+    "configured": "Configured",
+    "notInstalled": "Not installed",
+    "applyAuto": "Apply auto setup",
+    "close": "Close",
+    "sheetTitle": "Connect {name}",
+    "sheetDescription": "One command configures this tool for your gateway."
   },
   "analytics": {
     "title": "Analytics",
