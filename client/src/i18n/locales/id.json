@@ -1251,7 +1251,21 @@
       "reasonix": "Agen coding terminal yang dibuat khusus untuk DeepSeek, dibangun di sekitar prefix caching agar sesi panjang tetap murah."
     },
     "modelNoteFull": "Setup membawa semua model (auto, auto:*, fusion)",
-    "modelNoteDefault": "Setup hanya membawa auto — pilih model lain via UI agent"
+    "modelNoteDefault": "Setup hanya membawa auto — pilih model lain via UI agent",
+    "connected": "Terhubung",
+    "configured": "Terkonfigurasi",
+    "notConfigured": "Belum dikonfigurasi",
+    "notInstalled": "Belum terinstal",
+    "guide": "Panduan",
+    "applyAuto": "Terapkan penyiapan otomatis",
+    "reapply": "Terapkan ulang penyiapan",
+    "reset": "Atur ulang",
+    "installFirst": "Instal agen terlebih dahulu",
+    "installGuide": "Panduan instalasi",
+    "viewGuide": "Lihat panduan",
+    "close": "Tutup",
+    "sheetTitle": "Hubungkan {name}",
+    "sheetDescription": "Satu perintah untuk mengonfigurasi alat ini ke gateway Anda."
   },
   "update": {
     "available": "New version available",

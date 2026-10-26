@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, ExternalLink, Zap, CheckCircle2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Zap, CheckCircle2, AlertCircle, Globe } from 'lucide-react'
 import { useI18n } from '@/i18n'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -65,6 +65,11 @@ const analyticsIds: Record<string, string> = {
   cursor: 'cursor',
 }
 
+const WEB_SEARCH_TOOL_KEYS: Record<string, string> = {
+  claude: 'search.agentsBadgeClaude',
+  codex: 'search.agentsBadgeCodex',
+}
+
 export default function AgentDetailPage() {
   const { t } = useI18n()
   const { id } = useParams<{ id: string }>()
@@ -98,17 +103,20 @@ export default function AgentDetailPage() {
 
   type AgentStatus = 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
   let status: AgentStatus = 'not-installed'
-  if (tool.configType === 'guide') {
+  if (tool.id === 'generic') {
     status = 'guide'
   } else if (traffic) {
     status = 'connected'
   } else if (isConfigured) {
     status = 'configured'
   } else if (isInstalled) {
-    status = 'not-configured'
+    status = tool.configType === 'guide' ? 'guide' : 'not-configured'
   } else {
     status = 'not-installed'
   }
+
+  const descriptionKey = `agents.descriptions.${tool.id}`
+  const description = t(descriptionKey)
 
   const origin = import.meta.env.DEV
     ? `http://${window.location.hostname}:${__SERVER_PORT__}`
@@ -121,23 +129,88 @@ export default function AgentDetailPage() {
   return (
     <div className="min-h-screen">
       <header className="border-b bg-card sticky top-0 z-10">
-        <div className="container flex h-14 items-center gap-4 px-4">
+        <div className="container flex h-16 items-center gap-4 px-4">
           <Link to="/agents">
             <Button variant="ghost" size="sm" aria-label={t('common.back')}>
               <ArrowLeft className="size-4" />
             </Button>
           </Link>
-          <div className="flex items-center gap-3 flex-1">
-            <AgentIcon id={tool.id} name={tool.name} className="size-8" />
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold">{tool.name}</h1>
-              {statusBadge({ status, t })}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <AgentIcon id={tool.id} name={tool.name} className="size-8 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg font-semibold">{tool.name}</h1>
+                {statusBadge({ status, t })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                {description === descriptionKey
+                  ? `${tool.protocol} · ${tool.baseUrlSupport}`
+                  : description}
+              </p>
             </div>
           </div>
         </div>
       </header>
 
       <div className="container max-w-4xl space-y-6 py-6 px-4">
+        {/* Status context note */}
+        <section>
+          <Card className={
+            status === 'connected'
+              ? 'border-emerald-500/20 bg-emerald-500/5'
+              : status === 'configured'
+              ? 'border-amber-500/20 bg-amber-500/5'
+              : status === 'not-configured'
+              ? 'border-amber-500/20 bg-amber-500/5'
+              : 'border-muted-foreground/20 bg-muted/30'
+          }>
+            <CardContent className="py-3 flex items-start gap-2.5">
+              {status === 'connected' ? (
+                <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+              )}
+              <div className="text-xs space-y-0.5">
+                <span className="font-semibold text-foreground">
+                  {status === 'connected'
+                    ? 'Status: Terhubung (Active & Connected)'
+                    : status === 'configured'
+                    ? 'Status: Terkonfigurasi (Configured & Ready)'
+                    : status === 'not-configured'
+                    ? 'Status: Belum Dikonfigurasi (Installed, Needs Setup)'
+                    : status === 'guide'
+                    ? 'Status: Panduan Penyiapan Manual'
+                    : 'Status: Belum Terinstal (Not Installed)'}
+                </span>
+                <p className="text-muted-foreground">
+                  {status === 'connected'
+                    ? `Agen aktif terhubung ke gateway SRouter (≈ ${traffic?.requests.toLocaleString() ?? 0} request).`
+                    : status === 'configured'
+                    ? 'File konfigurasi agen di disk sudah mengarah ke gateway SRouter (port 20268). Agen siap digunakan — jalankan perintah dari terminal agen Anda untuk mulai mengirim request.'
+                    : status === 'not-configured'
+                    ? 'Agen terdeteksi di komputer Anda, namun konfigurasinya belum diarahkan ke SRouter. Klik "Terapkan penyiapan otomatis" untuk menghubungkannya.'
+                    : status === 'guide'
+                    ? 'Agen ini menggunakan penyiapan manual di dalam aplikasi. Ikuti panduan dokumentasi resmi di bawah.'
+                    : `Agen ${tool.name} belum terpasang di komputer Anda. Silakan instal agen terlebih dahulu sebelum melakukan penyiapan.`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Web Search Tool Integration Note */}
+        {WEB_SEARCH_TOOL_KEYS[tool.id] && (
+          <section>
+            <Card className="border-sky-500/20 bg-sky-500/5">
+              <CardContent className="py-3 flex items-center gap-2 text-sky-700 dark:text-sky-300">
+                <Globe className="size-4 shrink-0" />
+                <span className="text-xs font-medium">
+                  {t(WEB_SEARCH_TOOL_KEYS[tool.id])}
+                </span>
+              </CardContent>
+            </Card>
+          </section>
+        )}
         {/* Quick Setup */}
         <section>
           <Card>
@@ -315,38 +388,63 @@ function statusBadge({
   status: 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
   t: ReturnType<typeof useI18n>['t']
 }) {
+  const getLabel = (key: string, fallback: string) => {
+    const val = t(key)
+    return !val || val === key ? fallback : val
+  }
+
   if (status === 'connected') {
     return (
-      <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1">
+      <Badge
+        variant="outline"
+        className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1"
+        title="Terhubung & aktif — ada riwayat lalu lintas request dalam 7 hari terakhir"
+      >
         <CheckCircle2 className="size-3" />
-        {t('agents.connected')}
+        {getLabel('agents.connected', 'Connected')}
       </Badge>
     )
   }
   if (status === 'configured') {
     return (
-      <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400">
-        {t('agents.configured')}
+      <Badge
+        variant="outline"
+        className="border-amber-500/30 text-amber-600 dark:text-amber-400"
+        title="Terkonfigurasi — file konfigurasi sudah mengarah ke SRouter (siap digunakan)"
+      >
+        {getLabel('agents.configured', 'Configured')}
       </Badge>
     )
   }
   if (status === 'not-configured') {
     return (
-      <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400">
-        {t('agents.notConfigured')}
+      <Badge
+        variant="outline"
+        className="border-amber-500/30 text-amber-600 dark:text-amber-400"
+        title="Terinstal di sistem, namun konfigurasinya belum diarahkan ke SRouter"
+      >
+        {getLabel('agents.notConfigured', 'Not configured')}
       </Badge>
     )
   }
   if (status === 'guide') {
     return (
-      <Badge variant="outline" className="border-sky-500/30 text-sky-600 dark:text-sky-400">
-        {t('agents.guide')}
+      <Badge
+        variant="outline"
+        className="border-sky-500/30 text-sky-600 dark:text-sky-400"
+        title="Panduan penyiapan manual"
+      >
+        {getLabel('agents.guide', 'Guide')}
       </Badge>
     )
   }
   return (
-    <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground">
-      {t('agents.notInstalled')}
+    <Badge
+      variant="outline"
+      className="border-muted-foreground/30 text-muted-foreground"
+      title="Belum terinstal di komputer ini"
+    >
+      {getLabel('agents.notInstalled', 'Not installed')}
     </Badge>
   )
 }

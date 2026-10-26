@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle2, ChevronRight, Globe } from 'lucide-react'
+import { CheckCircle2, ChevronRight } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
 import { PageHeader } from '@/components/page-header'
@@ -50,13 +50,6 @@ const analyticsIds: Record<string, string> = {
   droid: 'droid',
   reasonix: 'reasonix',
   cursor: 'cursor',
-}
-
-// Agents whose built-in web search tool the gateway serves from the search
-// keys (#1174): Claude Code's WebSearch and Codex's web_search.
-const WEB_SEARCH_TOOL_KEYS: Record<string, string> = {
-  claude: 'search.agentsBadgeClaude',
-  codex: 'search.agentsBadgeCodex',
 }
 
 function masked(value: string): string {
@@ -139,14 +132,14 @@ export default function AgentsPage() {
 
           type AgentStatus = 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
           let status: AgentStatus = 'not-installed'
-          if (tool.configType === 'guide') {
+          if (tool.id === 'generic') {
             status = 'guide'
           } else if (traffic) {
             status = 'connected'
           } else if (isConfigured) {
             status = 'configured'
           } else if (isInstalled) {
-            status = 'not-configured'
+            status = tool.configType === 'guide' ? 'guide' : 'not-configured'
           } else {
             status = 'not-installed'
           }
@@ -166,7 +159,7 @@ export default function AgentsPage() {
                     <h3 className="font-semibold text-sm group-hover:text-primary transition-colors flex items-center gap-1.5 truncate">
                       {tool.name}
                     </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                    <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px] mt-0.5">
                       {description === descriptionKey
                         ? `${tool.protocol} · ${tool.baseUrlSupport}`
                         : description}
@@ -178,15 +171,6 @@ export default function AgentsPage() {
 
               <div className="mt-4 flex items-center justify-between gap-2 pt-3 border-t">
                 {statusBadge({ status, t })}
-                {WEB_SEARCH_TOOL_KEYS[tool.id] && (
-                  <Badge
-                    variant="outline"
-                    className="h-auto w-fit border-sky-600/30 py-0.5 text-[10px] text-sky-700 dark:text-sky-300 gap-1"
-                  >
-                    <Globe className="size-3" />
-                    {t(WEB_SEARCH_TOOL_KEYS[tool.id])}
-                  </Badge>
-                )}
               </div>
             </Link>
           )
@@ -203,38 +187,63 @@ function statusBadge({
   status: 'connected' | 'configured' | 'not-configured' | 'not-installed' | 'guide'
   t: ReturnType<typeof useI18n>['t']
 }) {
+  const getLabel = (key: string, fallback: string) => {
+    const val = t(key)
+    return !val || val === key ? fallback : val
+  }
+
   if (status === 'connected') {
     return (
-      <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1">
+      <Badge
+        variant="outline"
+        className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1"
+        title="Terhubung & aktif — ada riwayat lalu lintas request dalam 7 hari terakhir"
+      >
         <CheckCircle2 className="size-3" />
-        {t('agents.connected')}
+        {getLabel('agents.connected', 'Connected')}
       </Badge>
     )
   }
   if (status === 'configured') {
     return (
-      <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400">
-        {t('agents.configured')}
+      <Badge
+        variant="outline"
+        className="border-amber-500/30 text-amber-600 dark:text-amber-400"
+        title="Terkonfigurasi — file konfigurasi sudah mengarah ke SRouter (siap digunakan)"
+      >
+        {getLabel('agents.configured', 'Configured')}
       </Badge>
     )
   }
   if (status === 'not-configured') {
     return (
-      <Badge variant="outline" className="border-amber-500/30 text-amber-600 dark:text-amber-400">
-        {t('agents.notConfigured')}
+      <Badge
+        variant="outline"
+        className="border-amber-500/30 text-amber-600 dark:text-amber-400"
+        title="Terinstal di sistem, namun konfigurasinya belum diarahkan ke SRouter"
+      >
+        {getLabel('agents.notConfigured', 'Not configured')}
       </Badge>
     )
   }
   if (status === 'guide') {
     return (
-      <Badge variant="outline" className="border-sky-500/30 text-sky-600 dark:text-sky-400">
-        {t('agents.guide')}
+      <Badge
+        variant="outline"
+        className="border-sky-500/30 text-sky-600 dark:text-sky-400"
+        title="Panduan penyiapan manual"
+      >
+        {getLabel('agents.guide', 'Guide')}
       </Badge>
     )
   }
   return (
-    <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground">
-      {t('agents.notInstalled')}
+    <Badge
+      variant="outline"
+      className="border-muted-foreground/30 text-muted-foreground"
+      title="Belum terinstal di komputer ini"
+    >
+      {getLabel('agents.notInstalled', 'Not installed')}
     </Badge>
   )
 }

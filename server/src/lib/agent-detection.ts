@@ -99,19 +99,36 @@ function configPathFor(id: string): string | null {
     }
     case 'droid':
       return path.join(home, '.factory', 'settings.json');
-    // Env-var agents (OpenClaude, AtomCode) and guide-only agents
-    // (Cursor, Zed, JetBrains, Generic) write no config file.
+    case 'openclaude':
+      return path.join(home, '.openclaude', 'settings.json');
+    case 'cursor': {
+      const appData = envPath('APPDATA') ?? path.join(home, 'AppData', 'Roaming');
+      const settingsPath = path.join(appData, 'Cursor', 'User', 'settings.json');
+      if (fs.existsSync(settingsPath)) return settingsPath;
+      return path.join(home, '.cursor');
+    }
+    case 'zed': {
+      const zedConfig = path.join(home, '.config', 'zed', 'settings.json');
+      if (fs.existsSync(zedConfig)) return zedConfig;
+      const appData = envPath('APPDATA') ?? path.join(home, 'AppData', 'Roaming');
+      return path.join(appData, 'Zed', 'settings.json');
+    }
+    case 'jetbrains': {
+      const appData = envPath('APPDATA') ?? path.join(home, 'AppData', 'Roaming');
+      return path.join(appData, 'JetBrains');
+    }
+    case 'atomcode':
+      return path.join(home, '.atom');
     default:
       return null;
   }
 }
 
-/** True when the file's text mentions srouter — the marker every generator
- *  writes (provider name, base URL host, or the setup command itself). */
+/** True when the file's text mentions srouter, gateway port 20268, or unified sr-* key. */
 function mentionsSrouter(filePath: string): boolean {
   try {
     const text = fs.readFileSync(filePath, 'utf8');
-    return /srouter/i.test(text);
+    return /srouter|20268|sr-[a-f0-9]{16}/i.test(text);
   } catch {
     return false;
   }
@@ -182,10 +199,51 @@ function isBinaryInPath(name: string): boolean {
   return false;
 }
 
-export function detectAgent(id: string): AgentDetection {
-  const configPath = configPathFor(id);
+function isAppInstalled(id: string): boolean {
   const binaryName = binaryNameFor(id);
-  const binaryFound = binaryName ? isBinaryInPath(binaryName) : false;
+  if (binaryName && isBinaryInPath(binaryName)) return true;
+
+  const home = envHome();
+  const localAppData = envPath('LOCALAPPDATA') ?? path.join(home, 'AppData', 'Local');
+  const appData = envPath('APPDATA') ?? path.join(home, 'AppData', 'Roaming');
+
+  switch (id) {
+    case 'cursor':
+      return (
+        isBinaryInPath('cursor') ||
+        fs.existsSync(path.join(localAppData, 'Programs', 'cursor')) ||
+        fs.existsSync(path.join(appData, 'Cursor')) ||
+        fs.existsSync(path.join(home, '.cursor')) ||
+        (process.platform === 'darwin' && fs.existsSync('/Applications/Cursor.app'))
+      );
+    case 'zed':
+      return (
+        isBinaryInPath('zed') ||
+        fs.existsSync(path.join(localAppData, 'Programs', 'Zed')) ||
+        fs.existsSync(path.join(home, '.config', 'zed')) ||
+        (process.platform === 'darwin' && fs.existsSync('/Applications/Zed.app'))
+      );
+    case 'jetbrains':
+      return (
+        fs.existsSync(path.join(appData, 'JetBrains')) ||
+        fs.existsSync(path.join(localAppData, 'JetBrains')) ||
+        fs.existsSync(path.join(home, '.config', 'JetBrains')) ||
+        (process.platform === 'darwin' && fs.existsSync(path.join(home, 'Library', 'Application Support', 'JetBrains')))
+      );
+    case 'atomcode':
+      return isBinaryInPath('atom') || fs.existsSync(path.join(home, '.atom'));
+    default:
+      return false;
+  }
+}
+
+export function detectAgent(id: string): AgentDetection {
+  if (id === 'generic') {
+    return { id, installed: false, configured: false, configPath: null };
+  }
+
+  const configPath = configPathFor(id);
+  const appInstalled = isAppInstalled(id);
 
   let configFileExists = false;
   if (configPath) {
@@ -196,7 +254,7 @@ export function detectAgent(id: string): AgentDetection {
     }
   }
 
-  const installed = binaryFound || configFileExists;
+  const installed = appInstalled || configFileExists;
   const configured = configFileExists ? mentionsSrouter(configPath!) : false;
 
   return {
