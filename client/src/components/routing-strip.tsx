@@ -323,7 +323,6 @@ function BranchTreeConnector({
 }
 
 function GatewayNode({ className = '' }: { className?: string }) {
-  const port = typeof window !== 'undefined' && window.location.port ? window.location.port : '20268'
   return (
     <div
       className={`h-[52px] min-w-0 shrink-0 sm:shrink max-w-[170px] rounded-xl border bg-background px-3 flex items-center gap-1.5 shadow-2xs select-none ${className}`}
@@ -331,9 +330,6 @@ function GatewayNode({ className = '' }: { className?: string }) {
       <LogoMark className="size-4 shrink-0" />
       <span className="font-semibold text-xs tracking-tight truncate text-foreground">
         SRouter
-      </span>
-      <span className="text-[10px] text-muted-foreground font-mono shrink-0">
-        {port}
       </span>
     </div>
   )
