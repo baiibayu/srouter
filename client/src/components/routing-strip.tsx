@@ -148,7 +148,7 @@ const CARD_HEIGHT = 52
 const CARD_GAP = 8
 
 const NODE_BOX_CLASS =
-  'h-[52px] min-w-[130px] max-w-[190px] shrink-0 rounded-xl border bg-background px-3 flex flex-col justify-center shadow-2xs select-none'
+  'h-[52px] min-w-0 rounded-xl border bg-background px-2.5 sm:px-3 flex flex-col justify-center shadow-2xs select-none'
 
 function StripLine({
   processing,
@@ -160,9 +160,16 @@ function StripLine({
   return (
     <div
       aria-hidden="true"
-      className={`relative flex items-center h-[52px] min-w-8 max-w-20 flex-1 shrink-0 ${className}`}
+      className={`relative flex items-center h-[52px] w-5 sm:w-8 md:w-12 shrink-0 ${className}`}
     >
       <svg className="w-full h-4 overflow-visible">
+        <defs>
+          <filter id="sr-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
         {/* Background track line */}
         <line
           x1="0"
@@ -171,7 +178,7 @@ function StripLine({
           y2="8"
           stroke="currentColor"
           strokeWidth="2"
-          className={processing ? 'text-border/70' : 'text-border'}
+          className={processing ? 'text-primary/40' : 'text-border'}
         />
 
         {/* Animated active dash line */}
@@ -183,7 +190,7 @@ function StripLine({
             y2="8"
             stroke="currentColor"
             strokeWidth="2.5"
-            strokeDasharray="5 5"
+            strokeDasharray="4 4"
             className="text-primary sr-svg-flow-path"
           />
         )}
@@ -203,17 +210,20 @@ function StripLine({
           r="2.5"
           className={processing ? 'fill-primary' : 'fill-border'}
         />
-      </svg>
 
-      {/* Animated traveling data packet */}
-      {processing && (
-        <span
-          className="pointer-events-none absolute top-1/2 -translate-y-1/2 size-2 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"
-          style={{
-            animation: 'sr-packet 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite',
-          }}
-        />
-      )}
+        {/* Glowing traveling packet using native SVG animate */}
+        {processing && (
+          <circle r="3.5" cy="8" className="fill-primary" filter="url(#sr-glow)">
+            <animate
+              attributeName="cx"
+              from="0%"
+              to="100%"
+              dur="1.1s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        )}
+      </svg>
     </div>
   )
 }
@@ -229,7 +239,7 @@ function BranchTreeConnector({
 }) {
   const totalHeight = count * CARD_HEIGHT + (count - 1) * CARD_GAP
   const yCenter = totalHeight / 2
-  const svgWidth = 52
+  const svgWidth = 44
 
   const hasActive = activeMap ? activeMap.some(Boolean) : processing
 
@@ -255,8 +265,8 @@ function BranchTreeConnector({
         className="w-full h-full overflow-visible"
       >
         <defs>
-          <filter id="sr-branch-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.5" result="blur" />
+          <filter id="sr-branch-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
@@ -272,7 +282,7 @@ function BranchTreeConnector({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className={isBranchActive ? 'text-border/70' : 'text-border'}
+              className={isBranchActive ? 'text-primary/40' : 'text-border'}
             />
 
             {/* Foreground animated flowing dash stream */}
@@ -282,17 +292,17 @@ function BranchTreeConnector({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
-                strokeDasharray="5 5"
+                strokeDasharray="4 4"
                 className="text-primary sr-svg-flow-path"
               />
             )}
 
             {/* Glowing pulse particle traveling along each branch */}
             {isBranchActive && (
-              <circle r="3" className="fill-primary" filter="url(#sr-branch-glow)">
+              <circle r="3.5" className="fill-primary" filter="url(#sr-branch-glow)">
                 <animateMotion
                   path={d}
-                  dur={`${1.2 + key * 0.15}s`}
+                  dur={`${1.1 + key * 0.15}s`}
                   repeatCount="indefinite"
                 />
               </circle>
@@ -312,16 +322,16 @@ function BranchTreeConnector({
   )
 }
 
-function GatewayNode() {
+function GatewayNode({ className = 'flex-1' }: { className?: string }) {
   return (
-    <div className={NODE_BOX_CLASS}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1">
+    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
         Gateway
       </div>
-      <div className="flex items-center gap-1.5 text-xs font-medium text-foreground leading-none">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-foreground leading-none min-w-0">
         <LogoMark className="size-4 shrink-0" />
-        <span className="font-semibold tracking-tight">SRouter</span>
-        <span className="text-[10px] text-muted-foreground font-mono">20268</span>
+        <span className="font-semibold tracking-tight truncate">SRouter</span>
+        <span className="text-[10px] text-muted-foreground font-mono shrink-0 hidden sm:inline">20268</span>
       </div>
     </div>
   )
@@ -331,19 +341,21 @@ function ModeNode({
   sub,
   label,
   tone,
+  className = 'flex-1',
 }: {
   sub: string
   label: string
   tone?: string
+  className?: string
 }) {
   return (
-    <div className={NODE_BOX_CLASS}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 max-w-[11rem] truncate">
+    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
         {sub}
       </div>
-      <div className={`flex items-center gap-1.5 text-xs font-medium leading-none ${tone || 'text-foreground'}`}>
+      <div className={`flex items-center gap-1.5 text-xs font-medium leading-none min-w-0 ${tone || 'text-foreground'}`}>
         <GitBranch className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="max-w-[11rem] truncate">{label}</span>
+        <span className="truncate">{label}</span>
       </div>
     </div>
   )
@@ -352,18 +364,20 @@ function ModeNode({
 function ProviderModelNode({
   platform,
   model,
+  className = 'flex-[1.2]',
 }: {
   platform: string
   model?: string | null
+  className?: string
 }) {
   return (
-    <div className={NODE_BOX_CLASS}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 max-w-[11rem] truncate">
+    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
         {platformLabel(platform)}
       </div>
-      <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-foreground leading-none">
+      <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-foreground leading-none min-w-0">
         <Server className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="max-w-[11rem] truncate" title={model ?? ''}>
+        <span className="truncate" title={model ?? ''}>
           {model || '—'}
         </span>
       </div>
@@ -378,6 +392,7 @@ function AgentStatusNode({
   attempt,
   ageMs,
   isProcessing,
+  className = 'flex-1',
 }: {
   agent?: string | null
   status?: 'ok' | 'fail' | 'canceled' | null
@@ -385,6 +400,7 @@ function AgentStatusNode({
   attempt?: number
   ageMs?: number
   isProcessing: boolean
+  className?: string
 }) {
   const name = agentLabel(agent)
 
@@ -392,44 +408,44 @@ function AgentStatusNode({
 
   if (isProcessing) {
     content = (
-      <div className="flex items-center gap-1.5 text-xs font-medium text-primary leading-none">
-        <span className="inline-block size-2 rounded-full bg-primary animate-pulse" />
-        <span>In-flight {ageMs ? `${(ageMs / 1000).toFixed(1)}s` : ''}</span>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-primary leading-none min-w-0">
+        <span className="inline-block size-2 rounded-full bg-primary animate-pulse shrink-0" />
+        <span className="truncate">In-flight {ageMs ? `${(ageMs / 1000).toFixed(1)}s` : ''}</span>
       </div>
     )
   } else if (status === 'ok') {
     content = (
-      <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 leading-none">
-        <span className="inline-block size-2 rounded-full bg-emerald-500" />
-        <span>200 OK {latencyMs != null ? `· ${latencyMs}ms` : ''} {attempt && attempt > 1 ? `(a${attempt})` : ''}</span>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 leading-none min-w-0">
+        <span className="inline-block size-2 rounded-full bg-emerald-500 shrink-0" />
+        <span className="truncate">200 OK {latencyMs != null ? `· ${latencyMs}ms` : ''} {attempt && attempt > 1 ? `(a${attempt})` : ''}</span>
       </div>
     )
   } else if (status === 'fail') {
     content = (
-      <div className="flex items-center gap-1.5 text-xs font-medium text-destructive leading-none">
-        <span className="inline-block size-2 rounded-full bg-destructive" />
-        <span>Failed {attempt ? `· a${attempt}` : ''}</span>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-destructive leading-none min-w-0">
+        <span className="inline-block size-2 rounded-full bg-destructive shrink-0" />
+        <span className="truncate">Failed {attempt ? `· a${attempt}` : ''}</span>
       </div>
     )
   } else if (status === 'canceled') {
     content = (
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground leading-none">
-        <span className="inline-block size-2 rounded-full bg-muted-foreground" />
-        <span>Canceled</span>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground leading-none min-w-0">
+        <span className="inline-block size-2 rounded-full bg-muted-foreground shrink-0" />
+        <span className="truncate">Canceled</span>
       </div>
     )
   } else {
     content = (
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground leading-none">
-        <span className="inline-block size-2 rounded-full bg-muted-foreground/40" />
-        <span>Waiting…</span>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground leading-none min-w-0">
+        <span className="inline-block size-2 rounded-full bg-muted-foreground/40 shrink-0" />
+        <span className="truncate">Waiting…</span>
       </div>
     )
   }
 
   return (
-    <div className={NODE_BOX_CLASS}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 max-w-[11rem] truncate">
+    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
         {name}
       </div>
       {content}
@@ -448,7 +464,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
   const { data } = useQuery<LiveRoutes>({
     queryKey: ['analytics', 'live'],
     queryFn: () => apiFetch('/api/analytics/live'),
-    refetchInterval: 3000,
+    refetchInterval: 1000,
   })
 
   const active = data?.active ?? []
@@ -506,7 +522,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
   const currentModeInfo = resolveModeInfo(current?.requestedModel, strategy, t)
 
   return (
-    <section className="rounded-3xl border bg-card p-4 sm:p-5" aria-label={t('routingStrip.title')}>
+    <section className="rounded-3xl border bg-card p-4 sm:p-5 overflow-hidden w-full min-w-0" aria-label={t('routingStrip.title')}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-sm font-medium">{t('routingStrip.title')}</h2>
         <div className="flex items-center gap-2">
@@ -529,27 +545,28 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         </div>
       </div>
 
-      <div className="flex items-center overflow-x-auto w-full py-1">
+      <div className="flex items-center w-full min-w-0 py-1">
         {isBranching && modeGroups.length === 1 ? (
           /* Single shared mode: Gateway connects to Mode, Mode branches into Provider lanes */
           <>
-            <GatewayNode />
+            <GatewayNode className="flex-1" />
             <StripLine processing={processing} />
-            <div className="flex min-w-0 flex-1 items-center">
+            <div className="flex min-w-0 flex-[3.2] items-center">
               <ModeNode
                 sub={modeGroups[0].modeInfo.sub}
                 label={modeGroups[0].modeInfo.label}
                 tone={modeGroups[0].modeInfo.tone}
+                className="flex-1"
               />
               <BranchTreeConnector
                 count={modeGroups[0].lanes.length}
                 activeMap={modeGroups[0].lanes.map(isLaneActive)}
                 processing={processing}
               />
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div className="flex min-w-0 flex-[2.2] flex-col gap-2">
                 {modeGroups[0].lanes.map((lane, i) => (
                   <div key={i} className="flex min-w-0 flex-1 items-center">
-                    <ProviderModelNode platform={lane.platform} model={lane.model} />
+                    <ProviderModelNode platform={lane.platform} model={lane.model} className="flex-[1.2]" />
                     <StripLine processing={isLaneActive(lane)} />
                     <AgentStatusNode
                       agent={lane.clientAgent}
@@ -558,6 +575,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                       attempt={lane.attempt}
                       ageMs={lane.ageMs}
                       isProcessing={isLaneActive(lane)}
+                      className="flex-1"
                     />
                   </div>
                 ))}
@@ -567,19 +585,20 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         ) : isBranching && modeGroups.length > 1 ? (
           /* Multiple different modes active: Gateway branches directly to Mode groups */
           <>
-            <GatewayNode />
+            <GatewayNode className="flex-1" />
             <BranchTreeConnector
               count={modeGroups.length}
               activeMap={modeGroups.map(g => g.lanes.some(isLaneActive))}
               processing={processing}
             />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex min-w-0 flex-[3.2] flex-col gap-2">
               {modeGroups.map((group, gi) => (
                 <div key={gi} className="flex min-w-0 flex-1 items-center">
                   <ModeNode
                     sub={group.modeInfo.sub}
                     label={group.modeInfo.label}
                     tone={group.modeInfo.tone}
+                    className="flex-1"
                   />
                   {group.lanes.length > 1 ? (
                     <>
@@ -588,10 +607,10 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                         activeMap={group.lanes.map(isLaneActive)}
                         processing={processing}
                       />
-                      <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      <div className="flex min-w-0 flex-[2.2] flex-col gap-2">
                         {group.lanes.map((lane, li) => (
                           <div key={li} className="flex min-w-0 flex-1 items-center">
-                            <ProviderModelNode platform={lane.platform} model={lane.model} />
+                            <ProviderModelNode platform={lane.platform} model={lane.model} className="flex-[1.2]" />
                             <StripLine processing={isLaneActive(lane)} />
                             <AgentStatusNode
                               agent={lane.clientAgent}
@@ -600,6 +619,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                               attempt={lane.attempt}
                               ageMs={lane.ageMs}
                               isProcessing={isLaneActive(lane)}
+                              className="flex-1"
                             />
                           </div>
                         ))}
@@ -608,7 +628,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                   ) : (
                     <>
                       <StripLine processing={isLaneActive(group.lanes[0]!)} />
-                      <ProviderModelNode platform={group.lanes[0]!.platform} model={group.lanes[0]!.model} />
+                      <ProviderModelNode platform={group.lanes[0]!.platform} model={group.lanes[0]!.model} className="flex-[1.2]" />
                       <StripLine processing={isLaneActive(group.lanes[0]!)} />
                       <AgentStatusNode
                         agent={group.lanes[0]!.clientAgent}
@@ -617,6 +637,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                         attempt={group.lanes[0]!.attempt}
                         ageMs={group.lanes[0]!.ageMs}
                         isProcessing={isLaneActive(group.lanes[0]!)}
+                        className="flex-1"
                       />
                     </>
                   )}
@@ -627,17 +648,19 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         ) : (
           /* Single request or idle */
           <>
-            <GatewayNode />
+            <GatewayNode className="flex-1" />
             <StripLine processing={processing} />
             <ModeNode
               sub={currentModeInfo.sub}
               label={currentModeInfo.label}
               tone={currentModeInfo.tone}
+              className="flex-1"
             />
             <StripLine processing={processing} />
             <ProviderModelNode
               platform={current ? current.platform : '—'}
               model={current ? current.model : '—'}
+              className="flex-[1.2]"
             />
             <StripLine processing={processing} />
             <AgentStatusNode
@@ -647,6 +670,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
               attempt={current?.attempt}
               ageMs={current?.ageMs}
               isProcessing={processing}
+              className="flex-1"
             />
           </>
         )}

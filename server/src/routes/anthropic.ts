@@ -702,6 +702,7 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
     }
   });
   const dispatchOptions = { ...completionOptions, signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]) };
+  const requestId = sessionId ? `${sessionId}:${Date.now().toString(36)}` : `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
   await runFallbackLoop({
     maxRetries: MAX_RETRIES,
@@ -720,6 +721,16 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
       return routeRequest(routingTotal, state.skipKeys.size > 0 ? state.skipKeys : undefined, preferredModel, hasImage, wantsTools, state.skipModels.size > 0 ? state.skipModels : undefined, groupChain ?? resolvedChain?.chain, false, state.skipPlatforms.size > 0 ? state.skipPlatforms : undefined, outputReserve, taskType);
     },
     dispatch: async (route, attempt, dispatchCtx) => {
+      traceRouteEvent('Proxy', {
+        event: attempt === 0 ? 'start' : 'next',
+        requestId,
+        attempt,
+        platform: route.platform,
+        model: route.modelId,
+        requestedModel,
+        clientAgent,
+      });
+
       const contextBudget = routeOutputBudget(route, estimatedInputTokens);
       const routeOptions = { ...dispatchOptions, contextBudget };
       if (stream) {
@@ -727,9 +738,20 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
           await streamCompletion(res, route, messages, routeOptions, {
             start, attempt, attemptLog, clientGone: () => clientGone, requestedModel, estimatedInputTokens, tools, pinnedModelId,
             sessionId, pinned: resolved.pinned, stickyScope, strategyKey, disarmHedge: dispatchCtx.disarmHedge, state,
+            requestId, clientAgent,
           });
           return 'done';
         } catch (err: any) {
+          traceRouteEvent('Proxy', {
+            event: isClientAbortError(err) ? 'canceled' : 'fail',
+            requestId,
+            attempt,
+            platform: route.platform,
+            model: route.modelId,
+            requestedModel,
+            clientAgent,
+            latencyMs: Date.now() - start,
+          });
           // The stream already committed (message_start sent) and surfaced its
           // own error event; stop without failover or a second response.
           if (err instanceof StreamAlreadyStarted) return 'committed';
@@ -823,6 +845,16 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
       res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
       setFallbackHeaders(res, attempt, attemptLog);
       logRequest(route.platform, route.modelId, route.keyId, 'success', promptTokens, completionTokens, Date.now() - start, null, null, pinnedModelId, null, 'http');
+      traceRouteEvent('Proxy', {
+        event: 'ok',
+        requestId,
+        attempt,
+        platform: route.platform,
+        model: route.modelId,
+        requestedModel,
+        clientAgent,
+        latencyMs: Date.now() - start,
+      });
       res.json(anthropicResponse);
       return 'done';
     },
@@ -868,6 +900,8 @@ interface StreamCtx {
   disarmHedge: () => void;
   /** The request's failover state, so a served tool request can be learned from (#1230). */
   state: FallbackState;
+  requestId: string;
+  clientAgent?: string;
 }
 
 // Consume the provider's OpenAI-style stream and re-emit it as the Anthropic
@@ -1130,7 +1164,8 @@ async function streamCompletion(
     recordUpstreamSuccess(route, ctx.estimatedInputTokens + outputTokens, ctx.state);
     traceRouteEvent('Proxy', {
       event: 'ok',
-      requestId: ctx.sessionId || `req_${Date.now().toString(36)}`,
+      requestId: ctx.requestId,
+      clientAgent: ctx.clientAgent,
       attempt: ctx.attempt,
       platform: route.platform,
       model: route.modelId,
