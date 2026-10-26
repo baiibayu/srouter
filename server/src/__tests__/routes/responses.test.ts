@@ -313,6 +313,56 @@ describe('POST /v1/responses (#96)', () => {
     expect(body.usage.output_tokens_details.reasoning_tokens).toBe(2);
   });
 
+  it('non-stream: surfaces the thinking trace as a reasoning output item', async () => {
+    mockRouteRequest.mockReturnValue(fakeRoute({
+      async chatCompletion() {
+        return {
+          id: 'c', object: 'chat.completion', created: 0, model: 'fake-model',
+          choices: [{ index: 0, message: { role: 'assistant', content: 'answer', reasoning_content: 'working it out' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 3, completion_tokens: 6, total_tokens: 9, completion_tokens_details: { reasoning_tokens: 3 } },
+        };
+      },
+      async *streamChatCompletion() { /* unused */ },
+    }));
+
+    const { status, text } = await post(app, '/v1/responses', { input: 'hi', stream: false }, key);
+    expect(status).toBe(200);
+    const body = JSON.parse(text);
+    const reasoningItem = body.output.find((o: any) => o.type === 'reasoning');
+    expect(reasoningItem).toBeTruthy();
+    expect(reasoningItem.content[0].text).toBe('working it out');
+    // Reasoning item precedes the message item in output order.
+    expect(body.output.indexOf(reasoningItem)).toBeLessThan(
+      body.output.findIndex((o: any) => o.type === 'message'),
+    );
+  });
+
+  it('stream: surfaces the thinking trace as reasoning_text deltas before text', async () => {
+    mockRouteRequest.mockReturnValue(fakeRoute({
+      async chatCompletion() { throw new Error('should not be called'); },
+      async *streamChatCompletion() {
+        yield { id: 'c', object: 'chat.completion.chunk', created: 0, model: 'fake-model', choices: [{ index: 0, delta: { reasoning_content: 'working it out' }, finish_reason: null }] };
+        yield { id: 'c', object: 'chat.completion.chunk', created: 0, model: 'fake-model', choices: [{ index: 0, delta: { content: 'answer' }, finish_reason: null }] };
+        yield { id: 'c', object: 'chat.completion.chunk', created: 0, model: 'fake-model', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
+      },
+    }));
+
+    const { status, text } = await post(app, '/v1/responses', { input: 'hi', stream: true }, key);
+    expect(status).toBe(200);
+    expect(text).toContain('event: response.output_item.added');
+    expect(text).toContain('"type":"reasoning"');
+    expect(text).toContain('event: response.reasoning_text.delta');
+    expect(text).toContain('"delta":"working it out"');
+    expect(text).toContain('event: response.content_part.added');
+    expect(text).toContain('"type":"reasoning_text"');
+    // Reasoning item.done carries the full trace.
+    const reasoningDone = text.split('event: response.output_item.done')[0];
+    expect(reasoningDone).toContain('"type":"reasoning"');
+    expect(reasoningDone).toContain('"reasoning_text"');
+    // Reasoning precedes text in the stream.
+    expect(text.indexOf('working it out')).toBeLessThan(text.indexOf('answer'));
+  });
+
   it('stream: tool-call deltas produce function_call events with assembled arguments', async () => {
     mockRouteRequest.mockReturnValue(fakeRoute({
       async chatCompletion() { throw new Error('nope'); },

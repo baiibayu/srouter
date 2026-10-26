@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { detectAllAgents, type AgentDetection } from '../lib/agent-detection.js';
+import { detectAgent, detectAllAgents, type AgentDetection } from '../lib/agent-detection.js';
 import { setupAgent, resetAgent } from '../lib/agent-setup.js';
 import { getUnifiedApiKey } from '../db/index.js';
 
@@ -19,7 +19,15 @@ agentsRouter.get('/detection', (_req: Request, res: Response) => {
 agentsRouter.post('/:id/setup', async (req: Request, res: Response) => {
   const { id } = req.params;
   if (!id || typeof id !== 'string') {
-    res.status(400).json({ error: 'Agent ID is required' });
+    res.status(400).json({ error: { message: 'Agent ID is required' } });
+    return;
+  }
+
+  const detection = detectAgent(id);
+  if (!detection.installed) {
+    res.status(400).json({
+      error: { message: `Agent '${id}' is not installed on this system. Please install it first.` },
+    });
     return;
   }
 

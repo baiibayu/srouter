@@ -223,6 +223,26 @@ function isBinaryInPath(name: string): boolean {
   return false;
 }
 
+function hasIdeExtension(pattern: RegExp): boolean {
+  const home = envHome();
+  const dirs = [
+    path.join(home, '.vscode', 'extensions'),
+    path.join(home, '.vscode-insiders', 'extensions'),
+    path.join(home, '.cursor', 'extensions'),
+    path.join(home, '.windsurf', 'extensions'),
+  ];
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      const entries = fs.readdirSync(dir);
+      if (entries.some(e => pattern.test(e))) return true;
+    } catch {
+      // Ignore permission or file system errors
+    }
+  }
+  return false;
+}
+
 function isAppInstalled(id: string): boolean {
   const binaryName = binaryNameFor(id);
   if (binaryName && isBinaryInPath(binaryName)) return true;
@@ -232,6 +252,16 @@ function isAppInstalled(id: string): boolean {
   const appData = envPath('APPDATA') ?? path.join(home, 'AppData', 'Roaming');
 
   switch (id) {
+    case 'cline':
+      return isBinaryInPath('cline') || hasIdeExtension(/^(saoudrizwan\.claude-dev|cline\.)/i);
+    case 'continue':
+      return isBinaryInPath('continue') || hasIdeExtension(/^continue\.continue/i);
+    case 'roo':
+      return (
+        isBinaryInPath('roo') ||
+        isBinaryInPath('roo-cline') ||
+        hasIdeExtension(/^(rooveterinaryinc\.roo-cline|roo\.)/i)
+      );
     case 'cursor':
       return (
         isBinaryInPath('cursor') ||
@@ -267,7 +297,7 @@ export function detectAgent(id: string): AgentDetection {
   }
 
   const configPath = configPathFor(id);
-  const appInstalled = isAppInstalled(id);
+  const installed = isAppInstalled(id);
 
   let configFileExists = false;
   if (configPath) {
@@ -277,11 +307,6 @@ export function detectAgent(id: string): AgentDetection {
       configFileExists = false;
     }
   }
-
-  const isCli = binaryNameFor(id) !== null;
-  // For CLI tools, the binary executable must exist in PATH to be considered installed.
-  // Having a stray config file when the binary is missing does not mean it's installed.
-  const installed = isCli ? appInstalled : (appInstalled || configFileExists);
 
   let configured = false;
   if (installed) {
