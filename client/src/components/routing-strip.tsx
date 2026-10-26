@@ -325,10 +325,10 @@ function BranchTreeConnector({
 function GatewayNode({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`h-[52px] min-w-0 shrink-0 sm:shrink max-w-[170px] rounded-xl border bg-background px-3 flex items-center gap-1.5 shadow-2xs select-none ${className}`}
+      className={`h-[52px] min-w-0 shrink-0 sm:shrink max-w-[170px] rounded-xl border bg-background px-3.5 flex items-center gap-2 shadow-2xs select-none ${className}`}
     >
-      <LogoMark className="size-4 shrink-0" />
-      <span className="font-semibold text-xs tracking-tight truncate text-foreground">
+      <LogoMark className="size-5 shrink-0" />
+      <span className="font-semibold text-sm tracking-tight truncate text-foreground">
         SRouter
       </span>
     </div>
