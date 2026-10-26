@@ -148,7 +148,7 @@ const CARD_HEIGHT = 52
 const CARD_GAP = 8
 
 const NODE_BOX_CLASS =
-  'h-[52px] min-w-0 rounded-xl border bg-background px-2.5 sm:px-3 flex flex-col justify-center shadow-2xs select-none'
+  'h-[52px] min-w-0 shrink-0 sm:shrink rounded-xl border bg-background px-3 flex flex-col justify-center shadow-2xs select-none'
 
 function StripLine({
   processing,
@@ -160,65 +160,65 @@ function StripLine({
   return (
     <div
       aria-hidden="true"
-      className={`relative flex items-center h-[52px] w-5 sm:w-8 md:w-12 shrink-0 ${className}`}
+      className={`relative flex items-center h-[52px] min-w-8 flex-1 ${className}`}
     >
-      <svg className="w-full h-4 overflow-visible">
+      <svg
+        viewBox="0 0 64 20"
+        preserveAspectRatio="none"
+        className="w-full h-5 overflow-visible"
+      >
         <defs>
-          <filter id="sr-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
+          <filter id="sr-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
 
-        {/* Background track line */}
-        <line
-          x1="0"
-          y1="8"
-          x2="100%"
-          y2="8"
+        {/* Start docking anchor dot flush against preceding card */}
+        <circle
+          cx="0"
+          cy="10"
+          r="2.5"
+          className={processing ? 'fill-primary' : 'fill-border'}
+        />
+
+        {/* Background track curve */}
+        <path
+          d="M 0 10 C 20 2, 44 18, 64 10"
+          fill="none"
           stroke="currentColor"
           strokeWidth="2"
           className={processing ? 'text-primary/40' : 'text-border'}
+          vectorEffect="non-scaling-stroke"
         />
 
-        {/* Animated active dash line */}
+        {/* Animated active dash wave stream */}
         {processing && (
-          <line
-            x1="0"
-            y1="8"
-            x2="100%"
-            y2="8"
+          <path
+            d="M 0 10 C 20 2, 44 18, 64 10"
+            fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
             strokeDasharray="4 4"
             className="text-primary sr-svg-flow-path"
+            vectorEffect="non-scaling-stroke"
           />
         )}
 
-        {/* Docking anchor dot at start (flush against preceding card) */}
+        {/* End docking anchor dot flush against succeeding card */}
         <circle
-          cx="0"
-          cy="8"
+          cx="64"
+          cy="10"
           r="2.5"
           className={processing ? 'fill-primary' : 'fill-border'}
         />
 
-        {/* Docking anchor dot at end (flush against succeeding card) */}
-        <circle
-          cx="100%"
-          cy="8"
-          r="2.5"
-          className={processing ? 'fill-primary' : 'fill-border'}
-        />
-
-        {/* Glowing traveling packet using native SVG animate */}
+        {/* Animated traveling data packet along curve */}
         {processing && (
-          <circle r="3.5" cy="8" className="fill-primary" filter="url(#sr-glow)">
-            <animate
-              attributeName="cx"
-              from="0%"
-              to="100%"
-              dur="1.1s"
+          <circle r="3.5" className="fill-primary" filter="url(#sr-glow)">
+            <animateMotion
+              path="M 0 10 C 20 2, 44 18, 64 10"
+              dur="1.2s"
               repeatCount="indefinite"
             />
           </circle>
@@ -239,7 +239,7 @@ function BranchTreeConnector({
 }) {
   const totalHeight = count * CARD_HEIGHT + (count - 1) * CARD_GAP
   const yCenter = totalHeight / 2
-  const svgWidth = 44
+  const svgWidth = 48
 
   const hasActive = activeMap ? activeMap.some(Boolean) : processing
 
@@ -322,17 +322,19 @@ function BranchTreeConnector({
   )
 }
 
-function GatewayNode({ className = 'flex-1' }: { className?: string }) {
+function GatewayNode({ className = '' }: { className?: string }) {
+  const port = typeof window !== 'undefined' && window.location.port ? window.location.port : '20268'
   return (
-    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
-        Gateway
-      </div>
-      <div className="flex items-center gap-1.5 text-xs font-medium text-foreground leading-none min-w-0">
-        <LogoMark className="size-4 shrink-0" />
-        <span className="font-semibold tracking-tight truncate">SRouter</span>
-        <span className="text-[10px] text-muted-foreground font-mono shrink-0 hidden sm:inline">20268</span>
-      </div>
+    <div
+      className={`h-[52px] min-w-0 shrink-0 sm:shrink max-w-[170px] rounded-xl border bg-background px-3 flex items-center gap-1.5 shadow-2xs select-none ${className}`}
+    >
+      <LogoMark className="size-4 shrink-0" />
+      <span className="font-semibold text-xs tracking-tight truncate text-foreground">
+        SRouter
+      </span>
+      <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+        {port}
+      </span>
     </div>
   )
 }
@@ -341,7 +343,7 @@ function ModeNode({
   sub,
   label,
   tone,
-  className = 'flex-1',
+  className = '',
 }: {
   sub: string
   label: string
@@ -349,7 +351,7 @@ function ModeNode({
   className?: string
 }) {
   return (
-    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
+    <div className={`${NODE_BOX_CLASS} max-w-[180px] ${className}`}>
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
         {sub}
       </div>
@@ -364,14 +366,14 @@ function ModeNode({
 function ProviderModelNode({
   platform,
   model,
-  className = 'flex-[1.2]',
+  className = '',
 }: {
   platform: string
   model?: string | null
   className?: string
 }) {
   return (
-    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
+    <div className={`${NODE_BOX_CLASS} max-w-[210px] ${className}`}>
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
         {platformLabel(platform)}
       </div>
@@ -392,7 +394,7 @@ function AgentStatusNode({
   attempt,
   ageMs,
   isProcessing,
-  className = 'flex-1',
+  className = '',
 }: {
   agent?: string | null
   status?: 'ok' | 'fail' | 'canceled' | null
@@ -444,7 +446,7 @@ function AgentStatusNode({
   }
 
   return (
-    <div className={`${NODE_BOX_CLASS} ${className} min-w-0`}>
+    <div className={`${NODE_BOX_CLASS} max-w-[185px] ${className}`}>
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 truncate">
         {name}
       </div>
@@ -545,28 +547,27 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         </div>
       </div>
 
-      <div className="flex items-center w-full min-w-0 py-1">
+      <div className="flex items-center w-full min-w-0 py-1 overflow-x-auto">
         {isBranching && modeGroups.length === 1 ? (
           /* Single shared mode: Gateway connects to Mode, Mode branches into Provider lanes */
           <>
-            <GatewayNode className="flex-1" />
+            <GatewayNode />
             <StripLine processing={processing} />
-            <div className="flex min-w-0 flex-[3.2] items-center">
+            <div className="flex min-w-0 flex-[3] items-center">
               <ModeNode
                 sub={modeGroups[0].modeInfo.sub}
                 label={modeGroups[0].modeInfo.label}
                 tone={modeGroups[0].modeInfo.tone}
-                className="flex-1"
               />
               <BranchTreeConnector
                 count={modeGroups[0].lanes.length}
                 activeMap={modeGroups[0].lanes.map(isLaneActive)}
                 processing={processing}
               />
-              <div className="flex min-w-0 flex-[2.2] flex-col gap-2">
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
                 {modeGroups[0].lanes.map((lane, i) => (
                   <div key={i} className="flex min-w-0 flex-1 items-center">
-                    <ProviderModelNode platform={lane.platform} model={lane.model} className="flex-[1.2]" />
+                    <ProviderModelNode platform={lane.platform} model={lane.model} />
                     <StripLine processing={isLaneActive(lane)} />
                     <AgentStatusNode
                       agent={lane.clientAgent}
@@ -575,7 +576,6 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                       attempt={lane.attempt}
                       ageMs={lane.ageMs}
                       isProcessing={isLaneActive(lane)}
-                      className="flex-1"
                     />
                   </div>
                 ))}
@@ -585,20 +585,19 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         ) : isBranching && modeGroups.length > 1 ? (
           /* Multiple different modes active: Gateway branches directly to Mode groups */
           <>
-            <GatewayNode className="flex-1" />
+            <GatewayNode />
             <BranchTreeConnector
               count={modeGroups.length}
               activeMap={modeGroups.map(g => g.lanes.some(isLaneActive))}
               processing={processing}
             />
-            <div className="flex min-w-0 flex-[3.2] flex-col gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
               {modeGroups.map((group, gi) => (
                 <div key={gi} className="flex min-w-0 flex-1 items-center">
                   <ModeNode
                     sub={group.modeInfo.sub}
                     label={group.modeInfo.label}
                     tone={group.modeInfo.tone}
-                    className="flex-1"
                   />
                   {group.lanes.length > 1 ? (
                     <>
@@ -607,10 +606,10 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                         activeMap={group.lanes.map(isLaneActive)}
                         processing={processing}
                       />
-                      <div className="flex min-w-0 flex-[2.2] flex-col gap-2">
+                      <div className="flex min-w-0 flex-1 flex-col gap-2">
                         {group.lanes.map((lane, li) => (
                           <div key={li} className="flex min-w-0 flex-1 items-center">
-                            <ProviderModelNode platform={lane.platform} model={lane.model} className="flex-[1.2]" />
+                            <ProviderModelNode platform={lane.platform} model={lane.model} />
                             <StripLine processing={isLaneActive(lane)} />
                             <AgentStatusNode
                               agent={lane.clientAgent}
@@ -619,7 +618,6 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                               attempt={lane.attempt}
                               ageMs={lane.ageMs}
                               isProcessing={isLaneActive(lane)}
-                              className="flex-1"
                             />
                           </div>
                         ))}
@@ -628,7 +626,7 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                   ) : (
                     <>
                       <StripLine processing={isLaneActive(group.lanes[0]!)} />
-                      <ProviderModelNode platform={group.lanes[0]!.platform} model={group.lanes[0]!.model} className="flex-[1.2]" />
+                      <ProviderModelNode platform={group.lanes[0]!.platform} model={group.lanes[0]!.model} />
                       <StripLine processing={isLaneActive(group.lanes[0]!)} />
                       <AgentStatusNode
                         agent={group.lanes[0]!.clientAgent}
@@ -637,7 +635,6 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                         attempt={group.lanes[0]!.attempt}
                         ageMs={group.lanes[0]!.ageMs}
                         isProcessing={isLaneActive(group.lanes[0]!)}
-                        className="flex-1"
                       />
                     </>
                   )}
@@ -648,19 +645,17 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
         ) : (
           /* Single request or idle */
           <>
-            <GatewayNode className="flex-1" />
+            <GatewayNode />
             <StripLine processing={processing} />
             <ModeNode
               sub={currentModeInfo.sub}
               label={currentModeInfo.label}
               tone={currentModeInfo.tone}
-              className="flex-1"
             />
             <StripLine processing={processing} />
             <ProviderModelNode
               platform={current ? current.platform : '—'}
               model={current ? current.model : '—'}
-              className="flex-[1.2]"
             />
             <StripLine processing={processing} />
             <AgentStatusNode
@@ -670,7 +665,6 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
               attempt={current?.attempt}
               ageMs={current?.ageMs}
               isProcessing={processing}
-              className="flex-1"
             />
           </>
         )}
