@@ -144,8 +144,11 @@ function resolveModeInfo(
   }
 }
 
-const CARD_HEIGHT = 54
+const CARD_HEIGHT = 52
 const CARD_GAP = 8
+
+const NODE_BOX_CLASS =
+  'h-[52px] min-w-[130px] max-w-[190px] shrink-0 rounded-xl border bg-background px-3 flex flex-col justify-center shadow-2xs select-none'
 
 function StripLine({
   processing,
@@ -157,79 +160,87 @@ function StripLine({
   return (
     <div
       aria-hidden="true"
-      className={`relative flex items-center h-7 min-w-8 flex-1 ${className}`}
+      className={`relative flex items-center h-[52px] min-w-8 max-w-20 flex-1 shrink-0 ${className}`}
     >
-      <svg
-        viewBox="0 0 64 20"
-        preserveAspectRatio="none"
-        className="w-full h-5 overflow-visible"
-      >
-        <defs>
-          <filter id="sr-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.5" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-
-        {/* Anchor point start */}
-        <circle cx={0} cy={10} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
-
-        {/* Background track with gentle wave curve */}
-        <path
-          d="M 0 10 C 20 2, 44 18, 64 10"
-          fill="none"
+      <svg className="w-full h-4 overflow-visible">
+        {/* Background track line */}
+        <line
+          x1="0"
+          y1="8"
+          x2="100%"
+          y2="8"
           stroke="currentColor"
           strokeWidth="2"
-          className={processing ? 'text-border/80' : 'text-border'}
-          vectorEffect="non-scaling-stroke"
+          className={processing ? 'text-border/70' : 'text-border'}
         />
 
+        {/* Animated active dash line */}
         {processing && (
-          <>
-            {/* Animated flowing wave dashed line */}
-            <path
-              d="M 0 10 C 20 2, 44 18, 64 10"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeDasharray="5 5"
-              className="text-primary sr-svg-flow-path"
-              vectorEffect="non-scaling-stroke"
-            />
-            {/* Glowing particle packet traveling along the wave */}
-            <circle r="3" className="fill-primary" filter="url(#sr-glow)">
-              <animateMotion
-                path="M 0 10 C 20 2, 44 18, 64 10"
-                dur="1.3s"
-                repeatCount="indefinite"
-              />
-            </circle>
-          </>
+          <line
+            x1="0"
+            y1="8"
+            x2="100%"
+            y2="8"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeDasharray="5 5"
+            className="text-primary sr-svg-flow-path"
+          />
         )}
 
-        {/* Anchor point end */}
-        <circle cx={64} cy={10} r={2.5} className={processing ? 'fill-primary' : 'fill-border'} />
+        {/* Docking anchor dot at start (flush against preceding card) */}
+        <circle
+          cx="0"
+          cy="8"
+          r="2.5"
+          className={processing ? 'fill-primary' : 'fill-border'}
+        />
+
+        {/* Docking anchor dot at end (flush against succeeding card) */}
+        <circle
+          cx="100%"
+          cy="8"
+          r="2.5"
+          className={processing ? 'fill-primary' : 'fill-border'}
+        />
       </svg>
+
+      {/* Animated traveling data packet */}
+      {processing && (
+        <span
+          className="pointer-events-none absolute top-1/2 -translate-y-1/2 size-2 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"
+          style={{
+            animation: 'sr-packet 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+          }}
+        />
+      )}
     </div>
   )
 }
 
 function BranchTreeConnector({
   count,
-  processing = true,
+  activeMap,
+  processing = false,
 }: {
   count: number
+  activeMap?: boolean[]
   processing?: boolean
 }) {
   const totalHeight = count * CARD_HEIGHT + (count - 1) * CARD_GAP
   const yCenter = totalHeight / 2
-  const svgWidth = 56
+  const svgWidth = 52
+
+  const hasActive = activeMap ? activeMap.some(Boolean) : processing
 
   const paths = Array.from({ length: count }, (_, i) => {
     const yDest = i * (CARD_HEIGHT + CARD_GAP) + CARD_HEIGHT / 2
+    const isBranchActive = activeMap ? !!activeMap[i] : processing
     return {
       d: `M 0 ${yCenter} C ${svgWidth * 0.45} ${yCenter}, ${svgWidth * 0.55} ${yDest}, ${svgWidth} ${yDest}`,
       key: i,
+      yDest,
+      isBranchActive,
     }
   })
 
@@ -237,7 +248,7 @@ function BranchTreeConnector({
     <div
       aria-hidden="true"
       style={{ height: `${totalHeight}px`, width: `${svgWidth}px` }}
-      className="relative flex items-center shrink-0 my-0.5"
+      className="relative shrink-0"
     >
       <svg
         viewBox={`0 0 ${svgWidth} ${totalHeight}`}
@@ -250,10 +261,10 @@ function BranchTreeConnector({
           </filter>
         </defs>
 
-        {/* Origin junction point at the Mode card */}
-        <circle cx={0} cy={yCenter} r={3} className={processing ? 'fill-primary' : 'fill-border'} />
+        {/* Origin junction point docked at Mode card right border */}
+        <circle cx={0} cy={yCenter} r={3} className={hasActive ? 'fill-primary' : 'fill-border'} />
 
-        {paths.map(({ d, key }) => (
+        {paths.map(({ d, key, yDest, isBranchActive }) => (
           <g key={key}>
             {/* Background static curved branch track */}
             <path
@@ -261,35 +272,38 @@ function BranchTreeConnector({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className={processing ? 'text-border/80' : 'text-border'}
+              className={isBranchActive ? 'text-border/70' : 'text-border'}
             />
-            {processing && (
-              <>
-                {/* Foreground animated flowing dash stream */}
-                <path
-                  d={d}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeDasharray="6 6"
-                  className="text-primary sr-svg-flow-path"
-                />
-                {/* Glowing pulse particle traveling along each branch */}
-                <circle r="3" className="fill-primary" filter="url(#sr-branch-glow)">
-                  <animateMotion
-                    path={d}
-                    dur={`${1.2 + key * 0.15}s`}
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              </>
+
+            {/* Foreground animated flowing dash stream */}
+            {isBranchActive && (
+              <path
+                d={d}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeDasharray="5 5"
+                className="text-primary sr-svg-flow-path"
+              />
             )}
-            {/* Terminal junction point entering the Provider card */}
+
+            {/* Glowing pulse particle traveling along each branch */}
+            {isBranchActive && (
+              <circle r="3" className="fill-primary" filter="url(#sr-branch-glow)">
+                <animateMotion
+                  path={d}
+                  dur={`${1.2 + key * 0.15}s`}
+                  repeatCount="indefinite"
+                />
+              </circle>
+            )}
+
+            {/* Terminal junction point docked at Provider card left border */}
             <circle
               cx={svgWidth}
-              cy={key * (CARD_HEIGHT + CARD_GAP) + CARD_HEIGHT / 2}
+              cy={yDest}
               r={2.5}
-              className={processing ? 'fill-primary' : 'fill-border'}
+              className={isBranchActive ? 'fill-primary' : 'fill-border'}
             />
           </g>
         ))}
@@ -298,24 +312,37 @@ function BranchTreeConnector({
   )
 }
 
-function StripNode({
+function GatewayNode() {
+  return (
+    <div className={NODE_BOX_CLASS}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1">
+        Gateway
+      </div>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-foreground leading-none">
+        <LogoMark className="size-4 shrink-0" />
+        <span className="font-semibold tracking-tight">SRouter</span>
+        <span className="text-[10px] text-muted-foreground font-mono">20268</span>
+      </div>
+    </div>
+  )
+}
+
+function ModeNode({
   sub,
-  icon,
   label,
-  tone = 'text-foreground',
+  tone,
 }: {
-  sub?: string
-  icon?: React.ReactNode
-  label: React.ReactNode
+  sub: string
+  label: string
   tone?: string
 }) {
   return (
-    <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
-      {sub && (
-        <div className="max-w-[11rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{sub}</div>
-      )}
-      <div className={`mt-0.5 flex items-center gap-1.5 text-xs font-medium ${tone}`}>
-        {icon}
+    <div className={NODE_BOX_CLASS}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 max-w-[11rem] truncate">
+        {sub}
+      </div>
+      <div className={`flex items-center gap-1.5 text-xs font-medium leading-none ${tone || 'text-foreground'}`}>
+        <GitBranch className="size-3.5 shrink-0 text-muted-foreground" />
         <span className="max-w-[11rem] truncate">{label}</span>
       </div>
     </div>
@@ -330,11 +357,11 @@ function ProviderModelNode({
   model?: string | null
 }) {
   return (
-    <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
-      <div className="max-w-[11rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+    <div className={NODE_BOX_CLASS}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 max-w-[11rem] truncate">
         {platformLabel(platform)}
       </div>
-      <div className="mt-0.5 flex items-center gap-1.5 text-xs font-mono font-medium text-foreground">
+      <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-foreground leading-none">
         <Server className="size-3.5 shrink-0 text-muted-foreground" />
         <span className="max-w-[11rem] truncate" title={model ?? ''}>
           {model || '—'}
@@ -361,71 +388,51 @@ function AgentStatusNode({
 }) {
   const name = agentLabel(agent)
 
+  let content: React.ReactNode
+
   if (isProcessing) {
-    return (
-      <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
-        <div className="max-w-[11rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {name}
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-primary">
-          <span className="inline-block size-2 rounded-full bg-primary animate-pulse" />
-          <span>In-flight {ageMs ? `${(ageMs / 1000).toFixed(1)}s` : ''}</span>
-        </div>
+    content = (
+      <div className="flex items-center gap-1.5 text-xs font-medium text-primary leading-none">
+        <span className="inline-block size-2 rounded-full bg-primary animate-pulse" />
+        <span>In-flight {ageMs ? `${(ageMs / 1000).toFixed(1)}s` : ''}</span>
       </div>
     )
-  }
-
-  if (status === 'ok') {
-    return (
-      <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
-        <div className="max-w-[11rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {name}
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-          <span className="inline-block size-2 rounded-full bg-emerald-500" />
-          <span>200 OK {latencyMs != null ? `· ${latencyMs}ms` : ''} {attempt && attempt > 1 ? `(a${attempt})` : ''}</span>
-        </div>
+  } else if (status === 'ok') {
+    content = (
+      <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 leading-none">
+        <span className="inline-block size-2 rounded-full bg-emerald-500" />
+        <span>200 OK {latencyMs != null ? `· ${latencyMs}ms` : ''} {attempt && attempt > 1 ? `(a${attempt})` : ''}</span>
       </div>
     )
-  }
-
-  if (status === 'fail') {
-    return (
-      <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
-        <div className="max-w-[11rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {name}
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-destructive">
-          <span className="inline-block size-2 rounded-full bg-destructive" />
-          <span>Failed {attempt ? `· a${attempt}` : ''}</span>
-        </div>
+  } else if (status === 'fail') {
+    content = (
+      <div className="flex items-center gap-1.5 text-xs font-medium text-destructive leading-none">
+        <span className="inline-block size-2 rounded-full bg-destructive" />
+        <span>Failed {attempt ? `· a${attempt}` : ''}</span>
       </div>
     )
-  }
-
-  if (status === 'canceled') {
-    return (
-      <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
-        <div className="max-w-[11rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {name}
-        </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <span className="inline-block size-2 rounded-full bg-muted-foreground" />
-          <span>Canceled</span>
-        </div>
+  } else if (status === 'canceled') {
+    content = (
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground leading-none">
+        <span className="inline-block size-2 rounded-full bg-muted-foreground" />
+        <span>Canceled</span>
+      </div>
+    )
+  } else {
+    content = (
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground leading-none">
+        <span className="inline-block size-2 rounded-full bg-muted-foreground/40" />
+        <span>Waiting…</span>
       </div>
     )
   }
 
   return (
-    <div className="min-w-0 shrink-0 rounded-xl border bg-background px-3 py-2">
-      <div className="max-w-[11rem] truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        Client
+    <div className={NODE_BOX_CLASS}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1 max-w-[11rem] truncate">
+        {name}
       </div>
-      <div className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <span className="inline-block size-2 rounded-full bg-muted-foreground/40" />
-        <span>Waiting for request…</span>
-      </div>
+      {content}
     </div>
   )
 }
@@ -502,74 +509,88 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
     <section className="rounded-3xl border bg-card p-4 sm:p-5" aria-label={t('routingStrip.title')}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-sm font-medium">{t('routingStrip.title')}</h2>
-        {processing ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-            <Loader2 className="size-3 animate-spin" />
-            {t('routingStrip.activeCount', { n: active.length })}
-          </span>
-        ) : recent.length > 0 ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            {recent.length} recent
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {hiddenLanes > 0 && (
+            <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+              +{hiddenLanes} more
+            </span>
+          )}
+          {processing ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+              <Loader2 className="size-3 animate-spin" />
+              {t('routingStrip.activeCount', { n: active.length })}
+            </span>
+          ) : recent.length > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="size-1.5 rounded-full bg-emerald-500" />
+              {recent.length} recent
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto w-full py-1">
-        <StripNode label="SRouter" icon={<LogoMark className="size-4 shrink-0" />} />
-        <StripLine processing={processing} />
-
+      <div className="flex items-center overflow-x-auto w-full py-1">
         {isBranching && modeGroups.length === 1 ? (
-          /* Single shared mode: branch directly to provider lanes */
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <StripNode
-              sub={modeGroups[0].modeInfo.sub}
-              label={modeGroups[0].modeInfo.label}
-              tone={modeGroups[0].modeInfo.tone}
-              icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
-            />
-            <BranchTreeConnector count={modeGroups[0].lanes.length} processing={processing} />
-            <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
-              {modeGroups[0].lanes.map((lane, i) => (
-                <div key={i} className="flex min-w-0 flex-1 items-center gap-2">
-                  <ProviderModelNode platform={lane.platform} model={lane.model} />
-                  <StripLine processing={isLaneActive(lane)} />
-                  <AgentStatusNode
-                    agent={lane.clientAgent}
-                    status={isLaneActive(lane) ? null : (lane.outcome ?? 'ok')}
-                    latencyMs={lane.latencyMs}
-                    attempt={lane.attempt}
-                    ageMs={lane.ageMs}
-                    isProcessing={isLaneActive(lane)}
-                  />
-                </div>
-              ))}
-              {hiddenLanes > 0 && (
-                <span className="self-start rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
-                  +{hiddenLanes}
-                </span>
-              )}
+          /* Single shared mode: Gateway connects to Mode, Mode branches into Provider lanes */
+          <>
+            <GatewayNode />
+            <StripLine processing={processing} />
+            <div className="flex min-w-0 flex-1 items-center">
+              <ModeNode
+                sub={modeGroups[0].modeInfo.sub}
+                label={modeGroups[0].modeInfo.label}
+                tone={modeGroups[0].modeInfo.tone}
+              />
+              <BranchTreeConnector
+                count={modeGroups[0].lanes.length}
+                activeMap={modeGroups[0].lanes.map(isLaneActive)}
+                processing={processing}
+              />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                {modeGroups[0].lanes.map((lane, i) => (
+                  <div key={i} className="flex min-w-0 flex-1 items-center">
+                    <ProviderModelNode platform={lane.platform} model={lane.model} />
+                    <StripLine processing={isLaneActive(lane)} />
+                    <AgentStatusNode
+                      agent={lane.clientAgent}
+                      status={isLaneActive(lane) ? null : (lane.outcome ?? 'ok')}
+                      latencyMs={lane.latencyMs}
+                      attempt={lane.attempt}
+                      ageMs={lane.ageMs}
+                      isProcessing={isLaneActive(lane)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         ) : isBranching && modeGroups.length > 1 ? (
-          /* Multiple different modes active */
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <BranchTreeConnector count={modeGroups.length} processing={processing} />
-            <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
+          /* Multiple different modes active: Gateway branches directly to Mode groups */
+          <>
+            <GatewayNode />
+            <BranchTreeConnector
+              count={modeGroups.length}
+              activeMap={modeGroups.map(g => g.lanes.some(isLaneActive))}
+              processing={processing}
+            />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
               {modeGroups.map((group, gi) => (
-                <div key={gi} className="flex min-w-0 flex-1 items-center gap-2">
-                  <StripNode
+                <div key={gi} className="flex min-w-0 flex-1 items-center">
+                  <ModeNode
                     sub={group.modeInfo.sub}
                     label={group.modeInfo.label}
                     tone={group.modeInfo.tone}
-                    icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
                   />
                   {group.lanes.length > 1 ? (
                     <>
-                      <BranchTreeConnector count={group.lanes.length} processing={processing} />
-                      <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
+                      <BranchTreeConnector
+                        count={group.lanes.length}
+                        activeMap={group.lanes.map(isLaneActive)}
+                        processing={processing}
+                      />
+                      <div className="flex min-w-0 flex-1 flex-col gap-2">
                         {group.lanes.map((lane, li) => (
-                          <div key={li} className="flex min-w-0 flex-1 items-center gap-2">
+                          <div key={li} className="flex min-w-0 flex-1 items-center">
                             <ProviderModelNode platform={lane.platform} model={lane.model} />
                             <StripLine processing={isLaneActive(lane)} />
                             <AgentStatusNode
@@ -601,21 +622,17 @@ export function RoutingStrip({ strategy }: { strategy: RoutingStrategy }) {
                   )}
                 </div>
               ))}
-              {hiddenLanes > 0 && (
-                <span className="self-start rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
-                  +{hiddenLanes}
-                </span>
-              )}
             </div>
-          </div>
+          </>
         ) : (
           /* Single request or idle */
           <>
-            <StripNode
+            <GatewayNode />
+            <StripLine processing={processing} />
+            <ModeNode
               sub={currentModeInfo.sub}
               label={currentModeInfo.label}
               tone={currentModeInfo.tone}
-              icon={<GitBranch className="size-3.5 shrink-0 text-muted-foreground" />}
             />
             <StripLine processing={processing} />
             <ProviderModelNode
