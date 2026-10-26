@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle2, ExternalLink, Globe } from 'lucide-react'
+import { CheckCircle2, ChevronRight, Globe } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
 import { PageHeader } from '@/components/page-header'
@@ -9,14 +9,6 @@ import { CopyButton } from '@/components/copy-button'
 import { AgentIcon } from '@/components/agent-icons'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import toolCatalog from '@/data/agent-tools.json'
 
 interface ClientAnalytics {
@@ -159,84 +151,44 @@ export default function AgentsPage() {
             status = 'not-installed'
           }
 
-          const command = `npx @baiibayu/srouter ${tool.command} --url ${origin}`
-          const endpoint = tool.baseUrlSupport === 'root' ? origin : `${origin}/v1`
-          // The copied snippet is pasted into config files — keep it
-          // locale-independent.
-          const realConnection = `BASE_URL=${endpoint}\nAPI_KEY=${keyData?.apiKey ?? '<unified-key>'}`
-          const shownConnection = `BASE_URL=${endpoint}\nAPI_KEY=${shownKey}`
-          // What the tool actually is, in one plain sentence. `t` echoes the
-          // key back when neither the active locale nor English defines it, so
-          // a catalog entry added ahead of its copy falls back to the wire
-          // details rather than printing a dotted key at the reader.
           const descriptionKey = `agents.descriptions.${tool.id}`
           const description = t(descriptionKey)
           return (
-            <Card key={tool.id} size="sm">
-              <CardHeader>
-                <AgentIcon id={tool.id} name={tool.name} className="mb-1.5" />
-                <CardTitle>
-                  <Link to={`/agents/${tool.id}`} className="hover:underline">
-                    {tool.name}
-                  </Link>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {description === descriptionKey
-                    ? `${tool.protocol} · ${tool.baseUrlSupport}`
-                    : description}
-                </CardDescription>
-                <CardAction>
-                  {statusBadge({ status, t })}
-                </CardAction>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col gap-4">
+            <Link
+              key={tool.id}
+              to={`/agents/${tool.id}`}
+              className="group block rounded-2xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <AgentIcon id={tool.id} name={tool.name} className="size-9 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm group-hover:text-primary transition-colors flex items-center gap-1.5 truncate">
+                      {tool.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                      {description === descriptionKey
+                        ? `${tool.protocol} · ${tool.baseUrlSupport}`
+                        : description}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="size-4 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground shrink-0 mt-1" />
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-2 pt-3 border-t">
+                {statusBadge({ status, t })}
                 {WEB_SEARCH_TOOL_KEYS[tool.id] && (
                   <Badge
                     variant="outline"
-                    className="h-auto w-fit whitespace-normal border-sky-600/30 py-0.5 text-[11px] text-sky-700 dark:text-sky-300"
+                    className="h-auto w-fit border-sky-600/30 py-0.5 text-[10px] text-sky-700 dark:text-sky-300 gap-1"
                   >
-                    <Globe />
+                    <Globe className="size-3" />
                     {t(WEB_SEARCH_TOOL_KEYS[tool.id])}
                   </Badge>
                 )}
-                <div>
-                  <p className="text-xs font-medium">{t('agents.setupLabel')}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {tool.configType === 'guide' ? t('agents.setupGuideHint') : t('agents.setupHint')}
-                  </p>
-                  {tool.modelBehavior === 'full'
-                    ? <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400">⚡ {t('agents.modelNoteFull')}</p>
-                    : <p className="mt-1 text-[11px] text-muted-foreground">{t('agents.modelNoteDefault')}</p>
-                  }
-                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
-                    <code className="min-w-0 flex-1 truncate font-mono text-[11px]">{command}</code>
-                    <CopyButton text={command} className="size-7 shrink-0" label={t('common.copy')} />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-medium">{t('agents.manualLabel')}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{t('agents.manualHint')}</p>
-                  <div className="mt-2 flex items-start gap-2 rounded-xl border px-3 py-2">
-                    <code className="min-w-0 flex-1 whitespace-pre-wrap break-all font-mono text-[11px]">
-                      {shownConnection}
-                    </code>
-                    <CopyButton
-                      text={realConnection}
-                      className="size-7 shrink-0"
-                      label={t('common.copy')}
-                    />
-                  </div>
-                </div>
-                <a
-                  href={tool.docsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-auto inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  {t('agents.documentation')} <ExternalLink className="size-3" />
-                </a>
-              </CardContent>
-            </Card>
+              </div>
+            </Link>
           )
         })}
       </div>
