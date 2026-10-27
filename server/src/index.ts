@@ -130,39 +130,25 @@ async function main() {
     s.headersTimeout = 76_000;
   };
 
-  const servers: ReturnType<typeof app.listen>[] = [];
+  const server = app.listen(Number(PORT), HOST, onReady(HOST));
+  tuneKeepAlive(server);
+  const servers = [server];
   installGracefulShutdown({ servers: () => servers.filter(s => s.listening), closeDb: () => getDb().close?.() });
-
-  let bindAttempts = 0;
-  const maxBindAttempts = 5;
-
-  const startListening = (host: string) => {
-    const serverInstance = app.listen(Number(PORT), host, onReady(host));
-    tuneKeepAlive(serverInstance);
-    servers.push(serverInstance);
-
-    serverInstance.on('error', (err: NodeJS.ErrnoException) => {
-      // The default '::' bind fails where IPv6 is disabled (kernel
-      // ipv6.disable=1 and the like) — retry IPv4-only rather than dying.
-      if (!process.env.HOST && (err.code === 'EAFNOSUPPORT' || err.code === 'EADDRNOTAVAIL')) {
-        console.warn('[server] IPv6 unavailable on this host — falling back to 0.0.0.0 (IPv4-only)');
-        startListening('0.0.0.0');
-        return;
-      }
-      // On Windows or fast file reloads, old TCP sockets can linger in TIME_WAIT
-      // for 1-2 seconds. Retry before failing fast so watch mode does not crash.
-      if (err.code === 'EADDRINUSE' && bindAttempts < maxBindAttempts) {
-        bindAttempts++;
-        console.warn(`[server] Port ${PORT} temporarily in use, retrying in 1s (${bindAttempts}/${maxBindAttempts})...`);
-        setTimeout(() => startListening(host), 1000);
-        return;
-      }
-      console.error('\n[server] Failed to start:\n  ' + (err?.message ?? err) + '\n');
-      process.exit(1);
-    });
-  };
-
-  startListening(HOST);
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    // The default '::' bind fails where IPv6 is disabled (kernel
+    // ipv6.disable=1 and the like) — retry IPv4-only rather than dying.
+    // Anything else (EADDRINUSE, an explicit HOST that can't bind) keeps the
+    // fail-fast posture documented in main().catch below.
+    if (!process.env.HOST && (err.code === 'EAFNOSUPPORT' || err.code === 'EADDRNOTAVAIL')) {
+      console.warn('[server] IPv6 unavailable on this host — falling back to 0.0.0.0 (IPv4-only)');
+      const fallback = app.listen(Number(PORT), '0.0.0.0', onReady('0.0.0.0'));
+      tuneKeepAlive(fallback);
+      servers.push(fallback);
+      return;
+    }
+    console.error('\n[server] Failed to start:\n  ' + (err?.message ?? err) + '\n');
+    process.exit(1);
+  });
 }
 
 main().catch((err) => {
