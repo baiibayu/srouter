@@ -1,6 +1,6 @@
 {
   "name": "@baiibayu/srouter-server",
-  "version": "0.1.13",
+  "version": "0.1.24",
   "description": "SRouter gateway server — free open-source LLM router with a multi-provider failover proxy and dashboard",
   "license": "MIT",
   "type": "module",

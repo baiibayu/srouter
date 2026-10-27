@@ -74,12 +74,12 @@ describe('runUpdate --check', () => {
     const io = captureOutput();
     const install = vi.fn();
     const code = await runUpdate({ check: true }, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       fetchLatest: async () => '0.2.0',
       install,
     });
     expect(code).toBe(1);
-    expect(io.out()).toContain('0.1.13 → 0.2.0 available');
+    expect(io.out()).toContain('0.1.24 → 0.2.0 available');
     expect(io.out()).toContain("run 'srouter update'");
     expect(install).not.toHaveBeenCalled();
   });
@@ -97,7 +97,7 @@ describe('runUpdate --check', () => {
   it('exits 1 with a retry hint when the registry is unreachable', async () => {
     const io = captureOutput();
     const code = await runUpdate({ check: true }, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       fetchLatest: async () => null,
     });
     expect(code).toBe(1);
@@ -110,7 +110,7 @@ describe('runUpdate install flow', () => {
     const io = captureOutput();
     const install = vi.fn();
     const code = await runUpdate({}, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       scriptPath: () => 'C:\\cache\\_npx\\ab12\\node_modules\\@baiibayu\\srouter\\dist\\index.js',
       globalRoot: () => null,
       install,
@@ -125,7 +125,7 @@ describe('runUpdate install flow', () => {
     const io = captureOutput();
     const install = vi.fn();
     const code = await runUpdate({}, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       scriptPath: () => '/home/me/.local/share/pnpm/global/5/node_modules/@baiibayu/srouter/dist/index.js',
       globalRoot: () => '/usr/lib/node_modules',
       install,
@@ -138,7 +138,7 @@ describe('runUpdate install flow', () => {
   it('sends project-local copies back to the project', async () => {
     const io = captureOutput();
     const code = await runUpdate({}, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       scriptPath: () => 'C:\\proj\\node_modules\\@baiibayu\\srouter\\dist\\index.js',
       globalRoot: () => 'C:\\Users\\me\\AppData\\Roaming\\npm\\node_modules',
     });
@@ -150,21 +150,21 @@ describe('runUpdate install flow', () => {
     const io = captureOutput();
     const install = vi.fn(() => 0);
     const code = await runUpdate({}, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       scriptPath: () => '/usr/lib/node_modules/@baiibayu/srouter/dist/index.js',
       globalRoot: () => '/usr/lib/node_modules',
       install,
     });
     expect(code).toBe(0);
     expect(install).toHaveBeenCalledTimes(1);
-    expect(io.out()).toContain('Updating @baiibayu/srouter (you have 0.1.13)');
+    expect(io.out()).toContain('Updating @baiibayu/srouter (you have 0.1.24)');
     expect(io.out()).toContain('Updated');
   });
 
   it('surfaces a failed install with an EACCES hint', async () => {
     const io = captureOutput();
     const code = await runUpdate({}, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       scriptPath: () => '/usr/lib/node_modules/@baiibayu/srouter/dist/index.js',
       globalRoot: () => '/usr/lib/node_modules',
       install: () => null,
@@ -177,7 +177,7 @@ describe('runUpdate install flow', () => {
   it('propagates a nonzero npm exit code', async () => {
     const io = captureOutput();
     const code = await runUpdate({}, {
-      currentVersion: () => '0.1.13',
+      currentVersion: () => '0.1.24',
       scriptPath: () => '/usr/lib/node_modules/@baiibayu/srouter/dist/index.js',
       globalRoot: () => '/usr/lib/node_modules',
       install: () => 7,

@@ -1,3 +1,39 @@
+## 2026-10-27 — 0.1.24
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `8b784e2` | 2026-10-27 | fix(i18n): complete indonesian translations for web tools, backups, outlook, and strategies. |
+| `70fb9b6` | 2026-10-27 | fix(i18n): clarify model sync button label from provider instead of upstream across all 60 locales. |
+| `23ab0b3` | 2026-10-27 | fix(responses,proxy): prevent ERR_HTTP_HEADERS_SENT on slow TTFB keepalive. |
+| `2ec2bbe` | 2026-10-27 | fix(responses): prevent ERR_HTTP_HEADERS_SENT crash on fatal error in streaming mode. |
+| `c22ff01` | 2026-10-27 | fix(rescue): parse and rescue dots_function_call and invoke dialect into structured tool calls. |
+| `321f970` | 2026-10-27 | revert(server): keep server/src/index.ts clean and enforce non-watch dev runner. |
+| `1f9c649` | 2026-10-27 | feat(agents): add official Zcode brand icon. |
+| `2ca30b3` | 2026-10-27 | feat(agents): add Zcode agent support and add socket retry on EADDRINUSE to prevent server crash. |
+| `358f826` | 2026-10-27 | fix(setup): set default custom model for factory droid and clean up on reset. |
+| `c331d95` | 2026-10-27 | feat(classifier): add Factory Droid client detection and routing label. |
+| `26686cd` | 2026-10-27 | fix(agents): add extension detection for ide agents and reject setup for uninstalled agents. |
+| `fb5e150` | 2026-10-27 | fix(agents): complete non-placeholder reset logic, fix status detection order, and optimize config merge. |
+| `f48b445` | 2026-10-27 | fix(i18n): sync agent keys across all 60 locales and provide complete non-placeholder reset logic. |
+| `daf4598` | 2026-10-27 | fix(agents): add real server setup/reset execution, fix CLI installation detection, and polish i18n. |
+| `a0cac93` | 2026-10-27 | fix(agents): remove redundant status banner, clean up i18n tooltips and section titles. |
+| `eaa0e0f` | 2026-10-27 | fix(agents): fix i18n keys, card text truncation, web-search placement, and guide agent installation detection. |
+| `ad370c5` | 2026-10-27 | feat(agents): implement clean overview grid linking to agent detail sub-pages (Option B). |
+| `fe89e66` | 2026-10-27 | fix(agents): enforce 5-state lifecycle and prevent auto-setup on uninstalled agents. |
+| `9684538` | 2026-10-27 | fix(anthropic): fix premature stream truncation and cut-off in claude code. |
+| `a9ac246` | 2026-10-27 | style(dashboard): increase logo and text size for gateway node. |
+| `4ef1af4` | 2026-10-27 | fix(dashboard): remove port badge from gateway node. |
+| `376eb75` | 2026-10-27 | fix(dashboard): restore curved routing line, compact card sizes, and clean gateway port label. |
+| `a1f91d9` | 2026-10-27 | fix(dashboard): responsive live routing strip and in-flight stream trace for anthropic. |
+| `b9062d8` | 2026-10-27 | feat(agents): add detection endpoint for installed and configured CLI agents. |
+| `9ea1145` | 2026-10-27 | fix(dashboard): align live routing strip layout and card docking geometry. |
+| `9f82647` | 2026-10-27 | fix(anthropic,proxy): prevent ERR_HTTP_HEADERS_SENT on streaming keepalive and exhaustion. |
+| `fd8abbc` | 2026-10-27 | fix(opencode-free): ensure keyless validation never deactivates platform and align CLI UA. |
+| `3b901fc` | 2026-10-27 | fix(opencode-free,routing): improve standalone provider, disable stale models, and fit live routing strip. |
+| `97d91dd` | 2026-10-27 | fix(dashboard): multi-mode branch curve and clean status filtering for hero image. |
+| `79e58fb` | 2026-10-27 | fix(dashboard): responsive svg branching curves with retained route history and updated hero. |
+| `2254d45` | 2026-10-27 | fix(dashboard,providers): explicit svg branching curves in routing strip and standalone opencode-free. |
+
 ## 2026-10-25 — 0.1.13
 
 | Commit | Date | Summary |

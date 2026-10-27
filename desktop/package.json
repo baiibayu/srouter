@@ -1,6 +1,6 @@
 {
   "name": "@baiibayu/srouter-desktop",
-  "version": "0.1.13",
+  "version": "0.1.24",
   "description": "SRouter menu-bar app — local OpenAI-compatible LLM router",
   "author": {
     "name": "baiibayu",
@@ -26,6 +26,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@baiibayu/srouter-monorepo": "file:..",
     "better-sqlite3": "^12.10.0",
     "electron-updater": "^6.8.9"
   },

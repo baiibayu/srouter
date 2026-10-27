@@ -217,6 +217,7 @@ SRouter includes automated configuration generators (`setup-*`) that inspect you
 <td align="center"><img src="repo-assets/agents/pi.png" width="64" alt="Pi"><br/><b>Pi</b></td>
 <td align="center"><img src="repo-assets/agents/atomcode.png" width="64" alt="AtomCode"><br/><b>AtomCode</b></td>
 <td align="center"><img src="repo-assets/agents/reasonix.png" width="64" alt="Reasonix"><br/><b>Reasonix</b></td>
+<td align="center"><img src="repo-assets/agents/zcode.png" width="64" alt="Zcode"><br/><b>Zcode</b></td>
 </tr>
 </table>
 
@@ -243,6 +244,7 @@ _Not installed? Run the same command with `npx @baiibayu/srouter` in place of `s
 | **OpenCode** | `srouter setup-opencode` | `http://localhost:20268/v1` | OpenAI Chat Completions |
 | **Gemini CLI** | Native `/v1beta` | `http://localhost:20268` | Native `generateContent` format |
 | **Zed / JetBrains AI** | Ollama Emulation | `http://localhost:20268` | Native NDJSON Ollama API |
+| **Zcode** | `srouter setup-zcode` | `http://localhost:20268/v1` | OpenAI Chat Completions |
 
 <details>
 <summary><b>View Quick Tool Config Snippets (Click to expand)</b></summary>
