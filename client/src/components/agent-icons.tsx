@@ -10,6 +10,7 @@ import zedImg from '@/assets/agents/zed.png'
 import jetbrainsImg from '@/assets/agents/jetbrains.png'
 import atomcodeImg from '@/assets/agents/atomcode.png'
 import openclaudeImg from '@/assets/agents/openclaude.png'
+import zcodeImg from '@/assets/agents/zcode.png'
 
 // Brand marks for the tools listed on the Agents page. Every mark below is the
 // tool's own published logo, taken verbatim from the source in the table and
@@ -361,12 +362,7 @@ const brands: Record<string, Brand> = {
     img: atomcodeImg,
   },
   zcode: {
-    tint: '[--mk:#2563EB] dark:[--mk:#60A5FA]',
-    art: (
-      <g fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 6.5h14L8 17.5h11" />
-      </g>
-    ),
+    img: zcodeImg,
   },
 }
 
