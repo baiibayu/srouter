@@ -601,7 +601,7 @@
     "providerActions": "공급자 작업",
     "routeViaProxy": "프록시를 통한 라우팅",
     "checkNow": "지금 확인하세요",
-    "syncModels": "Sync models with upstream",
+    "syncModels": "Sync models from provider",
     "syncModelsResult": "Model list synced: {added} added, {total} live",
     "syncModelsFailed": "Model sync failed: {reason}",
     "syncAllModels": "Sync all providers",

@@ -605,7 +605,7 @@
     "providerActions": "提供者操作",
     "routeViaProxy": "經由代理伺服器轉發",
     "checkNow": "立即檢查",
-    "syncModels": "Sync models with upstream",
+    "syncModels": "Sync models from provider",
     "syncModelsResult": "Model list synced: {added} added, {total} live",
     "syncModelsFailed": "Model sync failed: {reason}",
     "syncAllModels": "Sync all providers",

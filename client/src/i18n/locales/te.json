@@ -601,7 +601,7 @@
     "providerActions": "ప్రొవైడర్ చర్యలు",
     "routeViaProxy": "ప్రాక్సీ ద్వారా మార్గం",
     "checkNow": "ఇప్పుడే తనిఖీ చేయండి",
-    "syncModels": "Sync models with upstream",
+    "syncModels": "Sync models from provider",
     "syncModelsResult": "Model list synced: {added} added, {total} live",
     "syncModelsFailed": "Model sync failed: {reason}",
     "syncAllModels": "Sync all providers",

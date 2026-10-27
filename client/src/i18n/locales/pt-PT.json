@@ -601,7 +601,7 @@
     "providerActions": "Ações do fornecedor",
     "routeViaProxy": "Rota via procuração",
     "checkNow": "Confirme agora",
-    "syncModels": "Sync models with upstream",
+    "syncModels": "Sync models from provider",
     "syncModelsResult": "Model list synced: {added} added, {total} live",
     "syncModelsFailed": "Model sync failed: {reason}",
     "syncAllModels": "Sync all providers",

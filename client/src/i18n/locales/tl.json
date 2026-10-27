@@ -601,7 +601,7 @@
     "providerActions": "Mga aksyon ng provider",
     "routeViaProxy": "Ruta sa pamamagitan ng proxy",
     "checkNow": "Suriin ngayon",
-    "syncModels": "I-sync ang mga modelo sa upstream",
+    "syncModels": "I-sync ang mga modelo mula sa provider",
     "syncModelsResult": "Na-sync ang listahan ng modelo: {added} idinagdag, {total} aktibo",
     "syncModelsFailed": "Nabigo ang sync ng modelo: {reason}",
     "syncAllModels": "I-sync ang lahat ng provider",

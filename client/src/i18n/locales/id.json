@@ -601,7 +601,7 @@
     "providerActions": "Tindakan penyedia",
     "routeViaProxy": "Rute melalui proxy",
     "checkNow": "Periksa sekarang",
-    "syncModels": "Sinkronkan model dengan upstream",
+    "syncModels": "Sinkronkan model dari provider",
     "syncModelsResult": "Daftar model disinkronkan: {added} ditambahkan, {total} aktif",
     "syncModelsFailed": "Sinkronisasi model gagal: {reason}",
     "syncAllModels": "Sinkronkan semua provider",

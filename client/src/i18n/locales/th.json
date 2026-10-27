@@ -601,7 +601,7 @@
     "providerActions": "การกระทำของผู้ให้บริการ",
     "routeViaProxy": "เส้นทางผ่านพร็อกซี",
     "checkNow": "ตรวจสอบตอนนี้",
-    "syncModels": "Sync models with upstream",
+    "syncModels": "Sync models from provider",
     "syncModelsResult": "Model list synced: {added} added, {total} live",
     "syncModelsFailed": "Model sync failed: {reason}",
     "syncAllModels": "Sync all providers",
