@@ -1730,8 +1730,23 @@ export async function handleResponses(req: Request, res: Response): Promise<void
       logRequest(route.platform, route.modelId, route.keyId, 'error', estimatedInputTokens, 0, latency, safeError, null, null, null, 'http');
     },
     onFatal: (route, err, attempt) => {
-      setFallbackHeaders(res, attempt, attemptLog);
-      res.status(502).json({ error: { message: `Provider error (${route.displayName}): ${sanitizeProviderErrorMessage(err.message)}`, type: 'provider_error' } });
+      if (streamStarted || res.headersSent) {
+        sse('response.failed', {
+          response: {
+            id: responseId,
+            object: 'response',
+            status: 'failed',
+            error: {
+              message: `Provider error (${route.displayName}): ${sanitizeProviderErrorMessage(err.message)}`,
+              type: 'provider_error',
+            },
+          },
+        });
+        res.end();
+      } else {
+        setFallbackHeaders(res, attempt, attemptLog);
+        res.status(502).json({ error: { message: `Provider error (${route.displayName}): ${sanitizeProviderErrorMessage(err.message)}`, type: 'provider_error' } });
+      }
     },
     onRoutingExhausted: (lastError, routeErr, exhaustion, info) => {
       if (streamStarted) {
