@@ -1457,32 +1457,22 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
         let sawText = false;
         let upstreamFinish: string | null = null;
         const buffered: unknown[] = [];
-        // Fallback-v2 keepalive: send periodic `response.in_progress` events
+        // Fallback-v2 keepalive: send periodic SSE comment pings
         // during TTFB so idle proxies / client watchdogs do not cut the connection.
         let keepaliveId: NodeJS.Timeout | null = null;
-        try {
-          keepaliveId = setInterval(() => {
-            if (!headerSent) {
-              ctx.disarmHedge();
-              res.write(`event: response.in_progress\n`);
-              res.write(`data: ${JSON.stringify({ type: 'response.in_progress', response: { status: 'in_progress', model: route.modelId, output: [], output_text: '' } })}\n\n`);
-            }
-          }, 5_000);
-          keepaliveId.unref?.();
-        } catch {
-          /* interval setup race — proceed without keepalive */
-        }
         const flushHeaders = () => {
           if (headerSent) return;
           // #764: ttfb is recorded on the first token of ANY kind (content or
           // reasoning) in the pump loop below; this call only backfills streams
           // that reached the commit point without one.
           if (ttfbMs === null) ttfbMs = Date.now() - start;
-          res.setHeader('Content-Type', 'text/event-stream');
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Connection', 'keep-alive');
-          res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
-          setFallbackHeaders(res, attempt, attemptLog);
+          if (!res.headersSent) {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
+            setFallbackHeaders(res, attempt, attemptLog);
+          }
           headerSent = true;
           // Committed: the answer is on its way, so the retry budget must no
           // longer cancel this attempt (it could not fail over now anyway).
@@ -1490,6 +1480,18 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
           for (const frame of buffered) res.write(`data: ${JSON.stringify(frame)}\n\n`);
           buffered.length = 0;
         };
+
+        try {
+          keepaliveId = setInterval(() => {
+            if (!headerSent) {
+              flushHeaders();
+            }
+            try { res.write(': keepalive\n\n'); } catch {}
+          }, 5_000);
+          keepaliveId.unref?.();
+        } catch {
+          /* interval setup race — proceed without keepalive */
+        }
 
         try {
           const gen = route.provider.streamChatCompletion(
@@ -1597,6 +1599,8 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
             return 'committed';
           }
           throw streamErr;
+        } finally {
+          if (keepaliveId) clearInterval(keepaliveId);
         }
       }
 

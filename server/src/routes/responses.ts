@@ -1281,11 +1281,13 @@ export async function handleResponses(req: Request, res: Response): Promise<void
         const commit = () => {
           if (streamStarted) return;
           if (ttfbMs === null) ttfbMs = Date.now() - start;
-          res.setHeader('Content-Type', 'text/event-stream');
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Connection', 'keep-alive');
-          res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
-          setFallbackHeaders(res, attempt, attemptLog);
+          if (!res.headersSent) {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
+            setFallbackHeaders(res, attempt, attemptLog);
+          }
           const skeleton = {
             id: responseId, object: 'response', created_at: nowUnix(),
             status: 'in_progress', model: route.modelId, output: [], output_text: '',
@@ -1335,10 +1337,15 @@ export async function handleResponses(req: Request, res: Response): Promise<void
 
           try {
             keepaliveId = setInterval(() => {
+              if (clientGone) return;
               if (!streamStarted) {
-                ctx.disarmHedge();
-                res.write(`event: response.in_progress\n`);
-                res.write(`data: ${JSON.stringify({ type: 'response.in_progress', response: { status: 'in_progress', model: route.modelId, output: [], output_text: '' } })}\n\n`);
+                commit();
+              } else {
+                try {
+                  res.write(': keepalive\n\n');
+                } catch {
+                  /* socket closed */
+                }
               }
             }, 5_000);
             keepaliveId.unref?.();
@@ -1603,6 +1610,8 @@ export async function handleResponses(req: Request, res: Response): Promise<void
             return 'committed';
           }
           throw streamErr;
+        } finally {
+          if (keepaliveId) clearInterval(keepaliveId);
         }
       }
 
@@ -1749,7 +1758,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
       }
     },
     onRoutingExhausted: (lastError, routeErr, exhaustion, info) => {
-      if (streamStarted) {
+      if (streamStarted || res.headersSent) {
         // Headers are already on the wire — the honest status/Retry-After can
         // only travel in the failed-event payload.
         sse('response.failed', { response: { id: responseId, object: 'response', status: 'failed', error: exhaustionErrorPayload(exhaustion) } });
@@ -1763,7 +1772,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
     onExhausted: (exhaustion, info) => {
       // The streaming skeleton may already be on the wire — close the SSE stream
       // with a failed event instead of writing JSON onto a committed response.
-      if (streamStarted) {
+      if (streamStarted || res.headersSent) {
         sse('response.failed', { response: { id: responseId, object: 'response', status: 'failed', error: exhaustionErrorPayload(exhaustion) } });
         res.end();
       } else {
