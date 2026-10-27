@@ -90,10 +90,8 @@ function fpTool(name: string, description: string, parameters: Record<string, un
 
 function ensureFingerprintTools(body: Record<string, unknown>): void {
   const present = new Set<string>();
-  let callerCount = 0;
 
   if (Array.isArray(body.tools)) {
-    callerCount = body.tools.length;
     for (const t of body.tools) {
       const n = t?.function?.name ?? t?.name;
       if (typeof n === 'string') present.add(n.trim().toLowerCase());

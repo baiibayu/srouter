@@ -35,12 +35,6 @@ function descendingTimeHex(time: number, counterValue: number): string {
     .padStart(12, '0');
 }
 
-function cryptoHex(n: number): string {
-  const b = new Uint8Array(n);
-  globalThis.crypto.getRandomValues(b);
-  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
-}
-
 function cryptoBase62(n: number): string {
   const b = new Uint8Array(n);
   globalThis.crypto.getRandomValues(b);

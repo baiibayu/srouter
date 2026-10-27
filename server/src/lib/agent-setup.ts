@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import YAML from 'yaml';
-import { configPathFor, detectAgent, type AgentDetection } from './agent-detection.js';
+import { detectAgent, type AgentDetection } from './agent-detection.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -135,7 +135,6 @@ function removeTomlProviders(filePath: string): void {
 
 export async function resetAgent(id: string): Promise<SetupResult> {
   const home = os.homedir();
-  const configPath = configPathFor(id);
 
   try {
     switch (id) {
