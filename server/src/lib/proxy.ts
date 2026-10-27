@@ -1261,7 +1261,10 @@ export async function probeProxyUrl(
         latencyMs: Date.now() - started,
         status: response.status,
         target,
-        error: `relay failed with HTTP ${response.status}`,
+        error:
+          response.status === 401 || response.status === 403
+            ? `relay rejected the token (${response.status})`
+            : `relay failed with HTTP ${response.status}`,
       };
     }
     // Any other HTTP response proves the proxy route works; the upstream may
