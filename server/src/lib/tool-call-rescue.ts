@@ -25,6 +25,9 @@
  *  4. Bare or ```json-fenced single JSON object: {"name": KNOWN, "arguments": {...}}
  *     (only rescued when "name" matches a requested tool — bare JSON is a
  *     legitimate answer shape, so this one is strictly schema-gated)
+ *  5. Dots / XML invoke blocks:
+ *     <dots_function_call><invoke name="NAME"><parameter name="PARAM">VAL</parameter></invoke></dots_function_call>
+ *     or standalone <invoke name="NAME"><parameter name="PARAM">VAL</parameter></invoke>
  */
 
 export interface RescuedToolCall {
@@ -49,6 +52,8 @@ const DIALECT_MARKERS = [
   '<|tool_call_begin|>',
   '<tool_call>',
   '<function=',
+  '<dots_function_call',
+  '<invoke',
 ] as const;
 
 /** Does the (trimmed) text start with a known dialect marker? */
@@ -206,6 +211,110 @@ function parseXmlDialect(text: string, toolNames: Set<string>): { calls: Rescued
   return { calls: parsedAll && calls.length > 0 ? calls : null, cleanText: clean.trim() };
 }
 
+function decodeXmlEntities(val: string): string {
+  if (!val.includes('&')) return val;
+  return val
+    .replaceAll('&quot;', '"')
+    .replaceAll('&apos;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&');
+}
+
+/** Dialect 5: Dots / XML invoke blocks (<dots_function_call> / <invoke name="...">). */
+function parseInvokeDialect(text: string, toolNames: Set<string>): { calls: RescuedToolCall[] | null; cleanText: string } {
+  const calls: RescuedToolCall[] = [];
+  let parsedAll = true;
+
+  const openInvokeMatches = text.match(/<invoke\b/g) || [];
+  const closeInvokeMatches = text.match(/<\/invoke>/g) || [];
+  if (openInvokeMatches.length !== closeInvokeMatches.length) {
+    parsedAll = false;
+  }
+  const openDotsMatches = text.match(/<dots_function_call\b/g) || [];
+  const closeDotsMatches = text.match(/<\/dots_function_call>/g) || [];
+  if (openDotsMatches.length !== closeDotsMatches.length) {
+    parsedAll = false;
+  }
+
+  const invokeRe = /<invoke\s+name\s*=\s*["']?([^"'>\s]+)["']?\s*>([\s\S]*?)<\/invoke>/g;
+  let m: RegExpExecArray | null;
+  while ((m = invokeRe.exec(text)) !== null) {
+    const name = m[1];
+    const inner = m[2];
+
+    if (!isKnownTool(name, toolNames)) {
+      parsedAll = false;
+      continue;
+    }
+
+    const paramRe = /<parameter\s+name\s*=\s*["']?([^"'>\s]+)["']?\s*>([\s\S]*?)<\/parameter>/g;
+    let paramMatch: RegExpExecArray | null;
+    let hasParams = false;
+    const argsObj: Record<string, unknown> = {};
+
+    while ((paramMatch = paramRe.exec(inner)) !== null) {
+      hasParams = true;
+      const paramName = paramMatch[1];
+      const rawVal = paramMatch[2];
+      const decoded = decodeXmlEntities(rawVal);
+      const trimmedVal = decoded.trim();
+      if (trimmedVal === '') {
+        argsObj[paramName] = '';
+      } else {
+        try {
+          argsObj[paramName] = JSON.parse(trimmedVal);
+        } catch {
+          argsObj[paramName] = trimmedVal;
+        }
+      }
+    }
+
+    const openParamMatches = inner.match(/<parameter\b/g) || [];
+    const closeParamMatches = inner.match(/<\/parameter>/g) || [];
+    if (openParamMatches.length !== closeParamMatches.length) {
+      parsedAll = false;
+      continue;
+    }
+
+    if (hasParams) {
+      calls.push({ name, arguments: JSON.stringify(argsObj) });
+    } else {
+      const trimmedInner = decodeXmlEntities(inner).trim();
+      if (trimmedInner === '') {
+        calls.push({ name, arguments: '{}' });
+      } else if (trimmedInner.startsWith('{') && trimmedInner.endsWith('}')) {
+        try {
+          JSON.parse(trimmedInner);
+          calls.push({ name, arguments: trimmedInner });
+        } catch {
+          parsedAll = false;
+        }
+      } else {
+        parsedAll = false;
+      }
+    }
+  }
+
+  if (calls.length === 0) {
+    parsedAll = false;
+  }
+
+  const clean = text
+    .replace(/<dots_function_call\b[^>]*>([\s\S]*?)<\/dots_function_call>/g, (_match, inner) => {
+      return inner.replace(/<invoke\s+name\s*=\s*["']?[^"'>\s]+["']?\s*>[\s\S]*?<\/invoke>/g, '');
+    })
+    .replace(/<invoke\s+name\s*=\s*["']?[^"'>\s]+["']?\s*>[\s\S]*?<\/invoke>/g, '')
+    .replace(/<dots_function_call\b[^>]*>/g, '')
+    .replace(/<\/dots_function_call>/g, '')
+    .trim();
+
+  return {
+    calls: parsedAll && calls.length > 0 ? calls : null,
+    cleanText: clean,
+  };
+}
+
 /**
  * Rescue inline tool-call dialects out of an assistant text answer.
  *
@@ -227,6 +336,10 @@ export function rescueInlineToolCalls(text: string, toolNames: Set<string>): Res
   }
   if (text.includes('<tool_call>')) {
     const { calls, cleanText } = parseXmlDialect(text, toolNames);
+    return { detected: true, calls, cleanText };
+  }
+  if (text.includes('<dots_function_call') || text.includes('<invoke')) {
+    const { calls, cleanText } = parseInvokeDialect(text, toolNames);
     return { detected: true, calls, cleanText };
   }
 

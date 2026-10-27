@@ -6,7 +6,7 @@ import {
   containsDialectMarker,
 } from '../../lib/tool-call-rescue.js';
 
-const TOOLS = new Set(['Read', 'Write', 'Bash', 'Grep', 'list_dir']);
+const TOOLS = new Set(['Read', 'Write', 'Bash', 'Grep', 'list_dir', 'exec_command']);
 
 describe('inline tool-call dialect rescue', () => {
   describe('Kimi/DeepSeek token dialect', () => {
@@ -88,6 +88,102 @@ describe('inline tool-call dialect rescue', () => {
     });
   });
 
+  describe('Dots / XML invoke dialect', () => {
+    it('parses consecutive <dots_function_call> blocks (the Codex exec_command incident)', () => {
+      const text = `<dots_function_call>
+<invoke name="exec_command">
+<parameter name="cmd">
+Select-String -Path "C:\\Users\\Hype AMD\\Downloads\\APP\\SRouter\\server\\src\\routes\\keys.ts" -Pattern "get(|post(|put(|delete(" | Select-Object LineNumber, Line | Select-Object -First 20
+</parameter>
+</invoke>
+</dots_function_call>
+<dots_function_call>
+<invoke name="exec_command">
+<parameter name="cmd">
+Select-String -Path "C:\\Users\\Hype AMD\\Downloads\\APP\\SRouter\\server\\src\\routes\\settings.ts" -Pattern "get('/proxy'|get('/api-key'|get('/version'" | Select-Object LineNumber, Line
+</parameter>
+</invoke>
+</dots_function_call>`;
+      const r = rescueInlineToolCalls(text, TOOLS);
+      expect(r.detected).toBe(true);
+      expect(r.calls).toHaveLength(2);
+      expect(r.calls![0].name).toBe('exec_command');
+      expect(JSON.parse(r.calls![0].arguments)).toEqual({
+        cmd: 'Select-String -Path "C:\\Users\\Hype AMD\\Downloads\\APP\\SRouter\\server\\src\\routes\\keys.ts" -Pattern "get(|post(|put(|delete(" | Select-Object LineNumber, Line | Select-Object -First 20',
+      });
+      expect(r.calls![1].name).toBe('exec_command');
+      expect(JSON.parse(r.calls![1].arguments)).toEqual({
+        cmd: 'Select-String -Path "C:\\Users\\Hype AMD\\Downloads\\APP\\SRouter\\server\\src\\routes\\settings.ts" -Pattern "get(\'/proxy\'|get(\'/api-key\'|get(\'/version\'" | Select-Object LineNumber, Line',
+      });
+      expect(r.cleanText).toBe('');
+    });
+
+    it('parses multiple invoke blocks inside a single <dots_function_call> wrapper', () => {
+      const text = `I will run these commands:
+<dots_function_call>
+<invoke name="Bash">
+<parameter name="command">git status</parameter>
+</invoke>
+<invoke name="Read">
+<parameter name="file_path">/tmp/x</parameter>
+</invoke>
+</dots_function_call>`;
+      const r = rescueInlineToolCalls(text, TOOLS);
+      expect(r.detected).toBe(true);
+      expect(r.calls).toHaveLength(2);
+      expect(r.calls![0]).toEqual({ name: 'Bash', arguments: '{"command":"git status"}' });
+      expect(r.calls![1]).toEqual({ name: 'Read', arguments: '{"file_path":"/tmp/x"}' });
+      expect(r.cleanText).toBe('I will run these commands:');
+    });
+
+    it('parses standalone <invoke> without <dots_function_call> wrapper', () => {
+      const text = '<invoke name="Bash"><parameter name="command">npm test</parameter></invoke>';
+      const r = rescueInlineToolCalls(text, TOOLS);
+      expect(r.detected).toBe(true);
+      expect(r.calls).toEqual([{ name: 'Bash', arguments: '{"command":"npm test"}' }]);
+    });
+
+    it('decodes XML entities in parameter content', () => {
+      const text = '<invoke name="Bash"><parameter name="command">cat file.txt &gt; out.txt &amp;&amp; echo &quot;done&quot;</parameter></invoke>';
+      const r = rescueInlineToolCalls(text, TOOLS);
+      expect(r.detected).toBe(true);
+      expect(JSON.parse(r.calls![0].arguments)).toEqual({
+        command: 'cat file.txt > out.txt && echo "done"',
+      });
+    });
+
+    it('parses JSON parameter values like numbers, booleans, and objects', () => {
+      const text = `<invoke name="Grep">
+<parameter name="pattern">error</parameter>
+<parameter name="case_insensitive">true</parameter>
+<parameter name="max_results">50</parameter>
+<parameter name="extra">{"context": 2}</parameter>
+</invoke>`;
+      const r = rescueInlineToolCalls(text, TOOLS);
+      expect(r.detected).toBe(true);
+      expect(JSON.parse(r.calls![0].arguments)).toEqual({
+        pattern: 'error',
+        case_insensitive: true,
+        max_results: 50,
+        extra: { context: 2 },
+      });
+    });
+
+    it('marks truncated or unclosed <dots_function_call> tags as unparseable', () => {
+      const text = '<dots_function_call><invoke name="Bash"><parameter name="command">echo hi';
+      const r = rescueInlineToolCalls(text, TOOLS);
+      expect(r.detected).toBe(true);
+      expect(r.calls).toBeNull();
+    });
+
+    it('rejects invoke with undeclared tool name', () => {
+      const text = '<dots_function_call><invoke name="UndeclaredTool"><parameter name="x">1</parameter></invoke></dots_function_call>';
+      const r = rescueInlineToolCalls(text, TOOLS);
+      expect(r.detected).toBe(true);
+      expect(r.calls).toBeNull();
+    });
+  });
+
   describe('bare / fenced JSON dialect (schema-gated)', () => {
     it('rescues a bare JSON object naming a known tool', () => {
       const r = rescueInlineToolCalls('{"name": "list_dir", "arguments": {"path": "/tmp"}}', TOOLS);
@@ -118,6 +214,8 @@ describe('inline tool-call dialect rescue', () => {
       expect(startsWithDialectMarker('  <|tool_call_begin|>')).toBe(true);
       expect(startsWithDialectMarker('\n<tool_call>{}')).toBe(true);
       expect(startsWithDialectMarker('<function=Bash{')).toBe(true);
+      expect(startsWithDialectMarker('<dots_function_call>\n<invoke')).toBe(true);
+      expect(startsWithDialectMarker('  <invoke name="Bash">')).toBe(true);
       expect(startsWithDialectMarker('Hello!')).toBe(false);
       expect(startsWithDialectMarker('<html>')).toBe(false);
     });
@@ -127,6 +225,8 @@ describe('inline tool-call dialect rescue', () => {
       expect(couldBecomeDialectMarker('<|to')).toBe(true);
       expect(couldBecomeDialectMarker('<fun')).toBe(true);
       expect(couldBecomeDialectMarker('<tool_ca')).toBe(true);
+      expect(couldBecomeDialectMarker('<dots_')).toBe(true);
+      expect(couldBecomeDialectMarker('<inv')).toBe(true);
       expect(couldBecomeDialectMarker('<div')).toBe(false);
       expect(couldBecomeDialectMarker('Hi')).toBe(false);
       // Full marker present is no longer a *prefix* — startsWith takes over.
