@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { getUnifiedApiKey, regenerateUnifiedKey, getSetting, setSetting, getDb } from '../db/index.js';
-import { applyProxyUrl, applyProxyMode, applyProxyEnabled, applyProxyBypass, applyFetchRelayToken, encodeFetchRelayToken, isProxyActive, getProxyUrl, getProxyMode, getFetchRelayToken, isProxyEnabled, getProxyBypassPlatforms, probeProxyUrl, fetchRelayUrlError, DEFAULT_PROXY_PROBE_TARGET, PROXY_MODES, PROXY_SCHEMES } from '../lib/proxy.js';
+import { applyProxyUrl, applyProxyMode, applyProxyEnabled, applyProxyBypass, applyFetchRelayToken, encodeFetchRelayToken, isProxyActive, getProxyUrl, getProxyMode, getFetchRelayToken, isProxyEnabled, getProxyBypassPlatforms, applyRelayPool, applyRelayStrategy, getRelayPoolUrls, getRelayStrategy, applyProviderRouting, getAllProviderRouting, probeProxyUrl, fetchRelayUrlError, DEFAULT_PROXY_PROBE_TARGET, PROXY_MODES, PROXY_SCHEMES } from '../lib/proxy.js';
 import { getProvider } from '../providers/index.js';
 import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import type { ProxyMode, ProxyPoolStrategy } from '@baiibayu/srouter-shared/types.js';
@@ -561,12 +561,15 @@ function proxyUrlError(proxyUrl: string, proxyMode: ProxyMode): string | undefin
 
 // Set the proxy settings. Accepts partial updates.
 settingsRouter.put('/proxy', (req: Request, res: Response) => {
-  const { proxyUrl, proxyMode, fetchRelayToken, enabled, bypassPlatforms } = req.body as {
+  const { proxyUrl, proxyMode, fetchRelayToken, enabled, bypassPlatforms, relayPoolUrls, relayStrategy, providerRouting } = req.body as {
     proxyUrl?: string;
     proxyMode?: ProxyMode;
     fetchRelayToken?: string;
     enabled?: boolean;
     bypassPlatforms?: string[];
+    relayPoolUrls?: string;
+    relayStrategy?: "round-robin" | "random";
+    providerRouting?: Record<string, "proxy-pool" | "relay-pool" | "direct" | null>;
   };
 
   if (proxyMode !== undefined && !PROXY_MODES.includes(proxyMode)) {
@@ -625,12 +628,36 @@ settingsRouter.put('/proxy', (req: Request, res: Response) => {
     applyProxyBypass(csv);
   }
 
+  // --- relayPoolUrls ---
+  if (typeof relayPoolUrls === "string") {
+    setSetting("relay_pool_urls", relayPoolUrls);
+    applyRelayPool(relayPoolUrls);
+  }
+  // --- relayStrategy ---
+  if (relayStrategy !== undefined) {
+    if (relayStrategy !== "round-robin" && relayStrategy !== "random") {
+      res.status(400).json({ error: { message: "Relay strategy must be round-robin or random", type: "invalid_request_error" } });
+      return;
+    }
+    setSetting("relay_strategy", relayStrategy);
+    applyRelayStrategy(relayStrategy);
+  }
+  // --- providerRouting ---
+  if (providerRouting !== undefined) {
+    const csv = JSON.stringify(providerRouting);
+    setSetting("provider_routing", csv);
+    applyProviderRouting(providerRouting);
+  }
+
   res.json({
     proxyUrl: getProxyUrl(),
     proxyMode: getProxyMode(),
     fetchRelayTokenConfigured: Boolean(getFetchRelayToken()),
     enabled: isProxyEnabled(),
     bypassPlatforms: getProxyBypassPlatforms(),
+    relayPoolUrls: getRelayPoolUrls(),
+    relayStrategy: getRelayStrategy(),
+    providerRouting: getAllProviderRouting(),
     active: isProxyActive(),
   });
 });

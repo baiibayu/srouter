@@ -654,12 +654,46 @@ exports[`tool generators > setup-omp has stable golden output 1`] = `
 
 exports[`tool generators > setup-openclaude has stable golden output 1`] = `
 {
-  "files": [],
+  "files": [
+    {
+      "format": "json",
+      "path": "/home/tester/.openclaude/settings.json",
+      "sensitive": true,
+      "value": {
+        "env": {
+          "ANTHROPIC_AUTH_TOKEN": "srouter-test-key",
+          "ANTHROPIC_BASE_URL": "http://localhost:3000",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL": "fast-coder",
+          "ANTHROPIC_DEFAULT_OPUS_MODEL": "fast-coder",
+          "ANTHROPIC_DEFAULT_SONNET_MODEL": "fast-coder",
+          "ANTHROPIC_MODEL": "fast-coder",
+          "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "131072",
+          "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1",
+          "OPENAI_API_KEY": "srouter-test-key",
+          "OPENAI_BASE_URL": "http://localhost:3000/v1",
+        },
+      },
+    },
+    {
+      "format": "json",
+      "path": "/home/tester/.openclaude.json",
+      "sensitive": true,
+      "value": {
+        "mcpServers": {
+          "srouter": {
+            "headers": {
+              "Authorization": "Bearer srouter-test-key",
+            },
+            "type": "http",
+            "url": "http://localhost:3000/mcp",
+          },
+        },
+      },
+    },
+  ],
   "notes": [
-    "OpenClaude is a Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
-    "Set OPENAI_BASE_URL=http://localhost:3000/v1 and OPENAI_API_KEY to your unified key.",
-    "OpenClaude then speaks Claude-style tool calls through the gateway, which translates them to the upstream provider.",
-    "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
+    "OpenClaude will read this configuration automatically.",
+    "MCP: wrote mcpServers.srouter -> /home/tester/.openclaude.json",
   ],
 }
 `;
@@ -1039,6 +1073,91 @@ exports[`tool generators > setup-roo has stable golden output 1`] = `
     "  export OPENROUTER_API_KEY=<unified-key>   # the CLI refuses to start without it, even with the key in the profile",
     "  roo -m fast-coder "Say hello"            # -m is required: the CLI's built-in default model shadows cli-settings.json",
     "MCP: add to your MCP client config: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
+  ],
+}
+`;
+
+exports[`tool generators > setup-zcode has stable golden output 1`] = `
+{
+  "files": [
+    {
+      "format": "json",
+      "path": "/home/tester/.zcode/v2/provider_config.json",
+      "sensitive": true,
+      "value": {
+        "config": {
+          "defaultModelSelection": {
+            "modelId": "fast-coder",
+            "options": {
+              "reasoningLevel": "disabled",
+            },
+            "providerId": "srouter",
+          },
+          "modelConfigRules": {
+            "manualProviderModelRules": [],
+            "providerModelRules": [
+              {
+                "config": {
+                  "enabled": true,
+                },
+                "modelId": "fast-coder",
+                "providerId": "srouter",
+              },
+              {
+                "config": {
+                  "enabled": true,
+                },
+                "modelId": "reasoning-model",
+                "providerId": "srouter",
+              },
+            ],
+          },
+          "providerConfigRules": {
+            "providerRules": [
+              {
+                "config": {
+                  "access": {
+                    "apiKey": "srouter-test-key",
+                    "apiKeyManagementUrl": "http://localhost:3000",
+                    "type": "api-key",
+                  },
+                  "api": {
+                    "baseUrl": "http://localhost:3000/v1",
+                    "headers": {},
+                    "type": "openai-chat-completions",
+                  },
+                  "group": "standard-personal",
+                  "logo": null,
+                  "modelOrder": [
+                    "fast-coder",
+                    "reasoning-model",
+                  ],
+                  "personalModelIds": [
+                    "fast-coder",
+                    "reasoning-model",
+                  ],
+                  "visibility": "visible",
+                },
+                "enabled": true,
+                "providerId": "srouter",
+                "providerName": "SRouter",
+                "templateId": null,
+              },
+            ],
+          },
+          "providerOrder": [
+            "srouter",
+          ],
+        },
+        "schemaVersion": 1,
+      },
+    },
+  ],
+  "notes": [
+    "Install Zcode: npm install -g zcode-app-cli",
+    "Configuration written to ~/.zcode/v2/provider_config.json",
+    "Default model set to srouter:fast-coder",
+    "MCP: add to /home/tester/.zcode/cli/setting.json: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
   ],
 }
 `;

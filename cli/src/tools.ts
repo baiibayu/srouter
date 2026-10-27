@@ -1214,6 +1214,80 @@ function factoryDroid(ctx: GenerateContext): Generation {
   };
 }
 
+function zcode(ctx: GenerateContext): Generation {
+  const model = primaryModel(ctx.models, ctx.requestedModelId);
+  const roster = catalogModels(ctx.models);
+  const modelIds = [model.id, ...roster.filter(m => m.id !== model.id).map(m => m.id)];
+  const provider = ctx.profile === 'default'
+    ? 'srouter'
+    : `srouter-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+
+  return {
+    files: [
+      {
+        path: posixPath(ctx.homeDir, '.zcode', 'v2', 'provider_config.json'),
+        format: 'json',
+        sensitive: true,
+        value: {
+          schemaVersion: 1,
+          config: {
+            providerOrder: [provider],
+            providerConfigRules: {
+              providerRules: [
+                {
+                  providerId: provider,
+                  templateId: null,
+                  providerName: ctx.profile === 'default' ? 'SRouter' : `SRouter (${ctx.profile})`,
+                  enabled: true,
+                  config: {
+                    group: 'standard-personal',
+                    logo: null,
+                    access: {
+                      type: 'api-key',
+                      apiKey: ctx.apiKey,
+                      apiKeyManagementUrl: rootUrl(ctx.url),
+                    },
+                    api: {
+                      type: 'openai-chat-completions',
+                      baseUrl: v1Url(ctx.url),
+                      headers: {},
+                    },
+                    personalModelIds: modelIds,
+                    modelOrder: modelIds,
+                    visibility: 'visible',
+                  },
+                },
+              ],
+            },
+            modelConfigRules: {
+              providerModelRules: modelIds.map(id => ({
+                providerId: provider,
+                modelId: id,
+                config: {
+                  enabled: true,
+                },
+              })),
+              manualProviderModelRules: [],
+            },
+            defaultModelSelection: {
+              providerId: provider,
+              modelId: model.id,
+              options: {
+                reasoningLevel: 'disabled',
+              },
+            },
+          },
+        },
+      },
+    ],
+    notes: [
+      'Install Zcode: npm install -g zcode-app-cli',
+      'Configuration written to ~/.zcode/v2/provider_config.json',
+      `Default model set to ${provider}:${model.id}`,
+    ],
+  };
+}
+
 function generic(ctx: GenerateContext): Generation {
   const model = primaryModel(ctx.models, ctx.requestedModelId);
   return {
@@ -1248,6 +1322,7 @@ const metadata = [
   ['pi', 'Pi', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-pi', 'https://pi.dev/docs/latest/models', 'default', pi],
   ['reasonix', 'Reasonix', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-reasonix', 'https://github.com/esengine/DeepSeek-Reasonix/blob/studio/docs/CLI.md#configure-providers', 'default', reasonix],
   ['droid', 'Factory Droid', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-droid', 'https://docs.factory.ai/droid-cli/quickstart', 'default', factoryDroid],
+  ['zcode', 'Zcode', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-zcode', 'https://github.com/kingsword09/zcode-cli', 'default', zcode],
   ['cursor', 'Cursor', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-cursor', 'https://docs.cursor.com', 'default', cursor],
   ['zed', 'Zed', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-zed', 'https://zed.dev/docs', 'default', zed],
   ['jetbrains', 'JetBrains', 'code', 'guide', 'OpenAI Chat', '/v1', 'setup-jetbrains', 'https://www.jetbrains.com/help/ai/ai-assistant.html', 'default', jetbrains],

@@ -164,6 +164,8 @@ export function mcpSnippetTarget(id: string, ctx: GenerateContext): string | und
     }
     case 'droid':
       return posixPath(home, '.factory', 'settings.json');
+    case 'zcode':
+      return posixPath(home, '.zcode', 'cli', 'setting.json');
     default:
       return 'your MCP client config';
   }

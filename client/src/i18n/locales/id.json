@@ -1248,7 +1248,8 @@
       "jetbrains": "Asisten AI untuk seluruh lini IDE IntelliJ — IntelliJ, Rider, WebStorm, PyCharm, dan lainnya.",
       "openclaude": "CLI kompatibel Claude yang merutekan request melalui gateway kompatibel OpenAI.",
       "atomcode": "Ekstensi Atom IDE yang terintegrasi dengan gateway kompatibel OpenAI.",
-      "reasonix": "Agen coding terminal yang dibuat khusus untuk DeepSeek, dibangun di sekitar prefix caching agar sesi panjang tetap murah."
+      "reasonix": "Agen coding terminal yang dibuat khusus untuk DeepSeek, dibangun di sekitar prefix caching agar sesi panjang tetap murah.",
+      "zcode": "Klien terminal untuk runtime agen ZCode, dengan perutean multi-provider dan alur kerja dinamis."
     },
     "modelNoteFull": "Setup membawa semua model (auto, auto:*, fusion)",
     "modelNoteDefault": "Setup hanya membawa auto — pilih model lain via UI agent",

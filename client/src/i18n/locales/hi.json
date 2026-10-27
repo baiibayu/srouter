@@ -1248,7 +1248,8 @@
       "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
       "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
       "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways.",
-      "reasonix": "DeepSeek के लिए बना टर्मिनल कोडिंग एजेंट, प्रीफ़िक्स कैशिंग के इर्द-गिर्द बनाया गया ताकि लंबे सेशन भी सस्ते रहें।"
+      "reasonix": "DeepSeek के लिए बना टर्मिनल कोडिंग एजेंट, प्रीफ़िक्स कैशिंग के इर्द-गिर्द बनाया गया ताकि लंबे सेशन भी सस्ते रहें।",
+      "zcode": "Terminal client for the ZCode agent runtime, with multi-provider routing and dynamic workflows."
     },
     "modelNoteFull": "सेटअप सभी मॉडल लाता है (auto, auto:*, fusion)",
     "modelNoteDefault": "सेटअप केवल auto लाता है — अन्य मॉडल एजेंट UI से चुनें",

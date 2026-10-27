@@ -14,6 +14,7 @@ import { resolveMaxTokens } from '../lib/sampling-params.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 import { extractThinkFromMessage } from '../lib/think-tags.js';
+import { isAnonymousCredential } from '../lib/credential.js';
 
 // -- OpenCode Free Tier Identity --------------------------------------------
 //
@@ -156,9 +157,13 @@ export class OpenCodeFreeProvider extends BaseProvider {
     apiKey: string,
     _quotaContext?: QuotaObservationContext,
   ): Promise<KeyValidationResult> {
-    const hasCustomKey = Boolean(apiKey && apiKey.trim() && apiKey !== 'keyless' && !apiKey.startsWith('sr-'));
-    if (!hasCustomKey) {
-      // Keyless path: always valid so the platform remains active
+    // Keyless path: the sentinel ('no-key' / '' / 'keyless') is the anonymous
+    // public-tier credential. The upstream /models endpoint answers 401 to
+    // `Bearer no-key` (it is not a real key), so validating it would flip the
+    // row to status='invalid' and take the whole platform out of rotation.
+    // A keyless provider is always valid by definition - real traffic is the
+    // only thing that can prove the tier is reachable.
+    if (isAnonymousCredential(apiKey)) {
       return true;
     }
     try {

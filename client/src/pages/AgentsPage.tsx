@@ -48,6 +48,7 @@ const analyticsIds: Record<string, string> = {
   pi: 'pi',
 
   droid: 'droid',
+  zcode: 'zcode',
   reasonix: 'reasonix',
   cursor: 'cursor',
 }

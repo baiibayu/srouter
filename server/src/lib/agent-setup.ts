@@ -578,6 +578,36 @@ export async function resetAgent(id: string): Promise<SetupResult> {
         break;
       }
 
+      case 'zcode': {
+        const zcodeConfig = path.join(home, '.zcode', 'v2', 'provider_config.json');
+        if (fs.existsSync(zcodeConfig)) {
+          try {
+            const raw = fs.readFileSync(zcodeConfig, 'utf8');
+            const data = JSON.parse(raw);
+            if (data.config) {
+              if (Array.isArray(data.config.providerOrder)) {
+                data.config.providerOrder = data.config.providerOrder.filter((p: string) => !p.startsWith('srouter'));
+              }
+              if (Array.isArray(data.config.providerConfigRules?.providerRules)) {
+                data.config.providerConfigRules.providerRules = data.config.providerConfigRules.providerRules.filter(
+                  (r: Record<string, unknown>) => typeof r.providerId !== 'string' || !r.providerId.startsWith('srouter'),
+                );
+              }
+              if (Array.isArray(data.config.modelConfigRules?.providerModelRules)) {
+                data.config.modelConfigRules.providerModelRules = data.config.modelConfigRules.providerModelRules.filter(
+                  (r: Record<string, unknown>) => typeof r.providerId !== 'string' || !r.providerId.startsWith('srouter'),
+                );
+              }
+              if (data.config.defaultModelSelection?.providerId?.startsWith('srouter')) {
+                delete data.config.defaultModelSelection;
+              }
+              fs.writeFileSync(zcodeConfig, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+            }
+          } catch {}
+        }
+        break;
+      }
+
       case 'openclaude': {
         const settingsPath = path.join(home, '.openclaude', 'settings.json');
         if (fs.existsSync(settingsPath)) {

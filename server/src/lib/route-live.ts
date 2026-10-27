@@ -62,6 +62,21 @@ const active = new Map<string, Entry>();
 let last: CompletedEntry | null = null;
 const recentCompleted: CompletedEntry[] = [];
 
+/**
+ * Composite key for the active map. Codex (and other Responses clients) send
+ * several tool-bearing requests in parallel under a single x-request-id, so
+ * keying only on requestId collapses them into one lane. Adding platform,
+ * model and attempt keeps each attempt visible as its own lane.
+ */
+function activeKey(opts: {
+  requestId: string;
+  platform: string;
+  model: string;
+  attempt: number;
+}): string {
+  return `${opts.requestId}::${opts.platform}::${opts.model}::a${opts.attempt}`;
+}
+
 export function recordRouteTrace(opts: {
   event: RouteTraceEvent;
   requestId: string;
@@ -73,9 +88,14 @@ export function recordRouteTrace(opts: {
   latencyMs?: number;
 }): void {
   const now = Date.now();
+  const key = activeKey(opts);
 
-  if (opts.event === 'start' || opts.event === 'next') {
-    const entry = active.get(opts.requestId) ?? {
+  if (opts.event === 'start') {
+    // A fresh in-flight attempt. Drop any prior entry with the same composite
+    // key so a re-attempt of the exact same platform+model+attempt shows the
+    // freshest one, not a stale duplicate.
+    active.delete(key);
+    const entry: Entry = {
       requestId: opts.requestId,
       startedAt: now,
       platform: opts.platform,
@@ -83,20 +103,39 @@ export function recordRouteTrace(opts: {
       attempt: opts.attempt,
       clientAgent: opts.clientAgent,
     };
-    entry.platform = opts.platform;
-    entry.model = opts.model;
-    entry.attempt = opts.attempt;
     if (opts.requestedModel) entry.requestedModel = opts.requestedModel;
-    if (opts.clientAgent) entry.clientAgent = opts.clientAgent;
-    active.set(opts.requestId, entry);
+    active.set(key, entry);
+    trim(now);
+    return;
+  }
+
+  if (opts.event === 'next') {
+    // Failover: the same request moved to a different platform/model/attempt.
+    // Drop every entry sharing this requestId so the strip shows only the
+    // current attempt — otherwise a superseded attempt and the new one would
+    // both stay "active" until the old one aged out.
+    for (const k of [...active.keys()]) {
+      const e = active.get(k);
+      if (e && e.requestId === opts.requestId) active.delete(k);
+    }
+    const entry: Entry = {
+      requestId: opts.requestId,
+      startedAt: now,
+      platform: opts.platform,
+      model: opts.model,
+      attempt: opts.attempt,
+      clientAgent: opts.clientAgent,
+    };
+    if (opts.requestedModel) entry.requestedModel = opts.requestedModel;
+    active.set(key, entry);
     trim(now);
     return;
   }
 
   // ok | fail | canceled — terminal. Runs even when the entry was already
   // trimmed, so a long stream still reports its outcome the moment it ends.
-  const existing = active.get(opts.requestId);
-  active.delete(opts.requestId);
+  const existing = active.get(key);
+  active.delete(key);
   const startedAt = existing?.startedAt ?? now - (opts.latencyMs ?? 0);
   last = {
     requestId: opts.requestId,

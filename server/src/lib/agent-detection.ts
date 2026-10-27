@@ -106,6 +106,11 @@ export function configPathFor(id: string): string | null {
     }
     case 'droid':
       return path.join(home, '.factory', 'settings.json');
+    case 'zcode':
+      return path.join(
+        envPath('ZCODE_PERSONAL_PROVIDER_CONFIG_FILE') ?? path.join(home, '.zcode', 'v2'),
+        'provider_config.json',
+      );
     case 'openclaude': {
       const openclaudeSettings = path.join(home, '.openclaude', 'settings.json');
       if (fs.existsSync(openclaudeSettings)) return openclaudeSettings;
@@ -187,6 +192,8 @@ function binaryNameFor(id: string): string | null {
       return 'pi';
     case 'droid':
       return 'droid';
+    case 'zcode':
+      return 'zcode';
     case 'reasonix':
       return 'reasonix';
     case 'openclaude':
@@ -368,6 +375,7 @@ export const AGENT_IDS = [
   'pi',
   'reasonix',
   'droid',
+  'zcode',
   'cursor',
   'zed',
   'jetbrains',

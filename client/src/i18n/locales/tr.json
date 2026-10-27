@@ -1248,7 +1248,8 @@
       "jetbrains": "AI Assistant across the IntelliJ IDEA family — IntelliJ, Rider, WebStorm, PyCharm and more.",
       "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
       "atomcode": "AtomGit'in terminal ajanı; Rust ile yazılmış, OpenAI uyumlu her uç noktayı kabul eder.",
-      "reasonix": "DeepSeek için geliştirilmiş bir terminal kodlama ajanı; uzun oturumlar ucuz kalsın diye önek önbelleği etrafında kurulmuştur."
+      "reasonix": "DeepSeek için geliştirilmiş bir terminal kodlama ajanı; uzun oturumlar ucuz kalsın diye önek önbelleği etrafında kurulmuştur.",
+      "zcode": "Terminal client for the ZCode agent runtime, with multi-provider routing and dynamic workflows."
     },
     "modelNoteFull": "Kurulum tüm modelleri ekler (auto, auto:*, fusion)",
     "modelNoteDefault": "Kurulum yalnızca auto ekler — diğer modelleri arayüzden seçin",

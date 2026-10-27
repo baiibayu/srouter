@@ -360,6 +360,14 @@ const brands: Record<string, Brand> = {
   atomcode: {
     img: atomcodeImg,
   },
+  zcode: {
+    tint: '[--mk:#2563EB] dark:[--mk:#60A5FA]',
+    art: (
+      <g fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 6.5h14L8 17.5h11" />
+      </g>
+    ),
+  },
 }
 
 function Mark({

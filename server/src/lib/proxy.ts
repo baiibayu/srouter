@@ -571,6 +571,15 @@ export function clearProviderRouting(): void {
   _providerRouting.clear();
 }
 
+/** Apply a full provider-routing map (from the dashboard or restoreProxySettings).
+ * Null entries delete; everything else sets. */
+export function applyProviderRouting(routing: Record<string, "proxy-pool" | "relay-pool" | "direct" | null>): void {
+  clearProviderRouting();
+  for (const [platform, mode] of Object.entries(routing)) {
+    setProviderRouting(platform, mode);
+  }
+}
+
 /** Determine if a platform should use the relay pool. */
 export function shouldUseRelayPool(platform?: string): boolean {
   if (!platform) return false;

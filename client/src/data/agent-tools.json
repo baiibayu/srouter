@@ -210,6 +210,17 @@
     "modelBehavior": "default"
   },
   {
+    "id": "zcode",
+    "name": "Zcode",
+    "category": "code",
+    "configType": "file",
+    "protocol": "OpenAI Chat",
+    "baseUrlSupport": "/v1",
+    "command": "setup-zcode",
+    "docsUrl": "https://github.com/kingsword09/zcode-cli",
+    "modelBehavior": "default"
+  },
+  {
     "id": "cursor",
     "name": "Cursor",
     "category": "code",
