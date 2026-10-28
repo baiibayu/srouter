@@ -432,7 +432,7 @@ export class OpenCodeFreeProvider extends BaseProvider {
         signal: options?.signal,
         timeoutMs: timeout,
       });
-    } catch (tlsErr: any) {
+    } catch (_tlsErr: any) {
       // Fallback to fetchWithTimeout
       res = await this.fetchWithTimeout(
         url,

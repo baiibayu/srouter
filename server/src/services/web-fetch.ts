@@ -3,7 +3,7 @@ import dns from 'node:dns/promises';
 import { stripTags } from '../lib/html.js';
 import { getTinyfishApiKey } from './web-search.js';
 import { recordFetchUsage } from './fetch-usage.js';
-import { fetchChainOrder, type FetchSourceId } from './fetch-sources.js';
+import { fetchChainOrder } from './fetch-sources.js';
 
 export const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 export const FETCH_TIMEOUT_MS = 15_000;

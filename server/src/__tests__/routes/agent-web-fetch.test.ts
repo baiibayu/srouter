@@ -10,7 +10,6 @@ vi.mock('../../services/web-fetch.js', async (importOriginal) => {
 import { createApp } from '../../app.js';
 import { initDb, getDb, getUnifiedApiKey, setSetting } from '../../db/index.js';
 import { mintDashboardToken } from '../helpers/auth.js';
-import { WEB_FETCH_FUNCTION_PARAMETERS } from '../../lib/web-fetch-tool.js';
 
 let app: Express;
 let dashToken = '';
