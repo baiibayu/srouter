@@ -348,10 +348,10 @@ The default family, per-provider toggles, and priorities live on the dashboard's
 
 Agents die on "search this" or "read that" when their provider ships no `web_search` or URL-fetch tool. SRouter answers both itself — same unified API key as every other `/v1` endpoint, rate-limited by the shared `/v1` proxy limiter.
 
-### `POST /v1/web-search`
+### `POST /v1/search`
 
 ```bash
-curl http://localhost:20268/v1/web-search \
+curl http://localhost:20268/v1/search \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "best free LLM API 2026", "max_results": 5}'
@@ -360,19 +360,24 @@ curl http://localhost:20268/v1/web-search \
 | Field | Type | Notes |
 | --- | --- | --- |
 | `query` | string, required | 1–500 chars after trim |
-| `max_results` | int, optional | 1–10, default 5 |
+| `max_results` | int, optional | 1–20, default 5 |
+| `topic` | string, optional | `"general"` or `"news"` |
+| `include_answer` | boolean, optional | Ask engines that support it for a direct summary |
+| `engine` | string, optional | Pin one engine id from `GET /v1/search/engines`, or `"auto"` |
 
 ```json
 {
-  "provider": "duckduckgo",
   "query": "best free LLM API 2026",
+  "answer": "...",
   "results": [
-    { "title": "...", "url": "https://...", "snippet": "..." }
-  ]
+    { "title": "...", "url": "https://...", "content": "...", "score": 0.95 }
+  ],
+  "provider": "duckduckgo",
+  "engine": "duckduckgo-html"
 }
 ```
 
-The backend is chosen in **Keys page → Providers → Web search backend** (live status + attempt counters on **Models → Web**): DuckDuckGo (keyless default), your own SearXNG instance (JSON format enabled), or Tavily/Brave/Exa/TinyFish with a free-tier key stored server-side (TinyFish Search is free at any balance — 12k requests/day). The chosen backend runs first; if it cannot answer, the request walks a fixed fallback chain — DuckDuckGo → SearXNG → TinyFish → Exa → Brave → Tavily, skipping candidates without a key or instance URL — all inside one ~25s budget, and `provider` always reports whichever backend actually answered. A response that needed more than one attempt carries an `attempts` array of `{backend, ok, error?}` so you can see who failed and why; only when every candidate fails does the endpoint answer `502` with each backend's error joined together. Every attempt is counted per backend (today / this month, served by `GET /api/settings/web-search` as `usage`) so you can watch the free tiers being consumed. A captcha/rate page on the answering backend (HTTP 200, zero parsed results) counts as a failure and keeps the chain moving — never an empty result set, so an agent can't mistake throttling for "the web has no answer".
+Engines and priorities are configured on the dashboard's **Models → Search** page (`/models/search`). Keyless engines (DuckDuckGo, Parallel) work out of the box with no key. Keyed engines (Tavily, Exa, Brave, TinyFish, Firecrawl, Linkup) and self-hosted SearXNG instance URL are managed on the **Keys → Web Tools** page (`/keys?tab=webSearch`). When set to `"auto"`, SRouter walks the failover chain across configured engines inside a ~25s budget, skipping unconfigured or exhausted engines.
 
 ### `POST /v1/fetch`
 

@@ -53,6 +53,8 @@ export interface ChatMessage {
     fusionStreaming?: boolean
     // Set when the question was looked up on the web first (#1174).
     webSearch?: WebSearchMeta
+    // Set when web URLs in the question were fetched first.
+    webFetch?: WebFetchMeta
   }
 }
 
@@ -61,6 +63,13 @@ export interface WebSearchMeta {
   engine: string
   latency: number
   sources: { title: string; url: string }[]
+}
+
+/** The web fetch an answer was grounded on: reader source, timing, fetched pages. */
+export interface WebFetchMeta {
+  via: string
+  latency: number
+  pages: { url: string; title: string | null }[]
 }
 
 /** Sidebar row: enough to list a conversation, never its transcript. */

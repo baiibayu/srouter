@@ -1417,7 +1417,14 @@
     "addKeyCta": "add a key",
     "fetchEndpointHint": "Fetch a page via",
     "fetchEndpointHintTail": "— public http(s) pages only, SSRF-guarded. The reader order is set below.",
-    "fetchEmpty": "No fetch sources yet. They come from the local registry."
+    "fetchEmpty": "No fetch sources yet. They come from the local registry.",
+    "fetchPlaygroundHeading": "Web fetch",
+    "fetchPlaygroundHelp": "Fetches web pages referenced in your prompt and feeds full content to the model.",
+    "fetchPlaygroundToggle": "Fetch web pages",
+    "fetchPlaygroundReaders": "Readers: {chain}",
+    "fetchPlaygroundFailed": "Web fetch failed, answering without it: {reason}",
+    "traceFetched": "{count} fetched pages",
+    "fetched": "Fetched page · {via} · {latency} ms"
   },
   "decision": {
     "tab": "القرار",

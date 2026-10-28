@@ -139,3 +139,48 @@ export function searchContextMessage(result: SearchResult, maxSnippet = 600): st
     'Use these results to answer, and cite them inline as [1], [2] where they support a claim. If they do not answer the question, say so.',
   ].join('\n\n')
 }
+
+export interface FetchHit {
+  url: string
+  title: string | null
+  text: string
+  via: string
+  truncated?: boolean
+}
+
+/** Extract public HTTP/HTTPS URLs from user prompt text. */
+export function extractUrls(text: string): string[] {
+  const matches = text.match(/https?:\/\/[^\s<>"'{}|\\^`[\]]+/g)
+  if (!matches) return []
+  const seen = new Set<string>()
+  const valid: string[] = []
+  for (const m of matches) {
+    try {
+      const u = new URL(m)
+      if (u.protocol === 'http:' || u.protocol === 'https:') {
+        if (!seen.has(u.href)) {
+          seen.add(u.href)
+          valid.push(u.href)
+        }
+      }
+    } catch {
+      // ignore invalid
+    }
+  }
+  return valid
+}
+
+/**
+ * The system message the Playground sends when URLs in a question were fetched.
+ */
+export function fetchContextMessage(pages: FetchHit[], maxChars = 4000): string {
+  const parts = pages.map((page, i) => {
+    const text = page.text.length > maxChars ? `${page.text.slice(0, maxChars)}… [truncated]` : page.text
+    return `[Page ${i + 1}: ${page.title || hostOf(page.url)} (${page.url})]\n${text}`
+  })
+  return [
+    'Web page content fetched for the URLs mentioned in the prompt:',
+    ...parts,
+    'Use this content to accurately answer the question. Cite the page URL where relevant.',
+  ].join('\n\n')
+}

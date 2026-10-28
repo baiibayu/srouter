@@ -52,7 +52,6 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import AgentsPage from '@/pages/AgentsPage'
 import AgentDetailPage from '@/pages/AgentDetailPage'
 import SystemOnePage from '@/pages/SystemOnePage'
-import WebSearchPage from '@/pages/WebSearchPage'
 
 // Every failed mutation surfaces as an error toast, so no action fails
 // silently. A page that already shows the failure inline can opt out with
@@ -97,7 +96,6 @@ const modelItems = [
   { to: '/models/search', labelKey: 'search.tab' },
   { to: '/models/fusion', labelKey: 'models.fusionTab' },
   { to: '/models/system-one', labelKey: 'models.systemOneTab' },
-  { to: '/models/web-search', labelKey: 'models.webSearchTab' },
 ]
 
 // The pages that hang off "Analytics". Logs is reachable only from here — it is
@@ -591,10 +589,9 @@ function App() {
                       <Route path="/models/audio" element={<AudioPage />} />
                       <Route path="/models/audio/:id" element={<MediaDetailPage modality="audio" />} />
                       <Route path="/models/transcription/:id" element={<MediaDetailPage modality="transcription" />} />
-                      <Route path="/models/tools" element={<Navigate to="/models/web-search" replace />} />
+                      <Route path="/models/tools" element={<Navigate to="/models/search" replace />} />
                       <Route path="/models/system-one" element={<SystemOnePage />} />
-                      <Route path="/models/web-search" element={<WebSearchPage />} />
-                      <Route path="/models/web-fetch" element={<Navigate to="/models/web-search" replace />} />
+                      <Route path="/models/web-fetch" element={<Navigate to="/models/search" replace />} />
                       <Route path="/models/search" element={<SearchPage />} />
                       <Route path="/models/decision" element={<DecisionPage />} />
                       <Route path="/playground" element={<PlaygroundPage />} />

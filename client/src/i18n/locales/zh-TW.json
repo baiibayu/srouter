@@ -1417,7 +1417,14 @@
     "addKeyCta": "add a key",
     "fetchEndpointHint": "Fetch a page via",
     "fetchEndpointHintTail": "— public http(s) pages only, SSRF-guarded. The reader order is set below.",
-    "fetchEmpty": "No fetch sources yet. They come from the local registry."
+    "fetchEmpty": "No fetch sources yet. They come from the local registry.",
+    "fetchPlaygroundHeading": "網頁抓取",
+    "fetchPlaygroundHelp": "擷取提示詞中提及的網頁完整內容供模型參考。",
+    "fetchPlaygroundToggle": "擷取網頁內容",
+    "fetchPlaygroundReaders": "讀取源: {chain}",
+    "fetchPlaygroundFailed": "網頁抓取失敗，略過抓取直接回答: {reason}",
+    "traceFetched": "{count} 個已擷取網頁",
+    "fetched": "擷取網頁 · {via} · {latency} ms"
   },
   "decision": {
     "tab": "決策",

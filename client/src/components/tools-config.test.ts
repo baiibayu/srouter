@@ -12,7 +12,6 @@ const sources = [
   'tools-config.tsx',
   'keys/web-search-section.tsx',
   '../pages/SystemOnePage.tsx',
-  '../pages/WebSearchPage.tsx',
 ].map(name => readFileSync(path.join(here, name), 'utf8'))
 const en = JSON.parse(readFileSync(path.join(here, '../i18n/locales/en.json'), 'utf8')) as unknown
 

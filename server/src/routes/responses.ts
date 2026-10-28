@@ -40,6 +40,7 @@ import { isClientAbortError, newClientAbortError, newHedgeAbortError } from '../
 import { inferQuotaPoolKey, type QuotaObservationContext } from '../services/provider-quota.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
 import { maybeServeResponsesWebSearch, webSearchCallToText } from '../lib/responses-web-search.js';
+import { webFetchCallToText } from '../lib/web-fetch-tool.js';
 import {
   FUSION_MODEL_ID,
   FusionError,
@@ -174,7 +175,7 @@ const additionalToolsItemSchema = z.object({
 // the kinds above.
 const otherKnownItemSchema = z.object({
   type: z.enum([
-    'web_search_call', 'file_search_call', 'code_interpreter_call',
+    'web_search_call', 'web_fetch_call', 'file_search_call', 'code_interpreter_call',
     'image_generation_call', 'mcp_call', 'mcp_list_tools',
     'mcp_approval_request', 'mcp_approval_response', 'item_reference',
   ]),
@@ -370,6 +371,11 @@ export function toChatMessages(req: ResponsesRequest): ChatMessage[] {
 
     if ('type' in item && item.type === 'web_search_call') {
       const note = webSearchCallToText(item as Record<string, unknown>);
+      if (note) pendingSearchNotes.push(note);
+      continue;
+    }
+    if ('type' in item && item.type === 'web_fetch_call') {
+      const note = webFetchCallToText(item as Record<string, unknown>);
       if (note) pendingSearchNotes.push(note);
       continue;
     }

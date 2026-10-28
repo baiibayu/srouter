@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { getDb, getUnifiedApiKey, getSetting } from '../db/index.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';
 import { runSearch } from '../services/search.js';
+import { runWebFetch } from '../services/web-fetch.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { supportedParametersForPlatforms } from '../lib/sampling-params.js';
 import { getRoutingScores, getRoutingStrategy, setRoutingStrategy } from '../services/router.js';
@@ -407,6 +408,23 @@ async function webSearch(args: Record<string, unknown>): Promise<unknown> {
   };
 }
 
+async function webFetch(args: Record<string, unknown>): Promise<unknown> {
+  const url = typeof args.url === 'string' ? args.url.trim() : '';
+  if (!url) throw new Error('url is required');
+  const maxBytes = typeof args.max_bytes === 'number' && Number.isFinite(args.max_bytes) ? args.max_bytes : undefined;
+  const outcome = await runWebFetch(url, { maxBytes });
+  if (!outcome.ok) {
+    throw new Error(outcome.error);
+  }
+  return {
+    url: outcome.url,
+    title: outcome.title,
+    text: outcome.text,
+    via: outcome.via,
+    truncated: outcome.truncated,
+  };
+}
+
 // ── Tool registry ────────────────────────────────────────────────────────
 
 interface McpTool {
@@ -542,6 +560,21 @@ const TOOLS: Record<string, McpTool> = {
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
     run: webSearch,
   },
+  web_fetch: {
+    title: 'Fetch web page content',
+    description: 'Fetch full readable text content from a public web URL through SRouter (direct HTTP with Jina/TinyFish reader fallback). Use when you need the complete documentation, article, or web page content beyond short snippets.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        url: { type: 'string', minLength: 1, maxLength: 2048, description: 'The public http(s) URL to fetch.' },
+        max_bytes: { type: 'integer', minimum: 1024, maximum: 2097152, default: 524288, description: 'Optional maximum bytes to fetch.' },
+      },
+      required: ['url'],
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+    run: webFetch,
+  },
   compression_stats: {
     title: 'Inspect prompt-compression savings',
     description: 'Prompt-compression statistics: requests compressed, estimated tokens saved, fidelity-gate discards, and per-engine savings.',
@@ -593,7 +626,7 @@ async function dispatchRpc(msg: JsonRpcRequest, id: number | string | null, req:
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
         serverInfo: { name: 'srouter', version: '1.0.0' },
-        instructions: 'Use ask_srouter when the user explicitly asks srouter or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, provider_list, usage_summary, cache_stats, compression_stats, quota_outlook, and routing_info for diagnostics. set_routing_strategy changes server state. web_search searches the web through the configured search providers. clear_cache flushes cached responses.',
+        instructions: 'Use ask_srouter when the user explicitly asks srouter or one of its models to perform a text task. Use healthcheck before troubleshooting availability; list_models for model choice; provider_health, provider_list, usage_summary, cache_stats, compression_stats, quota_outlook, and routing_info for diagnostics. set_routing_strategy changes server state. web_search searches the web through the configured search providers; web_fetch fetches full text from public web URLs. clear_cache flushes cached responses.',
       });
     }
     case 'ping':

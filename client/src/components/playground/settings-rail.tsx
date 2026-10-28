@@ -64,6 +64,11 @@ export interface SettingsRailProps {
   webSearchAvailable: boolean
   /** Enabled engines in failover order, e.g. "Tavily → Exa". */
   webSearchChain: string
+  /** Fetch web pages in the prompt before answering. */
+  webFetch?: boolean
+  onWebFetchChange?: (enabled: boolean) => void
+  webFetchAvailable?: boolean
+  webFetchChain?: string
 }
 
 function SamplingControlRow({
@@ -157,11 +162,15 @@ export function SettingsRail({
   onWebSearchChange,
   webSearchAvailable,
   webSearchChain,
+  webFetch = false,
+  onWebFetchChange,
+  webFetchAvailable = true,
+  webFetchChain,
 }: SettingsRailProps) {
   const { t } = useI18n()
   // Anything the collapsed strip should own up to: a system prompt riding on
   // every request, or a knob overriding the provider's default.
-  const tweaked = samplingActiveCount(sampling) > 0 || systemPrompt.trim().length > 0 || webSearch
+  const tweaked = samplingActiveCount(sampling) > 0 || systemPrompt.trim().length > 0 || webSearch || webFetch
 
   return (
     <div
@@ -304,6 +313,32 @@ export function SettingsRail({
             {webSearchAvailable && webSearchChain && (
               <p className="text-[11px] text-muted-foreground">
                 {t('search.playgroundEngines', { chain: webSearchChain })}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="space-y-0.5">
+              <span className="block text-xs font-medium">{t('search.fetchPlaygroundHeading')}</span>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {t('search.fetchPlaygroundHelp')}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="playground-web-fetch" className="flex-1 text-xs">
+                {t('search.fetchPlaygroundToggle')}
+              </label>
+              <Switch
+                id="playground-web-fetch"
+                size="sm"
+                checked={webFetch && webFetchAvailable}
+                onCheckedChange={onWebFetchChange}
+                disabled={!webFetchAvailable}
+              />
+            </div>
+            {webFetchAvailable && webFetchChain && (
+              <p className="text-[11px] text-muted-foreground">
+                {t('search.fetchPlaygroundReaders', { chain: webFetchChain })}
               </p>
             )}
           </div>

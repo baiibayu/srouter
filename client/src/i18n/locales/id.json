@@ -1417,7 +1417,14 @@
     "addKeyCta": "tambah kunci",
     "fetchEndpointHint": "Ambil halaman via",
     "fetchEndpointHintTail": "— hanya halaman http(s) publik, dengan penjaga SSRF. Urutan pembaca diatur di bawah.",
-    "fetchEmpty": "Belum ada sumber fetch. Sumber berasal dari registri lokal."
+    "fetchEmpty": "Belum ada sumber fetch. Sumber berasal dari registri lokal.",
+    "fetchPlaygroundHeading": "Web fetch",
+    "fetchPlaygroundHelp": "Mengambil isi halaman web yang disebutkan dalam prompt untuk konteks model.",
+    "fetchPlaygroundToggle": "Ambil halaman web",
+    "fetchPlaygroundReaders": "Reader: {chain}",
+    "fetchPlaygroundFailed": "Web fetch gagal, menjawab tanpa fetch: {reason}",
+    "traceFetched": "{count} halaman diambil",
+    "fetched": "Mengambil halaman · {via} · {latency} ms"
   },
   "decision": {
     "tab": "Keputusan",

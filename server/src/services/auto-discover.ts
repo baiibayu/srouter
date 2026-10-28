@@ -508,6 +508,24 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
   const empty: DiscoverResult = { registered: 0, refreshed: 0, retired: 0, embeddingsRegistered: 0, embeddingsRefreshed: 0, mediaRegistered: 0, mediaRefreshed: 0, quirksAssigned: 0, newModels: [], updatedModels: [], retiredModels: [] };
   if (SKIP_AUTO_DISCOVER.has(platform)) return empty;
 
+  if (platform === 'opencode-free') {
+    const { syncOpenCodeFreeModels } = await import('./opencode-free-sync.js');
+    const syncRes = await syncOpenCodeFreeModels();
+    return {
+      registered: syncRes.added,
+      refreshed: syncRes.updated,
+      retired: syncRes.retired,
+      embeddingsRegistered: 0,
+      embeddingsRefreshed: 0,
+      mediaRegistered: 0,
+      mediaRefreshed: 0,
+      quirksAssigned: 0,
+      newModels: syncRes.models,
+      updatedModels: [],
+      retiredModels: [],
+    };
+  }
+
   // Check if the platform already has all three model types — only skip if
   // chat + embeddings + media are all populated. Platforms that have chat
   // models but lack embeddings or media should still be discovered.

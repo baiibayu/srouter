@@ -265,10 +265,10 @@ curl http://localhost:20268/v1/embeddings \
 
 当上游供应商不提供 `web_search` 或 URL 抓取工具时，智能体任务会卡在"搜一下"或"读一下"。SRouter 自己回答这两个问题 —— 与其它 `/v1` 端点共用同一把统一 API key，受共享的 `/v1` 代理限流器约束。
 
-### `POST /v1/web-search`
+### `POST /v1/search`
 
 ```bash
-curl http://localhost:20268/v1/web-search \
+curl http://localhost:20268/v1/search \
   -H "Authorization: Bearer srouter-your-unified-key" \
   -H "Content-Type: application/json" \
   -d '{"query": "best free LLM API 2026", "max_results": 5}'
@@ -277,19 +277,24 @@ curl http://localhost:20268/v1/web-search \
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `query` | string，必填 | 去除首尾空白后 1–500 字符 |
-| `max_results` | int，可选 | 1–10，默认 5 |
+| `max_results` | int，可选 | 1–20，默认 5 |
+| `topic` | string，可选 | `"general"` 或 `"news"` |
+| `include_answer` | boolean，可选 | 针对支持的引擎请求直接摘要回答 |
+| `engine` | string，可选 | 指定 `GET /v1/search/engines` 中的引擎 ID，或 `"auto"` |
 
 ```json
 {
-  "provider": "duckduckgo",
   "query": "best free LLM API 2026",
+  "answer": "...",
   "results": [
-    { "title": "...", "url": "https://...", "snippet": "..." }
-  ]
+    { "title": "...", "url": "https://...", "content": "...", "score": 0.95 }
+  ],
+  "provider": "duckduckgo",
+  "engine": "duckduckgo-html"
 }
 ```
 
-后端在 **Keys 页 → Providers → Web search backend** 中选择（实时状态与尝试计数见 **模型 → Web**）：DuckDuckGo（默认、免密钥）、你自己的 SearXNG 实例（需启用 JSON 格式），或用服务端保存的免费额度密钥走 Tavily/Brave/Exa/TinyFish（TinyFish Search 任意余额均免费 —— 每天 1.2 万次请求）。所选后端先执行；若无法作答，请求会沿固定回退链继续尝试 —— DuckDuckGo → SearXNG → TinyFish → Exa → Brave → Tavily（没有密钥或实例 URL 的候选会被跳过）—— 全部约束在同一个约 25 秒的预算内，`provider` 始终如实报告真正作答的后端。经过不止一次尝试的响应会带上 `attempts` 数组（`{backend, ok, error?}`），可看清谁失败、为什么失败；只有全部候选都失败时才以 `502` 上报，并把每个后端的错误拼接在一起。每次尝试都会按后端计数（今日 / 本月，由 `GET /api/settings/web-search` 的 `usage` 字段提供），方便观察免费额度的消耗。作答后端返回验证码/限流页面（HTTP 200 但解析出零条结果）会计为一次失败并继续走链 —— 绝不会伪装成空结果集，避免智能体把限流误判为"网上没有答案"。
+搜索引擎与优先级在仪表盘的 **模型 → 搜索** 页（`/models/search`）中配置。免密钥引擎（DuckDuckGo、Parallel）开箱即用；带密钥引擎（Tavily、Exa、Brave、TinyFish、Firecrawl、Linkup）及自建 SearXNG 实例地址在 **Keys → Web Tools** 页（`/keys?tab=webSearch`）中管理。设置为 `"auto"` 时，SRouter 会在约 25 秒预算内自动在已配置引擎间进行故障转移。
 
 ### `POST /v1/fetch`
 

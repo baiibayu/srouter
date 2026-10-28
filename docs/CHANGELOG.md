@@ -1,3 +1,11 @@
+## 2026-10-28 — 0.1.30
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `ba73de0` | 2026-10-28 | fix(opencode-free): resolve 429/401 upstream gates with BoringSSL cipher order, 1-indexed session counter, Bearer public auth, model sync provider wiring, and obsolete models purge. |
+| `ba73de0` | 2026-10-28 | fix(keys): restore /api/settings/web-search endpoint and add /search route alias for unified Web Tools tab. |
+| `ba73de0` | 2026-10-28 | feat(keys): separate search/fetch engine keys into dedicated Web Tools tab across all 60 locales. |
+
 ## 2026-10-27 — 0.1.24
 
 | Commit | Date | Summary |

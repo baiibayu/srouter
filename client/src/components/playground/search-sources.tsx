@@ -1,7 +1,7 @@
-import { Globe } from 'lucide-react'
+import { Globe, Compass } from 'lucide-react'
 import { useI18n } from '@/i18n'
 import { hostOf } from '@/lib/search'
-import type { WebSearchMeta } from '@/lib/playground-conversations'
+import type { WebSearchMeta, WebFetchMeta } from '@/lib/playground-conversations'
 
 // The sources a web-searched answer was given (#1174), numbered to match the
 // [n] citations the model was asked to use, with the engine that ran the
@@ -30,6 +30,38 @@ export function SearchSources({ search }: { search: WebSearchMeta }) {
               {source.title || hostOf(source.url)}
             </a>
             <span className="shrink-0 text-muted-foreground">— {hostOf(source.url)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+/** The pages a web-fetched answer was given, with reader source and latency. */
+export function FetchSources({ fetchMeta }: { fetchMeta: WebFetchMeta }) {
+  const { t } = useI18n()
+  return (
+    <div className="mt-3 w-full rounded-xl border bg-muted/30 px-3 py-2 text-xs">
+      <div className="mb-1 flex items-center gap-1.5 text-muted-foreground">
+        <Compass className="size-3" />
+        <span className="tabular-nums">
+          {t('search.fetched', { via: fetchMeta.via, latency: fetchMeta.latency })}
+        </span>
+      </div>
+      <ol className="space-y-0.5">
+        {fetchMeta.pages.map((page, i) => (
+          <li key={`${i}-${page.url}`} className="flex min-w-0 gap-1.5">
+            <span className="shrink-0 text-muted-foreground tabular-nums">[{i + 1}]</span>
+            <a
+              href={page.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-w-0 truncate underline underline-offset-2 hover:text-foreground"
+              title={page.url}
+            >
+              {page.title || hostOf(page.url)}
+            </a>
+            <span className="shrink-0 text-muted-foreground">— {hostOf(page.url)}</span>
           </li>
         ))}
       </ol>

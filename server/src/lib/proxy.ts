@@ -1030,6 +1030,7 @@ async function dispatchFetch(
     return fetch(url, init);
   }
 
+  console.log(`[proxy] dispatch platform=${platform} shouldUseRelayPool=${platform ? shouldUseRelayPool(platform) : false} relayUrl=${platform ? getNextRelayUrl() : null} proxyUrl=${_proxyUrl} mode=${_proxyMode}`);
   // Per-provider routing: check if this platform should use the relay pool
   if (platform && shouldUseRelayPool(platform)) {
     const relayUrl = getNextRelayUrl();
@@ -1093,7 +1094,13 @@ async function fetchRelayFetch(
   headers.delete('host');
   headers.delete('content-length');
   headers.set(FETCH_RELAY_TARGET_HEADER, targetUrl);
-  headers.set('x-relay-target', targetUrl);
+  try {
+    const parsedTarget = new URL(targetUrl);
+    headers.set('x-relay-target', `${parsedTarget.protocol}//${parsedTarget.host}`);
+    headers.set('x-relay-path', `${parsedTarget.pathname}${parsedTarget.search}`);
+  } catch {
+    headers.set('x-relay-target', targetUrl);
+  }
   // Always overwrite caller-supplied Relay control headers. They belong to
   // this hop and must not let an upstream request choose another target or
   // credential. An empty token supports deliberately unauthenticated relays.

@@ -113,7 +113,7 @@ SRouter secara otomatis menerjemahkan request ke format asli yang dibutuhkan ole
 | `POST /api/chat` & `/api/generate` | Ollama NDJSON | Emulasi Ollama untuk editor seperti Zed dan JetBrains AI. |
 | `POST /v1/embeddings` | OpenAI Wire | Inferensi embedding teks. |
 | `POST /v1/images/generations` | OpenAI Wire | Pembuatan gambar via model AI visual. |
-| `POST /v1/web-search` | SRouter Wire | Fitur pencarian web untuk agent (DuckDuckGo, SearXNG, Tavily). |
+| `POST /v1/search` | SRouter Wire | Fitur pencarian web untuk agent (DuckDuckGo, Parallel, SearXNG, Tavily, Exa, Brave, TinyFish, Firecrawl, Linkup). |
 | `POST /v1/fetch` | SRouter Wire | Ekstraksi konten halaman web publik menjadi teks bersih. |
 
 *Panduan lengkap API: [docs/en/api/01-rest-api.md](../en/api/01-rest-api.md)*

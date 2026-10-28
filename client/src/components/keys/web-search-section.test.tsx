@@ -107,7 +107,7 @@ it('reports filled and empty status per key slot from the presence flags', async
   expect(row('Linkup').textContent).toContain('No key yet')
 })
 
-it('saves each new slot to its own field on PUT /api/settings/web-search', async () => {
+it('saves each new slot to its own field on PUT /api/settings/search', async () => {
   await mount()
   const save = (label: string, value: string) => {
     const slot = row(label)

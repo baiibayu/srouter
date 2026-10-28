@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, CircleAlert, FileText, Globe, X } from 'lucide-react'
+import { ChevronRight, CircleAlert, Compass, FileText, Globe, X } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { buildModelOptions } from '@/lib/model-groups'
 import type { Chain } from '@/components/chain-manager'
@@ -32,8 +32,17 @@ import { readChatStream } from '@/lib/playground-stream'
 import { ConversationSidebar } from '@/components/playground/conversation-sidebar'
 import { SettingsRail } from '@/components/playground/settings-rail'
 import { LiquidComposer } from '@/components/playground/liquid-composer'
-import { SearchSources } from '@/components/playground/search-sources'
-import { engineChain, searchContextMessage, searchProviderName, type SearchEngine, type SearchResult } from '@/lib/search'
+import { SearchSources, FetchSources } from '@/components/playground/search-sources'
+import {
+  engineChain,
+  searchContextMessage,
+  searchProviderName,
+  extractUrls,
+  fetchContextMessage,
+  type FetchHit,
+  type SearchEngine,
+  type SearchResult,
+} from '@/lib/search'
 import { ModelMakerIcon } from '@/components/model-maker-icon'
 import { composerHasContent } from '@/lib/composer-geometry'
 import {
@@ -64,6 +73,7 @@ import {
   writeActiveConversationId,
   type ChatMessage,
   type WebSearchMeta,
+  type WebFetchMeta,
   type ConversationSummary,
   type FusionPanelEntry,
 } from '@/lib/playground-conversations'
@@ -167,9 +177,10 @@ function FusionTrace({ panel, judge, streaming, answerStarted }: {
 // visual language as FusionTrace (minimal font, muted, hanging rule, chevron
 // toggle) and the same behaviour: open while it streams so you can watch the
 // model work, auto-collapsing once the answer itself starts.
-function ReplyTrace({ reasoning, search, answerStarted }: {
+function ReplyTrace({ reasoning, search, fetchMeta, answerStarted }: {
   reasoning?: string
   search?: WebSearchMeta
+  fetchMeta?: WebFetchMeta
   answerStarted?: boolean
 }) {
   const { t } = useI18n()
@@ -185,6 +196,7 @@ function ReplyTrace({ reasoning, search, answerStarted }: {
     if (reasoning && !answerStarted && !touched.current) setOpen(true)
   }, [reasoning, answerStarted])
   const sourceCount = search?.sources.length ?? 0
+  const fetchCount = fetchMeta?.pages.length ?? 0
   return (
     <div className="mb-2 text-muted-foreground/80">
       <button
@@ -200,9 +212,15 @@ function ReplyTrace({ reasoning, search, answerStarted }: {
             · <Globe className="size-2.5" /> {t('search.traceSources', { count: sourceCount })}
           </span>
         )}
+        {fetchCount > 0 && (
+          <span className="inline-flex items-center gap-1 opacity-80">
+            · <Compass className="size-2.5" /> {t('search.traceFetched', { count: fetchCount })}
+          </span>
+        )}
       </button>
       <Collapse open={open}>
         {search && sourceCount > 0 && <SearchSources search={search} />}
+        {fetchMeta && fetchCount > 0 && <FetchSources fetchMeta={fetchMeta} />}
         {reasoning && (
           // Same type as the answer beneath it, size and leading, only quieter.
           <div className="mt-1 whitespace-pre-wrap border-l border-border/60 pl-2.5 text-sm leading-relaxed text-muted-foreground">
@@ -266,6 +284,13 @@ export default function PlaygroundPage() {
   const updateWebSearch = (enabled: boolean) => {
     setWebSearch(enabled)
     localStorage.setItem('playground.webSearch', enabled ? '1' : '0')
+  }
+  const [webFetch, setWebFetch] = useState<boolean>(
+    () => localStorage.getItem('playground.webFetch') === '1',
+  )
+  const updateWebFetch = (enabled: boolean) => {
+    setWebFetch(enabled)
+    localStorage.setItem('playground.webFetch', enabled ? '1' : '0')
   }
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -340,6 +365,17 @@ export default function PlaygroundPage() {
   // zero keys, so the switch is available on a fresh install.
   const webSearchAvailable = true
   const webSearchOn = webSearch && webSearchAvailable
+  const { data: fetchSourcesData } = useQuery<{ sources: Array<{ name: string; enabled: boolean; configured: boolean }> }>({
+    queryKey: ['fetch-sources'],
+    queryFn: () => apiFetch('/api/fetch/sources'),
+    retry: false,
+  })
+  const usableReaders = (fetchSourcesData?.sources ?? []).filter(s => s.enabled && s.configured)
+  const fetchReadersChain = usableReaders.length > 0
+    ? usableReaders.map(s => s.name).join(' → ')
+    : 'Direct → Jina'
+  const webFetchAvailable = true
+  const webFetchOn = webFetch && webFetchAvailable
   const transcriptionAvailable = hasTranscription(mediaModels)
   const [dictationChoice, setDictationChoice] = useState<string>(
     () => localStorage.getItem(DICTATION_MODEL_STORAGE_KEY) ?? DICTATION_AUTO,
@@ -731,6 +767,7 @@ export default function PlaygroundPage() {
     routedVia: string | null,
     fallbackAttempts: string | null,
     webSearchMeta?: WebSearchMeta,
+    webFetchMeta?: WebFetchMeta,
   ) => {
     const via = routedVia
       ? { platform: routedVia.split('/')[0], model: routedVia.split('/').slice(1).join('/') }
@@ -757,6 +794,7 @@ export default function PlaygroundPage() {
             latency: Date.now() - start,
             fallbackAttempts: fallbackAttempts ? parseInt(fallbackAttempts) : undefined,
             ...(webSearchMeta ? { webSearch: webSearchMeta } : {}),
+            ...(webFetchMeta ? { webFetch: webFetchMeta } : {}),
           },
         })
       }
@@ -882,12 +920,55 @@ export default function PlaygroundPage() {
         }
       }
 
+      // Web fetch: retrieve referenced URLs in prompt when enabled
+      let fetchContext: string | null = null
+      let webFetchMeta: WebFetchMeta | undefined
+      if (webFetchOn && text) {
+        const urls = extractUrls(text).slice(0, 3)
+        if (urls.length > 0) {
+          const fetchStart = Date.now()
+          const pages: FetchHit[] = []
+          for (const targetUrl of urls) {
+            try {
+              const res = await fetch(`${base}/v1/fetch`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ url: targetUrl }),
+              })
+              if (res.ok) {
+                const data = await res.json() as { url: string; title: string | null; text: string; via: string; truncated?: boolean }
+                if (data.text) {
+                  pages.push({
+                    url: data.url || targetUrl,
+                    title: data.title ?? null,
+                    text: data.text,
+                    via: data.via || 'direct',
+                    truncated: data.truncated,
+                  })
+                }
+              }
+            } catch {
+              // ignore individual page fetch error
+            }
+          }
+          if (pages.length > 0) {
+            fetchContext = fetchContextMessage(pages)
+            webFetchMeta = {
+              via: pages.map(p => p.via).join(', '),
+              latency: Date.now() - fetchStart,
+              pages: pages.map(p => ({ url: p.url, title: p.title })),
+            }
+          }
+        }
+      }
+
       const isFusion = selectedModel === 'fusion'
       const sysPrompt = systemPrompt.trim()
       const body: Record<string, unknown> = {
         messages: [
           ...(sysPrompt ? [{ role: 'system', content: sysPrompt }] : []),
           ...(searchContext ? [{ role: 'system', content: searchContext }] : []),
+          ...(fetchContext ? [{ role: 'system', content: fetchContext }] : []),
           ...newMessages.map(m => ({ role: m.role, content: toMessageContent(m.content, m.images) })),
         ],
         // Only the knobs switched on in the settings rail: temperature, top_p
@@ -941,7 +1022,7 @@ export default function PlaygroundPage() {
       // fall back to the buffered path rather than trusting that: a proxy in
       // front of us, or a future non-streaming route, can still hand back JSON.
       if (!isFusion && res.body && (res.headers.get('Content-Type') ?? '').includes('text/event-stream')) {
-        await streamChat(res.body, newMessages, start, routedVia, fallbackAttempts, webSearchMeta)
+        await streamChat(res.body, newMessages, start, routedVia, fallbackAttempts, webSearchMeta, webFetchMeta)
         return
       }
 
@@ -970,6 +1051,7 @@ export default function PlaygroundPage() {
           fusionPanel: fusion?.panel,
           fusionJudge: fusion?.judge,
           ...(webSearchMeta ? { webSearch: webSearchMeta } : {}),
+          ...(webFetchMeta ? { webFetch: webFetchMeta } : {}),
         },
       }]
       setMessages(answered)
@@ -1124,10 +1206,11 @@ export default function PlaygroundPage() {
                             </div>
                           ) : msg.role === 'assistant' ? (
                             <>
-                              {(msg.reasoning || (msg.meta?.webSearch && msg.meta.webSearch.sources.length > 0)) && (
+                              {(msg.reasoning || (msg.meta?.webSearch && msg.meta.webSearch.sources.length > 0) || (msg.meta?.webFetch && msg.meta.webFetch.pages.length > 0)) && (
                                 <ReplyTrace
                                   reasoning={msg.reasoning}
                                   search={msg.meta?.webSearch}
+                                  fetchMeta={msg.meta?.webFetch}
                                   answerStarted={msg.content.length > 0}
                                 />
                               )}
@@ -1307,6 +1390,12 @@ export default function PlaygroundPage() {
               unavailableHint: t('search.playgroundNoKeys'),
               onToggle: updateWebSearch,
             }}
+            webFetch={{
+              enabled: webFetchOn,
+              available: webFetchAvailable,
+              label: t('search.fetchPlaygroundToggle'),
+              onToggle: updateWebFetch,
+            }}
           />
         </div>
       </div>
@@ -1347,6 +1436,10 @@ export default function PlaygroundPage() {
         webSearchChain={usableEngines.length > 0
           ? usableEngines.map(e => e.displayName).join(' → ')
           : t('search.playgroundKeyless')}
+        webFetch={webFetch}
+        onWebFetchChange={updateWebFetch}
+        webFetchAvailable={webFetchAvailable}
+        webFetchChain={fetchReadersChain}
       />
       )}
     </div>

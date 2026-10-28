@@ -18,9 +18,9 @@ import type { Scheduler } from '../lib/scheduler.js';
 
 // ── OpenCode Free Tier Identity (mirrors opencode-free.ts) ─────────────────
 
-const UPSTREAM_BASE = 'https://opencode.ai/zen/v1';
+const UPSTREAM_BASE = 'https://opencode.ai/inference/v1';
 
-const USER_AGENT = 'opencode/1.19.0';
+const USER_AGENT = 'opencode/latest/2.0.26/cli';
 
 const BASE62 =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -41,11 +41,30 @@ function cryptoBase62(n: number): string {
   return Array.from(b, (x) => BASE62[x % 62]).join('');
 }
 
+let sessionCounter = 0;
+let lastSessionTime = 0;
+
 function genSessionId(): string {
-  return `ses_${descendingTimeHex(Date.now(), 0)}${cryptoBase62(14)}`;
+  const now = Date.now();
+  if (now !== lastSessionTime) {
+    lastSessionTime = now;
+    sessionCounter = 0;
+  }
+  sessionCounter++;
+  return `ses_${descendingTimeHex(now, sessionCounter)}${cryptoBase62(14)}`;
 }
+
+let requestCounter = 0;
+let lastRequestTime = 0;
+
 function genRequestId(): string {
-  return `msg_${descendingTimeHex(Date.now(), 0)}${cryptoBase62(14)}`;
+  const now = Date.now();
+  if (now !== lastRequestTime) {
+    lastRequestTime = now;
+    requestCounter = 0;
+  }
+  requestCounter++;
+  return `msg_${descendingTimeHex(now, requestCounter)}${cryptoBase62(14)}`;
 }
 
 function identityHeaders(): Record<string, string> {
@@ -56,8 +75,11 @@ function identityHeaders(): Record<string, string> {
     'x-opencode-client': 'cli',
     'x-opencode-session': sessionId,
     'x-opencode-session-id': sessionId,
+    'x-session-affinity': sessionId,
+    'x-session-id': sessionId,
     'x-opencode-request': genRequestId(),
     'x-opencode-project': 'global',
+    'Accept': 'application/json',
   };
 }
 
@@ -70,16 +92,18 @@ const FREE_SUFFIX = '-free';
 /** Known free model IDs that don't use the `-free` suffix. */
 const KNOWN_FREE_IDS = new Set([
   'big-pickle',
-  'jev-1.13',    // free variant listed alongside jev-1.13-free
   'flint-40b-free',
   'beam-free',
   'glm-5.3-flash-free',
   'mimo-v2.6-flash-free',
   'deepseek-v4.1-flash-free',
   'nemotron-3.5-lightning-free',
+  'nemotron-3.5-super-vl-free',
 ]);
 
 function isFreeModel(modelId: string): boolean {
+  // Exclude non-chat / internal routing / systemone models
+  if (modelId.startsWith('jev-') || modelId === 'test') return false;
   return modelId.endsWith(FREE_SUFFIX) || KNOWN_FREE_IDS.has(modelId);
 }
 
@@ -138,6 +162,7 @@ async function fetchFreeModels(): Promise<UpstreamModel[]> {
 export interface FreeSyncResult {
   added: number;
   updated: number;
+  retired: number;
   skipped: number;
   total: number;
   models: string[];
@@ -152,6 +177,7 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
   const result: FreeSyncResult = {
     added: 0,
     updated: 0,
+    retired: 0,
     skipped: 0,
     total: 0,
     models: [],
@@ -258,16 +284,20 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
       result.models.push(m.id);
     }
 
-    // Disable any opencode-free models that are no longer available upstream
+    // Purge any opencode-free models that are no longer available upstream or unsupported
     const activeIds = new Set(freeModels.map((m) => m.id));
     const allDbModels = db.prepare('SELECT id, model_id, enabled FROM models WHERE platform = ?').all(platform) as Array<{
       id: number;
       model_id: string;
       enabled: number;
     }>;
+    const deleteFb = db.prepare('DELETE FROM fallback_config WHERE model_db_id = ?');
+    const deleteModel = db.prepare('DELETE FROM models WHERE id = ?');
     for (const m of allDbModels) {
-      if (!activeIds.has(m.model_id) && m.enabled === 1) {
-        db.prepare('UPDATE models SET enabled = 0 WHERE id = ?').run(m.id);
+      if (!activeIds.has(m.model_id)) {
+        deleteFb.run(m.id);
+        deleteModel.run(m.id);
+        result.retired++;
       }
     }
   })();

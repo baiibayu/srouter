@@ -51,7 +51,7 @@ This documentation hub covers everything you need to install, configure, and ope
   - Ollama Emulation (`/api/chat`, `/api/generate`)
   - Text Embeddings (`/v1/embeddings`)
   - Media Generation (`/v1/images/generations`, `/v1/audio/*`, `/v1/videos/*`)
-  - Agent Web Search & Fetch (`/v1/web-search`, `/v1/fetch`)
+  - Agent Web Search & Fetch (`/v1/search`, `/v1/fetch`)
 - **[Idempotency & Retry Semantics](api/02-idempotency.md):** Request deduping and safe retries across distributed providers.
 
 ### ✂️ 4. Prompt Compression & Token Saver

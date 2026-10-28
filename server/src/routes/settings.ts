@@ -438,7 +438,7 @@ const webSearchView = () => {
   return { ...rest, usage: getWebSearchUsage() };
 };
 
-settingsRouter.get('/web-search', (_req: Request, res: Response) => {
+settingsRouter.get(['/web-search', '/search'], (_req: Request, res: Response) => {
   res.json(webSearchView());
 });
 
@@ -454,7 +454,7 @@ const webSearchPutSchema = z.object({
 
 // Partial update: send only the fields to change. A null key clears the
 // stored one. Takes effect on the next search — no restart needed.
-settingsRouter.put('/web-search', (req: Request, res: Response) => {
+settingsRouter.put(['/web-search', '/search'], (req: Request, res: Response) => {
   const parsed = webSearchPutSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: 'Invalid web-search config: send {baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?, firecrawlKey?, linkupKey?}', type: 'invalid_request_error' } });

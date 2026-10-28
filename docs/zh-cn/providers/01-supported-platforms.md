@@ -36,6 +36,7 @@
 | `llm7` | LLM7.io | 带密钥（基础模型可匿名） | OpenAI 兼容 | 免费档每小时 100 次请求。 |
 | `huggingface` | Hugging Face Router | 带密钥 | OpenAI 兼容 | `router.huggingface.co` 元路由器（V13 重新加入）；免费档每月循环发放的 $0.10 路由额度。官方文档于 2026-10-07 移除免费额度说明（huggingface/hub-docs#2865），但 grandfathered 账户仍可获得每月额度 —— 保留。 |
 | `opencode` | OpenCode Zen | 带密钥 | OpenAI 兼容 | 自 2026-09 起免费名册仅限 OpenCode 客户端使用（403 FreeTierError，#1249），已在目录中停用；仅支持付费模型。 |
+| `opencode-free` | OpenCode Free | 免密钥 | 原生（`OpenCodeFreeProvider`） | 使用 BoringSSL TLS 指纹、1-indexed 会话 ID 与环境注入直接连接 OpenCode 免费网关；支持经过验证的免费模型（Beam、Big Pickle、Flint 40B、MiMo、Nemotron、DeepSeek V4.1 Flash、GLM 5.3 Flash）。 |
 | `ovh` | OVHcloud AI Endpoints | 免密钥 | OpenAI 兼容 | 匿名档：每 IP 每模型每分钟 2 次请求（实测更严）；鉴权档要求绑定了支付方式的 Public Cloud 项目（`migrateModelsV26`）。 |
 | `agnes` | Agnes AI | 带密钥 | OpenAI 兼容 | 专有模型以 $0/词元促销提供；约 30 个并发请求后开始出现 429；为推理首字节设 60s 超时。 |
 | `reka` | Reka | 带密钥 | OpenAI 兼容 | 自 2026-09 起新账号不再免费：需预付额度（#1202）。仍有余额的账号可继续使用；余额只在仪表盘可见。 |

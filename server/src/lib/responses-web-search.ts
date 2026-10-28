@@ -14,13 +14,28 @@ import {
   type WebSearchOutcome,
   type DomainFilter,
 } from './web-search-tool.js';
+import {
+  WEB_FETCH_TOOL_NAME,
+  WEB_FETCH_ALT_NAME,
+  WEB_FETCH_FUNCTION_DESCRIPTION,
+  WEB_FETCH_FUNCTION_PARAMETERS,
+  isResponsesWebFetchTool,
+  performWebFetch,
+  formatFetchOutcomeForModel,
+  newWebFetchCallId,
+  webFetchCallToText,
+  type WebFetchOutcome,
+} from './web-fetch-tool.js';
 
-// OpenAI Responses `web_search` tool (Codex) served from the gateway's search
-// pool (#1174). Before this the tool was dropped at conversion and the model
-// could not search at all. The routed model sees a plain `web_search`
-// function; each call runs here and is reported to the client as a
-// `web_search_call` output item (action.type 'search', with its sources),
-// exactly where OpenAI would put it, ahead of the final answer.
+export { webFetchCallToText };
+
+// OpenAI Responses `web_search` and `web_fetch` tools (Codex) served from
+// the gateway's search and fetch pools (#1174). Before this, these tools
+// were dropped at conversion and the model could not search or fetch at all.
+// The routed model sees plain `web_search` and `web_fetch` functions; each
+// call runs here and is reported to the client as a `web_search_call` or
+// `web_fetch_call` output item, exactly where OpenAI would put it, ahead of
+// the final answer.
 
 const HEARTBEAT_MS = 5_000;
 // Commit the stream (response.created) if the first model turn has not come
@@ -53,6 +68,10 @@ function isOurSearchCall(item: Item): boolean {
   return item?.type === 'function_call' && item?.name === WEB_SEARCH_TOOL_NAME;
 }
 
+function isOurFetchCall(item: Item): boolean {
+  return item?.type === 'function_call' && (item?.name === WEB_FETCH_TOOL_NAME || item?.name === WEB_FETCH_ALT_NAME);
+}
+
 function searchCallItem(id: string, query: string, outcome: WebSearchOutcome | null): Item {
   const sources = outcome?.ok ? outcome.results.map(hit => ({ type: 'url', url: hit.url })) : undefined;
   return {
@@ -60,6 +79,20 @@ function searchCallItem(id: string, query: string, outcome: WebSearchOutcome | n
     id,
     status: outcome ? (outcome.ok ? 'completed' : 'failed') : 'in_progress',
     action: { type: 'search', query, ...(sources ? { sources } : {}) },
+  };
+}
+
+function fetchCallItem(id: string, url: string, outcome: WebFetchOutcome | null): Item {
+  return {
+    type: 'web_fetch_call',
+    id,
+    status: outcome ? (outcome.ok ? 'completed' : 'failed') : 'in_progress',
+    action: {
+      type: 'fetch',
+      url,
+      ...(outcome?.ok ? { title: outcome.title, via: outcome.via, truncated: outcome.truncated } : {}),
+      ...(outcome && !outcome.ok ? { error: outcome.error } : {}),
+    },
   };
 }
 
@@ -96,8 +129,6 @@ class ResponsesSse {
     this.write('response.created', { response: this.skeleton });
     this.write('response.in_progress', { response: this.skeleton });
     this.started = true;
-    // Same keep-alive Fusion uses: Codex's client watchdog ignores SSE
-    // comments but resets on any standard event.
     this.heartbeat = setInterval(() => this.write('response.in_progress', { response: this.skeleton }), HEARTBEAT_MS);
     this.heartbeat.unref?.();
   }
@@ -112,6 +143,19 @@ class ResponsesSse {
 
   searchDone(idx: number, item: Item): void {
     this.write('response.web_search_call.completed', { output_index: idx, item_id: item.id });
+    this.write('response.output_item.done', { output_index: idx, item });
+  }
+
+  fetchStarted(item: Item): number {
+    const idx = this.outputIndex++;
+    this.write('response.output_item.added', { output_index: idx, item });
+    this.write('response.web_fetch_call.in_progress', { output_index: idx, item_id: item.id });
+    this.write('response.web_fetch_call.fetching', { output_index: idx, item_id: item.id });
+    return idx;
+  }
+
+  fetchDone(idx: number, item: Item): void {
+    this.write('response.web_fetch_call.completed', { output_index: idx, item_id: item.id });
     this.write('response.output_item.done', { output_index: idx, item });
   }
 
@@ -153,10 +197,9 @@ class ResponsesSse {
 }
 
 /**
- * Serve a /v1/responses request that carries a `web_search` tool from the
- * search pool. Returns false (nothing sent) when the request has no such
- * tool, is a Fusion request, or no search key exists — the caller then runs
- * the normal handler, which drops the tool exactly as before.
+ * Serve a /v1/responses request that carries `web_search` or `web_fetch` tools
+ * from the search/fetch pool. Returns false (nothing sent) when the request has no
+ * such tools, is a Fusion request, or search tool is present without search capability.
  */
 export async function maybeServeResponsesWebSearch(
   handler: (req: Request, res: Response) => Promise<void>,
@@ -167,20 +210,33 @@ export async function maybeServeResponsesWebSearch(
   if (!body || typeof body !== 'object' || !Array.isArray(body.tools)) return false;
   if (body.fusion != null || body.model === 'fusion') return false;
   if (typeof body.input !== 'string' && !Array.isArray(body.input)) return false;
-  const searchTool = body.tools.find(isResponsesWebSearchTool);
-  if (!searchTool || !hasSearchCapability()) return false;
 
-  const filter: DomainFilter = {
+  const searchTool = body.tools.find(isResponsesWebSearchTool);
+  const fetchTool = body.tools.find(isResponsesWebFetchTool);
+  if (!searchTool && !fetchTool) return false;
+  if (searchTool && !hasSearchCapability() && !fetchTool) return false;
+
+  const filter: DomainFilter = searchTool ? {
     allowedDomains: Array.isArray(searchTool.filters?.allowed_domains) ? searchTool.filters.allowed_domains.filter((d: unknown) => typeof d === 'string') : undefined,
     blockedDomains: Array.isArray(searchTool.filters?.blocked_domains) ? searchTool.filters.blocked_domains.filter((d: unknown) => typeof d === 'string') : undefined,
-  };
-  const maxSearches = resolveMaxSearches(body.max_tool_calls);
-  let replaced = false;
+  } : {};
+
+  const maxCalls = resolveMaxSearches(body.max_tool_calls);
+  let searchReplaced = false;
+  let fetchReplaced = false;
+
   const tools = body.tools.flatMap((t: Item) => {
-    if (!isResponsesWebSearchTool(t)) return [t];
-    if (replaced) return [];
-    replaced = true;
-    return [{ type: 'function', name: WEB_SEARCH_TOOL_NAME, description: WEB_SEARCH_FUNCTION_DESCRIPTION, parameters: WEB_SEARCH_FUNCTION_PARAMETERS, strict: false }];
+    if (isResponsesWebSearchTool(t)) {
+      if (searchReplaced) return [];
+      searchReplaced = true;
+      return [{ type: 'function', name: WEB_SEARCH_TOOL_NAME, description: WEB_SEARCH_FUNCTION_DESCRIPTION, parameters: WEB_SEARCH_FUNCTION_PARAMETERS, strict: false }];
+    }
+    if (isResponsesWebFetchTool(t)) {
+      if (fetchReplaced) return [];
+      fetchReplaced = true;
+      return [{ type: 'function', name: WEB_FETCH_TOOL_NAME, description: WEB_FETCH_FUNCTION_DESCRIPTION, parameters: WEB_FETCH_FUNCTION_PARAMETERS, strict: false }];
+    }
+    return [t];
   });
 
   const responseId = `resp_${crypto.randomBytes(16).toString('hex')}`;
@@ -189,10 +245,11 @@ export async function maybeServeResponsesWebSearch(
   const assembled: Item[] = [];
   const usage = { input_tokens: 0, output_tokens: 0 };
   let searchesRun = 0;
+  let fetchesRun = 0;
   let input: Item[] = typeof body.input === 'string'
     ? [{ type: 'message', role: 'user', content: body.input }]
     : [...body.input];
-  const maxTurns = maxSearches + 2;
+  const maxTurns = maxCalls + 2;
   let commitTimer: NodeJS.Timeout | null = null;
 
   const emitItem = (item: Item) => {
@@ -238,11 +295,11 @@ export async function maybeServeResponsesWebSearch(
       sse?.start();
 
       const output: Item[] = Array.isArray(reply.output) ? reply.output : [];
-      const searchCalls = output.filter(isOurSearchCall);
-      const clientCalls = output.filter(item => item?.type === 'function_call' && !isOurSearchCall(item));
+      const ourCalls = output.filter(item => isOurSearchCall(item) || isOurFetchCall(item));
+      const clientCalls = output.filter(item => item?.type === 'function_call' && !isOurSearchCall(item) && !isOurFetchCall(item));
 
-      if (searchCalls.length === 0 || clientCalls.length > 0 || lastTurn) {
-        for (const item of output) if (!isOurSearchCall(item)) emitItem(item);
+      if (ourCalls.length === 0 || clientCalls.length > 0 || lastTurn) {
+        for (const item of output) if (!isOurSearchCall(item) && !isOurFetchCall(item)) emitItem(item);
         const finalResponse = {
           ...reply,
           id: responseId,
@@ -263,39 +320,60 @@ export async function maybeServeResponsesWebSearch(
 
       const followUp: Item[] = [];
       for (const item of output) {
-        if (!isOurSearchCall(item)) {
+        if (!isOurSearchCall(item) && !isOurFetchCall(item)) {
           emitItem(item);
-          // Interim assistant text goes back into the next turn's history;
-          // reasoning items have no chat equivalent and are dropped anyway.
           if (item.type === 'message') followUp.push(item);
           continue;
         }
+
         let args: Item = {};
-        try { args = JSON.parse(item.arguments ?? '{}'); } catch { /* malformed → invalid input */ }
-        const query = typeof args.query === 'string' ? args.query : '';
-        const callId = newWebSearchCallId();
-        const progressIdx = sse?.searchStarted(searchCallItem(callId, query, null));
-        let outcome: WebSearchOutcome;
-        if (searchesRun >= maxSearches) {
-          outcome = { ok: false, query, errorCode: 'max_uses_exceeded', message: 'max searches exceeded' };
-        } else {
-          searchesRun++;
-          outcome = await performWebSearch(args.query, filter);
+        try { args = JSON.parse(item.arguments ?? '{}'); } catch { /* malformed */ }
+
+        if (isOurSearchCall(item)) {
+          const query = typeof args.query === 'string' ? args.query : '';
+          const callId = newWebSearchCallId();
+          const progressIdx = sse?.searchStarted(searchCallItem(callId, query, null));
+          let outcome: WebSearchOutcome;
+          if (searchesRun >= maxCalls) {
+            outcome = { ok: false, query, errorCode: 'max_uses_exceeded', message: 'max searches exceeded' };
+          } else {
+            searchesRun++;
+            outcome = await performWebSearch(args.query, filter);
+          }
+          const done = searchCallItem(callId, query, outcome);
+          assembled.push(done);
+          if (sse && progressIdx !== undefined) sse.searchDone(progressIdx, done);
+          followUp.push(
+            { type: 'function_call', call_id: item.call_id, name: WEB_SEARCH_TOOL_NAME, arguments: item.arguments ?? '{}' },
+            { type: 'function_call_output', call_id: item.call_id, output: formatOutcomeForModel(outcome) },
+          );
+        } else if (isOurFetchCall(item)) {
+          const url = typeof args.url === 'string' ? args.url : '';
+          const maxBytes = typeof args.max_bytes === 'number' ? args.max_bytes : undefined;
+          const callId = newWebFetchCallId();
+          const progressIdx = sse?.fetchStarted(fetchCallItem(callId, url, null));
+          let outcome: WebFetchOutcome;
+          if (fetchesRun >= maxCalls) {
+            outcome = { ok: false, url, error: 'max fetches exceeded', errorCode: 'fetch_failed', status: 429 };
+          } else {
+            fetchesRun++;
+            outcome = await performWebFetch(url, maxBytes);
+          }
+          const done = fetchCallItem(callId, url, outcome);
+          assembled.push(done);
+          if (sse && progressIdx !== undefined) sse.fetchDone(progressIdx, done);
+          followUp.push(
+            { type: 'function_call', call_id: item.call_id, name: item.name ?? WEB_FETCH_TOOL_NAME, arguments: item.arguments ?? '{}' },
+            { type: 'function_call_output', call_id: item.call_id, output: formatFetchOutcomeForModel(outcome) },
+          );
         }
-        const done = searchCallItem(callId, query, outcome);
-        assembled.push(done);
-        if (sse && progressIdx !== undefined) sse.searchDone(progressIdx, done);
-        followUp.push(
-          { type: 'function_call', call_id: item.call_id, name: WEB_SEARCH_TOOL_NAME, arguments: item.arguments ?? '{}' },
-          { type: 'function_call_output', call_id: item.call_id, output: formatOutcomeForModel(outcome) },
-        );
       }
       input = [...input, ...followUp];
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    if (sse?.committed) sse.fail({ message: `web search failed: ${message}`, type: 'server_error' });
-    else if (!res.headersSent) res.status(500).json({ error: { message: `web search failed: ${message}`, type: 'server_error' } });
+    if (sse?.committed) sse.fail({ message: `web request failed: ${message}`, type: 'server_error' });
+    else if (!res.headersSent) res.status(500).json({ error: { message: `web request failed: ${message}`, type: 'server_error' } });
     return true;
   } finally {
     if (commitTimer) clearTimeout(commitTimer);

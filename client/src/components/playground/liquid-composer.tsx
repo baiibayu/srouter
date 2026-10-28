@@ -1,6 +1,6 @@
 import { useEffect, useState, type ClipboardEvent, type KeyboardEvent, type RefObject } from 'react'
 import { Liquid } from 'liquid-gooey'
-import { ArrowUp, Globe, Paperclip, Plus } from 'lucide-react'
+import { ArrowUp, Compass, Globe, Paperclip, Plus } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
@@ -49,10 +49,12 @@ export interface LiquidComposerProps {
   /** The web search switch in the + menu (#1174). While it is on, the + turns
    *  blue with a small dot instead of a chip in the field, so the input stays clear. */
   webSearch?: { enabled: boolean; available: boolean; label: string; unavailableHint: string; onToggle: (on: boolean) => void }
+  /** The web fetch switch in the + menu. While on, URLs in the prompt are fetched automatically. */
+  webFetch?: { enabled: boolean; available: boolean; label: string; unavailableHint?: string; onToggle: (on: boolean) => void }
 }
 
 export function LiquidComposer({
-  inputRef, value, onChange, onKeyDown, onPaste, placeholder, hasContent, loading, onSend, onAttach, labels, dictation, webSearch,
+  inputRef, value, onChange, onKeyDown, onPaste, placeholder, hasContent, loading, onSend, onAttach, labels, dictation, webSearch, webFetch,
 }: LiquidComposerProps) {
   // Set from input events; an empty value never counts as grown, so a
   // programmatic clear (send, new chat) drops back to one line by itself.
@@ -74,6 +76,12 @@ export function LiquidComposer({
     if (el) el.style.height = 'auto'
   }, [value, inputRef])
   const interactive = sendButtonInteractive(hasContent, loading)
+  const anyToolEnabled = Boolean(webSearch?.enabled || webFetch?.enabled)
+  const activeToolLabels = [
+    webSearch?.enabled ? webSearch.label : null,
+    webFetch?.enabled ? webFetch.label : null,
+  ].filter(Boolean).join(' · ')
+  const triggerAria = anyToolEnabled ? `${labels.add} · ${activeToolLabels}` : labels.add
 
   return (
     <Liquid
@@ -96,11 +104,11 @@ export function LiquidComposer({
             <DropdownMenuTrigger
               className={`${buttonVariants({ variant: 'ghost', size: 'icon' })} relative shrink-0 rounded-full text-muted-foreground hover:text-foreground data-popup-open:text-foreground ${grown ? 'mb-0.5' : ''}`}
               disabled={loading}
-              aria-label={webSearch?.enabled ? `${labels.add} · ${webSearch.label}` : labels.add}
-              title={webSearch?.enabled ? `${labels.add} · ${webSearch.label}` : labels.add}
+              aria-label={triggerAria}
+              title={triggerAria}
             >
-              <Plus className={`size-4 ${webSearch?.enabled ? 'text-sky-600 dark:text-sky-300' : ''}`} />
-              {webSearch?.enabled && (
+              <Plus className={`size-4 ${anyToolEnabled ? 'text-sky-600 dark:text-sky-300' : ''}`} />
+              {anyToolEnabled && (
                 <span
                   data-testid="web-search-indicator"
                   className="pointer-events-none absolute top-1.5 right-1.5 size-1.5 rounded-full bg-sky-500"
@@ -135,6 +143,32 @@ export function LiquidComposer({
                   </DropdownMenuItem>
                   {!webSearch.available && (
                     <p className="px-1.5 pt-0.5 pb-1 text-[11px] leading-snug text-muted-foreground">{webSearch.unavailableHint}</p>
+                  )}
+                </>
+              )}
+              {webFetch && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    closeOnClick={false}
+                    disabled={!webFetch.available}
+                    onClick={() => webFetch.onToggle(!webFetch.enabled)}
+                    title={webFetch.available ? undefined : webFetch.unavailableHint}
+                    aria-checked={webFetch.enabled}
+                    role="menuitemcheckbox"
+                  >
+                    <Compass />
+                    <span className="flex-1">{webFetch.label}</span>
+                    <Switch
+                      size="sm"
+                      checked={webFetch.enabled}
+                      tabIndex={-1}
+                      aria-hidden
+                      className="pointer-events-none"
+                    />
+                  </DropdownMenuItem>
+                  {!webFetch.available && webFetch.unavailableHint && (
+                    <p className="px-1.5 pt-0.5 pb-1 text-[11px] leading-snug text-muted-foreground">{webFetch.unavailableHint}</p>
                   )}
                 </>
               )}
