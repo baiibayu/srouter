@@ -15,14 +15,23 @@ import {
   type WebSearchOutcome,
   type DomainFilter,
 } from './web-search-tool.js';
+import {
+  WEB_FETCH_TOOL_NAME,
+  WEB_FETCH_ALT_NAME,
+  WEB_FETCH_FUNCTION_DESCRIPTION,
+  WEB_FETCH_FUNCTION_PARAMETERS,
+  isResponsesWebFetchTool,
+  performWebFetch,
+  formatFetchOutcomeForModel,
+  type WebFetchOutcome,
+} from './web-fetch-tool.js';
 
-// Anthropic `web_search_*` server tool (Claude Code's WebSearch) served from
-// the gateway's search pool (#1174). The client sees what api.anthropic.com
-// would send: `server_tool_use` + `web_search_tool_result` blocks ahead of the
-// answer, `usage.server_tool_use.web_search_requests`, and the matching SSE
-// events when it streams. The routed model only ever sees a plain function
-// tool named `web_search`; each of its calls is executed here and fed back
-// until it answers, a client tool is called, or max_uses runs out.
+// Anthropic `web_search_*` and `web_fetch_*` server tools (Claude Code's WebSearch & WebFetch)
+// served from the gateway's search and fetch pools (#1174).
+// The client sees what api.anthropic.com would send: `server_tool_use` + result blocks ahead
+// of the answer, usage metadata, and matching SSE events when streaming.
+// The routed model only ever sees plain function tools named `web_search` and `web_fetch`;
+// each call is executed here and fed back until it answers or client tools run.
 
 const HEARTBEAT_MS = 5_000;
 
@@ -32,12 +41,23 @@ export function isWebSearchServerTool(tool: unknown): boolean {
   return typeof type === 'string' && /^web_search_\d{8}$/.test(type);
 }
 
+/** `web_fetch`, `web_fetch_20250101`, `fetch_url`, … */
+export function isWebFetchServerTool(tool: unknown): boolean {
+  if (isResponsesWebFetchTool(tool)) return true;
+  const type = (tool as { type?: unknown } | null)?.type;
+  return typeof type === 'string' && /^web_fetch(_\d{8})?$/.test(type);
+}
+
 type Block = Record<string, any>;
 
 interface Usage { input_tokens: number; output_tokens: number }
 
 function isOurSearchCall(block: Block): boolean {
   return block?.type === 'tool_use' && block?.name === WEB_SEARCH_TOOL_NAME;
+}
+
+function isOurFetchCall(block: Block): boolean {
+  return block?.type === 'tool_use' && (block?.name === WEB_FETCH_TOOL_NAME || block?.name === WEB_FETCH_ALT_NAME);
 }
 
 function resultBlock(toolUseId: string, outcome: WebSearchOutcome): Block {
@@ -57,12 +77,35 @@ function resultBlock(toolUseId: string, outcome: WebSearchOutcome): Block {
   };
 }
 
-/** Earlier search blocks a client replays → text the routed model can read.
- *  Used by the request converter for both our own and real Anthropic blocks. */
+function fetchResultBlock(toolUseId: string, outcome: WebFetchOutcome): Block {
+  if (!outcome.ok) {
+    return { type: 'web_fetch_tool_result', tool_use_id: toolUseId, content: { type: 'web_fetch_tool_result_error', error_code: outcome.errorCode } };
+  }
+  return {
+    type: 'web_fetch_tool_result',
+    tool_use_id: toolUseId,
+    content: {
+      type: 'web_fetch_result',
+      url: outcome.url,
+      title: outcome.title || outcome.url,
+      text: outcome.text,
+      via: outcome.via,
+      truncated: outcome.truncated,
+    },
+  };
+}
+
+/** Earlier search and fetch blocks a client replays → text the routed model can read. */
 export function serverToolUseToText(block: Block): string {
-  if (block?.name !== WEB_SEARCH_TOOL_NAME) return '';
-  const query = typeof block?.input?.query === 'string' ? block.input.query : '';
-  return query ? `[Searched the web for: ${query}]` : '';
+  if (block?.name === WEB_SEARCH_TOOL_NAME) {
+    const query = typeof block?.input?.query === 'string' ? block.input.query : '';
+    return query ? `[Searched the web for: ${query}]` : '';
+  }
+  if (block?.name === WEB_FETCH_TOOL_NAME || block?.name === WEB_FETCH_ALT_NAME) {
+    const url = typeof block?.input?.url === 'string' ? block.input.url : '';
+    return url ? `[Fetched page content from: ${url}]` : '';
+  }
+  return '';
 }
 
 export function webSearchResultToText(block: Block): string {
@@ -77,6 +120,15 @@ export function webSearchResultToText(block: Block): string {
     if (extract) lines.push(`  ${extract.replace(/\s+/g, ' ').trim()}`);
   }
   return lines.join('\n');
+}
+
+export function webFetchResultToText(block: Block): string {
+  const content = block?.content;
+  if (!content || typeof content !== 'object') return '[Web fetch returned an error]';
+  if (content.type === 'web_fetch_tool_result_error') return `[Web fetch error: ${content.error_code ?? 'failed'}]`;
+  const title = content.title ? ` (${content.title})` : '';
+  const text = typeof content.text === 'string' ? content.text.slice(0, 1000) : '';
+  return `[Fetched page content from: ${content.url ?? ''}${title}]\n${text}`;
 }
 
 class AnthropicSse {
@@ -163,9 +215,9 @@ class AnthropicSse {
 }
 
 /**
- * Serve a /v1/messages request that carries a web_search server tool from the
- * search pool. Returns false (nothing sent) when the request has no such tool
- * or no search key is configured — the caller then runs the normal handler.
+ * Serve a /v1/messages request that carries a web_search or web_fetch server tool
+ * from the search/fetch pool. Returns false (nothing sent) when the request has no
+ * such tool or no capability is configured — the caller then runs the normal handler.
  */
 export async function maybeServeAnthropicWebSearch(
   handler: (req: Request, res: Response) => Promise<void>,
@@ -175,21 +227,31 @@ export async function maybeServeAnthropicWebSearch(
   const body = req.body;
   if (!body || typeof body !== 'object' || !Array.isArray(body.tools) || !Array.isArray(body.messages)) return false;
   const searchTool = body.tools.find(isWebSearchServerTool);
-  if (!searchTool || !hasSearchCapability()) return false;
+  const fetchTool = body.tools.find(isWebFetchServerTool);
+  if (!searchTool && !fetchTool) return false;
+  if (searchTool && !hasSearchCapability() && !fetchTool) return false;
 
-  const filter: DomainFilter = {
+  const filter: DomainFilter = searchTool ? {
     allowedDomains: Array.isArray(searchTool.allowed_domains) ? searchTool.allowed_domains.filter((d: unknown) => typeof d === 'string') : undefined,
     blockedDomains: Array.isArray(searchTool.blocked_domains) ? searchTool.blocked_domains.filter((d: unknown) => typeof d === 'string') : undefined,
-  };
-  const maxUses = resolveMaxSearches(searchTool.max_uses);
-  // One function tool stands in for the server tool; any other server tools
-  // (and duplicates) keep their current pass-through handling.
-  let replaced = false;
+  } : {};
+  const maxUses = resolveMaxSearches(searchTool?.max_uses);
+  const maxFetches = 5;
+
+  let searchReplaced = false;
+  let fetchReplaced = false;
   const tools = body.tools.flatMap((t: Block) => {
-    if (!isWebSearchServerTool(t)) return [t];
-    if (replaced) return [];
-    replaced = true;
-    return [{ name: WEB_SEARCH_TOOL_NAME, description: WEB_SEARCH_FUNCTION_DESCRIPTION, input_schema: WEB_SEARCH_FUNCTION_PARAMETERS }];
+    if (isWebSearchServerTool(t)) {
+      if (searchReplaced) return [];
+      searchReplaced = true;
+      return [{ name: WEB_SEARCH_TOOL_NAME, description: WEB_SEARCH_FUNCTION_DESCRIPTION, input_schema: WEB_SEARCH_FUNCTION_PARAMETERS }];
+    }
+    if (isWebFetchServerTool(t)) {
+      if (fetchReplaced) return [];
+      fetchReplaced = true;
+      return [{ name: WEB_FETCH_TOOL_NAME, description: WEB_FETCH_FUNCTION_DESCRIPTION, input_schema: WEB_FETCH_FUNCTION_PARAMETERS }];
+    }
+    return [t];
   });
 
   const wantsStream = body.stream === true;
@@ -198,10 +260,10 @@ export async function maybeServeAnthropicWebSearch(
   const usage: Usage = { input_tokens: 0, output_tokens: 0 };
   let searchesRun = 0;
   let searchRequests = 0;
+  let fetchesRun = 0;
+  let fetchRequests = 0;
   let messages: Block[] = [...body.messages];
-  // max_uses bounds real searches; one extra turn lets the model answer after
-  // the last search (or after being told the limit is spent).
-  const maxTurns = maxUses + 2;
+  const maxTurns = maxUses + maxFetches + 2;
 
   const emit = (block: Block) => {
     assembled.push(block);
@@ -212,8 +274,7 @@ export async function maybeServeAnthropicWebSearch(
     for (let turn = 0; turn < maxTurns; turn++) {
       const lastTurn = turn === maxTurns - 1;
       let toolChoice = body.tool_choice;
-      // A forced web_search choice would loop forever after the first search.
-      if (turn > 0 && toolChoice && (toolChoice.type === 'any' || (toolChoice.type === 'tool' && toolChoice.name === WEB_SEARCH_TOOL_NAME))) {
+      if (turn > 0 && toolChoice && (toolChoice.type === 'any' || (toolChoice.type === 'tool' && (toolChoice.name === WEB_SEARCH_TOOL_NAME || toolChoice.name === WEB_FETCH_TOOL_NAME)))) {
         toolChoice = { type: 'auto' };
       }
       const innerBody = {
@@ -245,19 +306,24 @@ export async function maybeServeAnthropicWebSearch(
 
       const content: Block[] = Array.isArray(reply.content) ? reply.content : [];
       const searchCalls = content.filter(isOurSearchCall);
-      const clientCalls = content.filter(b => b?.type === 'tool_use' && !isOurSearchCall(b));
+      const fetchCalls = content.filter(isOurFetchCall);
+      const ourCalls = [...searchCalls, ...fetchCalls];
+      const clientCalls = content.filter(b => b?.type === 'tool_use' && !isOurSearchCall(b) && !isOurFetchCall(b));
 
-      // Final turn: no search requested, a client tool must run first (the
-      // real API also defers the search then), or the turn budget is spent.
-      if (searchCalls.length === 0 || clientCalls.length > 0 || lastTurn) {
-        const finalBlocks = content.filter(b => !isOurSearchCall(b));
+      // Final turn: no search or fetch requested, a client tool must run first,
+      // or the turn budget is spent.
+      if (ourCalls.length === 0 || clientCalls.length > 0 || lastTurn) {
+        const finalBlocks = content.filter(b => !isOurSearchCall(b) && !isOurFetchCall(b));
         let stopReason = reply.stop_reason ?? 'end_turn';
         if (stopReason === 'tool_use' && clientCalls.length === 0) stopReason = 'end_turn';
         for (const block of finalBlocks) emit(block);
         const finalUsage = {
           input_tokens: usage.input_tokens,
           output_tokens: usage.output_tokens,
-          server_tool_use: { web_search_requests: searchRequests },
+          server_tool_use: {
+            web_search_requests: searchRequests,
+            ...(fetchRequests > 0 ? { web_fetch_requests: fetchRequests } : {}),
+          },
         };
         if (sse) {
           sse.finish(stopReason, finalUsage);
@@ -276,27 +342,43 @@ export async function maybeServeAnthropicWebSearch(
         return true;
       }
 
-      // Run this turn's searches, mirroring each as server_tool_use + result
-      // for the client and as tool_result for the routed model.
+      // Run this turn's searches and fetches
       const toolResults: Block[] = [];
       for (const block of content) {
-        if (!isOurSearchCall(block)) {
+        if (!isOurSearchCall(block) && !isOurFetchCall(block)) {
           emit(block);
           continue;
         }
-        const query = typeof block.input?.query === 'string' ? block.input.query : '';
-        let outcome: WebSearchOutcome;
-        if (searchesRun >= maxUses) {
-          outcome = { ok: false, query, errorCode: 'max_uses_exceeded', message: 'max uses exceeded' };
-        } else {
-          searchesRun++;
-          outcome = await performWebSearch(block.input?.query, filter);
-          if (outcome.ok) searchRequests++;
+        if (isOurSearchCall(block)) {
+          const query = typeof block.input?.query === 'string' ? block.input.query : '';
+          let outcome: WebSearchOutcome;
+          if (searchesRun >= maxUses) {
+            outcome = { ok: false, query, errorCode: 'max_uses_exceeded', message: 'max uses exceeded' };
+          } else {
+            searchesRun++;
+            outcome = await performWebSearch(block.input?.query, filter);
+            if (outcome.ok) searchRequests++;
+          }
+          const serverId = newServerToolUseId();
+          emit({ type: 'server_tool_use', id: serverId, name: WEB_SEARCH_TOOL_NAME, input: { query } });
+          emit(resultBlock(serverId, outcome));
+          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: formatOutcomeForModel(outcome) });
+        } else if (isOurFetchCall(block)) {
+          const url = typeof block.input?.url === 'string' ? block.input.url : '';
+          const maxBytes = typeof block.input?.max_bytes === 'number' ? block.input.max_bytes : undefined;
+          let outcome: WebFetchOutcome;
+          if (fetchesRun >= maxFetches) {
+            outcome = { ok: false, url, errorCode: 'fetch_failed', error: 'max fetches exceeded', status: 429 };
+          } else {
+            fetchesRun++;
+            outcome = await performWebFetch(url, maxBytes);
+            if (outcome.ok) fetchRequests++;
+          }
+          const serverId = newServerToolUseId();
+          emit({ type: 'server_tool_use', id: serverId, name: WEB_FETCH_TOOL_NAME, input: { url } });
+          emit(fetchResultBlock(serverId, outcome));
+          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: formatFetchOutcomeForModel(outcome) });
         }
-        const serverId = newServerToolUseId();
-        emit({ type: 'server_tool_use', id: serverId, name: WEB_SEARCH_TOOL_NAME, input: { query } });
-        emit(resultBlock(serverId, outcome));
-        toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: formatOutcomeForModel(outcome) });
       }
       messages = [...messages, { role: 'assistant', content }, { role: 'user', content: toolResults }];
     }

@@ -34,7 +34,7 @@ import type { ReasoningEffort } from '../lib/sampling-params.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
 import { normalizeMessageImages } from '../lib/image-normalize.js';
-import { maybeServeAnthropicWebSearch, serverToolUseToText, webSearchResultToText } from '../lib/anthropic-web-search.js';
+import { maybeServeAnthropicWebSearch, serverToolUseToText, webSearchResultToText, webFetchResultToText } from '../lib/anthropic-web-search.js';
 
 // Anthropic-compatible Messages API (`POST /v1/messages`). This is a thin
 // translation layer over the SAME router/fallback/analytics machinery the
@@ -358,6 +358,8 @@ function convertRequest(input: AnthropicRequest): ConvertedRequest {
         if (note) textParts.push(note);
       } else if (type === 'web_search_tool_result') {
         textParts.push(webSearchResultToText(block as any));
+      } else if (type === 'web_fetch_tool_result') {
+        textParts.push(webFetchResultToText(block as any));
       } else if (type === 'document') {
         // A document that is already text costs nothing to inline. One that
         // needs decoding cannot be served by any provider here, and dropping

@@ -196,4 +196,58 @@ describe('agent web fetch served from the fetch pool', () => {
       expect(body.result.isError).toBe(true);
     });
   });
+
+  describe('Anthropic Messages web_fetch tool', () => {
+    const anthropicHeaders = () => ({ 'x-api-key': getUnifiedApiKey(), 'anthropic-version': '2023-06-01' });
+
+    it('intercepts web_fetch in Anthropic messages and feeds content back', async () => {
+      const bodies = mockGroq([fetchCall('https://example.com/docs'), answer('The fetched docs are clear.')]);
+      const { status, body } = await post('/v1/messages', {
+        model: 'auto',
+        messages: [{ role: 'user', content: 'Fetch https://example.com/docs' }],
+        tools: [{ type: 'web_fetch' }],
+      }, anthropicHeaders());
+
+      expect(status).toBe(200);
+      expect(runWebFetchMock).toHaveBeenCalledTimes(1);
+      expect(body.type).toBe('message');
+      expect(body.content.map((b: any) => b.type)).toEqual(['server_tool_use', 'web_fetch_tool_result', 'text']);
+      expect(body.content[0]).toMatchObject({
+        type: 'server_tool_use',
+        name: 'web_fetch',
+        input: { url: 'https://example.com/docs' },
+      });
+      expect(body.content[1]).toMatchObject({
+        type: 'web_fetch_tool_result',
+        content: {
+          type: 'web_fetch_result',
+          url: 'https://example.com/docs',
+          title: 'Documentation',
+          text: 'Full documentation content.',
+        },
+      });
+      expect(body.content[2].text).toBe('The fetched docs are clear.');
+      expect(bodies[1].messages.find((m: any) => m.role === 'tool').content).toContain('Full documentation content.');
+    });
+
+    it('turns replayed web_fetch blocks into text context for the routed model', async () => {
+      const bodies = mockGroq([answer('Understood.')]);
+      await post('/v1/messages', {
+        model: 'auto',
+        messages: [
+          { role: 'user', content: 'Read this page' },
+          { role: 'assistant', content: [
+            { type: 'server_tool_use', id: 'srvtoolu_wf1', name: 'web_fetch', input: { url: 'https://example.com/docs' } },
+            { type: 'web_fetch_tool_result', tool_use_id: 'srvtoolu_wf1', content: { type: 'web_fetch_result', url: 'https://example.com/docs', title: 'Docs', text: 'Sample text.' } },
+            { type: 'text', text: 'I read the page.' },
+          ] },
+          { role: 'user', content: 'What was on it?' },
+        ],
+      }, anthropicHeaders());
+
+      const assistant = bodies[0].messages.find((m: any) => m.role === 'assistant');
+      expect(assistant.content).toContain('[Fetched page content from: https://example.com/docs (Docs)]');
+      expect(assistant.content).toContain('Sample text.');
+    });
+  });
 });

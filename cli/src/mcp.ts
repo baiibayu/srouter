@@ -10,7 +10,7 @@ export const MCP_TOGGLE_NOTE =
   'MCP: the dashboard toggle Keys -> Agents -> Enable MCP must be ON or /mcp answers 403.';
 
 export const MCP_TOOLS_SUMMARY =
-  'MCP gives agents mid-session access to SRouter tools: ask_srouter, web_search, list_models, '
+  'MCP gives agents mid-session access to SRouter tools: ask_srouter, web_search, web_fetch, list_models, '
   + 'provider_health, provider_list, usage_summary, cache_stats, compression_stats, quota_outlook, '
   + 'routing_info, set_routing_strategy, healthcheck, clear_cache.';
 
