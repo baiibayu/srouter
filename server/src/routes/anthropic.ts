@@ -472,7 +472,7 @@ function rescuedToToolCalls(
   return calls.map((c, i) => ({
     id: `toolu_${crypto.randomBytes(8).toString('hex')}_rescued_${i + 1}`,
     type: 'function' as const,
-    function: { name: c.name, arguments: repairToolArguments(c.arguments, schemas.get(c.name) as any) },
+    function: { name: c.name, arguments: repairToolArguments(c.arguments, schemas.get(c.name) as any, c.name) },
   }));
 }
 
@@ -811,7 +811,7 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
         const schemas = toolSchemaMap(tools);
         for (const tc of respToolCalls) {
           if (tc?.function?.arguments != null) {
-            tc.function.arguments = repairToolArguments(tc.function.arguments, schemas.get(tc.function.name));
+            tc.function.arguments = repairToolArguments(tc.function.arguments, schemas.get(tc.function.name), tc.function.name);
           }
         }
         // Opt-in schema verdict on what the repair could not fix. This surface
@@ -1071,7 +1071,7 @@ async function streamCompletion(
       .map(([, acc]) => ({
         id: acc.id && acc.id.length > 0 ? acc.id : `toolu_${crypto.randomBytes(8).toString('hex')}_${++synthetic}`,
         name: acc.name,
-        arguments: repairToolArguments(acc.args || '{}', schemas.get(acc.name)),
+        arguments: repairToolArguments(acc.args || '{}', schemas.get(acc.name), acc.name),
         ...(acc.thought_signature ? { thought_signature: acc.thought_signature } : {}),
       }))
       .filter(c => { try { JSON.parse(c.arguments); return c.name.length > 0; } catch { return false; } });
@@ -1090,7 +1090,7 @@ async function streamCompletion(
       if (rescue.detected && rescue.calls) {
         if (rescue.cleanText.length > 0) emitText(rescue.cleanText);
         for (const c of rescue.calls) {
-          const repaired = repairToolArguments(c.arguments, schemas.get(c.name));
+          const repaired = repairToolArguments(c.arguments, schemas.get(c.name), c.name);
           if (c.name.length === 0) continue;
           try { JSON.parse(repaired); } catch { continue; }
           completedCalls.push({ id: `toolu_${crypto.randomBytes(8).toString('hex')}_rescued_${++synthetic}`, name: c.name, arguments: repaired });

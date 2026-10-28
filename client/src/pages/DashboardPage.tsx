@@ -7,6 +7,7 @@ import {
   Boxes,
   CircleDollarSign,
   Coins,
+  Globe,
   Link2,
   Server,
   TrendingUp,
@@ -26,6 +27,7 @@ import { ApiUsageBlock } from '@/components/api-usage'
 import { apiBaseUrl } from '@/lib/api-base-url'
 import { Button } from '@/components/ui/button'
 import { formatPercent, formatTokens, platformColors, type RoutingData, type TokenUsageData } from '@/lib/routing'
+import type { SearchAnalytics } from '@/lib/search'
 
 // Response shapes consumed here are a subset of what server analytics emits
 // (the full types live in AnalyticsPage; only the fields this page reads are
@@ -180,6 +182,18 @@ export default function DashboardPage() {
   const { data: keyData } = useQuery<UnifiedKeyResponse>({
     queryKey: ['unified-key'],
     queryFn: () => apiFetch('/api/settings/api-key'),
+  })
+
+  const { data: searchStats } = useQuery<SearchAnalytics>({
+    queryKey: ['analytics', 'search', range],
+    queryFn: () => apiFetch(`/api/analytics/search?range=${range}`),
+    refetchInterval: STATS_POLL_MS,
+  })
+
+  const { data: fetchUsage } = useQuery<{ monthly: number; today: number }>({
+    queryKey: ['fetch-usage'],
+    queryFn: () => apiFetch('/api/fetch/usage'),
+    refetchInterval: STATS_POLL_MS,
   })
 
   // Estimated cost for the whole window: by-model rows are unpaginated, so
@@ -463,6 +477,83 @@ export default function DashboardPage() {
             )}
           </Panel>
         </div>
+
+        {/* Web Tools: Search and Fetch usage and health */}
+        <Panel
+          icon={Globe}
+          title={t('keys.webToolsSection')}
+          actions={
+            <Link to="/keys">
+              <Button variant="ghost" size="sm">
+                {t('nav.keys')}
+              </Button>
+            </Link>
+          }
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t('keys.webToolsSearchSubsection')}
+                </span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {searchStats?.today ?? 0} {t('search.analyticsToday').toLowerCase()}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl border bg-background/50 p-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">{t('analytics.requests')}</p>
+                  <p className="text-base font-bold tabular-nums">{searchStats?.total ?? 0}</p>
+                </div>
+                <div className="rounded-xl border bg-background/50 p-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">{t('analytics.successRate')}</p>
+                  <p className="text-base font-bold tabular-nums">
+                    {searchStats && searchStats.total > 0 ? `${Math.round(searchStats.successRate * 10) / 10}%` : '—'}
+                  </p>
+                </div>
+                <div className="rounded-xl border bg-background/50 p-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">{t('analytics.avgLatency')}</p>
+                  <p className="text-base font-bold tabular-nums">
+                    {searchStats && searchStats.total > 0 ? `${Math.round(searchStats.avgLatencyMs)} ms` : '—'}
+                  </p>
+                </div>
+              </div>
+              {searchStats?.byEngine && searchStats.byEngine.length > 0 && (
+                <div className="pt-1 text-xs text-muted-foreground flex items-center justify-between">
+                  <span>{t('search.analyticsByEngine')}:</span>
+                  <span className="font-medium text-foreground">
+                    {searchStats.byEngine.slice(0, 2).map((e) => `${e.displayName} (${e.count})`).join(', ')}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t('keys.webToolsFetchSubsection')}
+                </span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {fetchUsage?.today ?? 0} {t('search.analyticsToday').toLowerCase()}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-xl border bg-background/50 p-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">{t('search.analyticsToday')}</p>
+                  <p className="text-base font-bold tabular-nums">{fetchUsage?.today ?? 0}</p>
+                </div>
+                <div className="rounded-xl border bg-background/50 p-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">{t('models.usageThisMonth')}</p>
+                  <p className="text-base font-bold tabular-nums">{fetchUsage?.monthly ?? 0}</p>
+                </div>
+              </div>
+              <div className="pt-1 text-xs text-muted-foreground flex items-center justify-between">
+                <span>{t('models.webFetchTab')}:</span>
+                <span className="font-medium text-foreground">SSRF-Guarded · TinyFish / Jina</span>
+              </div>
+            </div>
+          </div>
+        </Panel>
 
         {/* Endpoint & key sit at the very bottom: the top of the page is for
             glancing (stats, routing, top lists) — this card is reference

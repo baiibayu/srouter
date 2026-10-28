@@ -104,7 +104,27 @@ function agentLabel(agent?: string | null): string {
   return 'API Client'
 }
 
+const SEARCH_PLATFORM_LABELS: Record<string, string> = {
+  duckduckgo: 'DuckDuckGo',
+  searxng: 'SearXNG',
+  tavily: 'Tavily',
+  brave: 'Brave Search',
+  tinyfish: 'TinyFish',
+  parallel: 'Parallel',
+  exa: 'Exa',
+  firecrawl: 'Firecrawl',
+  linkup: 'Linkup',
+  jina: 'Jina Reader',
+  direct: 'Direct HTTP',
+  search: 'Web Search',
+  fetch: 'Web Fetch',
+}
+
 function platformLabel(platform: string): string {
+  const lower = platform.toLowerCase()
+  if (SEARCH_PLATFORM_LABELS[lower]) {
+    return SEARCH_PLATFORM_LABELS[lower]
+  }
   const match = PLATFORMS.find(p => p.value === platform)
   return (match?.label ?? platform).split(' (')[0]
 }
@@ -122,6 +142,22 @@ function resolveModeInfo(
   }
 
   const lower = requestedModel.toLowerCase()
+  if (lower === 'web_search' || lower === 'search') {
+    return {
+      sub: 'Web Tools',
+      label: 'Search',
+      tone: 'text-sky-600 dark:text-sky-400 font-medium',
+    }
+  }
+
+  if (lower === 'web_fetch' || lower === 'fetch') {
+    return {
+      sub: 'Web Tools',
+      label: 'Fetch',
+      tone: 'text-sky-600 dark:text-sky-400 font-medium',
+    }
+  }
+
   if (lower.startsWith('auto:')) {
     const axis = lower.replace(/^auto:/, '')
     return {

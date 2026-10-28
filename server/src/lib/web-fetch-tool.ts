@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { recordRouteTrace } from './route-live.js';
 import {
   runWebFetch,
   DEFAULT_MAX_BYTES,
@@ -42,12 +43,48 @@ export function isResponsesWebFetchTool(tool: unknown): boolean {
 }
 
 /** Run one web fetch on behalf of an agent. Never throws. */
-export async function performWebFetch(rawUrl: unknown, maxBytes?: number): Promise<WebFetchOutcome> {
+export async function performWebFetch(rawUrl: unknown, maxBytes?: number, clientAgent?: string): Promise<WebFetchOutcome> {
   const url = typeof rawUrl === 'string' ? rawUrl.trim() : '';
   if (!url) {
     return { ok: false, url: '', error: 'missing URL', errorCode: 'invalid_url', status: 400 };
   }
-  return runWebFetch(url, { maxBytes });
+  const reqId = `ftch_${crypto.randomBytes(6).toString('hex')}`;
+  const startTime = Date.now();
+  recordRouteTrace({
+    event: 'start',
+    requestId: reqId,
+    attempt: 1,
+    platform: 'fetch',
+    model: 'web_fetch',
+    requestedModel: 'web_fetch',
+    clientAgent,
+  });
+  const outcome = await runWebFetch(url, { maxBytes });
+  const latencyMs = Date.now() - startTime;
+  if (outcome.ok) {
+    recordRouteTrace({
+      event: 'ok',
+      requestId: reqId,
+      attempt: 1,
+      platform: outcome.via || 'fetch',
+      model: 'web_fetch',
+      requestedModel: 'web_fetch',
+      clientAgent,
+      latencyMs,
+    });
+  } else {
+    recordRouteTrace({
+      event: 'fail',
+      requestId: reqId,
+      attempt: 1,
+      platform: 'fetch',
+      model: 'web_fetch',
+      requestedModel: 'web_fetch',
+      clientAgent,
+      latencyMs,
+    });
+  }
+  return outcome;
 }
 
 /** Format the fetch outcome for the model context in the conversation loop. */

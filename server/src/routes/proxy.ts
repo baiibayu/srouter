@@ -798,23 +798,53 @@ const SearchBody = z.object({
   engine: z.string().min(1).optional(),
 });
 
-proxyRouter.post('/search', async (req: Request, res: Response) => {
-  if (!requireInferenceAuth(req, res)) return;
-  const parsed = SearchBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: { message: 'Invalid request: `query` is required', type: 'invalid_request_error' } });
-    return;
-  }
-  // A departed client drops the upstream search instead of spending a credit.
+async function handleSearchRequest(
+  query: string,
+  options: {
+    max_results?: number;
+    topic?: 'general' | 'news';
+    include_answer?: boolean;
+    engine?: string;
+  },
+  req: Request,
+  res: Response,
+) {
+  const reqId = `srch_${crypto.randomBytes(6).toString('hex')}`;
+  const startTime = Date.now();
+  const ctx = getClientContext();
+  const clientAgent = ctx.agent || req.header('user-agent') || 'api';
+
+  traceRouteEvent('Proxy', {
+    event: 'start',
+    requestId: reqId,
+    attempt: 1,
+    platform: options.engine || 'search',
+    model: 'web_search',
+    requestedModel: 'web_search',
+    clientAgent,
+  });
+
   const abort = new AbortController();
   res.on('close', () => { if (!res.writableFinished) abort.abort(); });
+
   try {
-    const result = await runSearch(parsed.data.query, {
-      maxResults: parsed.data.max_results,
-      topic: parsed.data.topic,
-      includeAnswer: parsed.data.include_answer,
-      engine: parsed.data.engine,
+    const result = await runSearch(query, {
+      maxResults: options.max_results,
+      topic: options.topic,
+      includeAnswer: options.include_answer,
+      engine: options.engine,
       signal: abort.signal,
+    });
+    const latencyMs = Date.now() - startTime;
+    traceRouteEvent('Proxy', {
+      event: 'ok',
+      requestId: reqId,
+      attempt: 1,
+      platform: result.provider || result.engine || 'search',
+      model: 'web_search',
+      requestedModel: 'web_search',
+      clientAgent,
+      latencyMs,
     });
     res.json({
       query: result.query,
@@ -824,6 +854,18 @@ proxyRouter.post('/search', async (req: Request, res: Response) => {
       engine: result.engine,
     });
   } catch (err: any) {
+    const latencyMs = Date.now() - startTime;
+    traceRouteEvent('Proxy', {
+      event: 'fail',
+      requestId: reqId,
+      attempt: 1,
+      platform: options.engine || 'search',
+      model: 'web_search',
+      requestedModel: 'web_search',
+      clientAgent,
+      latencyMs,
+      error: err?.message,
+    });
     if (res.headersSent || abort.signal.aborted) return;
     const status = err instanceof SearchError ? err.status : 502;
     if (err instanceof SearchError) {
@@ -839,6 +881,31 @@ proxyRouter.post('/search', async (req: Request, res: Response) => {
       },
     });
   }
+}
+
+proxyRouter.post('/search', async (req: Request, res: Response) => {
+  if (!requireInferenceAuth(req, res)) return;
+  const parsed = SearchBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid request: `query` is required', type: 'invalid_request_error' } });
+    return;
+  }
+  await handleSearchRequest(parsed.data.query, parsed.data, req, res);
+});
+
+// GET /v1/search?q=... or ?query=... for OpenClaude, browser, or query-param clients
+proxyRouter.get('/search', async (req: Request, res: Response) => {
+  if (!requireInferenceAuth(req, res)) return;
+  const rawQ = typeof req.query.q === 'string' ? req.query.q : (typeof req.query.query === 'string' ? req.query.query : '');
+  const query = rawQ.trim();
+  if (!query) {
+    res.status(400).json({ error: { message: 'Invalid request: `q` or `query` parameter is required', type: 'invalid_request_error' } });
+    return;
+  }
+  const maxResults = typeof req.query.max_results === 'string' ? parseInt(req.query.max_results, 10) : undefined;
+  const topic = req.query.topic === 'news' ? 'news' as const : undefined;
+  const engine = typeof req.query.engine === 'string' ? req.query.engine : undefined;
+  await handleSearchRequest(query, { max_results: maxResults, topic, engine }, req, res);
 });
 
 // The engines a caller can pin with `engine` on POST /v1/search.
@@ -2720,7 +2787,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
             .map(([, acc]) => ({
               id: acc.id && acc.id.length > 0 ? acc.id : `call_stream_${++syntheticStreamIds}`,
               type: 'function' as const,
-              function: { name: acc.name, arguments: repairToolArguments(acc.args || '{}', schemas.get(acc.name)) },
+              function: { name: acc.name, arguments: repairToolArguments(acc.args || '{}', schemas.get(acc.name), acc.name) },
             }))
             .filter(c => { try { JSON.parse(c.function.arguments); return c.function.name.length > 0; } catch { return false; } });
 
@@ -2734,7 +2801,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
               if (!rescue.calls) throw new Error(`unparseable inline tool-call dialect from ${route.displayName}: ${heldText.slice(0, 120)}`);
               let rescuedIds = 0;
               for (const c of rescue.calls) {
-                completedCalls.push({ id: `call_rescued_${++rescuedIds}`, type: 'function', function: { name: c.name, arguments: repairToolArguments(c.arguments, schemas.get(c.name)) } });
+                completedCalls.push({ id: `call_rescued_${++rescuedIds}`, type: 'function', function: { name: c.name, arguments: repairToolArguments(c.arguments, schemas.get(c.name), c.name) } });
               }
               heldText = rescue.cleanText;
               console.log(`[Proxy] Rescued ${rescuedIds} inline tool call(s) from ${route.displayName} into structured tool_calls`);
@@ -3015,7 +3082,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
             respMsg.tool_calls = rescue.calls.map((c, i) => ({
               id: `call_rescued_${i + 1}`,
               type: 'function' as const,
-              function: { name: c.name, arguments: repairToolArguments(c.arguments, schemas.get(c.name)) },
+              function: { name: c.name, arguments: repairToolArguments(c.arguments, schemas.get(c.name), c.name) },
             }));
             respMsg.content = rescue.cleanText.length > 0 ? rescue.cleanText : null;
             if (result.choices?.[0]) result.choices[0].finish_reason = 'tool_calls';
@@ -3066,7 +3133,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
           const schemas = toolSchemaMap(tools);
           for (const tc of respMsg.tool_calls) {
             if (tc?.function?.arguments != null) {
-              tc.function.arguments = repairToolArguments(tc.function.arguments, schemas.get(tc.function.name));
+              tc.function.arguments = repairToolArguments(tc.function.arguments, schemas.get(tc.function.name), tc.function.name);
             }
           }
           // Whatever the repair could not fix is still broken. Opt-in, and

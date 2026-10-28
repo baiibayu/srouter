@@ -134,8 +134,18 @@ export function recordRouteTrace(opts: {
 
   // ok | fail | canceled — terminal. Runs even when the entry was already
   // trimmed, so a long stream still reports its outcome the moment it ends.
-  const existing = active.get(key);
-  active.delete(key);
+  let existing = active.get(key);
+  if (existing) {
+    active.delete(key);
+  } else {
+    for (const [k, e] of active.entries()) {
+      if (e.requestId === opts.requestId) {
+        existing = e;
+        active.delete(k);
+        break;
+      }
+    }
+  }
   const startedAt = existing?.startedAt ?? now - (opts.latencyMs ?? 0);
   last = {
     requestId: opts.requestId,

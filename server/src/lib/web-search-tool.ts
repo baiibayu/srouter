@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import type { Request, Response } from 'express';
 import { runSearch, SearchError, searchAvailable } from '../services/search.js';
+import { recordRouteTrace } from './route-live.js';
 
 // Shared plumbing for answering an agent's built-in web search from the
 // gateway's own search pool (#1174): Codex's Responses `web_search` tool and
@@ -107,14 +108,36 @@ function scopedQuery(query: string, filter: DomainFilter): string {
 
 /** Run one search on behalf of an agent. Never throws: failures become the
  *  protocol's in-band error result so the model can carry on without it. */
-export async function performWebSearch(rawQuery: unknown, filter: DomainFilter = {}): Promise<WebSearchOutcome> {
+export async function performWebSearch(rawQuery: unknown, filter: DomainFilter = {}, clientAgent?: string): Promise<WebSearchOutcome> {
   const query = typeof rawQuery === 'string' ? rawQuery.trim() : '';
   if (!query) return { ok: false, query: '', errorCode: 'invalid_tool_input', message: 'missing query' };
   if (query.length > MAX_QUERY_CHARS) return { ok: false, query, errorCode: 'query_too_long', message: 'query too long' };
+  const reqId = `srch_${crypto.randomBytes(6).toString('hex')}`;
+  const startTime = Date.now();
+  recordRouteTrace({
+    event: 'start',
+    requestId: reqId,
+    attempt: 1,
+    platform: 'search',
+    model: 'web_search',
+    requestedModel: 'web_search',
+    clientAgent,
+  });
   try {
     const response = await runSearch(scopedQuery(query, filter), { maxResults: RESULTS_PER_SEARCH * 2 });
     const hits = filterHitsByDomain(response.results, filter).slice(0, RESULTS_PER_SEARCH);
     const engine = (response as { engine?: unknown }).engine;
+    const latencyMs = Date.now() - startTime;
+    recordRouteTrace({
+      event: 'ok',
+      requestId: reqId,
+      attempt: 1,
+      platform: response.provider || (typeof engine === 'string' ? engine : 'search'),
+      model: 'web_search',
+      requestedModel: 'web_search',
+      clientAgent,
+      latencyMs,
+    });
     return {
       ok: true,
       query,
@@ -125,6 +148,17 @@ export async function performWebSearch(rawQuery: unknown, filter: DomainFilter =
   } catch (err: unknown) {
     const status = err instanceof SearchError ? err.status : 502;
     const message = err instanceof Error ? err.message : String(err);
+    const latencyMs = Date.now() - startTime;
+    recordRouteTrace({
+      event: 'fail',
+      requestId: reqId,
+      attempt: 1,
+      platform: 'search',
+      model: 'web_search',
+      requestedModel: 'web_search',
+      clientAgent,
+      latencyMs,
+    });
     return { ok: false, query, errorCode: status === 429 ? 'too_many_requests' : 'unavailable', message };
   }
 }

@@ -23,6 +23,7 @@
 interface JsonSchemaish {
   type?: string;
   properties?: Record<string, JsonSchemaish>;
+  additionalProperties?: boolean | JsonSchemaish;
   // `items` lets the walk descend into arrays. A tuple form (an array of
   // per-position schemas) is deliberately not followed: matching a decoded
   // element to its position is exactly the kind of inference that turns a
@@ -31,11 +32,22 @@ interface JsonSchemaish {
 }
 
 /**
+ * Known strict parameters for Claude Code / OpenClaude built-in tools.
+ * When models (e.g. general open-weights) hallucinate extra search parameters
+ * like `max_results` or `num_results`, strict client validators (Zod strictObject)
+ * crash with InputValidationError. Pruning them at the gateway preserves turn health.
+ */
+const STRICT_BUILTIN_TOOL_ALLOWED_KEYS: Record<string, Set<string>> = {
+  websearch: new Set(['query', 'allowed_domains', 'blocked_domains']),
+  webfetch: new Set(['url', 'prompt']),
+};
+
+/**
  * Repair a tool call's `arguments` JSON string against the tool's parameter
  * schema. Returns the original string untouched whenever anything doesn't
  * parse or doesn't match — this must never corrupt a valid call.
  */
-export function repairToolArguments(args: string, paramSchema?: JsonSchemaish): string {
+export function repairToolArguments(args: string, paramSchema?: JsonSchemaish, toolName?: string): string {
   let parsed: unknown;
   try {
     parsed = JSON.parse(args);
@@ -63,6 +75,31 @@ export function repairToolArguments(args: string, paramSchema?: JsonSchemaish): 
 
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return changed ? JSON.stringify(parsed) : args;
+  }
+
+  const obj = parsed as Record<string, unknown>;
+
+  // 1. Strict built-in tools (WebSearch / WebFetch in Claude Code / OpenClaude)
+  const normName = toolName?.toLowerCase();
+  if (normName && STRICT_BUILTIN_TOOL_ALLOWED_KEYS[normName]) {
+    const allowed = STRICT_BUILTIN_TOOL_ALLOWED_KEYS[normName];
+    for (const key of Object.keys(obj)) {
+      if (!allowed.has(key)) {
+        delete obj[key];
+        changed = true;
+      }
+    }
+  }
+
+  // 2. Strict schemas with additionalProperties: false
+  if (paramSchema?.additionalProperties === false && paramSchema.properties) {
+    const validProps = paramSchema.properties;
+    for (const key of Object.keys(obj)) {
+      if (!(key in validProps)) {
+        delete obj[key];
+        changed = true;
+      }
+    }
   }
 
   if (repairInPlace(parsed, paramSchema)) changed = true;

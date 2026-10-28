@@ -1,7 +1,8 @@
+import crypto from 'node:crypto';
 import { Router } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import { getDb, getUnifiedApiKey, getSetting } from '../db/index.js';
-import { extractApiToken, timingSafeStringEqual } from './proxy.js';
+import { extractApiToken, timingSafeStringEqual, traceRouteEvent } from './proxy.js';
 import { runSearch } from '../services/search.js';
 import { runWebFetch } from '../services/web-fetch.js';
 import { buildModelListing } from '../services/model-listing.js';
@@ -398,24 +399,102 @@ async function webSearch(args: Record<string, unknown>): Promise<unknown> {
     ? Math.min(Math.max(Math.floor(args.max_results), 1), 20)
     : 5;
   const topic = args.topic === 'news' ? 'news' : 'general';
-  const result = await runSearch(query, { maxResults, topic });
-  return {
-    query: result.query,
-    provider: result.provider,
-    ...((result as { engine?: unknown }).engine ? { engine: (result as { engine?: unknown }).engine } : {}),
-    ...(result.answer ? { answer: result.answer } : {}),
-    results: result.results.map(r => ({ title: r.title, url: r.url, content: r.content })),
-  };
+  const reqId = `srch_${crypto.randomBytes(6).toString('hex')}`;
+  const startTime = Date.now();
+
+  traceRouteEvent('Proxy', {
+    event: 'start',
+    requestId: reqId,
+    attempt: 1,
+    platform: 'search',
+    model: 'web_search',
+    requestedModel: 'web_search',
+    clientAgent: 'mcp-client',
+  });
+
+  try {
+    const result = await runSearch(query, { maxResults, topic });
+    const latencyMs = Date.now() - startTime;
+    traceRouteEvent('Proxy', {
+      event: 'ok',
+      requestId: reqId,
+      attempt: 1,
+      platform: result.provider || (result as any).engine || 'search',
+      model: 'web_search',
+      requestedModel: 'web_search',
+      clientAgent: 'mcp-client',
+      latencyMs,
+    });
+    return {
+      query: result.query,
+      provider: result.provider,
+      ...((result as { engine?: unknown }).engine ? { engine: (result as { engine?: unknown }).engine } : {}),
+      ...(result.answer ? { answer: result.answer } : {}),
+      results: result.results.map(r => ({ title: r.title, url: r.url, content: r.content })),
+    };
+  } catch (err: any) {
+    const latencyMs = Date.now() - startTime;
+    traceRouteEvent('Proxy', {
+      event: 'fail',
+      requestId: reqId,
+      attempt: 1,
+      platform: 'search',
+      model: 'web_search',
+      requestedModel: 'web_search',
+      clientAgent: 'mcp-client',
+      latencyMs,
+      error: err?.message,
+    });
+    throw err;
+  }
 }
 
 async function webFetch(args: Record<string, unknown>): Promise<unknown> {
   const url = typeof args.url === 'string' ? args.url.trim() : '';
   if (!url) throw new Error('url is required');
   const maxBytes = typeof args.max_bytes === 'number' && Number.isFinite(args.max_bytes) ? args.max_bytes : undefined;
+  const reqId = `ftch_${crypto.randomBytes(6).toString('hex')}`;
+  const startTime = Date.now();
+
+  traceRouteEvent('Proxy', {
+    event: 'start',
+    requestId: reqId,
+    attempt: 1,
+    platform: 'fetch',
+    model: 'web_fetch',
+    requestedModel: 'web_fetch',
+    clientAgent: 'mcp-client',
+  });
+
   const outcome = await runWebFetch(url, { maxBytes });
+  const latencyMs = Date.now() - startTime;
+
   if (!outcome.ok) {
+    traceRouteEvent('Proxy', {
+      event: 'fail',
+      requestId: reqId,
+      attempt: 1,
+      platform: 'fetch',
+      model: 'web_fetch',
+      requestedModel: 'web_fetch',
+      clientAgent: 'mcp-client',
+      latencyMs,
+      error: outcome.error,
+    });
     throw new Error(outcome.error);
   }
+
+  traceRouteEvent('Proxy', {
+    event: 'ok',
+    requestId: reqId,
+    attempt: 1,
+    platform: outcome.via || 'fetch',
+    model: 'web_fetch',
+    requestedModel: 'web_fetch',
+    clientAgent: 'mcp-client',
+    latencyMs,
+  });
+
   return {
     url: outcome.url,
     title: outcome.title,

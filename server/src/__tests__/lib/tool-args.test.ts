@@ -64,6 +64,38 @@ describe('repairToolArguments', () => {
     const args = JSON.stringify({ plan: '[{"step":"a"}]' });
     expect(repairToolArguments(args)).toBe(args);
   });
+
+  it('prunes hallucinated max_results from WebSearch calls for strict agents', () => {
+    const broken = JSON.stringify({
+      query: 'SRouter decisions system one',
+      max_results: '10',
+    });
+    const repaired = JSON.parse(repairToolArguments(broken, undefined, 'WebSearch'));
+    expect(repaired).toEqual({ query: 'SRouter decisions system one' });
+    expect(repaired.max_results).toBeUndefined();
+  });
+
+  it('prunes hallucinated max_bytes from WebFetch calls for strict agents', () => {
+    const broken = JSON.stringify({
+      url: 'https://example.com/docs',
+      prompt: 'extract api',
+      max_bytes: 10240,
+    });
+    const repaired = JSON.parse(repairToolArguments(broken, undefined, 'WebFetch'));
+    expect(repaired).toEqual({ url: 'https://example.com/docs', prompt: 'extract api' });
+    expect(repaired.max_bytes).toBeUndefined();
+  });
+
+  it('prunes unrecognized keys when additionalProperties is false', () => {
+    const schema = {
+      type: 'object',
+      properties: { query: { type: 'string' } },
+      additionalProperties: false,
+    };
+    const input = JSON.stringify({ query: 'test', extra_foo: 123 });
+    const repaired = JSON.parse(repairToolArguments(input, schema as any));
+    expect(repaired).toEqual({ query: 'test' });
+  });
 });
 
 // The same model that stringifies a top-level array stringifies a nested one.
