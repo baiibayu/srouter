@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { detectAgent, detectAllAgents, type AgentDetection } from '../lib/agent-detection.js';
+import { detectAgent, detectAllAgents, invalidateAgentDetectionCache, type AgentDetection } from '../lib/agent-detection.js';
 import { setupAgent, resetAgent } from '../lib/agent-setup.js';
 import { getUnifiedApiKey } from '../db/index.js';
 
@@ -43,6 +43,7 @@ agentsRouter.post('/:id/setup', async (req: Request, res: Response) => {
 
   try {
     const result = await setupAgent(id, { url, apiKey });
+    invalidateAgentDetectionCache();
     res.json(result);
   } catch (error: unknown) {
     const err = error as Error;
@@ -60,6 +61,7 @@ agentsRouter.post('/:id/reset', async (req: Request, res: Response) => {
 
   try {
     const result = await resetAgent(id);
+    invalidateAgentDetectionCache();
     res.json(result);
   } catch (error: unknown) {
     const err = error as Error;

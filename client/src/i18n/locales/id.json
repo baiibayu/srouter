@@ -450,7 +450,7 @@
     "pageTitle": "Kunci",
     "pageDescription": "Kredensial penyedia dan kunci API terpadu yang terhubung dengan aplikasi Anda.",
     "tabProviders": "Penyedia",
-    "tabWebSearch": "Pencarian web",
+    "tabWebSearch": "Alat Web",
     "checklistSummary": "{configured} dari {total} penyedia telah dikonfigurasi",
     "checklistKeyless": "tidak perlu kunci",
     "checklistNoKeyTip": "Belum ada kunci yang ditambahkan. Klik untuk menambahkan.",
@@ -1404,8 +1404,8 @@
     "analyticsSummary": "Search summary",
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
-    "agentsBadgeClaude": "Pencarian web: alat WebSearch dilayani oleh kunci pencarian Anda",
-    "agentsBadgeCodex": "Pencarian web: alat web_search dilayani oleh kunci pencarian Anda",
+    "agentsBadgeClaude": "Alat web: WebSearch & web_fetch otomatis dilayani SRouter",
+    "agentsBadgeCodex": "Alat web: web_search & web_fetch otomatis dilayani SRouter",
     "playgroundKeyless": "DuckDuckGo (fallback tanpa key)",
     "statusReady": "siap pakai",
     "statusConnected": "terhubung",
@@ -1424,7 +1424,8 @@
     "fetchPlaygroundReaders": "Reader: {chain}",
     "fetchPlaygroundFailed": "Web fetch gagal, menjawab tanpa fetch: {reason}",
     "traceFetched": "{count} halaman diambil",
-    "fetched": "Mengambil halaman · {via} · {latency} ms"
+    "fetched": "Mengambil halaman · {via} · {latency} ms",
+    "agentsBadgeMcp": "Alat web: web_search & web_fetch tersedia via SRouter MCP (/mcp)"
   },
   "decision": {
     "tab": "Keputusan",

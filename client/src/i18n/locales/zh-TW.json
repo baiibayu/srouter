@@ -1404,8 +1404,8 @@
     "analyticsSummary": "Search summary",
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
-    "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
-    "agentsBadgeCodex": "Web search: web_search tool served by your search keys",
+    "agentsBadgeClaude": "Web tools: WebSearch & web_fetch served by SRouter",
+    "agentsBadgeCodex": "Web tools: web_search & web_fetch served by SRouter",
     "playgroundKeyless": "DuckDuckGo (keyless fallback)",
     "statusReady": "ready to use",
     "statusConnected": "connected",
@@ -1424,7 +1424,8 @@
     "fetchPlaygroundReaders": "讀取源: {chain}",
     "fetchPlaygroundFailed": "網頁抓取失敗，略過抓取直接回答: {reason}",
     "traceFetched": "{count} 個已擷取網頁",
-    "fetched": "擷取網頁 · {via} · {latency} ms"
+    "fetched": "擷取網頁 · {via} · {latency} ms",
+    "agentsBadgeMcp": "Web tools: web_search & web_fetch served via SRouter MCP (/mcp)"
   },
   "decision": {
     "tab": "決策",

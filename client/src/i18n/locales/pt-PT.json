@@ -1404,8 +1404,8 @@
     "analyticsSummary": "Search summary",
     "analyticsSearches": "Searches",
     "analyticsToday": "Today",
-    "agentsBadgeClaude": "Web search: WebSearch tool served by your search keys",
-    "agentsBadgeCodex": "Web search: web_search tool served by your search keys",
+    "agentsBadgeClaude": "Web tools: WebSearch & web_fetch served by SRouter",
+    "agentsBadgeCodex": "Web tools: web_search & web_fetch served by SRouter",
     "playgroundKeyless": "DuckDuckGo (keyless fallback)",
     "statusReady": "ready to use",
     "statusConnected": "connected",
@@ -1424,7 +1424,8 @@
     "fetchPlaygroundReaders": "Readers: {chain}",
     "fetchPlaygroundFailed": "Web fetch failed, answering without it: {reason}",
     "traceFetched": "{count} fetched pages",
-    "fetched": "Fetched page · {via} · {latency} ms"
+    "fetched": "Fetched page · {via} · {latency} ms",
+    "agentsBadgeMcp": "Web tools: web_search & web_fetch served via SRouter MCP (/mcp)"
   },
   "decision": {
     "tab": "Decisão",

@@ -64,14 +64,17 @@ export default function AgentsPage() {
   const { data: keyData } = useQuery<KeyResponse>({
     queryKey: ['api-key'],
     queryFn: () => apiFetch('/api/settings/api-key'),
+    staleTime: 60_000,
   })
   const { data: byClient = [] } = useQuery<ClientAnalytics[]>({
     queryKey: ['analytics', 'by-client', '30d'],
     queryFn: () => apiFetch('/api/analytics/by-client?range=30d'),
+    staleTime: 30_000,
   })
   const { data: detectionData } = useQuery<{ agents: AgentDetectionItem[] }>({
     queryKey: ['agents', 'detection'],
     queryFn: () => apiFetch('/api/agents/detection'),
+    staleTime: 30_000,
   })
   // "Seen recently" means traffic within the last 7 days, not merely any row
   // in the fetched 30-day window. Read once at mount via lazy state init —

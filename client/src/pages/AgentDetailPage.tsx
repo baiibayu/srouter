@@ -66,11 +66,6 @@ const analyticsIds: Record<string, string> = {
   cursor: 'cursor',
 }
 
-const WEB_SEARCH_TOOL_KEYS: Record<string, string> = {
-  claude: 'search.agentsBadgeClaude',
-  codex: 'search.agentsBadgeCodex',
-}
-
 export default function AgentDetailPage() {
   const { t } = useI18n()
   const { id } = useParams<{ id: string }>()
@@ -81,16 +76,19 @@ export default function AgentDetailPage() {
   const { data: analytics = [] } = useQuery<ClientAnalytics[]>({
     queryKey: ['analytics', 'by-client', '30d'],
     queryFn: () => apiFetch('/api/analytics/by-client?range=30d'),
+    staleTime: 30_000,
   })
 
   const { data: detectionData } = useQuery<{ agents: AgentDetectionItem[] }>({
     queryKey: ['agents', 'detection'],
     queryFn: () => apiFetch('/api/agents/detection'),
+    staleTime: 30_000,
   })
 
   const { data: keyData } = useQuery<KeyResponse>({
     queryKey: ['api-key'],
     queryFn: () => apiFetch('/api/settings/api-key'),
+    staleTime: 60_000,
   })
 
   const queryClient = useQueryClient()
@@ -141,6 +139,10 @@ export default function AgentDetailPage() {
 
   const descriptionKey = `agents.descriptions.${tool.id}`
   const description = t(descriptionKey)
+
+  const isNativeClaude = tool.id === 'claude' || tool.id === 'openclaude'
+  const isNativeCodex = tool.id === 'codex'
+  const hasWebTools = tool.id !== 'aider' && tool.id !== 'generic'
 
   const origin = import.meta.env.DEV
     ? `http://${window.location.hostname}:${__SERVER_PORT__}`
@@ -269,14 +271,18 @@ export default function AgentDetailPage() {
           </Card>
         </section>
 
-        {/* Web Search Tool Integration Note */}
-        {WEB_SEARCH_TOOL_KEYS[tool.id] && (
+        {/* Web Tools (Search & Fetch) Integration Note */}
+        {hasWebTools && (
           <section>
             <Card className="border-sky-500/20 bg-sky-500/5">
               <CardContent className="py-3 flex items-center gap-2 text-sky-700 dark:text-sky-300">
                 <Globe className="size-4 shrink-0" />
                 <span className="text-xs font-medium">
-                  {t(WEB_SEARCH_TOOL_KEYS[tool.id])}
+                  {isNativeClaude
+                    ? t('search.agentsBadgeClaude')
+                    : isNativeCodex
+                      ? t('search.agentsBadgeCodex')
+                      : t('search.agentsBadgeMcp')}
                 </span>
               </CardContent>
             </Card>
@@ -338,7 +344,7 @@ export default function AgentDetailPage() {
         )}
 
         {/* Not installed warning */}
-        {!traffic && !isInstalled && tool.configType !== 'guide' && (
+        {!traffic && status === 'not-installed' && tool.configType !== 'guide' && (
           <section>
             <Card className="border-amber-500/30 bg-amber-500/5">
               <CardContent className="py-3">

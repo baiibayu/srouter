@@ -205,32 +205,57 @@ function binaryNameFor(id: string): string | null {
   }
 }
 
-/** Check if binary executable exists in any system PATH directory. */
-function isBinaryInPath(name: string): boolean {
+let cachedPathBinaries: { set: Set<string>; timestamp: number } | null = null;
+const PATH_CACHE_TTL_MS = 30_000;
+
+function getPathBinaries(): Set<string> {
+  const now = Date.now();
+  if (cachedPathBinaries && now - cachedPathBinaries.timestamp < PATH_CACHE_TTL_MS) {
+    return cachedPathBinaries.set;
+  }
+  const set = new Set<string>();
   const pathEnv = process.env.PATH || '';
   const dirs = pathEnv.split(path.delimiter);
-  const extensions =
-    process.platform === 'win32'
-      ? (process.env.PATHEXT ? [...process.env.PATHEXT.split(';'), ''] : ['.EXE', '.CMD', '.BAT', ''])
-      : [''];
-
   for (const dir of dirs) {
     if (!dir) continue;
-    for (const ext of extensions) {
-      const fullPath = path.join(dir, ext ? `${name}${ext}` : name);
-      try {
-        if (fs.existsSync(fullPath)) {
-          return true;
-        }
-      } catch {
-        // Ignore permission or file system errors
+    try {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        set.add(file.toLowerCase());
       }
+    } catch {
+      // Ignore permission or unreadable directories
+    }
+  }
+  cachedPathBinaries = { set, timestamp: now };
+  return set;
+}
+
+/** Check if binary executable exists in any system PATH directory. */
+function isBinaryInPath(name: string): boolean {
+  const binaries = getPathBinaries();
+  const lowerName = name.toLowerCase();
+  const extensions =
+    process.platform === 'win32'
+      ? (process.env.PATHEXT ? [...process.env.PATHEXT.split(';'), ''] : ['.exe', '.cmd', '.bat', ''])
+      : [''];
+
+  for (const ext of extensions) {
+    const target = `${lowerName}${ext.toLowerCase()}`;
+    if (binaries.has(target)) {
+      return true;
     }
   }
   return false;
 }
 
-function hasIdeExtension(pattern: RegExp): boolean {
+let cachedIdeExtensions: { entries: string[]; timestamp: number } | null = null;
+
+function getIdeExtensions(): string[] {
+  const now = Date.now();
+  if (cachedIdeExtensions && now - cachedIdeExtensions.timestamp < 30_000) {
+    return cachedIdeExtensions.entries;
+  }
   const home = envHome();
   const dirs = [
     path.join(home, '.vscode', 'extensions'),
@@ -238,16 +263,21 @@ function hasIdeExtension(pattern: RegExp): boolean {
     path.join(home, '.cursor', 'extensions'),
     path.join(home, '.windsurf', 'extensions'),
   ];
+  const entries: string[] = [];
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;
     try {
-      const entries = fs.readdirSync(dir);
-      if (entries.some(e => pattern.test(e))) return true;
+      entries.push(...fs.readdirSync(dir));
     } catch {
       // Ignore permission or file system errors
     }
   }
-  return false;
+  cachedIdeExtensions = { entries, timestamp: now };
+  return entries;
+}
+
+function hasIdeExtension(pattern: RegExp): boolean {
+  return getIdeExtensions().some(e => pattern.test(e));
 }
 
 function isAppInstalled(id: string): boolean {
@@ -384,6 +414,21 @@ export const AGENT_IDS = [
   'generic',
 ] as const;
 
+let cachedAllAgents: { data: AgentDetection[]; timestamp: number } | null = null;
+const DETECTION_CACHE_TTL_MS = 15_000;
+
+export function invalidateAgentDetectionCache(): void {
+  cachedAllAgents = null;
+  cachedPathBinaries = null;
+  cachedIdeExtensions = null;
+}
+
 export function detectAllAgents(): AgentDetection[] {
-  return AGENT_IDS.map(id => detectAgent(id));
+  const now = Date.now();
+  if (cachedAllAgents && now - cachedAllAgents.timestamp < DETECTION_CACHE_TTL_MS) {
+    return cachedAllAgents.data;
+  }
+  const data = AGENT_IDS.map(id => detectAgent(id));
+  cachedAllAgents = { data, timestamp: now };
+  return data;
 }
