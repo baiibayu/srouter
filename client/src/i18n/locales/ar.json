@@ -423,7 +423,9 @@
     "scoreColumn": "النتيجة",
     "minReliabilityFloor": "الحد الأدنى للموثوقية",
     "minReliabilityFloorHint": "يستبعد النموذج من التوجيه عندما تنخفض نسبة نجاحه المرصودة دون هذه القيمة. 0.8 تعني 80٪. اتركه فارغًا للتعطيل — تُحفظ دائمًا النماذج ذات السجلّ القليل حتى تظل النماذج الجديدة قابلة للتجربة. لا يُفرِّغ السلسلة كاملة أبدًا.",
-    "minReliabilityFloorOff": "معطّل"
+    "minReliabilityFloorOff": "معطّل",
+    "systemone": "System One",
+    "systemoneBlurb": "AI contextual decider: evaluates prompt complexity and routes directly to the best available model without bandit sampling."
   },
   "penaltyInspector": {
     "title": "ضغط جهاز التوجيه",

@@ -58,6 +58,7 @@ const STRATEGIES: { key: RoutingStrategy; tKey: string }[] = [
   { key: 'smartest', tKey: 'smartest' },
   { key: 'fastest', tKey: 'fastest' },
   { key: 'reliable', tKey: 'reliable' },
+  { key: 'systemone', tKey: 'systemone' },
   { key: 'custom', tKey: 'custom' },
 ]
 

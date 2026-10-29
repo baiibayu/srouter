@@ -19,7 +19,7 @@ export function ModelsTabs() {
       <NavLink to="/models/video" className={({ isActive }) => tab(isActive)}>{t('models.videoTab')}</NavLink>
       <NavLink to="/models/audio" className={({ isActive }) => tab(isActive)}>{t('models.audioTab')}</NavLink>
       <NavLink to="/models/embeddings" className={({ isActive }) => tab(isActive)}>{t('models.embeddingsTab')}</NavLink>
-      <NavLink to="/models/decision" className={({ isActive }) => tab(isActive)}>{t('decision.tab')}</NavLink>
+      <NavLink to="/models/system-one" className={({ isActive }) => tab(isActive)}>{t('models.systemOneTab')}</NavLink>
       <NavLink to="/models/search" className={({ isActive }) => tab(isActive)}>{t('search.tab')}</NavLink>
       <NavLink to="/models/fusion" className={({ isActive }) => tab(isActive)}>{t('models.fusionTab')}</NavLink>
     </div>

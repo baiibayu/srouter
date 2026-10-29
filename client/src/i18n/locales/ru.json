@@ -423,7 +423,9 @@
     "scoreColumn": "Оценка",
     "minReliabilityFloor": "Минимальный порог надёжности",
     "minReliabilityFloorHint": "Исключает модель из маршрутизации, когда её наблюдаемая доля успешных запросов падает ниже этого значения. 0,8 означает 80 %. Оставьте пустым, чтобы отключить — модели с малой историей всегда сохраняются, чтобы новые модели продолжали пробоваться. Никогда не опустошает всю цепочку.",
-    "minReliabilityFloorOff": "Отключено"
+    "minReliabilityFloorOff": "Отключено",
+    "systemone": "System One",
+    "systemoneBlurb": "AI contextual decider: evaluates prompt complexity and routes directly to the best available model without bandit sampling."
   },
   "penaltyInspector": {
     "title": "Давление маршрутизатора",

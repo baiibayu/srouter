@@ -659,6 +659,12 @@ register(new OpenAICompatProvider({
   baseUrl: 'https://codecraftapi.com/v1',
 }));
 
+register(new OpenAICompatProvider({
+  platform: 'typesafe',
+  name: 'TypeSafe (System One / Jev)',
+  baseUrl: 'https://api.typesafe.ai/v1',
+}));
+
 // Placeholder so getProvider('custom')/hasProvider('custom')/getAllProviders()
 // behave — but the real instance is built per-key by resolveProvider(), since
 // a custom provider's base URL is user-supplied and lives on the api_keys row.

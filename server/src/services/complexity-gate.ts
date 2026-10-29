@@ -28,6 +28,7 @@ import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { contentToString } from '../lib/content.js';
 import { decrypt } from '../lib/crypto.js';
 import { runDecision, decisionsAvailable } from './decision.js';
+import { getRoutingStrategy } from './router.js';
 
 export type ComplexityLevel = 'trivial' | 'normal' | 'hard';
 
@@ -57,7 +58,7 @@ export const COMPLEXITY_GATE_JEV_TIMEOUT_KEY = 'complexity_gate_jev_timeout_ms';
 // Zen answers in ~700-1500ms; the old 400ms budget would always abort, so the
 // default budget now fits the default (keyless zen) host. Still bounded and
 // configurable — a timeout just falls back to the heuristic.
-export const DEFAULT_JEV_BASE_URL = 'https://opencode.ai/zen';
+export const DEFAULT_JEV_BASE_URL = 'https://openrouter.ai';
 export const DEFAULT_JEV_TIMEOUT_MS = 2000;
 const DEFAULT_JEV_MODEL = 'jev-latest';
 const VALID_BACKENDS = ['heuristic', 'jev', 'decision'] as const;
@@ -65,8 +66,7 @@ const VALID_BACKENDS = ['heuristic', 'jev', 'decision'] as const;
 // -- Host presets -------------------------------------------------------------
 //
 // `systemoneUrl` is the full endpoint (some hosts differ: jev-ai.pro lives
-// under /api/v1). Zen is keyless: it takes the free jev-1.13-free model with
-// the same public identity opencode-free.ts spoofs — no key field at all.
+// under /api/v1). Hosts borrow keys from linked provider entries or use stored keys.
 export interface JevHostPreset {
   id: string;
   baseUrl: string;
@@ -78,13 +78,6 @@ export interface JevHostPreset {
 }
 
 export const JEV_HOST_PRESETS: JevHostPreset[] = [
-  {
-    id: 'zen',
-    baseUrl: 'https://opencode.ai/zen',
-    systemoneUrl: 'https://opencode.ai/zen/v1/systemone',
-    model: 'jev-1.13-free',
-    keyless: true,
-  },
   {
     // Verified live 2026-10-10: HTTP 200, typesafe/jev-1.13-20260917, tiny cost.
     id: 'openrouter',
@@ -100,6 +93,7 @@ export const JEV_HOST_PRESETS: JevHostPreset[] = [
     systemoneUrl: 'https://api.typesafe.ai/v1/systemone',
     model: 'jev-latest',
     keyless: false,
+    provider: 'typesafe',
   },
   {
     id: 'v1m',
@@ -126,10 +120,6 @@ export const JEV_HOST_PRESETS: JevHostPreset[] = [
 
 export function matchJevPreset(baseUrl: string): JevHostPreset | null {
   const norm = baseUrl.trim().replace(/\/+$/, '');
-  // Tolerate both https://opencode.ai/zen and .../zen/v1 as the stored root.
-  if (norm === 'https://opencode.ai/zen' || norm === 'https://opencode.ai/zen/v1') {
-    return JEV_HOST_PRESETS[0];
-  }
   return JEV_HOST_PRESETS.find((p) => p.baseUrl === norm) ?? null;
 }
 
@@ -454,8 +444,20 @@ export async function classifyComplexity(
 ): Promise<ComplexityLevel | undefined> {
   try {
     const cfg = getComplexityGate();
-    if (!cfg.enabled) return undefined;
-    if (cfg.backend === 'jev') {
+    const strategy = getRoutingStrategy();
+    const isSystemOne = strategy === 'systemone';
+    if (!cfg.enabled && !isSystemOne) return undefined;
+
+    // When systemone strategy is active, prioritize local decision model or remote jev
+    if (cfg.backend === 'decision' || isSystemOne) {
+      try {
+        const level = await classifyWithLocalDecision(cfg, messages);
+        if (level) return level;
+      } catch {
+        // Decision error/timeout → fall through
+      }
+    }
+    if (cfg.backend === 'jev' || (isSystemOne && cfg.hasJevApiKey)) {
       try {
         const level = await classifyWithJev(cfg, messages);
         if (level) return level;
@@ -463,16 +465,9 @@ export async function classifyComplexity(
         // Jev error/timeout → heuristic (layer 2).
       }
     }
-    if (cfg.backend === 'decision') {
-      try {
-        const level = await classifyWithLocalDecision(cfg, messages);
-        if (level) return level;
-      } catch {
-        // Decision error/timeout → heuristic (layer 2).
-      }
-    }
     return classifyComplexityHeuristic(messages, tools);
-  } catch {
+  } catch (err) {
+    console.error('classifyComplexity error:', err);
     return undefined;
   }
 }

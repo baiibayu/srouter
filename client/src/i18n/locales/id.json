@@ -423,7 +423,9 @@
     "scoreColumn": "Skor",
     "minReliabilityFloor": "Batas minimum reliabilitas",
     "minReliabilityFloorHint": "Hapus model dari perutean jika tingkat keberhasilannya turun di bawah nilai ini. 0.8 berarti 80%. Kosongkan untuk menonaktifkan — model dengan riwayat sedikit selalu dipertahankan agar model baru tetap dapat dicoba. Tidak pernah mengosongkan seluruh rantai rute.",
-    "minReliabilityFloorOff": "Dinonaktifkan"
+    "minReliabilityFloorOff": "Dinonaktifkan",
+    "systemone": "System One",
+    "systemoneBlurb": "Pengambil keputusan kontekstual AI: mengevaluasi kompleksitas prompt dan merutekan langsung ke model terbaik tanpa sampling bandit."
   },
   "penaltyInspector": {
     "title": "Tekanan router",

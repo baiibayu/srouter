@@ -987,11 +987,11 @@ async function handleDecision(req: Request, res: Response): Promise<void> {
   }
 }
 
-proxyRouter.post('/decisions', handleDecision);
+// System One decision endpoint (TypeSafe contract: model, state, questions)
 proxyRouter.post('/systemone', handleDecision);
 
-// The decision models a caller can pin with `model` on POST /v1/decisions.
-proxyRouter.get('/decisions/models', (req: Request, res: Response) => {
+// The System One decision models a caller can pin with `model` on POST /v1/systemone.
+proxyRouter.get('/systemone/models', (req: Request, res: Response) => {
   if (!requireInferenceAuth(req, res)) return;
   res.json({
     object: 'list',

@@ -67,7 +67,7 @@ describe('complexity gate — settings + master switch', () => {
     expect(preset?.provider).toBe('openrouter');
     expect(preset?.systemoneUrl).toBe('https://openrouter.ai/api/v1/systemone');
     // Detection only reports non-keyless presets with a linked provider.
-    expect(JEV_HOST_PRESETS.filter(p => p.provider).map(p => p.id)).toEqual(['openrouter']);
+    expect(JEV_HOST_PRESETS.filter(p => p.provider).map(p => p.id)).toEqual(['openrouter', 'typesafe']);
   });
 
   it('is OPT-IN: disabled by default, classify returns undefined', async () => {
@@ -100,9 +100,9 @@ describe('complexity gate — settings + master switch', () => {
     const reset = getComplexityGate();
     expect(reset.hasJevApiKey).toBe(false);
     expect(reset.jevBaseUrl).toBe(DEFAULT_JEV_BASE_URL);
-    expect(reset.jevHostPreset).toBe('zen');
-    expect(reset.jevKeyless).toBe(true);
-    expect(reset.jevModel).toBe('jev-1.13-free'); // preset default, override cleared
+    expect(reset.jevHostPreset).toBe('openrouter');
+    expect(reset.jevKeyless).toBe(false);
+    expect(reset.jevModel).toBe('typesafe/jev-1.13'); // preset default, override cleared
     expect(reset.jevTimeoutMs).toBe(DEFAULT_JEV_TIMEOUT_MS);
   });
 });
@@ -140,8 +140,8 @@ describe('complexity gate — Jev backend (fail-open to heuristic)', () => {
     expect(await classifyComplexity([msg('whatever')], undefined)).toBe('normal');
   });
 
-  it('default zen host is keyless: fetches without a stored key, using the free model', async () => {
-    setComplexityGate({ jevApiKey: null }); // default base url = zen preset
+  it('openrouter host fetches with authorization, using the default model', async () => {
+    setComplexityGate({ jevApiKey: 'test-key', jevBaseUrl: 'https://openrouter.ai' });
     const spy = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -151,12 +151,10 @@ describe('complexity gate — Jev backend (fail-open to heuristic)', () => {
     expect(await classifyComplexity([msg('hello')], undefined)).toBe('hard');
     expect(spy).toHaveBeenCalledTimes(1);
     const [url, init] = spy.mock.calls[0];
-    expect(url).toBe('https://opencode.ai/zen/v1/systemone');
-    expect(init.headers.authorization).toBe('Bearer public');
-    expect(init.headers['User-Agent']).toContain('opencode/1.18.31');
-    expect(init.headers['x-opencode-client']).toBe('desktop');
+    expect(url).toBe('https://openrouter.ai/api/v1/systemone');
+    expect(init.headers.authorization).toBe('Bearer test-key');
     const body = JSON.parse(init.body);
-    expect(body.model).toBe('jev-1.13-free');
+    expect(body.model).toBe('typesafe/jev-1.13');
     expect(body.questions.complexity.type).toBe('score');
     expect(body.questions.complexity.criteria).toEqual(['trivial', 'simple', 'moderate', 'complex', 'expert']);
   });

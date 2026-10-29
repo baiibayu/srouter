@@ -423,7 +423,9 @@
     "scoreColumn": "Puntuación",
     "minReliabilityFloor": "Umbral mínimo de fiabilidad",
     "minReliabilityFloorHint": "Excluye un modelo del enrutamiento cuando su tasa de éxito observada cae por debajo de este valor. 0,8 significa 80 %. Déjelo vacío para desactivarlo: los modelos con poco historial siempre se conservan para que los nuevos modelos sigan probándose. Nunca vacía toda la cadena.",
-    "minReliabilityFloorOff": "Desactivado"
+    "minReliabilityFloorOff": "Desactivado",
+    "systemone": "System One",
+    "systemoneBlurb": "AI contextual decider: evaluates prompt complexity and routes directly to the best available model without bandit sampling."
   },
   "penaltyInspector": {
     "title": "Presión del router",

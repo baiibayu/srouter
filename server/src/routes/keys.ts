@@ -64,7 +64,7 @@ const PLATFORMS = [
   'openrouter', 'cohere', 'tavily', 'exa', 'firecrawl', 'linkup', 'parallel', 'cloudflare', 'zhipu', 'ollama',
   'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'reka', 'siliconflow',
   'routeway', 'bazaarlink', 'ainative', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
-  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'custom',
+  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'typesafe', 'custom',
   'nous', 'typhoon', 'plugsky', 'tokenharbor', 'alibaba', 'codecraft',
 ] as const;
 

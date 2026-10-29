@@ -29,9 +29,9 @@ export interface RoutingWeights {
 }
 
 // Strategy is either the legacy manual chain ('priority'), one of the bandit
-// presets, or 'custom' (a user-tuned weight vector persisted in settings — see
-// router.ts). Each is just a weight vector — the engine is identical.
-export type RoutingStrategy = 'priority' | 'balanced' | 'smartest' | 'fastest' | 'reliable' | 'custom';
+// presets, 'custom' (a user-tuned weight vector persisted in settings — see
+// router.ts), or 'systemone' (direct AI contextual decider).
+export type RoutingStrategy = 'priority' | 'balanced' | 'smartest' | 'fastest' | 'reliable' | 'custom' | 'systemone';
 
 // How the router picks BETWEEN several keys of one platform, once a model has
 // been chosen. Deliberately not a RoutingStrategy: model ranking and key
@@ -41,7 +41,7 @@ export type RoutingStrategy = 'priority' | 'balanced' | 'smartest' | 'fastest' |
 // 'least-remaining' additionally ranks by observed remaining quota (#919).
 export type KeySelectionStrategy = 'auto' | 'least-remaining';
 
-export const BANDIT_PRESETS: Record<Exclude<RoutingStrategy, 'priority' | 'custom'>, RoutingWeights> = {
+export const BANDIT_PRESETS: Record<Exclude<RoutingStrategy, 'priority' | 'custom' | 'systemone'>, RoutingWeights> = {
   // Reliability leads; speed and intelligence split the rest evenly.
   balanced: { reliability: 0.5, speed: 0.25, intelligence: 0.25 },
   // Intelligence leads, but reliability still carries real weight so a smart
@@ -113,7 +113,7 @@ export const DEFAULT_PEAK_HOURS: PeakHoursConfig = {
  * alternative; exempting is chosen because it keeps each preset's identity
  * exactly, rather than making two of them silently converge on a third.
  */
-export const PEAK_EXEMPT_STRATEGIES: readonly RoutingStrategy[] = ['fastest', 'reliable'];
+export const PEAK_EXEMPT_STRATEGIES: readonly RoutingStrategy[] = ['fastest', 'reliable', 'systemone'];
 
 /** Whether this strategy opts out of the peak adjustment (see above). */
 export function isPeakExemptStrategy(strategy: RoutingStrategy): boolean {
@@ -212,7 +212,7 @@ export const TASK_WEIGHT_SHARE = 0.3;
  * it. The bias therefore applies only to the mixed presets (`balanced`,
  * `smartest`). `priority` never reaches here — it has no weight vector at all.
  */
-export const TASK_EXEMPT_STRATEGIES: readonly RoutingStrategy[] = [...PEAK_EXEMPT_STRATEGIES, 'custom'];
+export const TASK_EXEMPT_STRATEGIES: readonly RoutingStrategy[] = ['fastest', 'reliable', 'custom'];
 
 /** Whether this strategy opts out of the task-type bias (see above). */
 export function isTaskExemptStrategy(strategy: RoutingStrategy): boolean {

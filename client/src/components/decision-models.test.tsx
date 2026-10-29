@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Models → Decision lists the catalog's decision models, toggles one with
-// PATCH, and "Try it" runs one choice question through /api/decisions/try.
+// Models → System One lists the catalog's System One models, toggles one with
+// PATCH, and "Try it" runs one choice question through /api/systemone/try.
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { I18nProvider } from '@/i18n'
 import { apiFetch } from '@/lib/api'
 import type { DecisionModel } from '@/lib/decision'
-import { DecisionModelsView } from './decision-models'
+import { SystemOneModelsView } from './systemone-models'
 import { ModelsTabs } from './models-tabs'
 
 vi.mock('@/lib/api', () => ({ apiFetch: vi.fn() }))
@@ -34,8 +34,8 @@ afterEach(() => { act(() => root.unmount()); client.clear(); container.remove() 
 async function flush() { for (let i = 0; i < 4; i++) await act(async () => { await new Promise(r => setTimeout(r, 0)) }) }
 async function mount(models: DecisionModel[]) {
   vi.mocked(apiFetch).mockReset().mockImplementation(async (path: string) => {
-    if (path === '/api/decisions/models') return models
-    if (path === '/api/decisions/try') {
+    if (path === '/api/systemone/models') return models
+    if (path === '/api/systemone/try') {
       return {
         model: '@cf/cloudflare/clef-flash', provider: 'cloudflare', usage: { input_tokens: 10, output_tokens: 0 },
         answers: { answer: { type: 'choice', choice: 'code', confidence: 0.91, probabilities: { chat: 0.04, code: 0.93, reasoning: 0.03 } } },
@@ -46,14 +46,14 @@ async function mount(models: DecisionModel[]) {
   act(() => root.render(
     <QueryClientProvider client={client}>
       <I18nProvider initialLocale="en">
-        <MemoryRouter><DecisionModelsView /></MemoryRouter>
+        <MemoryRouter><SystemOneModelsView /></MemoryRouter>
       </I18nProvider>
     </QueryClientProvider>
   ))
   await flush()
 }
 
-it('lists the decision models with usage and a no-key badge', async () => {
+it('lists the System One models with usage and a no-key badge', async () => {
   await mount([
     model({}),
     model({ id: 2, platform: 'openrouter', modelId: 'inception/mercury-decide:free', displayName: 'Mercury Decide (free)', priority: 1, keyCount: 0, healthyKeyCount: 0, decisionsThisMonth: 0 }),
@@ -62,7 +62,7 @@ it('lists the decision models with usage and a no-key badge', async () => {
   expect(text).toContain('Clef Flash')
   expect(text).toContain('inception/mercury-decide:free')
   expect(text).toContain('4 this month')
-  expect(text).toContain('POST /v1/decisions')
+  expect(text).toContain('POST /v1/systemone')
   expect(text).toContain('Chat routing never uses these models')
   expect(container.querySelectorAll('[role="switch"]')).toHaveLength(2)
 })
@@ -72,7 +72,7 @@ it('turns a model off with PATCH', async () => {
   const toggle = container.querySelector('[role="switch"]') as HTMLElement
   await act(async () => { toggle.click() })
   await flush()
-  expect(vi.mocked(apiFetch)).toHaveBeenCalledWith('/api/decisions/models/1', { method: 'PATCH', body: JSON.stringify({ enabled: false }) })
+  expect(vi.mocked(apiFetch)).toHaveBeenCalledWith('/api/systemone/models/1', { method: 'PATCH', body: JSON.stringify({ enabled: false }) })
 })
 
 it('runs a test decision and shows the answer with probabilities', async () => {
@@ -80,7 +80,7 @@ it('runs a test decision and shows the answer with probabilities', async () => {
   const run = [...container.querySelectorAll('button')].find(b => b.textContent === 'Decide') as HTMLButtonElement
   await act(async () => { run.click() })
   await flush()
-  const call = vi.mocked(apiFetch).mock.calls.find(c => c[0] === '/api/decisions/try')!
+  const call = vi.mocked(apiFetch).mock.calls.find(c => c[0] === '/api/systemone/try')!
   expect(JSON.parse((call[1] as RequestInit).body as string)).toEqual({
     state: 'my react useEffect runs twice, why?',
     question: 'Which kind of model should answer this?',
@@ -97,10 +97,10 @@ it('shows the empty state before the catalog syncs', async () => {
   expect(container.textContent).toContain('No decision models yet')
 })
 
-it('orders the Models tabs with Embeddings after Audio and Decision next to it', () => {
+it('orders the Models tabs with Embeddings after Audio and System One next to it', () => {
   act(() => root.render(
     <I18nProvider initialLocale="en"><MemoryRouter><ModelsTabs /></MemoryRouter></I18nProvider>
   ))
   const labels = [...container.querySelectorAll('a')].map(a => a.textContent)
-  expect(labels).toEqual(['Chat models', 'Image', 'Video', 'Audio', 'Embeddings', 'Decision', 'Search', 'Fusion'])
+  expect(labels).toEqual(['Chat models', 'Image', 'Video', 'Audio', 'Embeddings', 'System One', 'Search', 'Fusion'])
 })

@@ -38,7 +38,7 @@ export const openapiSpec = {
     { name: 'Chat', description: 'OpenAI-compatible chat and completion endpoints' },
     { name: 'Media', description: 'Image generation and text-to-speech' },
     { name: 'Search', description: 'Web search over Parallel (keyless) and your Tavily, Exa, Firecrawl and Linkup keys' },
-    { name: 'Decisions', description: 'Decision models (choice, yes/no, score) over your Cloudflare and OpenRouter keys' },
+    { name: 'System One', description: 'System One decision models (choice, yes/no, score) over your Cloudflare, OpenRouter, and linked provider keys' },
     { name: 'Responses', description: 'OpenAI Responses API (Codex CLI wire format)' },
     { name: 'Anthropic', description: 'Anthropic Messages API (Claude Code and the Anthropic SDKs)' },
     { name: 'Models', description: 'Model discovery' },
@@ -276,16 +276,15 @@ export const openapiSpec = {
         },
       },
     },
-    '/v1/decisions': {
+    '/v1/systemone': {
       post: {
-        tags: ['Decisions'],
-        operationId: 'createDecision',
-        summary: 'Ask a decision model',
+        tags: ['System One'],
+        operationId: 'createSystemOneDecision',
+        summary: 'Ask System One (Decision)',
         description:
           'Ask typed questions about `state` and get probabilities back instead of generated text: pick one option ' +
-          '(`choice`), yes/no (`noul`) or a rating on a rubric (`score`). Served by the decision models in the catalog ' +
-          '(Cloudflare Clef Flash, OpenRouter Mercury Decide) on your Cloudflare and OpenRouter keys. Omit `model` (or set ' +
-          '`auto`) to fail over across models that have a key. `POST /v1/systemone` is an alias. Chat routing never uses these models.',
+          '(`choice`), yes/no (`noul`) or a rating on a rubric (`score`). Served by System One decision models in the catalog ' +
+          'on your linked provider keys (Cloudflare, OpenRouter, TypeSafe). Omit `model` (or set `auto`) to fail over across models that have a key.',
         requestBody: {
           required: true,
           content: {
@@ -294,7 +293,7 @@ export const openapiSpec = {
                 type: 'object',
                 required: ['state', 'questions'],
                 properties: {
-                  model: { type: 'string', description: 'A model id from GET /v1/decisions/models, or `auto`.' },
+                  model: { type: 'string', description: 'A model id from GET /v1/systemone/models, or `auto`.' },
                   state: { description: 'The text or structured data (object/array) to decide about.', example: 'my react useEffect runs twice, why?' },
                   questions: {
                     type: 'object',
@@ -349,12 +348,12 @@ export const openapiSpec = {
         },
       },
     },
-    '/v1/decisions/models': {
+    '/v1/systemone/models': {
       get: {
-        tags: ['Decisions'],
-        operationId: 'listDecisionModels',
-        summary: 'List decision models',
-        description: 'The enabled decision models, in failover order, and whether each has a usable key.',
+        tags: ['System One'],
+        operationId: 'listSystemOneModels',
+        summary: 'List System One decision models',
+        description: 'The enabled System One decision models, in failover order, and whether each has a usable key.',
         responses: {
           '200': {
             description: 'Decision models.',

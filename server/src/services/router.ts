@@ -471,7 +471,7 @@ export const EXPLORE_CHANCE = 0.25;
 /** A model counts as "has data" once its decay-weighted success+failure
  *  pseudo-count reaches this many samples. */
 export const EXPLORE_MIN_SAMPLES = 5;
-const VALID_STRATEGIES: RoutingStrategy[] = ['priority', 'balanced', 'smartest', 'fastest', 'reliable', 'custom'];
+const VALID_STRATEGIES: RoutingStrategy[] = ['priority', 'balanced', 'smartest', 'fastest', 'reliable', 'custom', 'systemone'];
 
 export function getRoutingStrategy(): RoutingStrategy {
   const raw = getSetting(STRATEGY_KEY);
@@ -711,7 +711,7 @@ export function setCommunityPriors(priors: CommunityPriorMap): number {
  *  `adjusted` is false, so nothing about routing moves with the clock.
  *  priority/custom are the operator's explicit choice and are never rewritten. */
 function weightsWithPeak(strategy: RoutingStrategy): { weights: RoutingWeights | null; adjusted: boolean } {
-  if (strategy === 'priority') return { weights: null, adjusted: false };
+  if (strategy === 'priority' || strategy === 'systemone') return { weights: null, adjusted: false };
   if (strategy === 'custom') return { weights: getCustomWeights(), adjusted: false };
   return peakAdjustedWeights(BANDIT_PRESETS[strategy], strategy, getPeakHoursConfig());
 }
@@ -1148,6 +1148,52 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
   // to override (see ChainRow.match_tier). Zero for every chain built anywhere
   // else, so this is a no-op outside slug-fallback resolution.
   const tier = (e: ChainRow) => e.match_tier ?? 0;
+
+  if (strategy === 'systemone') {
+    // System One: Direct AI Decider (No Bandit Sampling).
+    // System One directly evaluates prompt complexity ('trivial' | 'normal' | 'hard')
+    // and task intent ('code' | 'chat') to route deterministically, knowing field
+    // conditions: healthy keys, live penalties, tool capability, and model smartness.
+    const level = complexity ?? 'normal';
+    return chain
+      .map((e, i) => ({
+        e,
+        i,
+        intel: intelligenceComposite(e.size_label, e.intelligence_rank),
+        penalty: getPenalty(e.model_db_id),
+      }))
+      .sort((a, b) => {
+        // 1. Tier first
+        const tDiff = tier(a.e) - tier(b.e);
+        if (tDiff !== 0) return tDiff;
+
+        // 2. Cooldown/failure penalty: penalized models move down immediately
+        const pDiff = a.penalty - b.penalty;
+        if (pDiff !== 0) return pDiff;
+
+        // 3. For coding task: prioritize models with verified tool support
+        if (task === 'code') {
+          const toolDiff = (b.e.supports_tools ? 1 : 0) - (a.e.supports_tools ? 1 : 0);
+          if (toolDiff !== 0) return toolDiff;
+        }
+
+        // 4. System One direct decision
+        if (level === 'hard' || task === 'code') {
+          // Hard prompt or coding task: highest intelligence composite first
+          const iDiff = b.intel - a.intel;
+          if (iDiff !== 0) return iDiff;
+        } else if (level === 'trivial') {
+          // Trivial prompt: lowest intelligence composite (fastest/cheapest) first
+          const iDiff = a.intel - b.intel;
+          if (iDiff !== 0) return iDiff;
+        }
+
+        // 5. Manual priority tie-breaker
+        return a.e.priority - b.e.priority || a.i - b.i;
+      })
+      .map(x => x.e);
+  }
+
   let weights = weightsFor(strategy);
   if (!weights) {
     // Legacy priority mode: manual chain order + the 429/failure penalty,
@@ -2133,7 +2179,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
   // entirely: probing unmeasured models during a fleet-wide outage just burns
   // retry budget on the same dead providers, and the scored order of known
   // survivors is the only thing worth trying.
-  if (strategy !== 'priority' && getExploreEnabled() && !isDegraded() && Math.random() < EXPLORE_CHANCE) {
+  if (strategy !== 'priority' && strategy !== 'systemone' && getExploreEnabled() && !isDegraded() && Math.random() < EXPLORE_CHANCE) {
     // A model the operator zeroed out via MODEL_ROUTING_OVERRIDES never wins a
     // bandit draw, so it would stay under EXPLORE_MIN_SAMPLES forever and become
     // a perpetual probe target — the explicit ban outranks exploration.

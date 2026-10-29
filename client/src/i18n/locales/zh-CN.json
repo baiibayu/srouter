@@ -423,7 +423,9 @@
     "weightSpeed": "速度",
     "weightIntelligence": "智能",
     "weightRequired": "至少一个权重必须大于零。",
-    "scoreColumn": "评分"
+    "scoreColumn": "评分",
+    "systemone": "System One",
+    "systemoneBlurb": "AI contextual decider: evaluates prompt complexity and routes directly to the best available model without bandit sampling."
   },
   "penaltyInspector": {
     "title": "路由压力",

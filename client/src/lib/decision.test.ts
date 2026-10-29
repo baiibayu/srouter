@@ -14,7 +14,7 @@ describe('decision helpers', () => {
 
   it('builds a runnable curl example against this origin', () => {
     const curl = decisionExampleCurl('http://localhost:3001')
-    expect(curl).toContain('curl http://localhost:3001/v1/decisions')
+    expect(curl).toContain('curl http://localhost:3001/v1/systemone')
     expect(curl).toContain('"type": "choice"')
     expect(curl).toContain('$SROUTER_API_KEY')
     expect(curl).not.toContain('FREEL' + 'MAPI')

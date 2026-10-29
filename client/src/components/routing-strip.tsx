@@ -30,6 +30,7 @@ const STRATEGY_TKEY: Record<RoutingStrategy, string> = {
   smartest: 'smartest',
   fastest: 'fastest',
   reliable: 'reliable',
+  systemone: 'systemone',
   custom: 'custom',
 }
 

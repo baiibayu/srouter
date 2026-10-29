@@ -1,5 +1,6 @@
 import { getDb } from '../db/index.js';
 import { parseRetryAfterMs } from '../providers/base.js';
+import { getProvider } from '../providers/index.js';
 import { RetryHintTracker } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
 import { proxyFetch } from '../lib/proxy.js';
@@ -19,8 +20,7 @@ import { isOnCooldown, setCooldown } from './ratelimit.js';
 // only by the catalog's `decisionModels` registry (see catalog-sync). They ride
 // on keys the user already has for the hosting platform (Cloudflare Workers AI,
 // OpenRouter), so there is no separate key to add. They are exposed on
-// POST /v1/decisions and are NOT used by the chat router: routing never
-// consults them.
+// POST /v1/systemone. System One can act as the direct decider in routing.
 //
 // Routing within decisions: the requested model, or every enabled decision
 // model in priority order for 'auto', then every healthy enabled key of that
@@ -104,7 +104,19 @@ function parseMeta(raw: string | null): DecisionModelMeta {
 }
 
 function allDecisionRows(): DecisionModelRow[] {
-  return getDb()
+  const db = getDb();
+  const hasTypesafe = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ?').get(DECISION_MODALITY, 'typesafe');
+  if (!hasTypesafe) {
+    try {
+      db.prepare(`
+        INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+        VALUES ('typesafe', 'typesafe/jev-1.13', 'TypeSafe Jev (System One)', ?, 2, 1, 'TypeSafe API', '{"contextWindow":32768}')
+      `).run(DECISION_MODALITY);
+    } catch {
+      // Ignored if table locked or constraint
+    }
+  }
+  return db
     .prepare(`SELECT id, platform, model_id, display_name, priority, enabled, quota_label, meta_json
                 FROM media_models WHERE modality = ? ORDER BY priority, id`)
     .all(DECISION_MODALITY) as DecisionModelRow[];
@@ -204,6 +216,42 @@ const ADAPTERS: Record<string, Adapter> = {
     if (json?.error) throw new DecisionError(`openrouter: ${json.error.message ?? 'error'}`, 502);
     return { answers: answersOf(json?.answers, 'openrouter'), usage: usageOf(json?.usage) };
   },
+  typesafe: async (cred, modelId, body, signal) => {
+    const json = await upstream(
+      'https://api.typesafe.ai/v1/systemone',
+      'typesafe',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${cred.key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model: modelId, state: body.state, questions: body.questions }),
+      },
+      signal,
+    ) as { answers?: unknown; usage?: unknown; error?: { message?: string } };
+    if (json?.error) throw new DecisionError(`typesafe: ${json.error.message ?? 'error'}`, 502);
+    return { answers: answersOf(json?.answers, 'typesafe'), usage: usageOf(json?.usage) };
+  },
+  'opencode-free': async (cred, modelId, body, signal) => {
+    const json = await upstream(
+      'https://opencode.ai/zen/v1/systemone',
+      'opencode-free',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: cred.key && cred.key !== 'no-key' ? `Bearer ${cred.key}` : 'Bearer public',
+          'Content-Type': 'application/json',
+          'User-Agent': 'opencode/latest/2.0.26/cli',
+          'x-opencode-client': 'cli',
+        },
+        body: JSON.stringify({ model: modelId || 'jev-1.13-free', state: body.state, questions: body.questions }),
+      },
+      signal,
+    ) as { answers?: unknown; usage?: unknown; error?: { message?: string } };
+    if (json?.error) throw new DecisionError(`opencode-free: ${json.error.message ?? 'error'}`, 502);
+    return { answers: answersOf(json?.answers, 'opencode-free'), usage: usageOf(json?.usage) };
+  },
 };
 
 /** Platforms with a decision adapter. catalog-sync gates decisionModels rows
@@ -253,7 +301,7 @@ function decisionChain(model: string | undefined): DecisionModelRow[] {
     throw new DecisionError(
       known
         ? `Decision model '${model}' is turned off. Turn it on from Models → Decision, or use 'auto'.`
-        : `Unknown decision model '${model}'. Use 'auto' or a model id from GET /v1/decisions/models.`,
+        : `Unknown System One model '${model}'. Use 'auto' or a model id from GET /v1/systemone/models.`,
       400,
     );
   }

@@ -56,7 +56,7 @@ export interface FallbackEntry {
   groupLabel?: string
 }
 
-export type RoutingStrategy = 'priority' | 'balanced' | 'smartest' | 'fastest' | 'reliable' | 'custom'
+export type RoutingStrategy = 'priority' | 'balanced' | 'smartest' | 'fastest' | 'reliable' | 'custom' | 'systemone'
 
 // How the gateway picks between several keys of ONE platform, once a model has
 // been chosen (#919). Separate from RoutingStrategy, which ranks models: the
@@ -69,7 +69,7 @@ export type RoutingWeights = { reliability: number; speed: number; intelligence:
  *  the two ends of the speed↔reliability axis, so reweighting them would make
  *  one preset behave like another the user could have picked. Kept in sync with
  *  PEAK_EXEMPT_STRATEGIES in server/src/services/scoring.ts. */
-export const PEAK_EXEMPT_STRATEGIES: RoutingStrategy[] = ['fastest', 'reliable']
+export const PEAK_EXEMPT_STRATEGIES: RoutingStrategy[] = ['fastest', 'reliable', 'systemone']
 
 export interface RoutingScore {
   modelDbId: number

@@ -46,7 +46,7 @@ export function decisionExampleCurl(origin: string): string {
     },
   }
   return [
-    `curl ${origin}/v1/decisions \\`,
+    `curl ${origin}/v1/systemone \\`,
     `  -H "Authorization: Bearer $SROUTER_API_KEY" \\`,
     `  -H "Content-Type: application/json" \\`,
     `  -d '${JSON.stringify(body, null, 2).replace(/\n/g, '\n  ')}'`,

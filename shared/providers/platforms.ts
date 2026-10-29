@@ -99,4 +99,5 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'volcengine', label: 'Volcengine Ark (free daily, needs cn real-name)', url: 'https://console.volcengine.com/ark' },
   { value: 'longcat', label: 'LongCat (free daily, email signup ok)', url: 'https://longcat.chat/platform' },
   { value: 'xfyun', label: 'iFlytek Spark (free Lite, needs cn real-name)', url: 'https://console.xfyun.cn' },
+  { value: 'typesafe', label: 'TypeSafe (System One / Jev)', url: 'https://typesafe.ai' },
 ]

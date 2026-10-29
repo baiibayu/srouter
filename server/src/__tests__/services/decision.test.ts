@@ -64,7 +64,7 @@ describe('decision service', () => {
   });
 
   it('has adapters for exactly the launch platforms', () => {
-    expect([...DECISION_PLATFORMS].sort()).toEqual(['cloudflare', 'openrouter']);
+    expect([...DECISION_PLATFORMS].sort()).toEqual(['cloudflare', 'opencode-free', 'openrouter', 'typesafe']);
   });
 
   it('calls Cloudflare ai/run with the account from the key and the short model selector', async () => {

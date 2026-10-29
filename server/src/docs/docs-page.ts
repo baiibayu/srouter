@@ -293,11 +293,11 @@ export const DOCS_HTML = `<!DOCTYPE html>
       relBox.appendChild(relP);
       root.appendChild(relBox);
 
-      // Decision System One (POST /v1/decision) Section
+      // System One Decision (POST /v1/systemone) Section
       var decBox = el('div', 'info-card');
-      decBox.appendChild(el('h2', null, 'Decision System One (POST /v1/decision)'));
+      decBox.appendChild(el('h2', null, 'System One Decision (POST /v1/systemone)'));
       var decP1 = el('p', null,
-        'The System One decision surface accepts prompt state alongside question schemas and returns low-latency classification scores (docs.typesafe.ai contract). Ideal for complexity gating, model tier selection, and agent routing decisions.'
+        'The System One decision surface accepts prompt state alongside question schemas and returns low-latency classification scores (docs.typesafe.ai contract). Ideal for direct model routing, complexity gating, and agent decisioning.'
       );
       decBox.appendChild(decP1);
 
@@ -438,20 +438,20 @@ export const DOCS_HTML = `<!DOCTYPE html>
         });
       });
 
-      // Ensure POST /v1/decision (System One) is represented under Decisions if omitted in spec
-      if (!spec.paths['/v1/decision']) {
-        if (!groups['Decisions']) {
-          groups['Decisions'] = [];
-          order.push('Decisions');
+      // Ensure POST /v1/systemone is represented under System One if omitted in spec
+      if (!spec.paths['/v1/systemone']) {
+        if (!groups['System One']) {
+          groups['System One'] = [];
+          order.push('System One');
         }
-        groups['Decisions'].unshift({
-          path: '/v1/decision',
+        groups['System One'].unshift({
+          path: '/v1/systemone',
           method: 'POST',
           op: {
-            tags: ['Decisions'],
+            tags: ['System One'],
             operationId: 'createSystemOneDecision',
             summary: 'System One decision endpoint (TypeSafe)',
-            description: 'Evaluate prompt state against choice criteria with 3-tier fallback: remote Jev host -> chat-judge (via decision_chat_judge_order) -> local heuristic fail-open.',
+            description: 'Evaluate prompt state against choice criteria or score with dynamic decision models and local heuristic fail-open.',
             requestBody: {
               required: true,
               content: {

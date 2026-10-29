@@ -28,7 +28,6 @@ import { Tooltip } from '@/components/tooltip'
 import { SUPPORTED_LOCALES, type Locale, useI18n } from '@/i18n'
 import { type Theme, useTheme } from '@/theme-context'
 import { apiFetch } from '@/lib/api'
-import { ComplexityGateRow } from '@/components/tools-config'
 
 // Small info affordance used next to labels a first-time user can't be expected
 // to understand. It's a real <button> so it reaches the tooltip by keyboard
@@ -598,7 +597,7 @@ function SyncScheduleRow() {
     />
   )
 }
-function GeneralSection({ active }: { active: boolean }) {
+function GeneralSection() {
   const { t } = useI18n()
   const { theme, setTheme } = useTheme()
 
@@ -626,10 +625,6 @@ function GeneralSection({ active }: { active: boolean }) {
         )}
       />
       <SyncScheduleRow />
-      {/* System One (Jev-B complexity gate): the one agent-facing switch that
-          belongs in Settings — the rest of the tooling surface lives on the
-          Models tabs and the Keys page. */}
-      <ComplexityGateRow active={active} />
     </>
   )
 }
@@ -692,7 +687,7 @@ export function SettingsDialog({
 
           {/* min-height keeps the popup from resizing as sections are switched. */}
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:min-h-[27rem] sm:px-6 sm:py-6">
-            {section === 'general' && <GeneralSection active={open} />}
+            {section === 'general' && <GeneralSection />}
             {loading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />

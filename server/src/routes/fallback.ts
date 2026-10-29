@@ -54,7 +54,7 @@ fallbackRouter.delete('/penalty-inspector', (_req: Request, res: Response) => {
 });
 
 const routingSchema = z.object({
-  strategy: z.enum(['priority', 'balanced', 'smartest', 'fastest', 'reliable', 'custom']),
+  strategy: z.enum(['priority', 'balanced', 'smartest', 'fastest', 'reliable', 'custom', 'systemone']),
   // Only meaningful with strategy 'custom': the user's weight vector. Any
   // non-negative vector is accepted; setCustomWeights renormalizes to sum 1.
   weights: z.object({

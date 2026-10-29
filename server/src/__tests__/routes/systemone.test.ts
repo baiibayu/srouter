@@ -7,9 +7,8 @@ import { clearAllCooldowns } from '../../services/ratelimit.js';
 import { mintDashboardToken } from '../helpers/auth.js';
 import { seedDecisionModels } from '../helpers/decision-models.js';
 
-// HTTP surface of decision models: POST /v1/decisions (and the /v1/systemone
-// alias) and GET /v1/decisions/models for API callers, /api/decisions/* for the
-// dashboard's Models → Decision page.
+// HTTP surface of System One models: POST /v1/systemone and GET /v1/systemone/models
+// for API callers, /api/systemone/* for the dashboard Models → System One page.
 
 const realFetch = globalThis.fetch;
 let dashToken = '';
@@ -47,7 +46,7 @@ const BODY = {
   questions: { tier: { type: 'choice', instructions: 'Which tier?', criteria: { light: 'chat', code: 'coding' } } },
 };
 
-describe('decision routes', () => {
+describe('systemone routes', () => {
   let app: Express;
 
   beforeEach(() => {
@@ -58,61 +57,58 @@ describe('decision routes', () => {
     app = createApp();
     dashToken = mintDashboardToken();
     addKey('cloudflare', 'acct:tok');
-    globalThis.fetch = vi.fn(() => Promise.resolve(new Response(
-      JSON.stringify({ success: true, result: { answers: ANSWERS, usage: { input_tokens: 42, output_tokens: 0 } } }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    ))) as unknown as typeof fetch;
+
+    globalThis.fetch = vi.fn().mockImplementation(async () => ({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ success: true, result: { answers: ANSWERS, usage: { input_tokens: 10, output_tokens: 2 } } }),
+      text: async () => '',
+    })) as any;
   });
 
   afterEach(() => {
     globalThis.fetch = realFetch;
-    vi.restoreAllMocks();
   });
 
-  it('POST /v1/decisions needs the unified key', async () => {
-    const res = await call(app, 'POST', '/v1/decisions', { body: BODY, auth: null });
-    expect(res.status).toBe(401);
-  });
-
-  it('POST /v1/decisions returns the answers and the model that served them', async () => {
-    const res = await call(app, 'POST', '/v1/decisions', { body: BODY });
+  it('runs POST /v1/systemone with an API key', async () => {
+    const res = await call(app, 'POST', '/v1/systemone', { body: BODY });
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      object: 'decision',
+    expect(res.body).toMatchObject({
       model: '@cf/cloudflare/clef-flash',
       provider: 'cloudflare',
       answers: ANSWERS,
-      usage: { input_tokens: 42, output_tokens: 0 },
     });
   });
 
-  it('POST /v1/systemone is an alias', async () => {
-    const res = await call(app, 'POST', '/v1/systemone', { body: BODY });
-    expect(res.status).toBe(200);
-    expect(res.body.answers).toEqual(ANSWERS);
+  it('rejects POST /v1/systemone without an API key', async () => {
+    const res = await call(app, 'POST', '/v1/systemone', { body: BODY, auth: null });
+    expect(res.status).toBe(401);
   });
 
-  it('validates the body', async () => {
-    const noState = await call(app, 'POST', '/v1/decisions', { body: { questions: BODY.questions } });
-    expect(noState.status).toBe(400);
-    const badType = await call(app, 'POST', '/v1/decisions', {
-      body: { state: 'x', questions: { q: { type: 'essay', instructions: 'write' } } },
+  it('GET /v1/systemone/models lists models without leaking keys', async () => {
+    const res = await call(app, 'GET', '/v1/systemone/models');
+    expect(res.status).toBe(200);
+    expect(res.body.object).toBe('list');
+    expect(res.body.data).toHaveLength(3);
+    expect(res.body.data[0]).toMatchObject({
+      id: '@cf/cloudflare/clef-flash',
+      provider: 'cloudflare',
+      available: true,
     });
-    expect(badType.status).toBe(400);
-    const noQuestions = await call(app, 'POST', '/v1/decisions', { body: { state: 'x', questions: {} } });
-    expect(noQuestions.status).toBe(400);
+    expect(res.body.data[1]).toMatchObject({
+      id: 'inception/mercury-decide:free',
+      provider: 'openrouter',
+      available: false,
+    });
+    expect(res.body.data[2]).toMatchObject({
+      id: 'typesafe/jev-1.13',
+      provider: 'typesafe',
+      available: false,
+    });
   });
 
-  it('GET /v1/decisions/models lists the enabled models and whether a key exists', async () => {
-    const res = await call(app, 'GET', '/v1/decisions/models');
-    expect(res.status).toBe(200);
-    expect(res.body.data).toEqual([
-      { id: '@cf/cloudflare/clef-flash', object: 'decision_model', provider: 'cloudflare', name: 'Clef Flash', context_window: 24576, available: true },
-      { id: 'inception/mercury-decide:free', object: 'decision_model', provider: 'openrouter', name: 'Mercury Decide (free)', context_window: 65536, available: false },
-    ]);
-  });
-
-  it('decision models never show up in the chat model list', async () => {
+  it('decision models are NOT listed in GET /v1/models (stay separate from chat)', async () => {
     const res = await call(app, 'GET', '/v1/models');
     expect(res.status).toBe(200);
     const ids = (res.body.data as Array<{ id: string }>).map(m => m.id);
@@ -120,16 +116,16 @@ describe('decision routes', () => {
     expect(ids).not.toContain('inception/mercury-decide:free');
   });
 
-  it('dashboard lists, toggles and tries decision models', async () => {
-    const list = await call(app, 'GET', '/api/decisions/models');
+  it('dashboard lists, toggles and tries System One models', async () => {
+    const list = await call(app, 'GET', '/api/systemone/models');
     expect(list.status).toBe(200);
-    expect(list.body).toHaveLength(2);
+    expect(list.body).toHaveLength(3);
     const id = list.body[1].id;
-    const patched = await call(app, 'PATCH', `/api/decisions/models/${id}`, { body: { enabled: false } });
+    const patched = await call(app, 'PATCH', `/api/systemone/models/${id}`, { body: { enabled: false } });
     expect(patched.status).toBe(200);
     expect(patched.body.enabled).toBe(false);
 
-    const tried = await call(app, 'POST', '/api/decisions/try', {
+    const tried = await call(app, 'POST', '/api/systemone/try', {
       body: { state: 'my react effect runs twice', question: 'Which tier?', options: ['light', 'code'] },
     });
     expect(tried.status).toBe(200);
@@ -139,7 +135,7 @@ describe('decision routes', () => {
   });
 
   it('dashboard routes need the dashboard session', async () => {
-    const res = await call(app, 'GET', '/api/decisions/models', { auth: null });
+    const res = await call(app, 'GET', '/api/systemone/models', { auth: null });
     expect(res.status).toBe(401);
   });
 });

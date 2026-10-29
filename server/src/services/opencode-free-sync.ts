@@ -141,7 +141,12 @@ interface UpstreamModel {
   owned_by?: string;
 }
 
-async function fetchFreeModels(): Promise<UpstreamModel[]> {
+interface FetchedFreeResult {
+  chatModels: UpstreamModel[];
+  decisionModels: UpstreamModel[];
+}
+
+async function fetchFreeModels(): Promise<FetchedFreeResult> {
   const res = await fetch(`${UPSTREAM_BASE}/models`, {
     method: 'GET',
     headers: identityHeaders(),
@@ -154,7 +159,10 @@ async function fetchFreeModels(): Promise<UpstreamModel[]> {
 
   const body = await res.json() as { data?: UpstreamModel[] };
   const all = body.data ?? [];
-  return all.filter((m) => isFreeModel(m.id));
+  return {
+    chatModels: all.filter((m) => isFreeModel(m.id)),
+    decisionModels: all.filter((m) => m.id.startsWith('jev-') && m.id.endsWith(FREE_SUFFIX)),
+  };
 }
 
 // ── Sync logic ─────────────────────────────────────────────────────────────
@@ -183,15 +191,16 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
     models: [],
   };
 
-  let freeModels: UpstreamModel[];
+  let fetched: FetchedFreeResult;
   try {
-    freeModels = await fetchFreeModels();
+    fetched = await fetchFreeModels();
   } catch (err: any) {
     result.error = err?.message ?? String(err);
     console.error(`[opencode-free-sync] fetch failed: ${result.error}`);
     return result;
   }
 
+  const freeModels = fetched.chatModels;
   result.total = freeModels.length;
   if (freeModels.length === 0) {
     console.log('[opencode-free-sync] upstream returned 0 free models — skipping');
@@ -298,6 +307,26 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
         deleteFb.run(m.id);
         deleteModel.run(m.id);
         result.retired++;
+      }
+    }
+
+    // Sync free decision models (Jev) into media_models (modality = 'decision')
+    const insertMediaDecision = db.prepare(`
+      INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+      VALUES (?, ?, ?, 'decision', ?, 1, 'Keyless Zen Free', '{"contextWindow":32768}')
+    `);
+    const selectMediaDecision = db.prepare(
+      'SELECT id FROM media_models WHERE platform = ? AND model_id = ? AND modality = ?'
+    );
+    for (const dm of fetched.decisionModels) {
+      const existingDm = selectMediaDecision.get(platform, dm.id, 'decision');
+      if (!existingDm) {
+        insertMediaDecision.run(
+          platform,
+          dm.id,
+          dm.id === 'jev-1.13-free' ? 'OpenCode Zen (Jev 1.13 Free)' : `OpenCode Zen (${dm.id})`,
+          1,
+        );
       }
     }
   })();

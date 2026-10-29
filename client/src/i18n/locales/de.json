@@ -423,7 +423,9 @@
     "scoreColumn": "Punktzahl",
     "minReliabilityFloor": "Minimale Zuverlässigkeitsschwelle",
     "minReliabilityFloorHint": "Nimmt ein Modell aus dem Routing, sobald seine beobachtete Erfolgsquote unter diesen Wert fällt. 0,8 bedeutet 80 %. Leer lassen zum Deaktivieren – Modelle mit zu wenig Historie bleiben immer erhalten, damit neue Modelle weiter getestet werden können. Leert niemals die gesamte Kette.",
-    "minReliabilityFloorOff": "Deaktiviert"
+    "minReliabilityFloorOff": "Deaktiviert",
+    "systemone": "System One",
+    "systemoneBlurb": "AI contextual decider: evaluates prompt complexity and routes directly to the best available model without bandit sampling."
   },
   "penaltyInspector": {
     "title": "Router-Druck",

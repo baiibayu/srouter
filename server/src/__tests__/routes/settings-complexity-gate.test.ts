@@ -40,16 +40,16 @@ describe('/api/settings/complexity-gate', () => {
     token = mintDashboardToken();
   });
 
-  it('reports the defaults (disabled, heuristic, keyless zen, no key)', async () => {
+  it('reports the defaults (disabled, heuristic, openrouter preset, no key)', async () => {
     const { status, body } = await request(app, 'GET', '/api/settings/complexity-gate', undefined, token);
     expect(status).toBe(200);
     expect(body).toEqual({
       enabled: false,
       backend: 'heuristic',
       jevBaseUrl: DEFAULT_JEV_BASE_URL,
-      jevModel: 'jev-1.13-free',
-      jevHostPreset: 'zen',
-      jevKeyless: true,
+      jevModel: 'typesafe/jev-1.13',
+      jevHostPreset: 'openrouter',
+      jevKeyless: false,
       jevTimeoutMs: DEFAULT_JEV_TIMEOUT_MS,
       hasJevApiKey: false,
       jevKeyStored: false,
@@ -65,7 +65,7 @@ describe('/api/settings/complexity-gate', () => {
 
     const clear = await request(app, 'PUT', '/api/settings/complexity-gate', { jevModel: null }, token);
     expect(clear.status).toBe(200);
-    expect(clear.body.jevModel).toBe('jev-1.13-free');
+    expect(clear.body.jevModel).toBe('typesafe/jev-1.13');
     expect(getSetting(COMPLEXITY_GATE_JEV_MODEL_KEY)).toBeUndefined();
   });
 

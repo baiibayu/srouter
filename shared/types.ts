@@ -327,6 +327,7 @@ export type Platform =
   | 'codecraft'
   // User-configured OpenAI-compatible endpoint (llama.cpp, LM Studio, vLLM,
   // Ollama, any base_url). The endpoint URL lives on the api_keys row; see #117.
+  | 'typesafe'
   | 'custom';
 
 /** Platforms whose keys serve web search (POST /v1/search and the agents'
