@@ -374,9 +374,8 @@ All gateway surfaces are unified under a single API key (`Bearer sr-xxx` or head
 | `POST` | `/v1/messages` | **Anthropic Messages** | Native Anthropic Messages format for Claude Code, Cursor (Anthropic mode), and official Anthropic SDKs. Supports `/v1/messages/count_tokens`. | `Bearer sr-xxx` or `x-api-key: sr-xxx` |
 | `POST` | `/v1/search` | **Web Search** | Unified web search with automatic failover between Parallel Search (free keyless) and configured search providers (Tavily, Exa, Firecrawl, Linkup). | `Bearer sr-xxx` |
 | `GET` | `/v1/search/engines` | **Web Search** | Lists registered search engines, quota statuses, and health availability. | `Bearer sr-xxx` |
-| `POST` | `/v1/decision` | **Decision (System One)** | Ultra-low latency TypeSafe decision classifier evaluating `state` and criterion `choice` prompts. 3-tier resolution: remote Jev host → fallback chat-judge → instant local heuristic fail-open. | `Bearer sr-xxx` |
-| `POST` | `/v1/decisions` | **Decisions** | Multiclass rubric scoring classification models (Cloudflare Clef Flash, OpenRouter Mercury Decide). | `Bearer sr-xxx` |
-| `GET` | `/v1/decisions/models` | **Decisions** | Lists available decision-scoring models registered in the catalog. | `Bearer sr-xxx` |
+| `POST` | `/v1/systemone` | **System One Decision** | Direct prompt & state evaluation with typed choice questions. Resilient multi-tier failover chain: Cloudflare (Clef Flash), OpenRouter (Mercury Decide), OpenCode Zen (Jev 1.13 Free keyless), and TypeSafe (Jev 1.13 via Keys). | `Bearer sr-xxx` |
+| `GET` | `/v1/systemone/models` | **System One Models** | Lists available decision models registered in the catalog with live provider status. | `Bearer sr-xxx` |
 | `POST` | `/v1/fetch` | **Page Fetch** | Fetches clean, reader-mode readable web page text (boilerplate HTML stripped). Automatic fallback via TinyFish Fetch and Jina Reader (keyless). | `Bearer sr-xxx` |
 | `GET` | `/v1/fetch/sources` | **Page Fetch** | Lists registered page fetch engines (`tinyfish-fetch`, `jina-reader`) and their activation states. | `Bearer sr-xxx` |
 | `GET` | `/v1/models` | **Model Discovery** | OpenAI-compatible catalog listing all active models, fallback aliases (`auto`, `auto:fast`, `auto:smart`, `auto:cheap`), and Anthropic model negotiation. | `Bearer sr-xxx` |
@@ -389,7 +388,7 @@ All gateway surfaces are unified under a single API key (`Bearer sr-xxx` or head
 | `GET` | `/v1/openapi.json` | **OpenAPI Spec** | Full OpenAPI 3.0 specification for integrations and code generators. | *Public (No Auth)* |
 
 > [!TIP]
-> - **Decision System One (`POST /v1/decision`):** 3-tier resilience: ultra-fast remote Jev evaluation (< 2000ms) → lightweight chat-judge evaluation (via `decision_chat_judge_order`) → instant local heuristic fail-open (`scoreChoice`), guaranteeing zero downtime for agents.
+> - **System One Decision (`POST /v1/systemone`):** Resilient deterministic routing and complexity evaluation. Walks healthy decision models (Cloudflare Clef Flash, OpenRouter Mercury Decide, OpenCode Zen Jev Free, TypeSafe Jev) with instant fallback, zero downtime, and dynamic key reuse from `/keys`.
 > - **Web Tools vs Providers (`Keys` $\to$ `Web Tools`):** API keys for search and page extraction (Tavily, Exa, Firecrawl, TinyFish) are managed separately from LLM model providers. Keyless engines (**Parallel Search**, **Jina Reader**) work out-of-the-box with zero configuration.
 
 ---

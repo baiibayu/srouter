@@ -1,3 +1,18 @@
+## 2026-10-29 — 0.1.31
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `d52b053` | 2026-10-29 | feat(system-one): unify architecture under v1/systemone, enable OpenCode Zen jev-1.13-free discovery, sync routing strategy, and add TypeSafe keys. |
+| `d52b053` | 2026-10-29 | fix(system-one): eliminate legacy duplicate Complexity Gate switch from Settings dialog, avoiding dual-toggle confusion. |
+| `d52b053` | 2026-10-29 | fix(opencode-free): discover and route jev-1.13-free to System One decision models, filtering out paid jev-1.13 (401 auth error). |
+| `d52b053` | 2026-10-29 | fix(decision): upgrade OpenCode Free decision adapter to use native /systemone protocol instead of unsupported /chat/completions (400 protocol error). |
+| `d52b053` | 2026-10-29 | fix(system-one): implement instant 0ms optimistic React Query synchronization between /routing strategy and /models/system-one master switch. |
+| `d0a1245` | 2026-10-29 | feat(web-tools): gateway-side argument sanitization, GET search/fetch routes, and live routing & metrics integration. |
+| `be5b4ed` | 2026-10-29 | chore(i18n): harmonize search endpoint descriptions to POST /v1/search and POST /v1/fetch across all 60 locales. |
+| `4e6642c` | 2026-10-29 | perf(agents): instant PATH-indexed agent detection and query caching without checking transition. |
+| `0e9d9ab` | 2026-10-29 | feat(agents): support web_fetch tool across Anthropic messages, Responses, and MCP. |
+| `69a9d83` | 2026-10-29 | fix(lint): remove unused variables to pass CI lint gate. |
+
 ## 2026-10-28 — 0.1.30
 
 | Commit | Date | Summary |

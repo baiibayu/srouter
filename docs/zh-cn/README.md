@@ -48,7 +48,7 @@
   - OpenAI 聊天补全 (`/v1/chat/completions`)
   - Anthropic Messages API (`/v1/messages`)
   - Google Gemini 原生 API (`/v1beta/models/*:generateContent`)
-  - 决策分类 System One (`/v1/decision`)
+  - 决策分类 System One (`/v1/systemone`)
   - 统一网页搜索与抓取 (`/v1/search`, `/v1/fetch`)
   - Ollama 模拟接口 (`/api/chat`, `/api/tags`)
   - 文本向量嵌入 (`/v1/embeddings`) 与多模态生成
