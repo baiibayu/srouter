@@ -1,4 +1,4 @@
-import { getDb } from '../db/index.js';
+import { getDb, getSetting, setSetting } from '../db/index.js';
 import { parseRetryAfterMs } from '../providers/base.js';
 import { RetryHintTracker } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
@@ -27,6 +27,7 @@ import { isOnCooldown, setCooldown } from './ratelimit.js';
 // and the chain moves on. Every attempt is logged to decision_requests.
 
 export const DECISION_MODALITY = 'decision';
+export const SYSTEMONE_DEFAULT_SETTING = 'systemone_default_model';
 
 const FETCH_TIMEOUT_MS = 30_000;
 const RATE_LIMIT_COOLDOWN_MS = 60_000;
@@ -293,7 +294,17 @@ export function decisionsAvailable(): boolean {
 
 function decisionChain(model: string | undefined): DecisionModelRow[] {
   const enabled = allDecisionRows().filter(r => r.enabled === 1 && ADAPTERS[r.platform]);
-  if (!model || model === 'auto') return enabled;
+  if (!model || model === 'auto') {
+    const defaultModelId = getSetting(SYSTEMONE_DEFAULT_SETTING) ?? null;
+    if (defaultModelId) {
+      const defaultIdx = enabled.findIndex(r => r.model_id === defaultModelId);
+      if (defaultIdx > 0) {
+        const [def] = enabled.splice(defaultIdx, 1);
+        enabled.unshift(def);
+      }
+    }
+    return enabled;
+  }
   const pinned = enabled.filter(r => r.model_id === model);
   if (pinned.length === 0) {
     const known = allDecisionRows().some(r => r.model_id === model);
@@ -395,6 +406,7 @@ export interface DecisionModelView {
   displayName: string;
   priority: number;
   enabled: boolean;
+  isDefault: boolean;
   quotaLabel: string;
   contextWindow: number | null;
   keyCount: number;
@@ -417,6 +429,7 @@ export function listDecisionModels(): DecisionModelView[] {
        GROUP BY platform, model_id
     `).all() as { platform: string; model_id: string; n: number }[]).map(r => [`${r.platform}:${r.model_id}`, r.n]),
   );
+  const defaultModelId = getSetting(SYSTEMONE_DEFAULT_SETTING) ?? null;
   return allDecisionRows().map(row => {
     const meta = parseMeta(row.meta_json);
     const keys = keyRows.filter(k => k.platform === row.platform);
@@ -427,6 +440,7 @@ export function listDecisionModels(): DecisionModelView[] {
       displayName: row.display_name,
       priority: row.priority,
       enabled: row.enabled === 1,
+      isDefault: row.model_id === defaultModelId,
       quotaLabel: row.quota_label,
       contextWindow: typeof meta.contextWindow === 'number' ? meta.contextWindow : null,
       keyCount: keys.length,
@@ -442,4 +456,35 @@ export function setDecisionModelEnabled(id: number, enabled: boolean): boolean {
     .prepare('UPDATE media_models SET enabled = ? WHERE id = ? AND modality = ?')
     .run(enabled ? 1 : 0, id, DECISION_MODALITY);
   return info.changes > 0;
+}
+
+/** Returns the model_id of the user-chosen default decision model, or null. */
+export function getDecisionDefaultModelId(): string | null {
+  return getSetting(SYSTEMONE_DEFAULT_SETTING) ?? null;
+}
+
+/**
+ * Set model `id` as the default decision model (tried first in auto mode).
+ * Returns false if the id is not a decision model row.
+ */
+export function setDecisionModelDefault(id: number): boolean {
+  const row = getDb()
+    .prepare('SELECT model_id FROM media_models WHERE id = ? AND modality = ?')
+    .get(id, DECISION_MODALITY) as { model_id: string } | undefined;
+  if (!row) return false;
+  setSetting(SYSTEMONE_DEFAULT_SETTING, row.model_id);
+  return true;
+}
+
+export function decisionAnalytics(): { total: number; today: number } {
+  const db = getDb();
+  const total = (db.prepare(`
+    SELECT COUNT(*) AS n FROM decision_requests
+     WHERE status = 'ok' AND created_at >= datetime('now', 'start of month')
+  `).get() as { n: number }).n;
+  const today = (db.prepare(`
+    SELECT COUNT(*) AS n FROM decision_requests
+     WHERE status = 'ok' AND created_at >= datetime('now', 'start of day')
+  `).get() as { n: number }).n;
+  return { total, today };
 }

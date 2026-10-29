@@ -16,7 +16,7 @@ vi.mock('@/lib/api', () => ({ apiFetch: vi.fn() }))
 
 const model = (over: Partial<DecisionModel>): DecisionModel => ({
   id: 1, platform: 'cloudflare', modelId: '@cf/cloudflare/clef-flash', displayName: 'Clef Flash', priority: 0,
-  enabled: true, quotaLabel: 'Workers AI free daily neurons', contextWindow: 24576,
+  enabled: true, isDefault: false, quotaLabel: 'Workers AI free daily neurons', contextWindow: 24576,
   keyCount: 1, healthyKeyCount: 1, decisionsThisMonth: 4, ...over,
 })
 

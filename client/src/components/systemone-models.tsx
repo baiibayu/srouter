@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EmptyState } from '@/components/empty-state'
 import { CardSkeleton } from '@/components/ui/skeleton'
 import { CodeBlock } from '@/components/code-block'
+import { UsageSummaryCard } from '@/components/usage-summary-card'
 import { useI18n } from '@/i18n'
 import {
   decisionExampleCurl,
@@ -25,19 +26,46 @@ const AUTO = 'auto'
 // One model from the catalog's System One section.
 export function SystemOneModelCard({
   model: m,
+  position,
+  isDefault,
   onToggle,
+  onMakeDefault,
   pending,
 }: {
   model: DecisionModel
+  position: number | null
+  isDefault: boolean
   onToggle: (enabled: boolean) => void
+  onMakeDefault: () => void
   pending: boolean
 }) {
   const { t } = useI18n()
   return (
     <section className={`rounded-3xl border bg-card p-5 ${m.enabled ? '' : 'opacity-60'}`}>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="font-mono text-sm font-medium">{m.modelId}</span>
+        {isDefault ? (
+          <span className="text-xs text-muted-foreground">{t('decision.default')}</span>
+        ) : m.enabled && (
+          <button
+            type="button"
+            onClick={onMakeDefault}
+            disabled={pending}
+            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-50"
+          >
+            {t('decision.makeDefault')}
+          </button>
+        )}
+        <span className="flex-1" />
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {t('decision.thisMonth', { count: m.decisionsThisMonth })}
+        </span>
+      </div>
+
       <div className="flex items-center gap-3">
+        <span className="w-4 text-center text-xs text-muted-foreground tabular-nums">{position ?? '–'}</span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{m.displayName}</span>
             {m.keyCount === 0 && (
               <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-amber-600/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400">
@@ -45,14 +73,10 @@ export function SystemOneModelCard({
               </span>
             )}
           </div>
-          <div className="truncate font-mono text-[11px] text-muted-foreground">{m.modelId}</div>
           <div className="truncate text-[11px] text-muted-foreground">
             {[m.platform, m.quotaLabel].filter(Boolean).join(' · ')}
           </div>
         </div>
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {t('decision.thisMonth', { count: m.decisionsThisMonth })}
-        </span>
         <Switch checked={m.enabled} onCheckedChange={onToggle} disabled={pending} aria-label={m.displayName} />
       </div>
     </section>
@@ -62,6 +86,7 @@ export function SystemOneModelCard({
 // "Try it": one choice question over the typed text, run through POST /v1/systemone.
 export function TrySystemOne({ models }: { models: DecisionModel[] }) {
   const { t } = useI18n()
+  const queryClient = useQueryClient()
   const [text, setText] = useState('')
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState('')
@@ -82,6 +107,10 @@ export function TrySystemOne({ models }: { models: DecisionModel[] }) {
       })
       setLatency(Math.round(performance.now() - started))
       return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemone-models'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'systemone'] })
     },
   })
 
@@ -180,7 +209,7 @@ export function TrySystemOne({ models }: { models: DecisionModel[] }) {
   )
 }
 
-// System One Models view with "Try it" tester.
+// System One Models view with "Try it" tester & Monthly Usage summary.
 export function SystemOneModelsView() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
@@ -191,13 +220,44 @@ export function SystemOneModelsView() {
     refetchInterval: 30_000,
   })
 
+  const { data: analytics } = useQuery<{ total: number; today: number }>({
+    queryKey: ['analytics', 'systemone'],
+    queryFn: () => apiFetch('/api/systemone/analytics'),
+    refetchInterval: 30_000,
+  })
+
   const update = useMutation({
     mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
       apiFetch(`/api/systemone/models/${id}`, { method: 'PATCH', body: JSON.stringify({ enabled }) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['systemone-models'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemone-models'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'systemone'] })
+    },
   })
 
-  const ordered = models.slice().sort((a, b) => a.priority - b.priority || a.id - b.id)
+  const setDefault = useMutation({
+    mutationFn: (id: number) =>
+      apiFetch(`/api/systemone/models/${id}/set-default`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemone-models'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'systemone'] })
+    },
+  })
+
+  const enabled = models.filter(m => m.enabled)
+  const defaultModel = enabled.find(m => m.isDefault)
+  const chain = defaultModel
+    ? [defaultModel, ...enabled.filter(m => m.id !== defaultModel.id).sort((a, b) => a.priority - b.priority || a.id - b.id)]
+    : enabled.slice().sort((a, b) => a.priority - b.priority || a.id - b.id)
+  const positions = new Map(chain.map((m, i) => [m.id, i + 1]))
+
+  const ordered = models.slice().sort((a, b) => {
+    // Default always shown first, then by priority, then id
+    if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1
+    return a.priority - b.priority || a.id - b.id
+  })
+
+  const total = models.reduce((n, m) => n + m.decisionsThisMonth, 0)
 
   return (
     <div className="space-y-4">
@@ -206,6 +266,21 @@ export function SystemOneModelsView() {
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">POST /v1/systemone</code>{' '}
         {t('decision.notRoutingHint')}
       </p>
+
+      {models.length > 0 && (
+        <UsageSummaryCard
+          unit="requests"
+          total={total}
+          requestsToday={analytics?.today ?? 0}
+          rows={ordered.map(m => ({
+            label: m.displayName,
+            platform: m.platform,
+            quotaLabel: m.quotaLabel,
+            amount: m.decisionsThisMonth,
+            requestsToday: 0,
+          }))}
+        />
+      )}
 
       {isLoading ? (
         <>
@@ -220,8 +295,11 @@ export function SystemOneModelsView() {
             <SystemOneModelCard
               key={m.id}
               model={m}
+              position={positions.get(m.id) ?? null}
+              isDefault={m.isDefault}
               onToggle={enabled => update.mutate({ id: m.id, enabled })}
-              pending={update.isPending}
+              onMakeDefault={() => setDefault.mutate(m.id)}
+              pending={update.isPending || setDefault.isPending}
             />
           ))}
           <TrySystemOne models={ordered} />

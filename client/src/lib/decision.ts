@@ -7,6 +7,7 @@ export interface DecisionModel {
   displayName: string
   priority: number
   enabled: boolean
+  isDefault: boolean
   quotaLabel: string
   contextWindow: number | null
   keyCount: number

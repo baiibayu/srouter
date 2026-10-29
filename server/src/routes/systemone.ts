@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { listDecisionModels, runDecision, setDecisionModelEnabled, DecisionError } from '../services/decision.js';
+import { listDecisionModels, runDecision, setDecisionModelEnabled, setDecisionModelDefault, decisionAnalytics, DecisionError } from '../services/decision.js';
 
 // Dashboard: the Models → System One page. Models come from the catalog's
 // System One registry; this lists them with key and usage counts, lets the
@@ -10,6 +10,10 @@ export const systemoneRouter = Router();
 
 systemoneRouter.get('/models', (_req: Request, res: Response) => {
   res.json(listDecisionModels());
+});
+
+systemoneRouter.get('/analytics', (_req: Request, res: Response) => {
+  res.json(decisionAnalytics());
 });
 
 const patchSchema = z.object({ enabled: z.boolean() });
@@ -30,6 +34,20 @@ systemoneRouter.patch('/models/:id', (req: Request, res: Response) => {
     return;
   }
   res.json(listDecisionModels().find(m => m.id === id));
+});
+
+// Set a model as the default (tried first in auto mode).
+systemoneRouter.post('/models/:id/set-default', (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: { message: 'Invalid model id' } });
+    return;
+  }
+  if (!setDecisionModelDefault(id)) {
+    res.status(404).json({ error: { message: 'System One model not found' } });
+    return;
+  }
+  res.json({ ok: true, models: listDecisionModels() });
 });
 
 // "Try it" on the page: one choice question over the text the user typed.
