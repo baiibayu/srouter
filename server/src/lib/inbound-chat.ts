@@ -46,6 +46,8 @@ import { sanitizeProviderErrorMessage } from './error-redaction.js';
 import { newClientAbortError, isUpstreamClassificationOutput } from './error-classify.js';
 import { logRequest } from './request-log.js';
 import { getStickyModel, setStickyModel } from '../routes/proxy.js';
+import { breakLoop } from '../services/loop-breaker.js';
+import { classifyClientAgent } from './client-classifier.js';
 import type { CompletionOptions } from '../providers/base.js';
 
 export interface InboundChatRequest {
@@ -56,6 +58,8 @@ export interface InboundChatRequest {
   temperature?: number;
   topP?: number;
   stop?: string | string[];
+  frequencyPenalty?: number;
+  presencePenalty?: number;
   tools?: ChatToolDefinition[];
   toolChoice?: ChatToolChoice;
   parallelToolCalls?: boolean;
@@ -100,12 +104,12 @@ interface ResolvedPin {
   pinnedLabel: string | null;
 }
 
-function resolvePin(model: string | undefined, messages: ChatMessage[], sessionId?: string): ResolvedPin {
+function resolvePin(model: string | undefined, messages: ChatMessage[], sessionId?: string, escalateModel?: boolean): ResolvedPin {
   const requested = model?.trim();
   const auto = !requested || requested.toLowerCase() === 'auto' || requested.toLowerCase().startsWith('auto:');
   if (auto) {
     return {
-      preferredModel: resolveStickyPreference(getStickyModel(messages, sessionId)),
+      preferredModel: resolveStickyPreference(escalateModel ? undefined : getStickyModel(messages, sessionId)),
       pinnedLabel: null,
     };
   }
@@ -123,7 +127,7 @@ function resolvePin(model: string | undefined, messages: ChatMessage[], sessionI
       err.code = 'no_providers_configured';
       throw err;
     }
-    const sticky = getStickyModel(messages, sessionId, requested);
+    const sticky = escalateModel ? undefined : getStickyModel(messages, sessionId, requested);
     return {
       preferredModel: sticky != null && strictChain.some(row => row.model_db_id === sticky)
         ? sticky
@@ -182,15 +186,41 @@ export async function runInboundChat(
   const maxTokens = input.maxTokens
     ?? (budget.maxTokens != null ? Math.min(1024, budget.maxTokens) : 1024);
 
+  const clientAgent = classifyClientAgent(req);
+  const loopBreaker = breakLoop({
+    messages: input.messages,
+    temperature: input.temperature,
+    frequency_penalty: input.frequencyPenalty,
+    presence_penalty: input.presencePenalty,
+    clientAgent,
+  });
+
+  if (loopBreaker.detected) {
+    const esc = loopBreaker.escalateModel ? ';escalated=true' : '';
+    res.setHeader('X-SRouter-Loop-Breaker', `detected=${loopBreaker.kind};count=${loopBreaker.repetitionCount};target=${encodeURIComponent(loopBreaker.targetName ?? '')}${esc}`);
+  }
+
+  const effectiveTemperature = loopBreaker.detected ? loopBreaker.temperature : input.temperature;
+  const effectiveFrequencyPenalty = loopBreaker.detected ? loopBreaker.frequency_penalty : input.frequencyPenalty;
+  const effectivePresencePenalty = loopBreaker.detected ? loopBreaker.presence_penalty : input.presencePenalty;
+  const outboundMessages = loopBreaker.detected ? loopBreaker.messages : input.messages;
+
   let pin: ResolvedPin;
   try {
-    pin = resolvePin(input.model, input.messages, input.sessionId);
+    pin = resolvePin(input.model, input.messages, input.sessionId, loopBreaker.escalateModel);
   } catch (error: any) {
     wire.sendError(res, error.status ?? 404, error.message, error.code ?? 'model_not_found');
     return;
   }
 
   const state = newFallbackState();
+  if (loopBreaker.escalateModel) {
+    const stickyId = getStickyModel(input.messages, input.sessionId, pin.pinnedLabel ?? undefined);
+    if (stickyId != null) {
+      state.skipModels.add(stickyId);
+      console.warn(`[LoopBreaker] Escalating model on inbound-chat (${input.endpoint}): skipped stuck model ${stickyId} to fail over to smarter candidate.`);
+    }
+  }
   const attemptLog: AttemptRecord[] = [];
   const wantsTools = (input.tools?.length ?? 0) > 0;
   // Lets the failover loop learn which models reject tool calls (#1230).
@@ -212,10 +242,12 @@ export async function runInboundChat(
   });
 
   const options: CompletionOptions = {
-    temperature: input.temperature,
+    temperature: effectiveTemperature,
     max_tokens: maxTokens,
     top_p: input.topP,
     top_k: input.topK,
+    frequency_penalty: effectiveFrequencyPenalty,
+    presence_penalty: effectivePresencePenalty,
     stop: input.stop,
     tools: input.tools,
     tool_choice: input.toolChoice,
@@ -253,7 +285,7 @@ export async function runInboundChat(
       if (!input.stream) {
         const result = await route.provider.chatCompletion(
           route.apiKey,
-          input.messages,
+          outboundMessages,
           route.modelId,
           { ...options, contextBudget: routeOutputBudget(route, estimatedInputTokens) },
         );
@@ -380,7 +412,7 @@ export async function runInboundChat(
       try {
         const stream = route.provider.streamChatCompletion(
           route.apiKey,
-          input.messages,
+          outboundMessages,
           route.modelId,
           { ...options, contextBudget: routeOutputBudget(route, estimatedInputTokens) },
         );

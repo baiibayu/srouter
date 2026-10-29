@@ -39,6 +39,8 @@ import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
 import { isClientAbortError, newClientAbortError, newHedgeAbortError } from '../lib/error-classify.js';
 import { inferQuotaPoolKey, type QuotaObservationContext } from '../services/provider-quota.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
+import { breakLoop } from '../services/loop-breaker.js';
+import { classifyClientAgent } from '../lib/client-classifier.js';
 import { maybeServeResponsesWebSearch, webSearchCallToText } from '../lib/responses-web-search.js';
 import { webFetchCallToText } from '../lib/web-fetch-tool.js';
 import {
@@ -823,6 +825,25 @@ export async function handleResponses(req: Request, res: Response): Promise<void
     return;
   }
   completionOpts.max_tokens = budgetCheck.maxTokens;
+
+  const clientAgent = classifyClientAgent(req);
+  const loopBreaker = breakLoop({
+    messages,
+    temperature: reqData.temperature ?? undefined,
+    frequency_penalty: samplingParams.frequency_penalty,
+    presence_penalty: samplingParams.presence_penalty,
+    clientAgent,
+  });
+
+  if (loopBreaker.detected) {
+    const esc = loopBreaker.escalateModel ? ';escalated=true' : '';
+    res.setHeader('X-SRouter-Loop-Breaker', `detected=${loopBreaker.kind};count=${loopBreaker.repetitionCount};target=${encodeURIComponent(loopBreaker.targetName ?? '')}${esc}`);
+  }
+
+  const effectiveTemperature = loopBreaker.detected ? loopBreaker.temperature : (reqData.temperature ?? undefined);
+  const effectiveFrequencyPenalty = loopBreaker.detected ? loopBreaker.frequency_penalty : samplingParams.frequency_penalty;
+  const effectivePresencePenalty = loopBreaker.detected ? loopBreaker.presence_penalty : samplingParams.presence_penalty;
+
   // Optional client-managed session affinity (mirrors /chat/completions).
   const rawSessionId = req.headers['x-codex-session-id']
     ?? req.headers['session-id']
@@ -855,8 +876,11 @@ export async function handleResponses(req: Request, res: Response): Promise<void
       throw err;
     }
     stickyStrategyKey = resolvedChain.strategyKey === 'auto' ? undefined : resolvedChain.strategyKey;
+    const stickyId = loopBreaker.escalateModel
+      ? undefined
+      : getStickyModel(messages, sessionIdHeader, stickyStrategyKey);
     preferredModel = resolveStickyPreference(
-      getStickyModel(messages, sessionIdHeader, stickyStrategyKey),
+      stickyId,
       resolvedChain.chain,
     );
   } else if (isFusionModel(requestedModelLabel)) {
@@ -923,6 +947,14 @@ export async function handleResponses(req: Request, res: Response): Promise<void
   const state = newFallbackState();
   // Lets the failover loop learn which models reject tool calls (#1230).
   state.wantsTools = wantsTools;
+  if (loopBreaker.escalateModel) {
+    const stickyId = getStickyModel(messages, sessionIdHeader, stickyStrategyKey);
+    if (stickyId != null) {
+      state.skipModels.add(stickyId);
+      console.warn(`[LoopBreaker] Escalating model on /v1/responses: skipped stuck model ${stickyId} to fail over to smarter candidate.`);
+    }
+  }
+  const outboundMessages = loopBreaker.detected ? loopBreaker.messages : messages;
   const attemptLog: AttemptRecord[] = [];
   // Client-disconnect fan-out: the flag stops the loop before the NEXT
   // attempt; the AbortController (threaded to the provider as
@@ -942,7 +974,13 @@ export async function handleResponses(req: Request, res: Response): Promise<void
       clientAbort.abort(newClientAbortError());
     }
   });
-  const dispatchOpts = { ...completionOpts, signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]) };
+  const dispatchOpts = {
+    ...completionOpts,
+    temperature: effectiveTemperature,
+    frequency_penalty: effectiveFrequencyPenalty,
+    presence_penalty: effectivePresencePenalty,
+    signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]),
+  };
 
   // ── Fusion: Responses-API virtual model ────────────────────────────────
   // `fusion` is intentionally not a catalog row. The chat route handles this
@@ -956,7 +994,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
     if (!stream) {
       try {
         const result = await runFusion({
-          messages,
+          messages: outboundMessages,
           config: fusionConfig,
           options: fusionOptions,
           estimatedTokens: estimatedTotal,
@@ -1056,7 +1094,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
 
     try {
       const result = await runFusion({
-        messages,
+        messages: outboundMessages,
         config: fusionConfig,
         options: fusionOptions,
         estimatedTokens: estimatedTotal,
@@ -1335,7 +1373,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
         try {
           const gen = route.provider.streamChatCompletion(
             route.apiKey,
-            messages,
+            outboundMessages,
             route.modelId,
             routeOpts,
             quotaContextForRoute(route, 'responses'),
@@ -1623,7 +1661,7 @@ export async function handleResponses(req: Request, res: Response): Promise<void
 
       const result = await route.provider.chatCompletion(
         route.apiKey,
-        messages,
+        outboundMessages,
         route.modelId,
         routeOpts,
         quotaContextForRoute(route, 'responses'),
