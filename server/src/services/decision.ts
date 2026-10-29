@@ -1,6 +1,5 @@
 import { getDb } from '../db/index.js';
 import { parseRetryAfterMs } from '../providers/base.js';
-import { getProvider } from '../providers/index.js';
 import { RetryHintTracker } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
 import { proxyFetch } from '../lib/proxy.js';
