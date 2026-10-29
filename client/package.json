@@ -1,7 +1,7 @@
 {
   "name": "@baiibayu/srouter-client",
   "private": true,
-  "version": "0.1.31",
+  "version": "0.1.43",
   "type": "module",
   "scripts": {
     "dev": "vite",

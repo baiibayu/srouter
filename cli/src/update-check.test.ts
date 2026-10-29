@@ -28,7 +28,7 @@ afterEach(() => {
 
 describe('parseSemver', () => {
   it('accepts the shapes npm serves and drops junk', () => {
-    expect(parseSemver('0.1.31')).toMatchObject({ major: 0, minor: 1, patch: 31, prerelease: [] });
+    expect(parseSemver('0.1.43')).toMatchObject({ major: 0, minor: 1, patch: 43, prerelease: [] });
     expect(parseSemver('v1.2.3')).toMatchObject({ major: 1, minor: 2, patch: 3 });
     expect(parseSemver('1.0.0-rc.1+build.9')?.prerelease).toEqual(['rc', '1']);
     expect(parseSemver('1.0.0+build.9')).toMatchObject({ prerelease: [] });
@@ -43,9 +43,9 @@ describe('isNewer — semver precedence', () => {
   it('orders by major.minor.patch, jump versions included', () => {
     expect(isNewer('0.2.0', '0.1.9')).toBe(true);
     expect(isNewer('1.0.0', '0.9.9')).toBe(true);
-    expect(isNewer('0.1.31', '0.1.31')).toBe(false);
-    expect(isNewer('0.1.2', '0.1.31')).toBe(false);
-    expect(isNewer('v0.2.0', '0.1.31')).toBe(true);
+    expect(isNewer('0.1.43', '0.1.43')).toBe(false);
+    expect(isNewer('0.1.2', '0.1.43')).toBe(false);
+    expect(isNewer('v0.2.0', '0.1.43')).toBe(true);
   });
 
   it('treats any prerelease as older than its release', () => {
@@ -58,8 +58,8 @@ describe('isNewer — semver precedence', () => {
   });
 
   it('ignores build metadata and never notifies on unrecognized input', () => {
-    expect(isNewer('0.1.31+build.7', '0.1.31')).toBe(false);
-    expect(isNewer('garbage', '0.1.31')).toBe(false);
+    expect(isNewer('0.1.43+build.7', '0.1.43')).toBe(false);
+    expect(isNewer('garbage', '0.1.43')).toBe(false);
     expect(isNewer('0.1.4', 'not-a-version')).toBe(false);
   });
 });
@@ -95,15 +95,15 @@ describe('checkForUpdate — throttle, once-per-version, offline', () => {
     const dir = tempDataDir();
     const fetcher = vi.fn(async () => '0.2.0');
 
-    const first = await checkForUpdate('0.1.31', dir, { now: T0, fetchLatest: fetcher });
+    const first = await checkForUpdate('0.1.43', dir, { now: T0, fetchLatest: fetcher });
     expect(first).toEqual({ latest: '0.2.0', notify: true });
     expect(fetcher).toHaveBeenCalledTimes(1);
 
-    const second = await checkForUpdate('0.1.31', dir, { now: T0 + 1000, fetchLatest: fetcher });
+    const second = await checkForUpdate('0.1.43', dir, { now: T0 + 1000, fetchLatest: fetcher });
     expect(second.notify).toBe(false);
     expect(fetcher).toHaveBeenCalledTimes(1); // throttled — no registry hit
 
-    const nextDay = await checkForUpdate('0.1.31', dir, {
+    const nextDay = await checkForUpdate('0.1.43', dir, {
       now: T0 + CHECK_INTERVAL_MS,
       fetchLatest: fetcher,
     });
@@ -114,13 +114,13 @@ describe('checkForUpdate — throttle, once-per-version, offline', () => {
 
   it('announces again only when a newer version replaces the old one', async () => {
     const dir = tempDataDir();
-    await checkForUpdate('0.1.31', dir, { now: T0, fetchLatest: async () => '0.2.0' });
+    await checkForUpdate('0.1.43', dir, { now: T0, fetchLatest: async () => '0.2.0' });
 
     const later = T0 + CHECK_INTERVAL_MS;
-    const again = await checkForUpdate('0.1.31', dir, { now: later, fetchLatest: async () => '0.2.0' });
+    const again = await checkForUpdate('0.1.43', dir, { now: later, fetchLatest: async () => '0.2.0' });
     expect(again.notify).toBe(false);
 
-    const bumped = await checkForUpdate('0.1.31', dir, {
+    const bumped = await checkForUpdate('0.1.43', dir, {
       now: later + CHECK_INTERVAL_MS,
       fetchLatest: async () => '0.3.0',
     });
@@ -130,12 +130,12 @@ describe('checkForUpdate — throttle, once-per-version, offline', () => {
   it('does not throttle after a failed fetch — the next boot retries', async () => {
     const dir = tempDataDir();
     const failing = vi.fn(async () => null);
-    const first = await checkForUpdate('0.1.31', dir, { now: T0, fetchLatest: failing });
+    const first = await checkForUpdate('0.1.43', dir, { now: T0, fetchLatest: failing });
     expect(first).toEqual({ latest: null, notify: false });
     expect(loadCache(dir).lastCheckAt).toBeUndefined();
 
     const recovering = vi.fn(async () => '0.2.0');
-    const second = await checkForUpdate('0.1.31', dir, { now: T0 + 1000, fetchLatest: recovering });
+    const second = await checkForUpdate('0.1.43', dir, { now: T0 + 1000, fetchLatest: recovering });
     expect(second.notify).toBe(true);
     expect(recovering).toHaveBeenCalledTimes(1);
   });
@@ -153,9 +153,9 @@ describe('checkForUpdate — throttle, once-per-version, offline', () => {
     const dirA = tempDataDir();
     const dirB = tempDataDir();
     const fetcher = async () => '0.2.0';
-    expect((await checkForUpdate('0.1.31', dirA, { now: T0, fetchLatest: fetcher })).notify).toBe(true);
-    expect((await checkForUpdate('0.1.31', dirB, { now: T0, fetchLatest: fetcher })).notify).toBe(true);
-    expect((await checkForUpdate('0.1.31', dirA, { now: T0, fetchLatest: fetcher })).notify).toBe(false);
+    expect((await checkForUpdate('0.1.43', dirA, { now: T0, fetchLatest: fetcher })).notify).toBe(true);
+    expect((await checkForUpdate('0.1.43', dirB, { now: T0, fetchLatest: fetcher })).notify).toBe(true);
+    expect((await checkForUpdate('0.1.43', dirA, { now: T0, fetchLatest: fetcher })).notify).toBe(false);
   });
 });
 
@@ -164,9 +164,9 @@ describe('bootNotice — the exact line, or silence', () => {
     const dir = tempDataDir();
     // A fresh cache holding a newer version: no registry hit, fully deterministic.
     saveCache(dir, { lastCheckAt: Date.now(), latest: '0.2.0' });
-    expect(await bootNotice(dir, '0.1.31'))
-      .toBe("[srouter] 0.2.0 available (you have 0.1.31) — run 'srouter update'");
-    expect(await bootNotice(dir, '0.1.31')).toBeNull(); // already announced
+    expect(await bootNotice(dir, '0.1.43'))
+      .toBe("[srouter] 0.2.0 available (you have 0.1.43) — run 'srouter update'");
+    expect(await bootNotice(dir, '0.1.43')).toBeNull(); // already announced
   });
 
   it('returns null instead of throwing when the registry lookup dies', async () => {
@@ -174,7 +174,7 @@ describe('bootNotice — the exact line, or silence', () => {
     const original = globalThis.fetch;
     globalThis.fetch = (async () => { throw new Error('offline'); }) as unknown as typeof fetch;
     try {
-      expect(await bootNotice(dir, '0.1.31')).toBeNull();
+      expect(await bootNotice(dir, '0.1.43')).toBeNull();
       expect(loadCache(dir).lastCheckAt).toBeUndefined(); // no throttle after a failure
     } finally {
       globalThis.fetch = original;
@@ -183,7 +183,7 @@ describe('bootNotice — the exact line, or silence', () => {
 
   it('returns null when the installed copy is up to date', async () => {
     const dir = tempDataDir();
-    saveCache(dir, { lastCheckAt: Date.now(), latest: '0.1.31' });
-    expect(await bootNotice(dir, '0.1.31')).toBeNull();
+    saveCache(dir, { lastCheckAt: Date.now(), latest: '0.1.43' });
+    expect(await bootNotice(dir, '0.1.43')).toBeNull();
   });
 });
