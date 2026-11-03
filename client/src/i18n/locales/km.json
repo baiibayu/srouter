@@ -1451,6 +1451,8 @@
     "tryAnswer": "ចម្លើយ៖ {choice}",
     "tryConfidence": "ទំនុកចិត្ត {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "ឧទាហរណ៍សំណើ"
+    "exampleTitle": "ឧទាហរណ៍សំណើ",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

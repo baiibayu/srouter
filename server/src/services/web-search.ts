@@ -17,6 +17,7 @@ export const WEB_SEARCH_EXA_KEY = 'web_search_exa_key';
 // consumes them.
 export const WEB_SEARCH_FIRECRAWL_KEY = 'web_search_firecrawl_key';
 export const WEB_SEARCH_LINKUP_KEY = 'web_search_linkup_key';
+export const WEB_SEARCH_JINA_KEY = 'web_search_jina_key';
 // One TinyFish key is account-wide: it powers the search backend AND the
 // /v1/fetch reader chain — hence the name outside the web_search_* prefix.
 export const TINYFISH_API_KEY = 'tinyfish_api_key';
@@ -38,6 +39,7 @@ export interface WebSearchConfig {
   /** Stored Firecrawl/Linkup slot (catalog engines — no walker backend yet). */
   hasFirecrawlKey: boolean;
   hasLinkupKey: boolean;
+  hasJinaKey: boolean;
 }
 
 export function readKey(settingKey: string): string | null {
@@ -55,6 +57,7 @@ export function getWebSearchConfig(): WebSearchConfig {
     hasTinyfishKey: readKey(TINYFISH_API_KEY) !== null,
     hasFirecrawlKey: readKey(WEB_SEARCH_FIRECRAWL_KEY) !== null,
     hasLinkupKey: readKey(WEB_SEARCH_LINKUP_KEY) !== null,
+    hasJinaKey: readKey(WEB_SEARCH_JINA_KEY) !== null,
   };
 }
 
@@ -117,6 +120,7 @@ export interface WebSearchPatch {
   tinyfishKey?: string | null;
   firecrawlKey?: string | null;
   linkupKey?: string | null;
+  jinaKey?: string | null;
 }
 
 // Partial update; null/empty clears the stored value (mirrors the complexity
@@ -136,6 +140,7 @@ export function setWebSearchConfig(patch: WebSearchPatch): void {
     [patch.tinyfishKey, TINYFISH_API_KEY],
     [patch.firecrawlKey, WEB_SEARCH_FIRECRAWL_KEY],
     [patch.linkupKey, WEB_SEARCH_LINKUP_KEY],
+    [patch.jinaKey, WEB_SEARCH_JINA_KEY],
   ] as const) {
     if (value === undefined) continue;
     if (value === null || value.trim() === '') {

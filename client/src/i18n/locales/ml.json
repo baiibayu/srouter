@@ -1451,6 +1451,8 @@
     "tryAnswer": "ഉത്തരം: {choice}",
     "tryConfidence": "{value}% ഉറപ്പ്",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "ഉദാഹരണ അഭ്യർത്ഥന"
+    "exampleTitle": "ഉദാഹരണ അഭ്യർത്ഥന",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

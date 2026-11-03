@@ -1451,6 +1451,8 @@
     "tryAnswer": "پاسخ: {choice}",
     "tryConfidence": "{value}% اطمینان",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "نمونه درخواست"
+    "exampleTitle": "نمونه درخواست",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

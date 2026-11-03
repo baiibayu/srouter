@@ -1451,6 +1451,8 @@
     "tryAnswer": "ଉତ୍ତର: {choice}",
     "tryConfidence": "{value}% ନିଶ୍ଚିତ",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "ଉଦାହରଣ ଅନୁରୋଧ"
+    "exampleTitle": "ଉଦାହରଣ ଅନୁରୋଧ",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

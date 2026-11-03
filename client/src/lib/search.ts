@@ -9,7 +9,7 @@ import type { SearchPlatform as SharedSearchPlatform } from '@baiibayu/srouter-s
 // Mirrors SEARCH_PLATFORMS in shared/types.ts. The client only imports types
 // from shared, so the list is repeated here; the two assertions below fail the
 // typecheck if either side gains a platform the other lacks.
-export const SEARCH_PLATFORMS = ['tavily', 'exa', 'firecrawl', 'linkup', 'parallel'] as const
+export const SEARCH_PLATFORMS = ['tavily', 'exa', 'firecrawl', 'linkup', 'parallel', 'jina'] as const
 export type SearchPlatform = (typeof SEARCH_PLATFORMS)[number]
 const sharedCoversClient: SharedSearchPlatform = '' as SearchPlatform
 const clientCoversShared: SearchPlatform = '' as SharedSearchPlatform

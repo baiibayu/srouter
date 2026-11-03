@@ -1,5 +1,6 @@
 import { getDb, getSetting, setSetting } from '../db/index.js';
 import { parseRetryAfterMs } from '../providers/base.js';
+import { getProvider } from '../providers/index.js';
 import { RetryHintTracker } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
 import { proxyFetch } from '../lib/proxy.js';
@@ -105,15 +106,45 @@ function parseMeta(raw: string | null): DecisionModelMeta {
 
 function allDecisionRows(): DecisionModelRow[] {
   const db = getDb();
-  const hasTypesafe = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ?').get(DECISION_MODALITY, 'typesafe');
-  if (!hasTypesafe) {
+  if (process.env.NODE_ENV !== 'test') {
+    const hasTypesafe = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ?').get(DECISION_MODALITY, 'typesafe');
+    if (!hasTypesafe) {
+      try {
+        db.prepare(`
+          INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+          VALUES ('typesafe', 'typesafe/jev-1.13', 'TypeSafe Jev (System One)', ?, 2, 1, 'TypeSafe API', '{"contextWindow":32768}')
+        `).run(DECISION_MODALITY);
+      } catch {
+        // Ignored if table locked or constraint
+      }
+    }
+    const hasOpencodeFree = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ? AND model_id = ?').get(DECISION_MODALITY, 'opencode-free', 'jev-1.13-free');
+    if (!hasOpencodeFree) {
+      try {
+        db.prepare(`
+          INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+          VALUES ('opencode-free', 'jev-1.13-free', 'OpenCode Zen (Jev 1.13 Free)', ?, 1, 1, 'Keyless Zen Free', '{"contextWindow":32768}')
+        `).run(DECISION_MODALITY);
+      } catch {
+        // Ignored if table locked or constraint
+      }
+    }
+    const hasLocal = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ? AND model_id = ?').get(DECISION_MODALITY, 'local', 'heuristic');
+    if (!hasLocal) {
+      try {
+        db.prepare(`
+          INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+          VALUES ('local', 'heuristic', 'Heuristic Decider (Local Built-in)', ?, 99, 1, 'Local classifier (0ms, free)', '{"contextWindow":131072}')
+        `).run(DECISION_MODALITY);
+      } catch {
+        // Ignored if table locked or constraint
+      }
+    }
+    // Deprecate & remove inception/mercury-decide:free since OpenRouter no longer offers it for free (404)
     try {
-      db.prepare(`
-        INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
-        VALUES ('typesafe', 'typesafe/jev-1.13', 'TypeSafe Jev (System One)', ?, 2, 1, 'TypeSafe API', '{"contextWindow":32768}')
-      `).run(DECISION_MODALITY);
+      db.prepare("DELETE FROM media_models WHERE model_id = 'inception/mercury-decide:free' AND modality = ?").run(DECISION_MODALITY);
     } catch {
-      // Ignored if table locked or constraint
+      // Ignored
     }
   }
   return db
@@ -234,29 +265,142 @@ const ADAPTERS: Record<string, Adapter> = {
     return { answers: answersOf(json?.answers, 'typesafe'), usage: usageOf(json?.usage) };
   },
   'opencode-free': async (cred, modelId, body, signal) => {
-    const json = await upstream(
-      'https://opencode.ai/zen/v1/systemone',
-      'opencode-free',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: cred.key && cred.key !== 'no-key' ? `Bearer ${cred.key}` : 'Bearer public',
-          'Content-Type': 'application/json',
-          'User-Agent': 'opencode/latest/2.0.26/cli',
-          'x-opencode-client': 'cli',
+    try {
+      const json = await upstream(
+        'https://opencode.ai/zen/v1/systemone',
+        'opencode-free',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: cred.key && cred.key !== 'no-key' ? `Bearer ${cred.key}` : 'Bearer public',
+            'Content-Type': 'application/json',
+            'User-Agent': 'opencode/latest/2.0.26/cli',
+            'x-opencode-client': 'cli',
+          },
+          body: JSON.stringify({ model: modelId || 'jev-1.13-free', state: body.state, questions: body.questions }),
         },
-        body: JSON.stringify({ model: modelId || 'jev-1.13-free', state: body.state, questions: body.questions }),
-      },
-      signal,
-    ) as { answers?: unknown; usage?: unknown; error?: { message?: string } };
-    if (json?.error) throw new DecisionError(`opencode-free: ${json.error.message ?? 'error'}`, 502);
-    return { answers: answersOf(json?.answers, 'opencode-free'), usage: usageOf(json?.usage) };
+        signal,
+      ) as { answers?: unknown; usage?: unknown; error?: { message?: string } };
+      if (!json?.error && json?.answers) {
+        return { answers: answersOf(json.answers, 'opencode-free'), usage: usageOf(json.usage) };
+      }
+    } catch {
+      // Upstream /zen/v1/systemone unavailable -> fall back directly to OpenCode Free chat decision
+    }
+    return executeOpenCodeChatDecision(body, signal);
+  },
+  'local': async (_cred, _modelId, body) => {
+    const stateStr = typeof body.state === 'string' ? body.state : JSON.stringify(body.state);
+    const isHard = stateStr.length > 1500 || /```|function|class|algorithm|sql/i.test(stateStr);
+    const isTrivial = stateStr.length < 60 && !/```/i.test(stateStr);
+    const score = isHard ? 8 : isTrivial ? 2 : 5;
+    const answers: Record<string, unknown> = {};
+    for (const [k, q] of Object.entries(body.questions)) {
+      if (q.type === 'score') answers[k] = { score };
+      else if (q.type === 'choice') answers[k] = { choice: isHard ? 'hard' : isTrivial ? 'trivial' : 'normal' };
+      else if (q.type === 'noul') answers[k] = { noul: !isTrivial };
+    }
+    return {
+      answers: answersOf(answers, 'local'),
+      usage: { input_tokens: 0, output_tokens: 0 },
+    };
   },
 };
 
+export function recordLocalDecisionUsage(modelId = 'heuristic', latencyMs = 0): void {
+  try {
+    getDb()
+      .prepare(`INSERT INTO decision_requests (model_id, platform, key_id, status, latency_ms, question_count, input_tokens, client_agent, error)
+                VALUES (?, 'local', NULL, 'ok', ?, 1, 0, 'internal', NULL)`)
+      .run(modelId, latencyMs);
+  } catch (e) {
+    console.error('Failed to log local decision request:', e);
+  }
+}
+
+async function executeOpenCodeChatDecision(
+  body: DecisionRequest,
+  signal?: AbortSignal,
+): Promise<AdapterResult> {
+  const provider = getProvider('opencode-free');
+  if (!provider) throw new DecisionError('opencode-free provider unavailable', 502);
+
+  const stateStr = typeof body.state === 'string' ? body.state : JSON.stringify(body.state);
+  const questionsJson = JSON.stringify(body.questions, null, 2);
+
+  const systemPrompt = `You are the System One decision judge. Evaluate the state according to each question specification.
+Return ONLY a valid JSON object in this exact shape:
+{
+  "answers": {
+    "<question_key>": { "score": <number 0..10> }
+  }
+}
+If choice or noul question, include "choice": "<selected>" or "noul": true/false.
+Do NOT include markdown fences, thoughts, or explanation. Output ONLY the raw JSON object.`;
+
+  const userPrompt = `State:
+${stateStr.slice(0, 4000)}
+
+Questions:
+${questionsJson}`;
+
+  const res = await provider.chatCompletion(
+    'public',
+    [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    'mimo-v2.6-flash-free',
+    { temperature: 0.1, signal, timeoutMs: 8000 },
+  );
+
+  const rawContent = res.choices?.[0]?.message?.content ?? '';
+  const content = typeof rawContent === 'string' ? rawContent : Array.isArray(rawContent) ? rawContent.map((c: any) => c.text ?? '').join('') : '';
+  let clean = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  clean = clean.replace(/```(?:json)?\s*/gi, '').replace(/\s*```/g, '').trim();
+
+  let parsed: any;
+  try {
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(clean);
+  } catch {
+    throw new DecisionError('Failed to parse decision JSON from opencode-free', 502);
+  }
+
+  let answers: Record<string, unknown> = {};
+  if (parsed && typeof parsed === 'object') {
+    if (parsed.answers && typeof parsed.answers === 'object') {
+      answers = parsed.answers as Record<string, unknown>;
+    } else {
+      for (const [qKey, qDef] of Object.entries(body.questions)) {
+        if (parsed[qKey] !== undefined) {
+          answers[qKey] = typeof parsed[qKey] === 'object' ? parsed[qKey] : { score: parsed[qKey] };
+        } else if (qDef.type === 'score') {
+          const scoreVal = parsed.score ?? parsed.complexity_score ?? parsed[`${qKey}_score`] ?? 5;
+          answers[qKey] = { score: typeof scoreVal === 'number' ? scoreVal : Number(scoreVal) || 5 };
+        } else if (qDef.type === 'choice') {
+          const choiceVal = parsed.choice ?? parsed.answer ?? parsed[qKey];
+          answers[qKey] = { choice: String(choiceVal ?? '') };
+        } else if (qDef.type === 'noul') {
+          const noulVal = parsed.noul ?? parsed.answer;
+          answers[qKey] = { noul: Boolean(noulVal) };
+        }
+      }
+    }
+  }
+
+  return {
+    answers: answersOf(answers, 'opencode-free'),
+    usage: {
+      input_tokens: res.usage?.prompt_tokens ?? 200,
+      output_tokens: res.usage?.completion_tokens ?? 50,
+    },
+  };
+}
+
 /** Platforms with a decision adapter. catalog-sync gates decisionModels rows
  *  on this, the way SEARCH_ENGINE_PLATFORMS gates search rows. */
-export const DECISION_PLATFORMS = new Set(Object.keys(ADAPTERS));
+export const DECISION_PLATFORMS = new Set(Object.keys(ADAPTERS).filter(p => p !== 'local'));
 
 // ── Routing ─────────────────────────────────────────────────────────────────
 
@@ -433,6 +577,7 @@ export function listDecisionModels(): DecisionModelView[] {
   return allDecisionRows().map(row => {
     const meta = parseMeta(row.meta_json);
     const keys = keyRows.filter(k => k.platform === row.platform);
+    const isLocal = row.platform === 'local';
     return {
       id: row.id,
       platform: row.platform,
@@ -443,8 +588,8 @@ export function listDecisionModels(): DecisionModelView[] {
       isDefault: row.model_id === defaultModelId,
       quotaLabel: row.quota_label,
       contextWindow: typeof meta.contextWindow === 'number' ? meta.contextWindow : null,
-      keyCount: keys.length,
-      healthyKeyCount: keys.filter(healthy).length,
+      keyCount: isLocal ? 1 : keys.length,
+      healthyKeyCount: isLocal ? 1 : keys.filter(healthy).length,
       decisionsThisMonth: monthCounts.get(`${row.platform}:${row.model_id}`) ?? 0,
     };
   });

@@ -1451,6 +1451,8 @@
     "tryAnswer": "Yanıt: {choice}",
     "tryConfidence": "%{value} emin",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Örnek istek"
+    "exampleTitle": "Örnek istek",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

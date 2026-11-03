@@ -18,6 +18,7 @@ interface WebSearchConfig {
   hasTinyfishKey: boolean
   hasFirecrawlKey: boolean
   hasLinkupKey: boolean
+  hasJinaKey: boolean
 }
 
 // Where each keyed backend's free tier lives (no card required for any).
@@ -30,13 +31,14 @@ const KEY_SOURCES = {
   tavily: 'https://app.tavily.com/',
   firecrawl: 'https://www.firecrawl.dev/app/api-keys',
   linkup: 'https://app.linkup.so/api-keys',
+  jina: 'https://jina.ai/',
 } as const
 
-type KeyedBackend = 'tinyfish' | 'exa' | 'brave' | 'tavily' | 'firecrawl' | 'linkup'
+type KeyedBackend = 'tinyfish' | 'exa' | 'brave' | 'tavily' | 'firecrawl' | 'linkup' | 'jina'
 
 // Labels here; the row order below follows the Models → Search engine list
 // (duckduckgo, parallel, searxng, tinyfish, exa, brave, tavily, firecrawl,
-// linkup) so the two pages read top-to-bottom the same way.
+// linkup, jina) so the two pages read top-to-bottom the same way.
 const KEY_LABELS: Record<KeyedBackend, string> = {
   tinyfish: 'TinyFish',
   exa: 'Exa',
@@ -44,6 +46,7 @@ const KEY_LABELS: Record<KeyedBackend, string> = {
   tavily: 'Tavily',
   firecrawl: 'Firecrawl',
   linkup: 'Linkup',
+  jina: 'Jina',
 }
 
 function KeyField({
@@ -248,6 +251,12 @@ export function WebSearchSection() {
           busy={patch.isPending}
           onSave={value => patch.mutate({ linkupKey: value })}
         />
+        <KeyField
+          backend="jina"
+          stored={cfg.hasJinaKey}
+          busy={patch.isPending}
+          onSave={value => patch.mutate({ jinaKey: value })}
+        />
 
         {/* — Fetch engines (POST /v1/fetch) — */}
         <SubsectionHeading
@@ -267,3 +276,11 @@ export function WebSearchSection() {
     </section>
   )
 }
+
+
+
+
+
+
+
+

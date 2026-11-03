@@ -1451,6 +1451,8 @@
     "tryAnswer": "පිළිතුර: {choice}",
     "tryConfidence": "{value}% විශ්වාසයි",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "උදාහරණ ඉල්ලීම"
+    "exampleTitle": "උදාහරණ ඉල්ලීම",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

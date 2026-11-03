@@ -29,6 +29,8 @@ monetization/
 # Scratch / runtime artifacts (local)
 temp/
 server/logs/
+*.log
+*.err
 server/tmp-*.mjs
 server/audit-unorouter.mjs
 server/check-models-api.mjs

@@ -1451,6 +1451,8 @@
     "tryAnswer": "Відповідь: {choice}",
     "tryConfidence": "Впевненість {value}%",
     "tryServedBy": "{model} · {latency} мс",
-    "exampleTitle": "Приклад запиту"
+    "exampleTitle": "Приклад запиту",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

@@ -1451,6 +1451,8 @@
     "tryAnswer": "Válasz: {choice}",
     "tryConfidence": "{value}%-os biztonság",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Példakérés"
+    "exampleTitle": "Példakérés",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

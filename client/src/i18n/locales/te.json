@@ -1451,6 +1451,8 @@
     "tryAnswer": "సమాధానం: {choice}",
     "tryConfidence": "{value}% నమ్మకం",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "ఉదాహరణ అభ్యర్థన"
+    "exampleTitle": "ఉదాహరణ అభ్యర్థన",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

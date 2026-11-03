@@ -1451,6 +1451,8 @@
     "tryAnswer": "Ìdáhùn: {choice}",
     "tryConfidence": "Ó dá a lójú {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Àpẹẹrẹ ìbéèrè"
+    "exampleTitle": "Àpẹẹrẹ ìbéèrè",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

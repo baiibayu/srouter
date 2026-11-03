@@ -33,7 +33,6 @@ const SKIP_AUTO_DISCOVER = new Set([
   'ollama',       // local, handled separately
   'custom',       // custom endpoints use their own flow
   'aihorde',      // uses its own API format
-  'bai',          // 100% paid — "Deposit required to unlock premium models"
 ]);
 
 /** How many models to register per platform before giving up */
@@ -633,7 +632,9 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     // No tier field, or tier is quality-based (no 'free' value) — check if
     // models use the `:free` suffix convention. If ANY model id ends with
     // ':free', assume this provider uses the pattern and only keep those.
-    const hasColonFree = rawModels.some((m: any) => typeof m?.id === 'string' && m.id.endsWith(':free'));
+    // NOTE: cline has a hand-curated list of verified free models that mix
+    // openrouter/free, qwen, deepseek, and :free suffix models, so don't filter cline.
+    const hasColonFree = platform !== 'cline' && rawModels.some((m: any) => typeof m?.id === 'string' && m.id.endsWith(':free'));
     if (hasColonFree) {
       const beforeCount = freeModels.length;
       freeModels = freeModels.filter(m => m.id.endsWith(':free'));
@@ -880,10 +881,10 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       idx++;
     }
 
-    // Retire chat rows this platform's discovery created that upstream dropped
+    // Clean out chat rows this platform's discovery created that upstream dropped (matching OpenCode clean sync)
     if (stillOffered.size > 0) {
       const ownedRows = db.prepare(
-        "SELECT id, model_id FROM models WHERE platform = ? AND source = 'user' AND enabled = 1",
+        "SELECT id, model_id FROM models WHERE platform = ? AND source = 'user'",
       ).all(platform) as { id: number; model_id: string }[];
       for (const row of ownedRows) {
         if (stillOffered.has(row.id)) continue;
@@ -896,7 +897,9 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     // ──── 2. EMBEDDING MODELS ───────────────────────────────────
     let embRegistered = 0;
     let embRefreshed = 0;
+    const stillOfferedEmbeddings = new Set<string>();
     for (const m of embeddingModels.slice(0, MAX_AUTO_MODELS)) {
+      stillOfferedEmbeddings.add(m.id);
       const dims = extractDimensions(m.id, rawModels);
       const family = guessEmbeddingFamily(m.id);
       const display = m.id.replace(/[-_]/g, ' ');
@@ -913,6 +916,8 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
           embRefreshed++;
           updatedModelNames.push(m.id);
         }
+        // Ensure active if offered
+        db.prepare('UPDATE embedding_models SET enabled = 1 WHERE id = ?').run(existing.id);
         continue;
       }
 
@@ -922,10 +927,25 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       idx++;
     }
 
-    // ──── 3. MEDIA MODELS ───────────────────────────────────────
+    // Bench embedding rows this platform's discovery created that upstream dropped
+    if (stillOfferedEmbeddings.size > 0) {
+      const ownedEmbs = db.prepare(
+        "SELECT id, model_id FROM embedding_models WHERE platform = ? AND quota_label = 'auto-discovered'",
+      ).all(platform) as { id: number; model_id: string }[];
+      for (const row of ownedEmbs) {
+        if (stillOfferedEmbeddings.has(row.model_id)) continue;
+        db.prepare('UPDATE embedding_models SET enabled = 0 WHERE id = ?').run(row.id);
+        benched++;
+        retiredModelNames.push(row.model_id);
+      }
+    }
+
+    // ──── 3. MEDIA MODELS (Image, Audio, Video, Transcription) ───
     let mediaRegistered = 0;
     let mediaRefreshed = 0;
+    const stillOfferedMedia = new Set<string>();
     for (const m of mediaModels.slice(0, MAX_AUTO_MODELS)) {
+      stillOfferedMedia.add(m.id);
       const modality = m.kind as string; // 'image' | 'audio' | 'video' | 'transcription'
       const display = m.id.replace(/[-_]/g, ' ');
       const keyId = keyRow.id;
@@ -940,6 +960,8 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
           mediaRefreshed++;
           updatedModelNames.push(m.id);
         }
+        // Ensure active if offered
+        db.prepare('UPDATE media_models SET enabled = 1 WHERE id = ?').run(existing.id);
         continue;
       }
 
@@ -949,7 +971,41 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       idx++;
     }
 
-    // ──── 4. AUTO-ASSIGN QUIRKS ─────────────────────────────────
+    // Bench media rows this platform's discovery created that upstream dropped
+    if (stillOfferedMedia.size > 0) {
+      const ownedMedia = db.prepare(
+        "SELECT id, model_id FROM media_models WHERE platform = ? AND quota_label = 'auto-discovered' AND modality IN ('image', 'audio', 'video', 'transcription')",
+      ).all(platform) as { id: number; model_id: string }[];
+      for (const row of ownedMedia) {
+        if (stillOfferedMedia.has(row.model_id)) continue;
+        db.prepare('UPDATE media_models SET enabled = 0 WHERE id = ?').run(row.id);
+        benched++;
+        retiredModelNames.push(row.model_id);
+      }
+    }
+
+    // ──── 4. DECISION MODELS LIVENESS REFRESH ────────────────────
+    // Ensure decision models for this platform reflect live upstream availability
+    const allUpstreamIds = new Set<string>(rawModels.map((r: any) => r?.id).filter(Boolean));
+    if (allUpstreamIds.size > 0) {
+      const platformDecisions = db.prepare(
+        "SELECT id, model_id, enabled FROM media_models WHERE platform = ? AND modality = 'decision'",
+      ).all(platform) as { id: number; model_id: string; enabled: number }[];
+      for (const dm of platformDecisions) {
+        const stillAlive = allUpstreamIds.has(dm.model_id);
+        if (!stillAlive && dm.enabled) {
+          db.prepare('UPDATE media_models SET enabled = 0 WHERE id = ?').run(dm.id);
+          benched++;
+          retiredModelNames.push(dm.model_id);
+          console.log(`[auto-discover] ${platform}: decision model ${dm.model_id} no longer offered upstream — disabled`);
+        } else if (stillAlive && !dm.enabled) {
+          db.prepare('UPDATE media_models SET enabled = 1 WHERE id = ?').run(dm.id);
+          console.log(`[auto-discover] ${platform}: decision model ${dm.model_id} restored upstream — re-enabled`);
+        }
+      }
+    }
+
+    // ──── 5. AUTO-ASSIGN QUIRKS ─────────────────────────────────
     const quirkCount = autoAssignQuirks(db, platform, freeModels, rawModels);
 
     // Store counts for return

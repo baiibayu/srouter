@@ -1451,6 +1451,8 @@
     "tryAnswer": "အဖြေ: {choice}",
     "tryConfidence": "{value}% ယုံကြည်",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "တောင်းဆိုမှု ဥပမာ"
+    "exampleTitle": "တောင်းဆိုမှု ဥပမာ",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

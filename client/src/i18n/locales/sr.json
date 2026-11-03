@@ -1451,6 +1451,8 @@
     "tryAnswer": "Одговор: {choice}",
     "tryConfidence": "Сигурност {value}%",
     "tryServedBy": "{model} · {latency} мс",
-    "exampleTitle": "Пример захтева"
+    "exampleTitle": "Пример захтева",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

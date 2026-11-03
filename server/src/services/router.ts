@@ -26,6 +26,7 @@ import {
   DEFAULT_PEAK_HOURS, type PeakHoursConfig,
   observedSpeedRank, TIMEOUT_LATENCY_CAP_MS,
   type HeadroomThresholds,
+  tierValue,
 } from './scoring.js';
 import { TIMEOUT_ERROR_MARKERS } from '../lib/error-classify.js';
 import type { ComplexityLevel } from './complexity-gate.js';
@@ -274,6 +275,13 @@ const PENALTY_PER_FAIL = 1;       // each non-limit upstream failure (5xx/timeou
 const MAX_PENALTY = 10;            // cap so a model doesn't sink forever
 const DECAY_INTERVAL_MS = 2 * 60 * 1000; // penalty decays every 2 minutes
 const DECAY_AMOUNT = 1;            // remove this much penalty per decay interval
+
+// System One equal-tier dispatch tracking (model_db_id -> last dispatched timestamp)
+const systemOneLastDispatched = new Map<number, number>();
+
+export function clearSystemOneDispatches(): void {
+  systemOneLastDispatched.clear();
+}
 
 /**
  * Record an upstream failure for a model — increases its penalty so it sinks in
@@ -1150,48 +1158,47 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
   const tier = (e: ChainRow) => e.match_tier ?? 0;
 
   if (strategy === 'systemone') {
-    // System One: Direct AI Decider (No Bandit Sampling).
-    // System One directly evaluates prompt complexity ('trivial' | 'normal' | 'hard')
-    // and task intent ('code' | 'chat') to route deterministically, knowing field
-    // conditions: healthy keys, live penalties, tool capability, and model smartness.
-    const level = complexity ?? 'normal';
-    return chain
-      .map((e, i) => ({
-        e,
-        i,
-        intel: intelligenceComposite(e.size_label, e.intelligence_rank),
-        penalty: getPenalty(e.model_db_id),
-      }))
-      .sort((a, b) => {
-        // 1. Tier first
-        const tDiff = tier(a.e) - tier(b.e);
-        if (tDiff !== 0) return tDiff;
+    // System One: Direct AI Decider (Type-Safe Decision Pipeline).
+    // Pure deterministic single-pass pipeline — no Thompson sampling, no Beta
+    // posterior, no decay-weighted stats, and no random draws.
+    // Order of precedence:
+    //   0. Explicit Slug Match Tier (match_tier)
+    //   1. Live Health & Penalty Guard: penalized/rate-limited models sink immediately
+    //   2. Tool support gate for coding tasks
+    //   3. Model Tier (Frontier > Large > Medium > Small > Unknown; reversed for trivial)
+    //   4. Fair Pacing (LRU): least-recently dispatched among equal peers
+    //      (Prevents burning out providers with tight daily limits AND prevents
+    //       burst-choking providers with tight RPM limits)
+    //   5. Deterministic tie-breaker (model_db_id asc)
+    return chain.slice().sort((a, b) => {
+      // 0. Slug match tier first (pinned alias / specific route)
+      const mtDiff = tier(a) - tier(b);
+      if (mtDiff !== 0) return mtDiff;
 
-        // 2. Cooldown/failure penalty: penalized models move down immediately
-        const pDiff = a.penalty - b.penalty;
-        if (pDiff !== 0) return pDiff;
+      // 1. Health & failure penalty guard: failing/cooldown models sink immediately
+      const pDiff = getPenalty(a.model_db_id) - getPenalty(b.model_db_id);
+      if (pDiff !== 0) return pDiff;
 
-        // 3. For coding task: prioritize models with verified tool support
-        if (task === 'code') {
-          const toolDiff = (b.e.supports_tools ? 1 : 0) - (a.e.supports_tools ? 1 : 0);
-          if (toolDiff !== 0) return toolDiff;
-        }
+      // 2. Verified tool support for code tasks
+      if (task === 'code') {
+        const toolDiff = (b.supports_tools ? 1 : 0) - (a.supports_tools ? 1 : 0);
+        if (toolDiff !== 0) return toolDiff;
+      }
 
-        // 4. System One direct decision
-        if (level === 'hard' || task === 'code') {
-          // Hard prompt or coding task: highest intelligence composite first
-          const iDiff = b.intel - a.intel;
-          if (iDiff !== 0) return iDiff;
-        } else if (level === 'trivial') {
-          // Trivial prompt: lowest intelligence composite (fastest/cheapest) first
-          const iDiff = a.intel - b.intel;
-          if (iDiff !== 0) return iDiff;
-        }
+      // 3. Model Tier (Frontier > Large > Medium > Small > Unknown; reversed for trivial)
+      const tDiff = complexity === 'trivial'
+        ? tierValue(a.size_label) - tierValue(b.size_label)
+        : tierValue(b.size_label) - tierValue(a.size_label);
+      if (tDiff !== 0) return tDiff;
 
-        // 5. Manual priority tie-breaker
-        return a.e.priority - b.e.priority || a.i - b.i;
-      })
-      .map(x => x.e);
+      // 4. Fair pacing (LRU): least-recently dispatched among identical peers
+      const lastA = systemOneLastDispatched.get(a.model_db_id) ?? 0;
+      const lastB = systemOneLastDispatched.get(b.model_db_id) ?? 0;
+      if (lastA !== lastB) return lastA - lastB;
+
+      // 5. Pure deterministic tie-break
+      return a.model_db_id - b.model_db_id;
+    });
   }
 
   let weights = weightsFor(strategy);
@@ -2379,7 +2386,12 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
     // can serve right now — in which case we fall through to the next model in
     // the sorted chain for THIS request (no explicit penalty needed).
     const route = selectKeyForModel(entry, estimatedTokens, skipKeys, diag);
-    if (route) return route;
+    if (route) {
+      if (strategy === 'systemone') {
+        systemOneLastDispatched.set(entry.model_db_id, Date.now());
+      }
+      return route;
+    }
   }
 
   // The aggregate keyless line rides in diagnostics but NOT in the summary's

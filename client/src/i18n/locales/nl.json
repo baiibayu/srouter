@@ -1451,6 +1451,8 @@
     "tryAnswer": "Antwoord: {choice}",
     "tryConfidence": "{value}% zeker",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Voorbeeldverzoek"
+    "exampleTitle": "Voorbeeldverzoek",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

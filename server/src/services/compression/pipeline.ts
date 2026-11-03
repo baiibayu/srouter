@@ -186,7 +186,7 @@ export function compressRequest(
         });
         continue;
       }
-      const fidelity = checkFidelity(current, result.messages);
+      const fidelity = checkFidelity(current, result.messages, { isLossless: engine.lossless });
       if (!fidelity.accepted) {
         const discarded = fidelity.reason === 'inflation' ? 'inflation' : 'fidelity';
         if (discarded === 'fidelity') discardedByGate.push(engine.id);

@@ -1451,6 +1451,8 @@
     "tryAnswer": "答案：{choice}",
     "tryConfidence": "置信度 {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "请求示例"
+    "exampleTitle": "请求示例",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

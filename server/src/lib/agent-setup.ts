@@ -604,6 +604,17 @@ export async function resetAgent(id: string): Promise<SetupResult> {
             }
           } catch {}
         }
+        const zcodeSetting = path.join(home, '.zcode', 'cli', 'setting.json');
+        if (fs.existsSync(zcodeSetting)) {
+          try {
+            const raw = fs.readFileSync(zcodeSetting, 'utf8');
+            const data = JSON.parse(raw);
+            if (data.mcp?.servers?.srouter) {
+              delete data.mcp.servers.srouter;
+              fs.writeFileSync(zcodeSetting, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+            }
+          } catch {}
+        }
         break;
       }
 

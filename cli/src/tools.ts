@@ -6,6 +6,7 @@ import {
   codexMcpToml,
   opencodeMcpValue,
   withMcpNotes,
+  zcodeMcpValue,
 } from './mcp.js';
 import type {
   CatalogModel,
@@ -1221,6 +1222,7 @@ function zcode(ctx: GenerateContext): Generation {
   const provider = ctx.profile === 'default'
     ? 'srouter'
     : `srouter-${ctx.profile.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+  const mcpPath = posixPath(ctx.homeDir, '.zcode', 'cli', 'setting.json');
 
   return {
     files: [
@@ -1279,11 +1281,18 @@ function zcode(ctx: GenerateContext): Generation {
           },
         },
       },
+      {
+        path: mcpPath,
+        format: 'json',
+        sensitive: true,
+        value: zcodeMcpValue(ctx),
+      },
     ],
     notes: [
       'Install Zcode: npm install -g zcode-app-cli',
       'Configuration written to ~/.zcode/v2/provider_config.json',
       `Default model set to ${provider}:${model.id}`,
+      `MCP: wrote mcp.servers.srouter -> ${mcpPath}`,
     ],
   };
 }

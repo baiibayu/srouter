@@ -23,7 +23,6 @@ export interface PlatformEntry {
 // routing treats the platform as configured and calls go out anonymously, and
 // a real key is stored and sent like any other.
 export const PLATFORMS: PlatformEntry[] = [
-  { value: 'aclide', label: 'ACLIDE (shared monthly credits)', url: 'https://aclide.com/en/dashboard/api-keys' },
   { value: 'speka', label: 'Speka ($1 shared monthly credits)', url: 'https://speka.me/dashboard/keys' },
   { value: 'auray', label: 'Auray (50 shared monthly credits)', url: 'https://app.auray.ai' },
   { value: 'inferbase', label: 'Inferbase (shared monthly and daily allowance)', url: 'https://inferbase.ai' },
@@ -45,15 +44,12 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'electronhub', label: 'ElectronHub (shared weekly credits)', url: 'https://app.electronhub.ai' },
   { value: 'router9', label: 'Router9 (shared monthly credits)', url: 'https://www.router9.com' },
   { value: 'septor', label: 'Septor Labs (daily free-model quota)', url: 'https://septorlabs.com/dashboard' },
-  { value: 'clod', label: 'CLōD (shared daily free requests)', url: 'https://newapp.clod.io' },
   { value: 'speechify', label: 'Speechify (monthly free TTS characters)', url: 'https://platform.speechify.ai' },
-  { value: 'blaze', label: 'BlazeAPI (daily free tokens; Discord verification)', url: 'https://blazeapi.org/dashboard' },
   { value: 'lucidity', label: 'Lucidity Composite (daily free-model requests)', url: 'https://composite.lucidity.sh' },
   { value: 'airforce', label: 'Api.Airforce (daily free requests; 1 per minute)', url: 'https://api.airforce' },
   { value: 'dreamprompting', label: 'DreamPrompting (rolling 24h free tokens and requests)', url: 'https://dreamprompting.com' },
   { value: 'waterfall', label: 'Waterfall (community free models)', url: 'https://getwaterfall.org' },
   { value: 'logfare', label: 'Logfare (fair-use free models)', url: 'https://logfare.ai' },
-  { value: 'bai', label: 'B.AI (promotional free model)', url: 'https://b.ai' },
   { value: 'radeon', label: 'AMD Radeon Cloud (free shared models)', url: 'https://developer.amd.com.cn/radeon/tokenfactory' },
   { value: 'nvidia', label: 'NVIDIA NIM', url: 'https://build.nvidia.com/settings/api-keys' },
   { value: 'mistral', label: 'Mistral', url: 'https://console.mistral.ai/api-keys/' },
@@ -71,11 +67,9 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'opencode-free', label: 'OpenCode Free (no key needed)', url: 'https://opencode.ai', keyless: true },
   { value: 'opencode-go', label: 'OpenCode Go (separate tier)', url: 'https://opencode.ai/auth' },
   { value: 'agnes', label: 'Agnes AI (free key)', url: 'https://platform.agnes-ai.com' },
-  { value: 'reka', label: 'Reka (prepaid credits)', url: 'https://platform.reka.ai' },
   { value: 'siliconflow', label: 'SiliconFlow (image + TTS)', url: 'https://siliconflow.com' },
   { value: 'routeway', label: 'Routeway (free key)', url: 'https://routeway.ai' },
   { value: 'bazaarlink', label: 'BazaarLink (free key)', url: 'https://bazaarlink.ai' },
-  { value: 'ainative', label: 'AINative Studio (free key)', url: 'https://ainative.studio' },
   { value: 'aion', label: 'Aion Labs (free key)', url: 'https://www.aionlabs.ai' },
   { value: 'requesty', label: 'Requesty (free key)', url: 'https://www.requesty.ai' },
   { value: 'navy', label: 'NavyAI (free key)', url: 'https://api.navy' },
@@ -84,6 +78,7 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'orcarouter', label: 'OrcaRouter (free key)', url: 'https://www.orcarouter.ai' },
   { value: 'unorouter', label: 'UnoRouter (free key)', url: 'https://unorouter.com' },
   { value: 'xkiro', label: 'xKiro (free key)', url: 'https://xkiro.com' },
+  { value: 'jina', label: 'Jina AI (search / reader / embeddings)', url: 'https://jina.ai', keyless: false },
   // AnyAPI advertises 100K tokens/day free, but live testing on 2026-08-10
   // could not get a single free-tier request served (see
   // CATALOG-ANYAPI-SMOKE-2026-08-10 in the ops repo). No quota claim until

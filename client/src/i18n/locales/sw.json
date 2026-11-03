@@ -1451,6 +1451,8 @@
     "tryAnswer": "Jibu: {choice}",
     "tryConfidence": "Uhakika wa {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Mfano wa ombi"
+    "exampleTitle": "Mfano wa ombi",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

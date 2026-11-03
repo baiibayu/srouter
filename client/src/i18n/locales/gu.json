@@ -1451,6 +1451,8 @@
     "tryAnswer": "જવાબ: {choice}",
     "tryConfidence": "{value}% ખાતરી",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "ઉદાહરણ વિનંતી"
+    "exampleTitle": "ઉદાહરણ વિનંતી",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

@@ -318,6 +318,7 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
     const selectMediaDecision = db.prepare(
       'SELECT id FROM media_models WHERE platform = ? AND model_id = ? AND modality = ?'
     );
+    const activeDecisionIds = new Set(fetched.decisionModels.map((m) => m.id));
     for (const dm of fetched.decisionModels) {
       const existingDm = selectMediaDecision.get(platform, dm.id, 'decision');
       if (!existingDm) {
@@ -327,6 +328,17 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
           dm.id === 'jev-1.13-free' ? 'OpenCode Zen (Jev 1.13 Free)' : `OpenCode Zen (${dm.id})`,
           1,
         );
+      }
+    }
+
+    // Purge or disable any opencode-free decision models no longer offered upstream
+    const allDbDecisions = db.prepare(
+      "SELECT id, model_id, enabled FROM media_models WHERE platform = ? AND modality = 'decision'"
+    ).all(platform) as Array<{ id: number; model_id: string; enabled: number }>;
+    for (const dm of allDbDecisions) {
+      if (!activeDecisionIds.has(dm.model_id) && dm.enabled) {
+        db.prepare('UPDATE media_models SET enabled = 0 WHERE id = ?').run(dm.id);
+        console.log(`[opencode-free-sync] decision model ${dm.model_id} dropped upstream — disabled`);
       }
     }
   })();

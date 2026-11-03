@@ -1451,6 +1451,8 @@
     "tryAnswer": "Atsakymas: {choice}",
     "tryConfidence": "Tikrumas {value} %",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Užklausos pavyzdys"
+    "exampleTitle": "Užklausos pavyzdys",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

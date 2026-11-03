@@ -450,6 +450,7 @@ const webSearchPutSchema = z.object({
   tinyfishKey: z.string().min(1).nullable().optional(),
   firecrawlKey: z.string().min(1).nullable().optional(),
   linkupKey: z.string().min(1).nullable().optional(),
+  jinaKey: z.string().min(1).nullable().optional(),
 });
 
 // Partial update: send only the fields to change. A null key clears the
@@ -457,7 +458,7 @@ const webSearchPutSchema = z.object({
 settingsRouter.put(['/web-search', '/search'], (req: Request, res: Response) => {
   const parsed = webSearchPutSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: { message: 'Invalid web-search config: send {baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?, firecrawlKey?, linkupKey?}', type: 'invalid_request_error' } });
+    res.status(400).json({ error: { message: 'Invalid web-search config: send {baseUrl?, tavilyKey?, braveKey?, exaKey?, tinyfishKey?, firecrawlKey?, linkupKey?, jinaKey?}', type: 'invalid_request_error' } });
     return;
   }
   try {

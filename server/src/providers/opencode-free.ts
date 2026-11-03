@@ -260,6 +260,30 @@ async function tlsFetch(
   } = {},
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      if (options.signal) {
+        options.signal.removeEventListener('abort', onAbort);
+      }
+    };
+    const safeReject = (err: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(err);
+    };
+    const safeResolve = (res: Response) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(res);
+    };
+
+    const onAbort = () => {
+      try { req.destroy(); } catch {}
+      safeReject(new Error('This operation was aborted'));
+    };
+
     const parsed = new URL(url);
     const req = https.request(
       {
@@ -281,7 +305,7 @@ async function tlsFetch(
             headers.set(k, v);
           }
         }
-        resolve(
+        safeResolve(
           new Response(webStream, {
             status: res.statusCode ?? 500,
             statusText: res.statusMessage ?? '',
@@ -293,21 +317,20 @@ async function tlsFetch(
 
     if (options.signal) {
       if (options.signal.aborted) {
-        req.destroy(new Error('This operation was aborted'));
-        return reject(new Error('This operation was aborted'));
+        onAbort();
+        return;
       }
-      options.signal.addEventListener('abort', () => {
-        req.destroy(new Error('This operation was aborted'));
-        reject(new Error('This operation was aborted'));
-      });
+      options.signal.addEventListener('abort', onAbort, { once: true });
     }
 
     req.on('timeout', () => {
-      req.destroy(new Error(`OpenCode Free request timed out after ${options.timeoutMs ?? 60000}ms`));
-      reject(new Error(`OpenCode Free request timed out after ${options.timeoutMs ?? 60000}ms`));
+      try { req.destroy(); } catch {}
+      safeReject(new Error(`OpenCode Free request timed out after ${options.timeoutMs ?? 60000}ms`));
     });
 
-    req.on('error', reject);
+    req.on('error', (err) => {
+      safeReject(err);
+    });
 
     if (options.body) {
       req.write(options.body);

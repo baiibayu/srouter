@@ -88,6 +88,24 @@ export function clineMcpPath(homeDir: string): string {
   return posixPath(homeDir, '.cline', 'data', 'settings', 'cline_mcp_settings.json');
 }
 
+/** Zcode CLI MCP entry (mcp.servers.<name> in ~/.zcode/cli/setting.json). */
+export function zcodeMcpValue(ctx: GenerateContext): Record<string, unknown> {
+  return {
+    features: {
+      mcp: true,
+    },
+    mcp: {
+      servers: {
+        [MCP_SERVER_NAME]: {
+          type: 'http',
+          url: mcpEndpoint(ctx.url),
+          headers: { Authorization: `Bearer ${ctx.apiKey}` },
+        },
+      },
+    },
+  };
+}
+
 /** One-line ready-to-paste snippet for agents whose MCP file shape this repo
  *  does not document. JSON flavor matches the mcpServers object Claude/Cline
  *  style clients read; TOML flavor matches Codex's [mcp_servers.*] tables.

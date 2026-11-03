@@ -1451,6 +1451,8 @@
     "tryAnswer": "Ответ: {choice}",
     "tryConfidence": "Уверенность {value}%",
     "tryServedBy": "{model} · {latency} мс",
-    "exampleTitle": "Пример запроса"
+    "exampleTitle": "Пример запроса",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

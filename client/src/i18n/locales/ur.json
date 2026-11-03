@@ -1451,6 +1451,8 @@
     "tryAnswer": "جواب: {choice}",
     "tryConfidence": "{value}% اعتماد",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "مثالی درخواست"
+    "exampleTitle": "مثالی درخواست",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

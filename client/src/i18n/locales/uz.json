@@ -1451,6 +1451,8 @@
     "tryAnswer": "Javob: {choice}",
     "tryConfidence": "{value}% ishonch",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Namuna soʻrov"
+    "exampleTitle": "Namuna soʻrov",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

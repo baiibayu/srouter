@@ -29,7 +29,17 @@ function toolEnvelope(messages: ChatMessage[]): string[] {
   ]);
 }
 
-export function checkFidelity(before: ChatMessage[], after: ChatMessage[]): FidelityResult {
+export interface CheckFidelityOptions {
+  isLossless?: boolean;
+  liveTurns?: number;
+}
+
+export function checkFidelity(
+  before: ChatMessage[],
+  after: ChatMessage[],
+  options: CheckFidelityOptions = {},
+): FidelityResult {
+  const isLossless = options.isLossless ?? true;
   const beforeChars = messageChars(before);
   const afterChars = messageChars(after);
   if (afterChars >= beforeChars) {
@@ -90,12 +100,40 @@ export function checkFidelity(before: ChatMessage[], after: ChatMessage[]): Fide
     ...extractProtectedValues(input, 'constraint'),
   ], output) === 1;
   const envelopesPreserved = toolEnvelope(before).every(value => toolEnvelope(after).includes(value));
-  const accepted = protectedTokenSurvival >= 0.95
-    && numericLiteralsPreserved
-    && jsonKeySurvival >= 0.9
-    && diffHunksPreserved
-    && criticalLinesPreserved
-    && envelopesPreserved;
+
+  let accepted: boolean;
+  if (isLossless) {
+    accepted = protectedTokenSurvival >= 0.95
+      && numericLiteralsPreserved
+      && jsonKeySurvival >= 0.9
+      && diffHunksPreserved
+      && criticalLinesPreserved
+      && envelopesPreserved;
+  } else {
+    // For lossy pruning (aging, hard-budget, relevance): ensure live turns & system prompts remain intact
+    const liveTurnCount = options.liveTurns ?? 3;
+    let liveDistance = 0;
+    const liveIndices = new Set<number>();
+    for (let i = before.length - 1; i >= 0; i--) {
+      if (before[i].role === 'system' || liveDistance < liveTurnCount) {
+        liveIndices.add(i);
+      }
+      if (before[i].role === 'user') liveDistance++;
+    }
+    const liveBefore = before.filter((_, idx) => liveIndices.has(idx));
+    const liveBeforeInput = allMessageText(liveBefore);
+    const liveCriticalLinesPreserved = survival([
+      ...extractProtectedValues(liveBeforeInput, 'error'),
+      ...extractProtectedValues(liveBeforeInput, 'constraint'),
+    ], output) === 1;
+    const liveDiffHunksPreserved = survival(extractProtectedValues(liveBeforeInput, 'diff-hunk'), output) === 1;
+    const liveEnvelopesPreserved = toolEnvelope(liveBefore).every(value => toolEnvelope(after).includes(value));
+
+    accepted = protectedTokenSurvival >= 0.50
+      && liveCriticalLinesPreserved
+      && liveDiffHunksPreserved
+      && liveEnvelopesPreserved;
+  }
 
   return {
     accepted,

@@ -484,6 +484,14 @@ async function toGeminiContents(messages: ChatMessage[]): Promise<{
     })))
     .filter((entry): entry is { role: 'user' | 'model'; parts: GeminiPart[] } => entry !== null);
 
+  // Gemini requires contents to end with a 'user' turn. If the conversation
+  // ends with a model turn (e.g. assistant prefill or prompt replay), Gemini
+  // rejects with 400: "Requests ending with a model turn are not supported."
+  // Append a synthetic continue turn so Gemini succeeds.
+  if (contents.length > 0 && contents[contents.length - 1].role === 'model') {
+    contents.push({ role: 'user', parts: [{ text: 'Please continue.' }] });
+  }
+
   return {
     contents,
     systemInstruction: systemMessages.length > 0

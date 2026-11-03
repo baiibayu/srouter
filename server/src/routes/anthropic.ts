@@ -12,6 +12,7 @@ import type {
   ChatContentBlock,
 } from '@baiibayu/srouter-shared/types.js';
 import { routeRequest, resolveModelGroupCandidates, resolveRoutingChain, resolveStickyPreference, routingReserveTokens, type RouteResult, type ResolvedChain, type ChainRow } from '../services/router.js';
+import { classifyComplexity } from '../services/complexity-gate.js';
 import { getSetting, getUnifiedApiKey } from '../db/index.js';
 import { contentToString, estimateInputTokens } from '../lib/content.js';
 import { routeOutputBudget } from '../lib/output-cap.js';
@@ -706,6 +707,11 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
   const dispatchOptions = { ...completionOptions, signal: AbortSignal.any([clientAbort.signal, hedgeAbort.signal]) };
   const requestId = sessionId ? `${sessionId}:${Date.now().toString(36)}` : `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
+  // Complexity gate (Jev-B): classify ONCE per request, before the loop —
+  // level is a soft weight bias inside routeRequest (trivial → fast/cheap,
+  // hard → smart). classifyComplexity is opt-in and fail-open internally.
+  const complexity = await classifyComplexity(messages, tools);
+
   await runFallbackLoop({
     maxRetries: MAX_RETRIES,
     state,
@@ -720,7 +726,7 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
       // size latched onto state so the existing size gates in router.ts skip
       // low-TPM / small-context models on retry.
       const routingTotal = fallbackRoutingTokens(state, estimatedTotal, outputReserve);
-      return routeRequest(routingTotal, state.skipKeys.size > 0 ? state.skipKeys : undefined, preferredModel, hasImage, wantsTools, state.skipModels.size > 0 ? state.skipModels : undefined, groupChain ?? resolvedChain?.chain, false, state.skipPlatforms.size > 0 ? state.skipPlatforms : undefined, outputReserve, taskType);
+      return routeRequest(routingTotal, state.skipKeys.size > 0 ? state.skipKeys : undefined, preferredModel, hasImage, wantsTools, state.skipModels.size > 0 ? state.skipModels : undefined, groupChain ?? resolvedChain?.chain, false, state.skipPlatforms.size > 0 ? state.skipPlatforms : undefined, outputReserve, taskType, complexity);
     },
     dispatch: async (route, attempt, dispatchCtx) => {
       traceRouteEvent('Proxy', {

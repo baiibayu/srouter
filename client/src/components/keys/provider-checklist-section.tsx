@@ -11,6 +11,7 @@ import { PLATFORMS } from './shared'
 interface ProviderChecklistEntry {
   platform: string
   name: string
+  kind?: 'chat' | 'search'
   keyless: boolean
   configured: boolean
   keyCount: number
@@ -34,14 +35,19 @@ export function ProviderChecklistSection({ onAddKey }: { onAddKey: (platform: st
     queryFn: () => apiFetch('/api/keys/providers'),
   })
 
+  // #1174: 'search' engines (Tavily, Exa, Firecrawl, Linkup, Parallel, Jina)
+  // are configured in the dedicated Web Tools card, not in this model checklist.
+  const chatProviders = (data?.providers ?? []).filter(p => p.kind !== 'search')
+
   // No skeleton: the strip is one line of muted text, so it simply appears
   // once loaded instead of reserving space while the page settles.
-  if (!data || data.providers.length === 0) return null
+  if (chatProviders.length === 0) return null
 
-  const unconfigured = data.providers.filter(p => !p.configured)
+  const unconfigured = chatProviders.filter(p => !p.configured)
+  const configuredCount = chatProviders.filter(p => p.configured).length
   const summaryText = t('keys.checklistSummary', {
-    configured: data.summary.configured,
-    total: data.summary.total,
+    configured: configuredCount,
+    total: chatProviders.length,
   })
 
   // Everything configured: nothing actionable to expand, just the summary.

@@ -1,3 +1,31 @@
+## 2026-11-04 — 0.1.66
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `9a0fc06` | 2026-11-04 | fix(lint): remove unused getProvider import in decision service. |
+| `959b660` | 2026-11-04 | feat(system-one): add UsageSummaryCard and real-time usage metrics in dashboard. |
+| `959b660` | 2026-11-04 | feat(system-one): one-click Make default failover control for quick activation. |
+| `9aaa4b1` | 2026-11-04 | fix(loop-breaker): wire LoopBreaker into /v1/responses and inbound-chat to prevent repetition. |
+| `9aaa4b1` | 2026-11-04 | fix(routing): disable tool support for note-preview models prone to sequential number looping. |
+| `release` | 2026-11-04 | feat(providers): add Jina AI provider integration for Web Reader, Web Search, and Deep Fetch. |
+| `release` | 2026-11-04 | feat(oauth): add Cline OAuth authorize & callback URL flow for extension integration. |
+| `release` | 2026-11-04 | feat(providers): add Nous Research OpenAI-compatible provider and models. |
+| `release` | 2026-11-04 | feat(providers): add Puter.js free cloud inference provider. |
+| `release` | 2026-11-04 | feat(providers): add Freebuff provider adapter. |
+| `release` | 2026-11-04 | feat(providers): add Kiro / xKiro provider adapter and error handling. |
+| `release` | 2026-11-04 | fix(db): add migration 20261030_000001 to remove dead platforms (aclide, ainative, bai, reka, sambanova, blaze). |
+| `release` | 2026-11-04 | fix(db): add migration 20261030_000002 to seed Jina search platform defaults. |
+| `release` | 2026-11-04 | fix(db): add migration 20261031_000001 to purge dead platform clod. |
+| `release` | 2026-11-04 | chore(cleanup): completely purge 7 dead platforms (aclide, ainative, bai, reka, sambanova, blaze, clod) from catalog, discovery, and UI. |
+| `release` | 2026-11-04 | fix(providers): update Cerebras status from free tier to non-free trial credits. |
+| `release` | 2026-11-04 | fix(providers): fix NavyAI free-tier route and discovery to work reliably. |
+| `release` | 2026-11-04 | feat(compression): enable auto-triggered background compression (mode: standard, trigger: 25k, target: 16k tokens). |
+| `release` | 2026-11-04 | fix(compression): implement isLossless mode in fidelity-gate to permit aging and hard-budget pruning of ancient turns without discarding. |
+| `release` | 2026-11-04 | fix(google): handle trailing assistant turn with synthetic continue turn to prevent Google 400 error. |
+| `release` | 2026-11-04 | fix(routing): reset default routing strategy from broken systemone back to balanced to prevent trivial tier-inversion and codestral loops. |
+| `release` | 2026-11-04 | feat(ui): add ProviderChecklistSection, QuotaSignalsSection, and WebSearchSection components to Keys page. |
+| `release` | 2026-11-04 | chore(i18n): synchronize and harmonize translations across all 60 language locales. |
+
 ## 2026-10-29 — 0.1.43
 
 | Commit | Date | Summary |

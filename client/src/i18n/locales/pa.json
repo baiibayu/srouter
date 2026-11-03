@@ -1451,6 +1451,8 @@
     "tryAnswer": "ਜਵਾਬ: {choice}",
     "tryConfidence": "{value}% ਯਕੀਨੀ",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "ਉਦਾਹਰਨ ਬੇਨਤੀ"
+    "exampleTitle": "ਉਦਾਹਰਨ ਬੇਨਤੀ",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

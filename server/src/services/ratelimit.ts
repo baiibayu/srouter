@@ -390,7 +390,6 @@ interface WindowUsageSnapshot {
   keysByPlatform: Map<string, EligibleKey[]>;
   baseUrlByKeyId: Map<number, string | null>;
 }
-
 /** Utilization moves on the timescale of a rate-limit window, not a request, so
  *  a few seconds of staleness is invisible to a guardrail while the query count
  *  drops to ~one per burst. The hard gates above are unaffected — they still
@@ -458,7 +457,7 @@ function buildWindowUsageSnapshot(now: number): WindowUsageSnapshot | null {
   }) ?? null;
 }
 
-function getWindowUsageSnapshot(now: number): WindowUsageSnapshot | null {
+export function getWindowUsageSnapshot(now: number): WindowUsageSnapshot | null {
   let db;
   try {
     db = getDb();

@@ -63,8 +63,6 @@ describe('key parser', () => {
     expect(detectPlatform('MODELSCOPE_')).toBe('modelscope');
     expect(detectPlatform('ANYAPI_')).toBe('anyapi');
     expect(detectPlatform('ANY_API_')).toBe('anyapi');
-    expect(detectPlatform('BAI_')).toBe('bai');
-    expect(detectPlatform('B_AI_')).toBe('bai');
     expect(detectPlatform('RADEON_')).toBe('radeon');
     expect(detectPlatform('AMD_RADEON_')).toBe('radeon');
     expect(detectPlatform('AMD_TOKENFACTORY_')).toBe('radeon');
@@ -98,7 +96,6 @@ describe('key parser', () => {
     expect(AUTH_JSON_PROVIDER_MAP['uno-router']).toBe('unorouter');
     expect(AUTH_JSON_PROVIDER_MAP['model-scope']).toBe('modelscope');
     expect(AUTH_JSON_PROVIDER_MAP['any-api']).toBe('anyapi');
-    expect(AUTH_JSON_PROVIDER_MAP['b-ai']).toBe('bai');
     expect(AUTH_JSON_PROVIDER_MAP['radeon-cloud']).toBe('radeon');
     expect(AUTH_JSON_PROVIDER_MAP['amd-tokenfactory']).toBe('radeon');
     expect(AUTH_JSON_PROVIDER_MAP['sail-research']).toBe('sail');
@@ -135,7 +132,7 @@ describe('key parser', () => {
     expect(result.skipped).toEqual(['PORT: value does not look like an API key']);
   });
 
-  it.each([['CLOD', 'clod'], ['SPEECHIFY', 'speechify'], ['BLAZE', 'blaze'], ['BLAZEAPI', 'blaze'], ['LUCIDITY', 'lucidity'], ['AIRFORCE', 'airforce'], ['API_AIRFORCE', 'airforce'], ['DREAMPROMPTING', 'dreamprompting'], ['DREAM_PROMPTING', 'dreamprompting'], ['WATERFALL', 'waterfall'], ['LOGFARE', 'logfare']])('imports %s environment keys', (prefix, platform) => {
+  it.each([['SPEECHIFY', 'speechify'], ['LUCIDITY', 'lucidity'], ['AIRFORCE', 'airforce'], ['API_AIRFORCE', 'airforce'], ['DREAMPROMPTING', 'dreamprompting'], ['DREAM_PROMPTING', 'dreamprompting'], ['WATERFALL', 'waterfall'], ['LOGFARE', 'logfare']])('imports %s environment keys', (prefix, platform) => {
     const result = parseKeysFromFile(`${prefix}_API_KEY=not-a-real-provider-key`, 'keys.env');
     expect(result.keys).toHaveLength(1);
     expect(result.keys[0].platform).toBe(platform);

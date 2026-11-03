@@ -1451,6 +1451,8 @@
     "tryAnswer": "Resposta: {choice}",
     "tryConfidence": "{value}% de confiança",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Exemplo de requisição"
+    "exampleTitle": "Exemplo de requisição",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

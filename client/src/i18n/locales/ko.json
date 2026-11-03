@@ -1451,6 +1451,8 @@
     "tryAnswer": "답변: {choice}",
     "tryConfidence": "확신도 {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "요청 예시"
+    "exampleTitle": "요청 예시",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

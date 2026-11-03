@@ -102,8 +102,6 @@ export type Platform =
   // monthly when a payment method is attached; usage beyond the grant is
   // pay-as-you-go. Background polling is required for its flex-only models.
   | 'sail'
-  // Responses-only gateway; a shared monthly free allowance, not per model.
-  | 'aclide'
   // OpenAI-compatible chat and embeddings; one shared $1 monthly allowance.
   | 'speka'
   // Built-in chat and embeddings share free monthly credits; catalog only.
@@ -126,12 +124,10 @@ export type Platform =
   // Catalog-managed gateways: monthly shared credits vs daily free-model quota.
   | 'router9'
   | 'septor'
-  | 'clod'
   | 'speechify'
   // Self-hosted TTS: shared 30K tokens/day and 1K API requests/month, no card.
   // Model rows arrive only through the signed, freshness-gated catalog.
   | 'freeai'
-  | 'blaze'
   // Lucidity Composite, Api.Airforce and DreamPrompting expose daily free
   // allowances; Waterfall and Logfare publish community / fair-use tiers.
   | 'lucidity'
@@ -139,9 +135,6 @@ export type Platform =
   | 'dreamprompting'
   | 'waterfall'
   | 'logfare'
-  // B.AI — OpenAI-compatible gateway. Its catalog row is a live-tested,
-  // limited-time 0-credit promotion, not a recurring free allowance.
-  | 'bai'
   // AnyAPI — OpenAI-compatible gateway. Free tier is $0/no card/recurring but
   // capped at 100K tokens/day over "free and basic" models only; no RPM/RPD is
   // published. Catalog rows live in the hosted catalog (premium now, free after
@@ -153,7 +146,6 @@ export type Platform =
   | 'radeon'
   | 'nvidia'
   | 'mistral'
-  | 'sambanova'
   | 'openrouter'
   | 'cohere'
   // Web search APIs (#1174), not chat providers. Their keys serve POST
@@ -165,6 +157,8 @@ export type Platform =
   | 'firecrawl'
   | 'linkup'
   | 'parallel'
+  // Jina Search & Reader � search-only provider.
+  | 'jina'
   | 'cloudflare'
   | 'zhipu'
   | 'ollama'
@@ -195,10 +189,6 @@ export type Platform =
   // its own proprietary Agnes models; the free key comes from
   // platform.agnes-ai.com (no card).
   | 'agnes'
-  // Reka — OpenAI-compatible. Native multimodal models (reka-edge takes
-  // image/video). New accounts need prepaid credits (#1202); key from
-  // platform.reka.ai.
-  | 'reka'
   // SiliconFlow — OpenAI-compatible. Registered for its FREE generative-media
   // models (FLUX.1-schnell image, CosyVoice2 TTS) routed via services/media.ts;
   // chat is supported too. Key from siliconflow.com (no card).
@@ -210,10 +200,6 @@ export type Platform =
   // BazaarLink — OpenAI-compatible aggregator. Free 'auto:free' route picks an
   // available zero-cost model. Key from bazaarlink.ai (no card).
   | 'bazaarlink'
-  // AINative Studio — OpenAI-compatible aggregator. Advertises a recurring
-  // ~10M tokens/month free allocation (no card); quota unverified. Key from
-  // ainative.studio.
-  | 'ainative'
   // Aion Labs — OpenAI-compatible aggregator with a no-card free API key.
   // Catalog rows live in the Oracle catalog (premium now, free after 30 days).
   | 'aion'
@@ -328,13 +314,17 @@ export type Platform =
   // User-configured OpenAI-compatible endpoint (llama.cpp, LM Studio, vLLM,
   // Ollama, any base_url). The endpoint URL lives on the api_keys row; see #117.
   | 'typesafe'
+  | 'puter'
+  | 'cline'
+  | 'freebuff'
+  | 'kiro'
   | 'custom';
 
 /** Platforms whose keys serve web search (POST /v1/search and the agents'
  *  web_search tools), never chat. Search engine rows arrive through the
  *  catalog's `searchEngines` registry. The server keeps its own runtime copy in
  *  server/src/lib/search-platforms.ts (shared is type-only on the server). */
-export const SEARCH_PLATFORMS = ['tavily', 'exa', 'firecrawl', 'linkup', 'parallel'] as const;
+export const SEARCH_PLATFORMS = ['tavily', 'exa', 'firecrawl', 'linkup', 'parallel', 'jina'] as const;
 export type SearchPlatform = (typeof SEARCH_PLATFORMS)[number];
 
 export function isSearchPlatform(platform: string): platform is SearchPlatform {

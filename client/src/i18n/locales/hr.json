@@ -1451,6 +1451,8 @@
     "tryAnswer": "Odgovor: {choice}",
     "tryConfidence": "Sigurnost {value} %",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Primjer zahtjeva"
+    "exampleTitle": "Primjer zahtjeva",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

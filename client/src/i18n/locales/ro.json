@@ -1451,6 +1451,8 @@
     "tryAnswer": "Răspuns: {choice}",
     "tryConfidence": "Încredere {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Exemplu de cerere"
+    "exampleTitle": "Exemplu de cerere",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

@@ -1451,6 +1451,8 @@
     "tryAnswer": "პასუხი: {choice}",
     "tryConfidence": "{value}% დარწმუნებით",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "მოთხოვნის მაგალითი"
+    "exampleTitle": "მოთხოვნის მაგალითი",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

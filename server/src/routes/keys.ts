@@ -48,7 +48,6 @@ export const keysRouter = Router();
 // were dropped in 2026-10. HuggingFace is RETAINED (grandfathered accounts
 // still receive the monthly credit). LLMTR restored 2026-10-11.
 const PLATFORMS = [
-  'aclide',
   'speka',
   'auray',
   'typhoon',
@@ -60,11 +59,11 @@ const PLATFORMS = [
   'blockrun',
   'moondream',
  'freeai',
-  'google', 'groq', 'sail', 'electronhub', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'bai', 'radeon', 'nvidia', 'mistral',
-  'openrouter', 'cohere', 'tavily', 'exa', 'firecrawl', 'linkup', 'parallel', 'cloudflare', 'zhipu', 'ollama',
-  'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'reka', 'siliconflow',
-  'routeway', 'bazaarlink', 'ainative', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
-  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'typesafe', 'custom',
+  'google', 'groq', 'sail', 'electronhub', 'router9', 'septor', 'speechify', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'radeon', 'nvidia', 'mistral',
+  'openrouter', 'cohere', 'tavily', 'exa', 'firecrawl', 'linkup', 'parallel', 'jina', 'cloudflare', 'zhipu', 'ollama',
+  'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'siliconflow',
+  'routeway', 'bazaarlink', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
+  'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'typesafe', 'puter', 'cline', 'freebuff', 'kiro', 'custom',
   'nous', 'typhoon', 'plugsky', 'tokenharbor', 'alibaba', 'codecraft',
 ] as const;
 
@@ -308,8 +307,11 @@ keysRouter.get('/providers', (_req: Request, res: Response) => {
   `).all() as Array<{ platform: string; total_keys: number; enabled_keys: number }>;
   const countsByPlatform = new Map(countRows.map(r => [r.platform, r]));
 
+  // Search platforms (tavily, exa, firecrawl, linkup, parallel, jina)
+  // serve web search tools only and are configured in the Web Tools card,
+  // not in the chat model provider checklist (#1174, #1465).
   const providers = getAllProviders()
-    .filter(p => p.platform !== 'custom')
+    .filter(p => p.platform !== 'custom' && !isSearchPlatform(p.platform))
     .map(p => {
       const counts = countsByPlatform.get(p.platform);
       const keyCount = counts?.total_keys ?? 0;

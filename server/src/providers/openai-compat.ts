@@ -16,7 +16,7 @@ import type { QuotaMetric } from '@baiibayu/srouter-shared/types.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { isAbortLikeError } from '../lib/error-classify.js';
 import { contentToString } from '../lib/content.js';
-import { bearerAuthHeader } from '../lib/credential.js';
+import { bearerAuthHeader, isAnonymousCredential } from '../lib/credential.js';
 
 // Shared with the media/embeddings custom-endpoint paths; re-exported so
 // existing imports keep working (#1331).
@@ -86,13 +86,13 @@ export interface QuotaProbeSpec {
 export class OpenAICompatProvider extends BaseProvider {
   readonly platform: Platform;
   readonly name: string;
-  private readonly baseUrl: string;
+  protected readonly baseUrl: string;
 
   /** Read-only accessor for the merged provider catalog export. */
   get baseUrlPublic(): string {
     return this.baseUrl;
   }
-  private readonly extraHeaders: Record<string, string>;
+  protected readonly extraHeaders: Record<string, string>;
   private readonly validateUrl?: string;
   /** Per-provider HTTP timeout override. OpenAI-compatible gateways often buffer
    * non-streaming responses until generation completes, and reasoning models can
@@ -198,7 +198,7 @@ export class OpenAICompatProvider extends BaseProvider {
    * of the anonymous path, and a real key on a custom endpoint still gets its
    * bearer (#1331): the presence of a credential decides at request time —
    * Kilo, OVH and AI Horde all accept both modes per their docs. */
-  private authHeader(apiKey: string): Record<string, string> {
+  protected authHeader(apiKey: string): Record<string, string> {
     return bearerAuthHeader(apiKey);
   }
 
@@ -409,6 +409,10 @@ export class OpenAICompatProvider extends BaseProvider {
         `Check the base URL (for Ollama use http://host:11434/v1, for llama.cpp/vLLM/LM Studio the /v1 path).`,
       );
     }
+    // Unwrap { data: { choices: [...] } } returned by providers like Cline (#cline-unwrap)
+    if ((data as any)?.data && Array.isArray((data as any).data?.choices)) {
+      data = (data as any).data;
+    }
     normalizeChoices(data);
     // #pollinations-inband: a 200 whose body is really an out-of-credits notice
     // must fail over, not be returned as the answer. The "402 ... insufficient
@@ -570,6 +574,9 @@ export class OpenAICompatProvider extends BaseProvider {
   }
 
   async validateKey(apiKey: string, quotaContext?: QuotaObservationContext): Promise<KeyValidationResult> {
+    if (this.keyless && isAnonymousCredential(apiKey)) {
+      return true;
+    }
     const res = await this.fetchCatalogEndpoint(this.validateUrl ?? this.modelsUrl, apiKey, quotaContext);
     return this.validationResult(res);
   }

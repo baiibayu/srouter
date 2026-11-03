@@ -249,10 +249,6 @@ export const PLATFORM_PARAM_POLICIES: Partial<Record<Platform, PlatformParamPoli
     drop: ['top_k', 'min_p', 'seed', 'presence_penalty', 'frequency_penalty', 'repetition_penalty', 'logit_bias', 'logprobs', 'top_logprobs', 'response_format'],
     maxTokensCap: 4096,
   },
-  // ACLIDE uses Responses; these Chat Completions parameters have no mapping.
-  aclide: {
-    drop: ['top_k', 'min_p', 'seed', 'presence_penalty', 'frequency_penalty', 'repetition_penalty', 'logit_bias', 'logprobs', 'top_logprobs'],
-  },
   // Sail's stable Responses API accepts temperature/top_p, JSON Schema output,
   // tools and reasoning effort. The remaining Chat Completions knobs are not
   // supported and are intentionally omitted by the dedicated adapter.
@@ -306,8 +302,6 @@ export const PLATFORM_PARAM_POLICIES: Partial<Record<Platform, PlatformParamPoli
   // Dropping it also makes structured-output routing skip kilo entirely.
   kilo: { drop: ['response_format'] },
   // Reka supports json_schema but rejects json_object (live 2026-07-11);
-  // upgraded on the wire instead of dropped.
-  reka: { jsonObjectToSchema: true },
 };
 
 // The permissive schema a json_object request is upgraded to on platforms

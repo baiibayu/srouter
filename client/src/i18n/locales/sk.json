@@ -1451,6 +1451,8 @@
     "tryAnswer": "Odpoveď: {choice}",
     "tryConfidence": "Istota {value} %",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Ukážková požiadavka"
+    "exampleTitle": "Ukážková požiadavka",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

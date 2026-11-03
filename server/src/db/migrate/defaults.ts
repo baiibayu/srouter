@@ -51,6 +51,8 @@ import * as decisionChatJudge from '../migrations/20261021_000001_decision_chat_
 import * as fixDecisionChatJudgeOrder from '../migrations/20261022_000001_fix_decision_chat_judge_order.js';
 import * as proxyPools from '../migrations/20261023_000001_proxy_pools.js';
 import * as proxyConditionalRouting from '../migrations/20261024_000001_proxy_conditional_routing.js';
+import * as removeDeadPlatformsV2 from '../migrations/20261030_000001_remove_dead_platforms_v2.js';
+import * as seedJinaSearch from '../migrations/20261030_000002_seed_jina_search.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -105,6 +107,8 @@ export const UNIFIED_KEY_SR_PREFIX_FILENAME = '20261004_000001_unified_key_sr_pr
 export const KEY_BUDGET_PERIOD_FILENAME = '20261005_000001_key_budget_period.ts';
 export const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_period_auto.ts';
 export const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts';
+export const REMOVE_DEAD_PLATFORMS_V2_FILENAME = '20261030_000001_remove_dead_platforms_v2.ts';
+export const SEED_JINA_SEARCH_FILENAME = '20261030_000002_seed_jina_search.ts';
 export const SEARCH_ENGINES_FILENAME = '20261013_000001_search_engines.ts';
 export const DECISION_REQUESTS_FILENAME = '20261016_000001_decision_requests.ts';
 export const SEED_LOCAL_SEARCH_ENGINES_FILENAME = '20261019_000001_seed_local_search_engines.ts';
@@ -168,4 +172,6 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: FIX_DECISION_CHAT_JUDGE_ORDER_FILENAME, module: fixDecisionChatJudgeOrder },
   { filename: PROXY_POOLS_FILENAME, module: proxyPools },
   { filename: PROXY_CONDITIONAL_ROUTING_FILENAME, module: proxyConditionalRouting },
+  { filename: REMOVE_DEAD_PLATFORMS_V2_FILENAME, module: removeDeadPlatformsV2 },
+  { filename: SEED_JINA_SEARCH_FILENAME, module: seedJinaSearch },
 ];

@@ -1451,6 +1451,8 @@
     "tryAnswer": "Sagot: {choice}",
     "tryConfidence": "{value}% sigurado",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Halimbawang request"
+    "exampleTitle": "Halimbawang request",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

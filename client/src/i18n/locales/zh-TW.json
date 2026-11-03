@@ -1451,6 +1451,8 @@
     "tryAnswer": "答案：{choice}",
     "tryConfidence": "信心 {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "請求範例"
+    "exampleTitle": "請求範例",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

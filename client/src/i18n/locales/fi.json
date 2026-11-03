@@ -1451,6 +1451,8 @@
     "tryAnswer": "Vastaus: {choice}",
     "tryConfidence": "{value} % varma",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Esimerkkipyyntö"
+    "exampleTitle": "Esimerkkipyyntö",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

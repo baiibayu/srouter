@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -41,11 +41,111 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
   const [accountId, setAccountId] = useState('')
   const [label, setLabel] = useState('')
   const [addAttempted, setAddAttempted] = useState(false)
-  // Several credentials for one provider in one go (#705). Pooling keys is the
-  // point of this app, and the only bulk path was the file importer, so anyone
-  // holding five Groq keys reopened this dialog five times. Off by default: the
-  // single-key field masks what you type, and a textarea cannot.
   const [several, setSeveral] = useState(false)
+  const [kiroPending, setKiroPending] = useState(false)
+  const [kiroUserCode, setKiroUserCode] = useState<string | null>(null)
+  const [nousPending, setNousPending] = useState(false)
+  const [nousUserCode, setNousUserCode] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handleMsg = (e: MessageEvent) => {
+      if (e.data?.type === 'SROUTER_OAUTH_SUCCESS') {
+        queryClient.invalidateQueries({ queryKey: ['keys'] })
+        queryClient.invalidateQueries({ queryKey: ['keys-providers'] })
+        toast.success(`Linked account: ${e.data.email || e.data.provider}`)
+        onSuccess()
+      }
+    }
+    window.addEventListener('message', handleMsg)
+    return () => window.removeEventListener('message', handleMsg)
+  }, [queryClient, onSuccess])
+
+  const handleKiroOAuth = async () => {
+    try {
+      setKiroPending(true)
+      const auth = await apiFetch<any>('/api/oauth/kiro/authorize')
+      if (auth.verificationUriComplete) {
+        setKiroUserCode(auth.userCode)
+        window.open(auth.verificationUriComplete, '_blank')
+
+        const pollTimer = setInterval(async () => {
+          try {
+            const pollRes = await apiFetch<any>('/api/oauth/kiro/poll', {
+              method: 'POST',
+              body: JSON.stringify({
+                clientId: auth.clientId,
+                clientSecret: auth.clientSecret,
+                deviceCode: auth.deviceCode,
+                region: auth.region,
+              }),
+            })
+            if (pollRes.success) {
+              clearInterval(pollTimer)
+              setKiroPending(false)
+              setKiroUserCode(null)
+              queryClient.invalidateQueries({ queryKey: ['keys'] })
+              queryClient.invalidateQueries({ queryKey: ['keys-providers'] })
+              toast.success('Connected Kiro AI (AWS Builder ID)!')
+              onSuccess()
+            } else if (!pollRes.pending) {
+              clearInterval(pollTimer)
+              setKiroPending(false)
+            }
+          } catch {
+            clearInterval(pollTimer)
+            setKiroPending(false)
+          }
+        }, 3000)
+      }
+    } catch (err: any) {
+      setKiroPending(false)
+      toast.error(err?.message || 'Failed to start Kiro OAuth')
+    }
+  }
+
+  const handleNousOAuth = async () => {
+    try {
+      setNousPending(true)
+      const auth = await apiFetch<any>('/api/oauth/nous/authorize')
+      if (auth.verificationUriComplete) {
+        setNousUserCode(auth.userCode)
+        window.open(auth.verificationUriComplete, '_blank')
+
+        const pollTimer = setInterval(async () => {
+          try {
+            const pollRes = await apiFetch<any>('/api/oauth/nous/poll', {
+              method: 'POST',
+              body: JSON.stringify({
+                deviceCode: auth.deviceCode,
+              }),
+            })
+            if (pollRes.success) {
+              clearInterval(pollTimer)
+              setNousPending(false)
+              setNousUserCode(null)
+              queryClient.invalidateQueries({ queryKey: ['keys'] })
+              queryClient.invalidateQueries({ queryKey: ['keys-providers'] })
+              toast.success(pollRes.email ? `Connected Nous Portal (${pollRes.email})!` : 'Connected Nous Portal!')
+              onSuccess()
+            } else if (!pollRes.pending) {
+              clearInterval(pollTimer)
+              setNousPending(false)
+            }
+          } catch {
+            clearInterval(pollTimer)
+            setNousPending(false)
+          }
+        }, 4000)
+      }
+    } catch (err: any) {
+      setNousPending(false)
+      toast.error(err?.message || 'Failed to start Nous Portal OAuth')
+    }
+  }
+
+  const handleClineOAuth = () => {
+    window.open('/api/oauth/cline/authorize?redirect=true', 'cline_oauth', 'width=550,height=700')
+  }
 
   // #707: the platform dropdown had no search and no way to skip providers that
   // already have keys, which is painful at thirty-odd entries. The shared
@@ -184,6 +284,125 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
 
   return (
     <div>
+      {platform === 'nous' && (
+        <div className="mb-4 rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <span>Nous Portal (OAuth Device Login)</span>
+              {nousUserCode && (
+                <span className="font-mono bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded text-[11px]">
+                  Code: {nousUserCode}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {nousPending ? 'Waiting for approval in browser...' : 'Connect Nous Portal account via OAuth login to use models.'}
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleNousOAuth}
+            disabled={nousPending}
+            className="whitespace-nowrap shrink-0 bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            {nousPending ? 'Polling Portal...' : 'Authorize Nous Portal'}
+          </Button>
+        </div>
+      )}
+
+      {platform === 'cline' && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <span>Cline Account OAuth (Multi-Account)</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Sign in via WorkOS with account selection prompt to link any Google/GitHub Cline account.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleClineOAuth}
+            className="whitespace-nowrap shrink-0"
+          >
+            Sign in with Cline Account
+          </Button>
+        </div>
+      )}
+
+      {platform === 'kiro' && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <span>Kiro AI (AWS Builder ID Device Login)</span>
+              {kiroUserCode && (
+                <span className="font-mono bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[11px]">
+                  Code: {kiroUserCode}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {kiroPending ? 'Waiting for AWS approval in browser...' : 'Connect free Claude 4.5 Sonnet / Haiku via your AWS Builder ID.'}
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleKiroOAuth}
+            disabled={kiroPending}
+            className="whitespace-nowrap shrink-0"
+          >
+            {kiroPending ? 'Polling AWS...' : 'Authorize AWS Builder ID'}
+          </Button>
+        </div>
+      )}
+
+      {platform === 'puter' && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <span>Puter AI (Keyless / Free Personal Token)</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Leave API key empty to enable anonymous keyless tier, or get a free personal auth token from your Puter dashboard.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => window.open('https://puter.com/dashboard#account', '_blank')}
+            className="whitespace-nowrap shrink-0"
+          >
+            Get Puter Token
+          </Button>
+        </div>
+      )}
+
+      {platform === 'freebuff' && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <span>Freebuff (Daily Freebucks & Auto-Detect)</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Auto-detects credentials from ~/.config/manicode or login at Freebuff to refill your daily Freebucks quota.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => window.open('https://freebuff.com/account', '_blank')}
+            className="whitespace-nowrap shrink-0"
+          >
+            Freebuff Portal
+          </Button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">{t('keys.platform')}</Label>

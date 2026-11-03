@@ -1,5 +1,5 @@
 import { getDb } from '../db/index.js';
-import { getAllPenalties, clearAllPenalties } from './router.js';
+import { getAllPenalties, clearAllPenalties, clearSystemOneDispatches } from './router.js';
 import { rateLimitFactor } from './scoring.js';
 import { clearAllCooldowns } from './ratelimit.js';
 import { clearModelFailureWindows } from '../lib/fallback-loop.js';
@@ -111,6 +111,7 @@ export interface RouterPressureClearResult {
  * failures — far better than a pool that cannot route for a day.
  */
 export function clearRouterPressure(): RouterPressureClearResult {
+  clearSystemOneDispatches();
   return {
     cooldowns: clearAllCooldowns(),
     penalties: clearAllPenalties(),

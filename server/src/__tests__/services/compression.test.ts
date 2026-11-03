@@ -349,6 +349,43 @@ describe('compression engines', () => {
     expect(lowered.mode).toBe('lossless');
   });
 
+  it('successfully condenses older turns with numbers and diffs via aging and hard-budget without gate discard', () => {
+    const olderTurns: ChatMessage[] = [];
+    for (let i = 0; i < 15; i++) {
+      const longOutput = [
+        `Step ${i}: build package version 1.2.${i} and check status code 200`,
+        'We decided to implement the new architecture because performance was degrading.',
+        'Compiling typescript files in directory /usr/src/app/packages/core/src/index.ts',
+        'Checking linting rules and formatting across 150 repository files without warning',
+        'Generating asset bundles and compressing chunks for client distribution',
+        `Error: ancient error ${i} occurred during initial diagnostic verification`,
+        '@@ -1,5 +1,5 @@',
+        `const port = ${8000 + i};`,
+        'All temporary build artifacts were successfully cleaned up and flushed.',
+      ].join('\n');
+      olderTurns.push(msg('user', longOutput));
+      olderTurns.push(msg('assistant', `Acknowledged step ${i} completed with status 200. Build verified.`));
+    }
+    const liveTurns: ChatMessage[] = [
+      msg('user', 'What is the final task status? Please keep port 9999 open.'),
+      msg('assistant', 'Everything is ready. Proceeding to port 9999.'),
+      msg('user', 'Run final deployment on port 9999.'),
+    ];
+    const messages = [
+      msg('system', 'System instruction: always keep port 9999 valid.'),
+      ...olderTurns,
+      ...liveTurns,
+    ];
+    const cfg = config('aggressive', { targetTokens: 500 });
+    const result = compressRequest(messages, { config: cfg, recordStats: false });
+    expect(result.stats.compressedChars).toBeLessThan(result.stats.originalChars);
+    expect(result.stats.discardedByGate).not.toContain('aging');
+    // Ensure live turns and system instructions are preserved
+    const outputText = result.messages.map(m => m.content).join('\n');
+    expect(outputText).toContain('System instruction: always keep port 9999 valid.');
+    expect(outputText).toContain('Run final deployment on port 9999.');
+  });
+
   it('keeps rolling aggregate stats without retaining request bodies', () => {
     compressRequest([msg('user', 'hello   \n\n\n\nworld')], { config: config('lossless') });
     const stats = getCompressionStats();

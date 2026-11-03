@@ -9,6 +9,7 @@ import { EXA_BASE_URL } from '../providers/exa.js';
 import { FIRECRAWL_BASE_URL } from '../providers/firecrawl.js';
 import { LINKUP_BASE_URL } from '../providers/linkup.js';
 import { PARALLEL_BASE_URL, PARALLEL_MCP_URL } from '../providers/parallel.js';
+import { JINA_SEARCH_BASE_URL } from '../providers/jina.js';
 import { isAnonymousCredential } from '../lib/credential.js';
 import { randomUUID } from 'node:crypto';
 import { secondsUntilNextMonth } from './key-budget.js';
@@ -17,7 +18,7 @@ import { isOnCooldown, setCooldown } from './ratelimit.js';
 import {
   searchWeb, getWebSearchUsage,
   WEB_SEARCH_TAVILY_KEY, WEB_SEARCH_EXA_KEY,
-  WEB_SEARCH_FIRECRAWL_KEY, WEB_SEARCH_LINKUP_KEY, WEB_SEARCH_BRAVE_KEY,
+  WEB_SEARCH_FIRECRAWL_KEY, WEB_SEARCH_LINKUP_KEY, WEB_SEARCH_JINA_KEY, WEB_SEARCH_BRAVE_KEY,
   getWebSearchConfig, getBaseUrl, getTinyfishApiKey, readKey,
 } from './web-search.js';
 
@@ -368,6 +369,26 @@ const ADAPTERS: Record<string, Adapter> = {
     const hits = (parsed.results || []).filter(r => r.type === undefined || r.type === "text").map(r => ({ title: str(r.name), url: str(r.url), content: str(r.content) }));
     return { results: keepHits(hits) };
   },
+  jina: async (cred, query, opts, maxResults) => {
+    const key = cred.key || readKey(WEB_SEARCH_JINA_KEY);
+    if (!key) throw new SearchError("Jina key not configured", 503, "no_key");
+    const parsed = await upstream(JINA_SEARCH_BASE_URL, "jina", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key.trim()}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ q: query, options: "Markdown" }),
+    }, opts.signal) as { data?: Array<Record<string, unknown>> };
+    const hits = (parsed.data || []).slice(0, maxResults).map(r => ({
+      title: str(r.title),
+      url: str(r.url),
+      content: str(r.content) || str(r.description) || "",
+    }));
+    return { results: keepHits(hits) };
+  },
+
 
   tinyfish: async (cred, query, _opts, _maxResults) => {
     const key = getTinyfishApiKey();
@@ -446,7 +467,7 @@ export const SEARCH_ENGINE_PLATFORMS = new Set(Object.keys(ADAPTERS).filter(p =>
  *  never publishes them, so applyCatalog must neither update nor prune their
  *  rows — the insert and prune loops gate on the complement instead. */
 export const LOCAL_SEARCH_PLATFORMS = new Set([
-  'duckduckgo', 'parallel', 'searxng', 'tinyfish', 'brave',
+  'duckduckgo', 'parallel', 'searxng', 'tinyfish', 'brave', 'jina',
 ]);
 
 /** Search platforms the upstream catalog publishes and therefore manages
@@ -519,6 +540,8 @@ function hasSearchKey(): boolean {
         break;
       case 'linkup':
         if (config.hasLinkupKey) return true;
+      case 'jina':
+        if (config.hasJinaKey) return true;
         break;
       case 'brave':
         if (config.hasBraveKey) return true;
@@ -556,6 +579,7 @@ export function searchAvailable(): boolean {
       case 'exa': if (config.hasExaKey) return true; break;
       case 'firecrawl': if (config.hasFirecrawlKey) return true; break;
       case 'linkup': if (config.hasLinkupKey) return true; break;
+      case 'jina': if (config.hasJinaKey) return true; break;
       case 'custom': if (row.key_id != null) return true; break;
     }
   }
@@ -588,6 +612,7 @@ function searchChain(engine: string | undefined): SearchEngineRow[] {
         case 'exa': canRun = config.hasExaKey; break;
         case 'firecrawl': canRun = config.hasFirecrawlKey; break;
         case 'linkup': canRun = config.hasLinkupKey; break;
+      case 'jina': canRun = config.hasJinaKey; break;
       }
     }
 
@@ -835,6 +860,7 @@ export function listSearchEngines(): SearchEngineView[] {
           case 'exa': return cfg.hasExaKey;
           case 'firecrawl': return cfg.hasFirecrawlKey;
           case 'linkup': return cfg.hasLinkupKey;
+    case 'jina': return cfg.hasJinaKey;
           case 'custom': return row.key_id != null;
           default: return false;
         }
@@ -851,6 +877,7 @@ export function listSearchEngines(): SearchEngineView[] {
           case "exa": return config.hasExaKey ? 1 : 0;
           case "firecrawl": return config.hasFirecrawlKey ? 1 : 0;
           case "linkup": return config.hasLinkupKey ? 1 : 0;
+    case "jina": return config.hasJinaKey ? 1 : 0;
           case "brave": return config.hasBraveKey ? 1 : 0;
           case "tinyfish": return config.hasTinyfishKey ? 1 : 0;
           case "custom": return keys.filter(healthy).length;

@@ -1451,6 +1451,8 @@
     "tryAnswer": "Amsa: {choice}",
     "tryConfidence": "Tabbaci {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Misalin buƙata"
+    "exampleTitle": "Misalin buƙata",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

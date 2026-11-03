@@ -1451,6 +1451,8 @@
     "tryAnswer": "Απάντηση: {choice}",
     "tryConfidence": "Βεβαιότητα {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Παράδειγμα αιτήματος"
+    "exampleTitle": "Παράδειγμα αιτήματος",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

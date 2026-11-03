@@ -1451,6 +1451,8 @@
     "tryAnswer": "Câu trả lời: {choice}",
     "tryConfidence": "Tự tin {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Yêu cầu mẫu"
+    "exampleTitle": "Yêu cầu mẫu",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

@@ -1451,6 +1451,8 @@
     "tryAnswer": "பதில்: {choice}",
     "tryConfidence": "{value}% உறுதி",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "எடுத்துக்காட்டு கோரிக்கை"
+    "exampleTitle": "எடுத்துக்காட்டு கோரிக்கை",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

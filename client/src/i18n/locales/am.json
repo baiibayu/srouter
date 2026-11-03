@@ -1451,6 +1451,8 @@
     "tryAnswer": "መልስ፦ {choice}",
     "tryConfidence": "{value}% እርግጠኛ",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "የጥያቄ ምሳሌ"
+    "exampleTitle": "የጥያቄ ምሳሌ",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

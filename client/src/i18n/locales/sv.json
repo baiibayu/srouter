@@ -1451,6 +1451,8 @@
     "tryAnswer": "Svar: {choice}",
     "tryConfidence": "{value} % säker",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Exempelförfrågan"
+    "exampleTitle": "Exempelförfrågan",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

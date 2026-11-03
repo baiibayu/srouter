@@ -1451,6 +1451,8 @@
     "tryAnswer": "תשובה: {choice}",
     "tryConfidence": "ביטחון של {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "בקשה לדוגמה"
+    "exampleTitle": "בקשה לדוגמה",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

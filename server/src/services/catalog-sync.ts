@@ -1082,6 +1082,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
         .all(DECISION_MODALITY) as { id: number; platform: string; model_id: string }[];
       for (const c of decisionCandidates) {
         if (!DECISION_PLATFORMS.has(c.platform)) continue;
+        if (c.platform === 'typesafe' || c.platform === 'opencode-free') continue;
         if (!inDecisionCatalog.has(`${c.platform}:${c.model_id}`)) {
           deleteMedia.run(c.id);
           counts.removed++;

@@ -27,7 +27,7 @@ import { getSetting, setSetting, getDb } from '../db/index.js';
 import type { ChatMessage } from '@baiibayu/srouter-shared/types.js';
 import { contentToString } from '../lib/content.js';
 import { decrypt } from '../lib/crypto.js';
-import { runDecision, decisionsAvailable } from './decision.js';
+import { runDecision, decisionsAvailable, recordLocalDecisionUsage } from './decision.js';
 import { getRoutingStrategy } from './router.js';
 
 export type ComplexityLevel = 'trivial' | 'normal' | 'hard';
@@ -95,28 +95,7 @@ export const JEV_HOST_PRESETS: JevHostPreset[] = [
     keyless: false,
     provider: 'typesafe',
   },
-  {
-    id: 'v1m',
-    baseUrl: 'https://v1m.ir',
-    systemoneUrl: 'https://v1m.ir/v1/systemone',
-    model: 'rev-latest',
-    keyless: false,
-  },
-  {
-    id: 'system-one-dev',
-    baseUrl: 'https://system-one.dev',
-    systemoneUrl: 'https://system-one.dev/v1/systemone',
-    model: 'jev-latest',
-    keyless: false,
-  },
-  {
-    id: 'jev-ai',
-    baseUrl: 'https://jev-ai.pro',
-    systemoneUrl: 'https://jev-ai.pro/api/v1/systemone',
-    model: 'jev-latest',
-    keyless: false,
-  },
-];
+  ];
 
 export function matchJevPreset(baseUrl: string): JevHostPreset | null {
   const norm = baseUrl.trim().replace(/\/+$/, '');
@@ -465,7 +444,10 @@ export async function classifyComplexity(
         // Jev error/timeout → heuristic (layer 2).
       }
     }
-    return classifyComplexityHeuristic(messages, tools);
+    const startH = performance.now();
+    const heuristicLevel = classifyComplexityHeuristic(messages, tools);
+    recordLocalDecisionUsage('heuristic', Math.round(performance.now() - startH));
+    return heuristicLevel;
   } catch (err) {
     console.error('classifyComplexity error:', err);
     return undefined;

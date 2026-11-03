@@ -115,7 +115,6 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'google') return 'google::project';
   if (platform === 'groq') return 'groq::account';
   if (platform === 'sail') return 'sail::monthly-credit';
-  if (platform === 'aclide') return 'aclide::monthly-credit';
   if (platform === 'speka') return 'speka::monthly-credit';
   // Auray: free credits renew monthly and are one wallet shared across chat
   // and embeddings (see providers/auray.ts), so one pool for the account.
@@ -127,17 +126,13 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'electronhub') return normalizedModelId.endsWith(':free') ? 'electronhub::daily-free' : 'electronhub::weekly-credit';
   if (platform === 'router9') return 'router9::monthly-credit';
   if (platform === 'septor') return 'septor::daily-free';
-  if (platform === 'clod') return 'clod::daily-free';
   if (platform === 'speechify') return 'speechify::monthly-characters';
-  if (platform === 'blaze') return 'blaze::daily-free';
   if (platform === 'lucidity') return 'lucidity::daily-free';
   if (platform === 'airforce') return 'airforce::daily-free';
   if (platform === 'dreamprompting') return 'dreamprompting::daily-free';
   if (platform === 'waterfall') return 'waterfall::community-free';
   if (platform === 'logfare') return 'logfare::fair-use';
-  if (platform === 'bai') return 'bai::promo';
   if (platform === 'radeon') return 'radeon::daily-free';
-  if (platform === 'sambanova') return 'sambanova::shared';
   if (platform === 'nvidia') return 'nvidia::credit-pool';
   if (platform === 'mistral') return 'mistral::experiment-pool';
   if (platform === 'cohere') return 'cohere::trial-pool';
@@ -157,7 +152,6 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   // Aggregators with a single shared free pool across all ':free'/'auto:free' models.
   if (platform === 'routeway') return 'routeway::free';
   if (platform === 'bazaarlink') return 'bazaarlink::free';
-  if (platform === 'ainative') return 'ainative::account';
   if (platform === 'aion') return 'aion::free';
   if (platform === 'requesty') return 'requesty::free';
   if (platform === 'nara') return 'nara::free';
@@ -178,32 +172,26 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'anyapi') return 'anyapi::free';
   // ModelScope: one 2000-requests/day quota across the whole account.
   if (platform === 'modelscope') return 'modelscope::account';
+  if (platform === 'puter') return 'puter::personal';
+  if (platform === 'cline') return 'cline::free';
+  if (platform === 'freebuff') return 'freebuff::hourly';
+  if (platform === 'kiro') return 'kiro::account';
   return normalizedModelId ? `${platform}::${normalizedModelId}` : `${platform}::account`;
 }
 
 function isSharedPool(platform: Platform): boolean {
-  if (platform === 'aclide') return true;
   if (platform === 'speka') return true;
   if (platform === 'auray') return true;
   if (platform === 'plugsky') return true;
   if (platform === 'codecraft') return true;
   if (platform === 'inferbase' || platform === 'simplellm') return true;
-  if (['electronhub', 'experiential', 'router9', 'septor', 'clod', 'speechify', 'blaze', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
-  return ['openrouter', 'google', 'groq', 'sail', 'bai', 'radeon', 'sambanova', 'nvidia', 'mistral', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama', 'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'opencode-go', 'routeway', 'bazaarlink', 'ainative', 'aion', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'anyapi', 'modelscope', 'aihorde'].includes(platform);
+  if (['electronhub', 'experiential', 'router9', 'septor', 'speechify', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
+  return ['openrouter', 'google', 'groq', 'sail', 'radeon', 'nvidia', 'mistral', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama', 'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'opencode-go', 'routeway', 'bazaarlink', 'aion', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'anyapi', 'modelscope', 'aihorde', 'puter', 'cline', 'freebuff', 'kiro'].includes(platform);
 }
 
 type HeaderSpec = { metric: QuotaMetric; limit: string; remaining?: string; reset?: string; strategy?: QuotaResetStrategy };
 
 const HEADER_SPECS: Partial<Record<Platform, HeaderSpec[]>> = {
-  // Observe upstream limits without inventing per-model budgets. CLōD's
-  // rate window is distinct from its daily grant; Speechify bills characters,
-  // not tokens, and does not publish token headers.
-  clod: [
-    { metric: 'requests', limit: 'x-ratelimit-limit', remaining: 'x-ratelimit-remaining', reset: 'x-ratelimit-reset', strategy: 'provider_reported' },
-  ],
-  blaze: [
-    { metric: 'tokens', limit: 'x-ratelimit-limit-tokens', remaining: 'x-ratelimit-remaining-tokens', strategy: 'provider_reported' },
-  ],
   // Observe actual headers only: Router9's documented request windows differ
   // from live headers. No invented per-model quotas or credit-to-token math.
   router9: [

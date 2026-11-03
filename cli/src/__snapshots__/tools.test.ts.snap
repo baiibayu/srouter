@@ -1152,12 +1152,33 @@ exports[`tool generators > setup-zcode has stable golden output 1`] = `
         "schemaVersion": 1,
       },
     },
+    {
+      "format": "json",
+      "path": "/home/tester/.zcode/cli/setting.json",
+      "sensitive": true,
+      "value": {
+        "features": {
+          "mcp": true,
+        },
+        "mcp": {
+          "servers": {
+            "srouter": {
+              "headers": {
+                "Authorization": "Bearer srouter-test-key",
+              },
+              "type": "http",
+              "url": "http://localhost:3000/mcp",
+            },
+          },
+        },
+      },
+    },
   ],
   "notes": [
     "Install Zcode: npm install -g zcode-app-cli",
     "Configuration written to ~/.zcode/v2/provider_config.json",
     "Default model set to srouter:fast-coder",
-    "MCP: add to /home/tester/.zcode/cli/setting.json: {"srouter":{"type":"http","url":"http://localhost:3000/mcp","headers":{"Authorization":"Bearer <unified-key>"}}} (Streamable HTTP MCP config; unified key from --api-key / SROUTER_API_KEY)",
+    "MCP: wrote mcp.servers.srouter -> /home/tester/.zcode/cli/setting.json",
   ],
 }
 `;

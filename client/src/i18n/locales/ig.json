@@ -1451,6 +1451,8 @@
     "tryAnswer": "Azịza: {choice}",
     "tryConfidence": "O doro anya {value}%",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Ihe atụ arịrịọ"
+    "exampleTitle": "Ihe atụ arịrịọ",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

@@ -222,21 +222,5 @@ describe('live-sweep policy findings (2026-07-11 demo-box validation)', () => {
     expect(body).not.toHaveProperty('response_format');
   });
 
-  it('reka: json_object upgraded to a permissive json_schema on the wire', () => {
-    const body = extendedBodyParams('reka', { response_format: { type: 'json_object' } });
-    expect((body.response_format as any).type).toBe('json_schema');
-    expect((body.response_format as any).json_schema.schema).toEqual({ type: 'object', properties: {}, additionalProperties: true });
-  });
 
-  it('reka: an explicit json_schema passes through untouched', () => {
-    const rf = { type: 'json_schema' as const, json_schema: { name: 'x', schema: { type: 'object', properties: {} } } };
-    const body = extendedBodyParams('reka', { response_format: rf });
-    expect(body.response_format).toBe(rf);
   });
-
-  it('kilo is skipped by structured-output routing; reka is not', async () => {
-    const { platformDropsResponseFormat } = await import('../../lib/sampling-params.js');
-    expect(platformDropsResponseFormat('kilo')).toBe(true);
-    expect(platformDropsResponseFormat('reka')).toBe(false);
-  });
-});

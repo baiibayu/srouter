@@ -8,13 +8,13 @@ import { ExaProvider } from './exa.js';
 import { FirecrawlProvider } from './firecrawl.js';
 import { LinkupProvider } from './linkup.js';
 import { ParallelProvider } from './parallel.js';
+import { JinaProvider } from './jina.js';
 import { CloudflareProvider } from './cloudflare.js';
 import { AIHordeProvider } from './aihorde.js';
 import { ModelScopeProvider } from './modelscope.js';
 import { PollinationsProvider } from './pollinations.js';
 import { ZhipuProvider } from './zhipu.js';
 import { SailProvider } from './sail.js';
-import { AclideProvider } from './aclide.js';
 import { SpekaProvider } from './speka.js';
 import { TyphoonProvider } from './typhoon.js';
 import { PlugskyProvider } from './plugsky.js';
@@ -27,10 +27,8 @@ import { MoondreamProvider } from './moondream.js';
 import { ElectronHubProvider } from './electronhub.js';
 import { Router9Provider } from './router9.js';
 import { SeptorProvider } from './septor.js';
-import { ClodProvider } from './clod.js';
 import { SpeechifyProvider } from './speechify.js';
 import { FreeAiProvider } from './freeai.js';
-import { BlazeProvider } from './blaze.js';
 import { LucidityProvider } from './lucidity.js';
 import { AirforceProvider } from './airforce.js';
 import { DreamPromptingProvider } from './dreamprompting.js';
@@ -39,6 +37,11 @@ import { LogfareProvider } from './logfare.js';
 import { AurayProvider } from './auray.js';
 import { OpenCodeFreeProvider } from './opencode-free.js';
 import { XKiroProvider } from './xkiro.js';
+import { PuterProvider } from './puter.js';
+import { ClineProvider } from './cline.js';
+import { FreebuffProvider } from './freebuff.js';
+import { KiroProvider } from './kiro.js';
+import { NousProvider } from './nous.js';
 
 
 const providers = new Map<Platform, BaseProvider>();
@@ -73,7 +76,6 @@ register(new OpenAICompatProvider({
 // usage beyond that grant is pay-as-you-go. Live-tested 2026-09-01. Model rows
 // stay in Oracle so the existing catalog age-in gate applies.
 register(new SailProvider());
-register(new AclideProvider());
 register(new SpekaProvider());
 register(new TyphoonProvider());
 register(new PlugskyProvider());
@@ -93,10 +95,8 @@ register(new ElectronHubProvider());
 // the existing catalog age-in gate remains authoritative.
 register(new Router9Provider());
 register(new SeptorProvider());
-register(new ClodProvider());
 register(new SpeechifyProvider());
 register(new FreeAiProvider());
-register(new BlazeProvider());
 // Five more OpenAI-compatible gateways. Each pins the response model to the
 // requested route (502 on substitution); rows stay in the hosted catalog.
 register(new LucidityProvider());
@@ -105,14 +105,6 @@ register(new DreamPromptingProvider());
 register(new WaterfallProvider());
 register(new LogfareProvider());
 
-// B.AI — OpenAI-compatible gateway. Provider support is first-class, but the
-// only free catalog row currently published is a limited-time 0-credit promo;
-// keep commercial eligibility in the hosted catalog rather than seeding it.
-register(new OpenAICompatProvider({
-  platform: 'bai',
-  name: 'B.AI',
-  baseUrl: 'https://api.b.ai/v1',
-}));
 
 // AnyAPI - OpenAI-compatible gateway (anyapi.ai). Free tier (checked against
 // anyapi.ai/pricing 2026-08-10): $0, no card, recurring — but the binding limit
@@ -208,6 +200,7 @@ register(new FirecrawlProvider());
 register(new LinkupProvider());
 // Keyless: anonymous Search MCP by default, REST API with a real key.
 register(new ParallelProvider());
+register(new JinaProvider());
 
 // Cloudflare Workers AI - OpenAI-compatible endpoint (key = "account_id:token")
 register(new CloudflareProvider());
@@ -369,21 +362,6 @@ register(new OpenAICompatProvider({
 // $0.0, please pay with fiat or send tao". The "free" tier requires a
 // non-zero balance, which conflicts with the project's no-card criterion.
 
-// Reka — OpenAI-compatible (api.reka.ai/v1). No longer free for new accounts
-// (#1202): Reka's FAQ now requires prepaid credits and a $0 balance answers
-// P001 Insufficient Balance. Accounts that still hold credit keep working
-// (both models answered 200 on 2026-09-17), so the provider stays registered;
-// the old `reka-flash` id 404s and is disabled in the catalog.
-// The OpenAI-compatible /v1/models lists two models:
-// reka-flash-3 (text reasoning) and reka-edge-2603 (natively multimodal —
-// accepts image/video input). Balance is dashboard-only (no credits API).
-// Catalog rows live in the catalog (age-in); they are NOT
-// shipped as srouter model migrations.
-register(new OpenAICompatProvider({
-  platform: 'reka',
-  name: 'Reka',
-  baseUrl: 'https://api.reka.ai/v1',
-}));
 
 // SiliconFlow — OpenAI-compatible (api.siliconflow.com/v1). Registered mainly
 // for its FREE generative-media models (FLUX.1-schnell image, CosyVoice2 TTS),
@@ -435,16 +413,6 @@ register(new OpenAICompatProvider({
   baseUrl: 'https://bazaarlink.ai/api/v1',
 }));
 
-// AINative Studio — OpenAI-compatible aggregator (api.ainative.studio/api/v1).
-// Advertises a recurring ~10M tokens/month free allocation (no card), though
-// its own pages disagree on scale; treat the quota as unverified until a real
-// account confirms it. Bearer auth works (X-API-Key also accepted). Catalog
-// rows live in the catalog (age-in).
-register(new OpenAICompatProvider({
-  platform: 'ainative',
-  name: 'AINative Studio',
-  baseUrl: 'https://api.ainative.studio/api/v1',
-}));
 
 // Aion Labs — OpenAI-compatible aggregator (api.aionlabs.ai/v1). Free key from
 // aionlabs.ai (no card); recurring free availability is catalog-managed.
@@ -470,6 +438,7 @@ register(new OpenAICompatProvider({
   platform: 'navy',
   name: 'NavyAI',
   baseUrl: 'https://api.navy/v1',
+  validateUrl: 'https://api.navy/v1/models',
   extraHeaders: {
     'User-Agent': 'srouter/1.0',
   },
@@ -664,6 +633,19 @@ register(new OpenAICompatProvider({
   name: 'TypeSafe (System One / Jev)',
   baseUrl: 'https://api.typesafe.ai/v1',
 }));
+
+// Puter AI — personal free tier for Claude, GPT, and DeepSeek
+register(new PuterProvider());
+
+// Cline — free open-weight coding models
+register(new ClineProvider());
+
+// Freebuff — ad-funded free coding agent backend
+register(new FreebuffProvider());
+
+// Kiro AI — AWS Bedrock-powered agentic coding backend
+register(new KiroProvider());
+register(new NousProvider());
 
 // Placeholder so getProvider('custom')/hasProvider('custom')/getAllProviders()
 // behave — but the real instance is built per-key by resolveProvider(), since

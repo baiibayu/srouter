@@ -48,6 +48,8 @@ import { logRequest } from './request-log.js';
 import { getStickyModel, setStickyModel } from '../routes/proxy.js';
 import { breakLoop } from '../services/loop-breaker.js';
 import { classifyClientAgent } from './client-classifier.js';
+import { deriveTaskType } from './task-type.js';
+import { classifyComplexity } from '../services/complexity-gate.js';
 import type { CompletionOptions } from '../providers/base.js';
 
 export interface InboundChatRequest {
@@ -257,6 +259,12 @@ export async function runInboundChat(
     signal: clientAbort.signal,
   };
 
+  // Complexity gate (Jev-B): classify ONCE per request, before the loop —
+  // level is a soft weight bias inside routeRequest (trivial → fast/cheap,
+  // hard → smart). classifyComplexity is opt-in and fail-open internally.
+  const complexity = await classifyComplexity(input.messages, input.tools);
+  const taskType = deriveTaskType(input.tools, input.messages);
+
   await runFallbackLoop({
     state,
     attemptLog,
@@ -279,6 +287,8 @@ export async function runInboundChat(
         input.responseFormat !== undefined,
         state.skipPlatforms.size ? state.skipPlatforms : undefined,
         outputReserve,
+        taskType,
+        complexity,
       );
     },
     dispatch: async (route, attempt) => {

@@ -81,10 +81,10 @@ describe('search service', () => {
     vi.restoreAllMocks();
   });
 
-  it('lists all nine engines in priority order', () => {
+  it('lists all ten engines in priority order', () => {
     expect(listSearchEngines().map(e => e.engineId)).toEqual([
       'duckduckgo-search', 'parallel-search', 'searxng-search', 'tinyfish-search', 'exa-search',
-      'brave-search', 'tavily-search', 'firecrawl-search', 'linkup-search',
+      'brave-search', 'tavily-search', 'firecrawl-search', 'jina-search', 'linkup-search',
     ]);
     expect(searchAvailable()).toBe(true);
   });

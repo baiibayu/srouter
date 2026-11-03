@@ -1451,6 +1451,8 @@
     "tryAnswer": "Cavab: {choice}",
     "tryConfidence": "{value}% əmin",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Nümunə sorğu"
+    "exampleTitle": "Nümunə sorğu",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }

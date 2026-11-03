@@ -1451,6 +1451,8 @@
     "tryAnswer": "Jawapan: {choice}",
     "tryConfidence": "{value}% yakin",
     "tryServedBy": "{model} · {latency} ms",
-    "exampleTitle": "Contoh permintaan"
+    "exampleTitle": "Contoh permintaan",
+    "default": "Default",
+    "makeDefault": "Make default"
   }
 }
