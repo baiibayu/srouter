@@ -780,7 +780,7 @@ describe('applyCatalog: generative media meta', () => {
 describe('applyCatalog: searchEngines', () => {
   type CatalogSearch = NonNullable<AnyCatalog['searchEngines']>[number];
 
-  const SEEDED = ['duckduckgo-search', 'parallel-search', 'searxng-search', 'tinyfish-search', 'brave-search'];
+  const SEEDED = ['duckduckgo-search', 'parallel-search', 'searxng-search', 'tinyfish-search', 'brave-search', 'jina-search'];
 
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
@@ -817,14 +817,15 @@ describe('applyCatalog: searchEngines', () => {
     `).all() as any;
   }
 
-  it('seeds the five local engines before any catalog arrives', () => {
+  it('seeds the six local engines before any catalog arrives', () => {
     expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual([
       'duckduckgo:duckduckgo-search', 'parallel:parallel-search',
       'searxng:searxng-search', 'tinyfish:tinyfish-search', 'brave:brave-search',
+      'jina:jina-search',
     ]);
     // duckduckgo (-5) ships disabled; parallel (-4) ships enabled (keyless);
-    // searxng (-3) ships disabled; tinyfish (-2) and brave (-1) ship enabled.
-    expect(searchRows().map(r => r.enabled)).toEqual([0, 1, 0, 1, 1]);
+    // searxng (-3) ships disabled; tinyfish (-2) and brave (-1) ship enabled; jina (8) ships enabled.
+    expect(searchRows().map(r => r.enabled)).toEqual([0, 1, 0, 1, 1, 1]);
   });
 
   it('applies the registry as a full snapshot with metadata in meta_json', () => {
@@ -832,7 +833,7 @@ describe('applyCatalog: searchEngines', () => {
     expect(searchRows().map(r => `${r.platform}:${r.model_id}`)).toEqual([
       'duckduckgo:duckduckgo-search', 'parallel:parallel-search',
       'searxng:searxng-search', 'tinyfish:tinyfish-search', 'brave:brave-search',
-      'exa:exa-search', 'tavily:tavily-search',
+      'exa:exa-search', 'tavily:tavily-search', 'jina:jina-search',
     ]);
     expect(searchRows().find(r => r.model_id === 'exa-search')!.quota_label).toBe('$10/month in credits');
     expect(JSON.parse(searchRows().find(r => r.model_id === 'tavily-search')!.meta_json!)).toEqual({
@@ -844,7 +845,7 @@ describe('applyCatalog: searchEngines', () => {
 
   it('keeps existing engines when a catalog omits the optional registry', () => {
     applyCatalog(getDb(), searchCatalog(undefined));
-    expect(searchRows()).toHaveLength(7);
+    expect(searchRows()).toHaveLength(8);
   });
 
   it('prunes only registry-owned engines when the registry is empty (a free catalog before an engine ages in)', () => {
@@ -852,10 +853,10 @@ describe('applyCatalog: searchEngines', () => {
     expect(counts.removed).toBeGreaterThanOrEqual(2);
     expect(searchRows().map(r => r.model_id)).toEqual(SEEDED);
     applyCatalog(getDb(), searchCatalog(searchRoster()));
-    expect(searchRows()).toHaveLength(7);
+    expect(searchRows()).toHaveLength(8);
   });
 
-  it('keeps the five locally seeded engines across every catalog variant', () => {
+  it('keeps the six locally seeded engines across every catalog variant', () => {
     applyCatalog(getDb(), searchCatalog(searchRoster()));
     expect(searchRows().map(r => r.model_id)).toEqual(expect.arrayContaining(SEEDED));
     applyCatalog(getDb(), searchCatalog([]));
@@ -864,7 +865,7 @@ describe('applyCatalog: searchEngines', () => {
     expect(searchRows().map(r => r.model_id)).toEqual(expect.arrayContaining(SEEDED));
     // End on the roster: later tests here expect the registry engines back.
     applyCatalog(getDb(), searchCatalog(searchRoster()));
-    expect(searchRows()).toHaveLength(7);
+    expect(searchRows()).toHaveLength(8);
   });
 
   it('keeps a local disable across catalog applies', () => {

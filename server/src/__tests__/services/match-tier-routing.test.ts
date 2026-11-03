@@ -60,14 +60,14 @@ describe('slug-match demotion survives the router', () => {
     setRoutingStrategy('balanced');
 
     const groqKey = addKey('groq');
-    const baiKey = addKey('bai');
+    const googleKey = addKey('google');
     literalId = addModel('groq', 'tier-test-model');
-    slugId = addModel('bai', 'tier-test-other');
+    slugId = addModel('google', 'tier-test-other');
 
     // The fallback candidate is measurably BETTER than the literal one, so
     // score alone would put it first.
     logFailures('groq', 'tier-test-model', groqKey, 30);
-    logSuccesses('bai', 'tier-test-other', baiKey, 40);
+    logSuccesses('google', 'tier-test-other', googleKey, 40);
     refreshStatsCache(getDb(), true);
   });
 

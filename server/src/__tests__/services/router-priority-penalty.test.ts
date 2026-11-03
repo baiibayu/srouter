@@ -120,7 +120,7 @@ describe('priority-mode routing penalty under spaced priorities', () => {
   it('does not demote past a model penalized even harder', () => {
     const a = addModel({ platform: 'google', modelId: 'a', priority: 10 });
     const b = addModel({ platform: 'groq', modelId: 'b', priority: 20 });
-    addModel({ platform: 'bai', modelId: 'c', priority: 30 });
+    addModel({ platform: 'sail', modelId: 'c', priority: 30 });
     refreshStatsCache(getDb(), true);
 
     penalize(a, 1);  // rank 1 + 3 = 4
