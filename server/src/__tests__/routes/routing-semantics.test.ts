@@ -235,21 +235,21 @@ describe('routing semantics', () => {
 // how much of their observed quota is left and tries the roomiest first, so the
 // key nearest its cap is held in reserve instead of being the next to 429.
 describe('key selection by remaining quota (#919)', () => {
-  // bai meters each key against its own budget ('bai::promo'), which
+  // opencode meters each key against its own budget ('opencode::promo'), which
   // is what makes "which key has more left" a question with an answer.
-  const BAI_POOL = 'bai::promo';
+  const OPENCODE_POOL = 'opencode::promo';
 
-  /** Two bai keys — the drained one FIRST, so rowid order (and the
+  /** Two opencode keys — the drained one FIRST, so rowid order (and the
    *  round-robin cursor that starts on it) would pick exactly the wrong key.
    *  The model id is per-test because the rotation cursor is keyed on it and
    *  outlives the in-memory DB. */
   function seedTwoKeys(modelId: string): { drained: number; roomy: number } {
     clearChain();
-    const drained = addKey('bai', 'drained');
-    const roomy = addKey('bai', 'roomy');
-    observeQuota('bai', drained, BAI_POOL, 20);
-    observeQuota('bai', roomy, BAI_POOL, 950);
-    addSyntheticModel(modelId, 1, true, 'bai');
+    const drained = addKey('opencode', 'drained');
+    const roomy = addKey('opencode', 'roomy');
+    observeQuota('opencode', drained, OPENCODE_POOL, 20);
+    observeQuota('opencode', roomy, OPENCODE_POOL, 950);
+    addSyntheticModel(modelId, 1, true, 'opencode');
     return { drained, roomy };
   }
 
@@ -259,7 +259,7 @@ describe('key selection by remaining quota (#919)', () => {
 
     const routed = routeRequest(100);
     routed.release?.();
-    expect(routed.platform).toBe('bai');
+    expect(routed.platform).toBe('opencode');
     expect(routed.keyId).toBe(roomy);
     expect(routed.keyId).not.toBe(drained);
   });
@@ -275,9 +275,9 @@ describe('key selection by remaining quota (#919)', () => {
 
   it('keeps the round-robin rotation when no key has a quota observation', () => {
     clearChain();
-    const first = addKey('bai', 'first');
-    const second = addKey('bai', 'second');
-    addSyntheticModel('unobserved-model', 1, true, 'bai');
+    const first = addKey('opencode', 'first');
+    const second = addKey('opencode', 'second');
+    addSyntheticModel('unobserved-model', 1, true, 'opencode');
     setKeySelectionStrategy('least-remaining');
 
     const picks: number[] = [];

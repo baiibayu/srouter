@@ -95,4 +95,8 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'longcat', label: 'LongCat (free daily, email signup ok)', url: 'https://longcat.chat/platform' },
   { value: 'xfyun', label: 'iFlytek Spark (free Lite, needs cn real-name)', url: 'https://console.xfyun.cn' },
   { value: 'typesafe', label: 'TypeSafe (System One / Jev)', url: 'https://typesafe.ai' },
+  { value: 'puter', label: 'Puter (free cloud AI access)', url: 'https://puter.com' },
+  { value: 'cline', label: 'Cline (free OAuth tokens)', url: 'https://cline.bot' },
+  { value: 'freebuff', label: 'Freebuff (free AI models)', url: 'https://freebuff.com' },
+  { value: 'kiro', label: 'Kiro (free Claude/GPT access)', url: 'https://kiro.dev' },
 ]

@@ -51,21 +51,6 @@ export class NousProvider extends OpenAICompatProvider {
     return headers;
   }
 
-  override async validateKey(apiKey: string): Promise<boolean> {
-    if (isAnonymousCredential(apiKey)) {
-      return false;
-    }
-    try {
-      const res = await this.fetchWithTimeout(`${this.baseUrl}/models`, {
-        method: 'GET',
-        headers: this.customHeaders(apiKey),
-      }, 15000);
-      return res.ok;
-    } catch {
-      return false;
-    }
-  }
-
   override async chatCompletion(
     apiKey: string,
     messages: ChatMessage[],
@@ -81,7 +66,10 @@ export class NousProvider extends OpenAICompatProvider {
           throw new Error('Empty completion from provider');
         }
         return res;
-      } catch (err) {
+      } catch (err: any) {
+        if (err && (typeof err.status === 'number' || err.retryAfterMs)) {
+          throw err;
+        }
         lastError = err instanceof Error ? err : new Error(String(err));
         if (attempt < 2) {
           await new Promise(r => setTimeout(r, 2000 * attempt));
