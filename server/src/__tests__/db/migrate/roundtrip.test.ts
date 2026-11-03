@@ -56,6 +56,9 @@ const DECISION_CHAT_JUDGE_FILENAME = '20261021_000001_decision_chat_judge.ts';
 const FIX_DECISION_CHAT_JUDGE_ORDER_FILENAME = '20261022_000001_fix_decision_chat_judge_order.ts';
 const PROXY_POOLS_FILENAME = '20261023_000001_proxy_pools.ts';
 const PROXY_CONDITIONAL_ROUTING_FILENAME = '20261024_000001_proxy_conditional_routing.ts';
+const REMOVE_DEAD_PLATFORMS_V2_FILENAME = '20261030_000001_remove_dead_platforms_v2.ts';
+const SEED_JINA_SEARCH_FILENAME = '20261030_000002_seed_jina_search.ts';
+const REMOVE_DEAD_PLATFORM_CLOD_FILENAME = '20261031_000001_remove_dead_platform_clod.ts';
 
 interface SchemaRow {
   type: string;
@@ -158,6 +161,9 @@ describe('migration round trip', () => {
         FIX_DECISION_CHAT_JUDGE_ORDER_FILENAME,
         PROXY_POOLS_FILENAME,
         PROXY_CONDITIONAL_ROUTING_FILENAME,
+        REMOVE_DEAD_PLATFORMS_V2_FILENAME,
+        SEED_JINA_SEARCH_FILENAME,
+        REMOVE_DEAD_PLATFORM_CLOD_FILENAME,
       ]);
     } finally {
       db.close();

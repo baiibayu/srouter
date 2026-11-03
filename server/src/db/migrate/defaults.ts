@@ -53,6 +53,7 @@ import * as proxyPools from '../migrations/20261023_000001_proxy_pools.js';
 import * as proxyConditionalRouting from '../migrations/20261024_000001_proxy_conditional_routing.js';
 import * as removeDeadPlatformsV2 from '../migrations/20261030_000001_remove_dead_platforms_v2.js';
 import * as seedJinaSearch from '../migrations/20261030_000002_seed_jina_search.js';
+import * as removeDeadPlatformClod from '../migrations/20261031_000001_remove_dead_platform_clod.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -109,6 +110,7 @@ export const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_perio
 export const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts';
 export const REMOVE_DEAD_PLATFORMS_V2_FILENAME = '20261030_000001_remove_dead_platforms_v2.ts';
 export const SEED_JINA_SEARCH_FILENAME = '20261030_000002_seed_jina_search.ts';
+export const REMOVE_DEAD_PLATFORM_CLOD_FILENAME = '20261031_000001_remove_dead_platform_clod.ts';
 export const SEARCH_ENGINES_FILENAME = '20261013_000001_search_engines.ts';
 export const DECISION_REQUESTS_FILENAME = '20261016_000001_decision_requests.ts';
 export const SEED_LOCAL_SEARCH_ENGINES_FILENAME = '20261019_000001_seed_local_search_engines.ts';
@@ -174,4 +176,5 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: PROXY_CONDITIONAL_ROUTING_FILENAME, module: proxyConditionalRouting },
   { filename: REMOVE_DEAD_PLATFORMS_V2_FILENAME, module: removeDeadPlatformsV2 },
   { filename: SEED_JINA_SEARCH_FILENAME, module: seedJinaSearch },
+  { filename: REMOVE_DEAD_PLATFORM_CLOD_FILENAME, module: removeDeadPlatformClod },
 ];
