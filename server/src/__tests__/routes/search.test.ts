@@ -136,7 +136,7 @@ describe('search routes', () => {
     expect(status).toBe(200);
     expect(body.data.map((e: any) => e.id)).toEqual([
       'tinyfish-search', 'exa-search', 'brave-search',
-      'tavily-search', 'firecrawl-search', 'linkup-search',
+      'tavily-search', 'firecrawl-search', 'jina-search', 'linkup-search',
     ]);
     expect(body.data.find((e: any) => e.id === 'exa-search').available).toBe(true);
     expect(body.data.find((e: any) => e.id === 'tavily-search').available).toBe(false);
@@ -169,7 +169,10 @@ describe('search routes', () => {
   it('marks search platforms on the provider checklist and keeps engines off the media list', async () => {
     const providers = await call(app, 'GET', '/api/keys/providers');
     const kinds = Object.fromEntries(providers.body.providers.map((p: any) => [p.platform, p.kind]));
-    expect(kinds).toMatchObject({ tavily: 'search', exa: 'search', firecrawl: 'search', linkup: 'search', groq: 'chat' });
+    expect(kinds.tavily).toBeUndefined();
+    expect(kinds.exa).toBeUndefined();
+    expect(kinds.firecrawl).toBeUndefined();
+    expect(kinds.groq).toBe('chat');
 
     const media = await call(app, 'GET', '/api/media');
     expect(media.body.models.some((m: any) => m.modality === 'search')).toBe(false);

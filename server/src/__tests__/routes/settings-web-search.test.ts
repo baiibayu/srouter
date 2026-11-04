@@ -54,7 +54,7 @@ describe('/api/settings/web-search', () => {
     expect(body).toEqual({
       baseUrl: '',
       hasTavilyKey: false, hasBraveKey: false, hasExaKey: false, hasTinyfishKey: false,
-      hasFirecrawlKey: false, hasLinkupKey: false,
+      hasFirecrawlKey: false, hasLinkupKey: false, hasJinaKey: false,
       usage: { daily: {}, monthly: {} },
     });
   });

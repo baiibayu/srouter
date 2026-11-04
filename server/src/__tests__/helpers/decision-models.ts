@@ -5,6 +5,7 @@ import { getDb } from '../../db/index.js';
 export const DECISION_MODELS = [
   { platform: 'cloudflare', modelId: '@cf/cloudflare/clef-flash', displayName: 'Clef Flash', quotaLabel: 'Workers AI free daily neurons', meta: { contextWindow: 24576 } },
   { platform: 'openrouter', modelId: 'inception/mercury-decide:free', displayName: 'Mercury Decide (free)', quotaLabel: 'Free model, 50 or 1,000 requests/day', meta: { contextWindow: 65536 } },
+  { platform: 'typesafe', modelId: 'typesafe/jev-1.13', displayName: 'Jev 1.13', quotaLabel: 'Free System One', meta: { contextWindow: 32768 } },
 ];
 
 export function seedDecisionModels(): void {
