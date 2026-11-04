@@ -540,6 +540,7 @@ function hasSearchKey(): boolean {
         break;
       case 'linkup':
         if (config.hasLinkupKey) return true;
+        break;
       case 'jina':
         if (config.hasJinaKey) return true;
         break;

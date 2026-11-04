@@ -1,5 +1,4 @@
 import { Router, type Request, type Response } from 'express';
-import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -155,7 +154,7 @@ oauthRouter.get('/:provider/authorize', async (req: Request, res: Response) => {
           interval: data.interval || 5,
         });
         return;
-      } catch (err) {
+      } catch (_err) {
         // Fallback info if API request fails
         res.json({
           provider: 'nous',

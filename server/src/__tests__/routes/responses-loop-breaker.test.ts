@@ -8,7 +8,7 @@ vi.mock('../../services/router.js', async (importOriginal) => {
 
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
-import { initDb, closeDb, getDb, getUnifiedApiKey } from '../../db/index.js';
+import { initDb, getDb, getUnifiedApiKey } from '../../db/index.js';
 
 function fakeRoute(provider: any) {
   return { provider, modelId: 'fake-model', modelDbId: 9999, apiKey: 'k', keyId: 1, platform: 'fake', displayName: 'Fake Model' };
