@@ -2,7 +2,7 @@ import { getDb } from '../db/index.js';
 import { resolveProvider } from '../providers/index.js';
 import { BaseProvider } from '../providers/base.js';
 import { decrypt } from '../lib/crypto.js';
-import { decryptProxyUrl, resolveKeyProxyConfig } from '../lib/key-proxy.js';
+import { resolveKeyProxyConfig } from '../lib/key-proxy.js';
 import { withKeyProxy } from '../lib/proxy.js';
 import type { Platform, KeyStatus } from '@baiibayu/srouter-shared/types.js';
 import { inferQuotaPoolKey } from './provider-quota.js';

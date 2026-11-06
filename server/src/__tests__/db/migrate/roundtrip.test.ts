@@ -59,6 +59,7 @@ const PROXY_CONDITIONAL_ROUTING_FILENAME = '20261024_000001_proxy_conditional_ro
 const REMOVE_DEAD_PLATFORMS_V2_FILENAME = '20261030_000001_remove_dead_platforms_v2.ts';
 const SEED_JINA_SEARCH_FILENAME = '20261030_000002_seed_jina_search.ts';
 const REMOVE_DEAD_PLATFORM_CLOD_FILENAME = '20261031_000001_remove_dead_platform_clod.ts';
+const API_KEY_PROXY_POOL_FILENAME = '20261105_000001_api_key_proxy_pool.ts';
 
 interface SchemaRow {
   type: string;
@@ -164,6 +165,7 @@ describe('migration round trip', () => {
         REMOVE_DEAD_PLATFORMS_V2_FILENAME,
         SEED_JINA_SEARCH_FILENAME,
         REMOVE_DEAD_PLATFORM_CLOD_FILENAME,
+        API_KEY_PROXY_POOL_FILENAME,
       ]);
     } finally {
       db.close();

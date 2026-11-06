@@ -1,7 +1,7 @@
 import { getDb, getSetting, setSetting } from '../db/index.js';
 import { getProvider, hasProvider, resolveProvider } from '../providers/index.js';
 import { decrypt } from '../lib/crypto.js';
-import { decryptProxyUrl, resolveKeyProxyConfig } from '../lib/key-proxy.js';
+import { resolveKeyProxyConfig } from '../lib/key-proxy.js';
 import type { PerKeyProxyConfig } from '../lib/proxy.js';
 import {
   canMakeRequest,
@@ -1714,7 +1714,7 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
     // Taken only once the key has cleared every gate and is definitely being
     // returned, so a rejected candidate never consumes concurrency budget.
     const proxyConfig = resolveKeyProxyConfig(key);
-    const proxyUrl = proxyConfig.url || undefined;
+    const proxyUrl = proxyConfig.url || '';
     const budget = reserveMonthlyBudget(key.id, estimatedTokens);
     if (!budget.allowed) { note('monthly-budget-cap'); continue; }
     const leaseId = acquireLease(entry.platform, entry.model_id, key.id, estimatedTokens);

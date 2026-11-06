@@ -467,36 +467,30 @@ export function selectProxyNode(
     if (targeted) return resolveClusteredNode(targeted);
   }
 
-  // 3. Keyless / noAuth Providers (e.g. opencode free, pollinations):
-  // Rate limits are IP-bucketed, so Round-Robin / Fallback across active proxy pool nodes is applied!
-  if (options?.isKeyless) {
-    const primaryNodes = nodes.filter(n => !n.role || n.role === 'primary');
-    if (primaryNodes.length > 0) {
-      const chosen = primaryNodes[roundRobinIndex % primaryNodes.length];
-      roundRobinIndex = (roundRobinIndex + 1) % 1_000_000;
-      return resolveClusteredNode(chosen);
-    }
-    const fallbackNodes = nodes.filter(n => n.role === 'fallback');
-    if (fallbackNodes.length > 0) {
-      const chosen = fallbackNodes[roundRobinIndex % fallbackNodes.length];
-      roundRobinIndex = (roundRobinIndex + 1) % 1_000_000;
-      return resolveClusteredNode(chosen);
-    }
-    return resolveClusteredNode(nodes[0]);
-  }
-
-  // 4. Keyed / Account-based Providers without explicit binding:
+  // 3. Keyed / Account-based Providers without explicit binding:
   // CRITICAL ANTI-BAN RULE: NEVER rotate IP per request for the same account!
-  // If keyId is present, use deterministic sticky hash (hash % pool.length) so the account stays on 1 IP!
+  // If keyId is present and not explicitly set to round-robin, use deterministic sticky hash (hash % pool.length) so the account stays on 1 IP!
   const primaryNodes = nodes.filter(n => !n.role || n.role === 'primary');
   const pool = primaryNodes.length > 0 ? primaryNodes : nodes;
+
   if (options?.keyId) {
     const hash = Math.abs(Number(options.keyId) || 0);
     return resolveClusteredNode(pool[hash % pool.length]);
   }
 
-  // Fallback if no keyId known: use first stable primary node (no random hopping)
-  return resolveClusteredNode(pool[0]);
+  // 4. Keyless / anonymous / general proxy pool dispatch: obey configured pool strategy
+  const strategy = getProxyPoolStrategy();
+  if (strategy === 'forward') {
+    return resolveClusteredNode(pool[0]);
+  }
+  if (strategy === 'random') {
+    return resolveClusteredNode(pool[Math.floor(Math.random() * pool.length)]);
+  }
+
+  // Default / 'round-robin':
+  const chosen = pool[roundRobinIndex % pool.length];
+  roundRobinIndex = (roundRobinIndex + 1) % 1_000_000;
+  return resolveClusteredNode(chosen);
 }
 
 // ── Instant Deployment: Cloudflare Workers ──────────────────────────────

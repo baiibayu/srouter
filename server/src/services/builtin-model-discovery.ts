@@ -4,7 +4,7 @@ import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import { getProvider } from '../providers/index.js';
 import { OpenAICompatProvider } from '../providers/openai-compat.js';
 import { decrypt } from '../lib/crypto.js';
-import { decryptProxyUrl, resolveKeyProxyConfig } from '../lib/key-proxy.js';
+import { resolveKeyProxyConfig } from '../lib/key-proxy.js';
 import { withKeyProxy } from '../lib/proxy.js';
 import { discoverProviderModels, type DiscoveredModel } from './model-discovery.js';
 import { appliedCatalogPlatforms, DISCOVERED_MODEL_SOURCE } from './catalog-sync.js';

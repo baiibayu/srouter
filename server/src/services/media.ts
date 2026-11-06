@@ -32,7 +32,7 @@ export const MEDIA_PLATFORMS = new Set(['nvidia', 'pollinations', 'cloudflare', 
 export const VIDEO_PLATFORMS = new Set(['pollinations', 'huggingface']);
 
 /** Platforms whose free media path needs no API key (anonymous). */
-const KEYLESS_CAPABLE = new Set(['pollinations', 'freeai']);
+const KEYLESS_CAPABLE = new Set(['pollinations']);
 
 /** Platforms with a speech-to-text adapter below. catalog-sync gates the
  *  catalog's `transcriptionModels` entries on this, the way MEDIA_PLATFORMS

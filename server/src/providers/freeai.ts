@@ -1,5 +1,5 @@
 import type { ChatCompletionChunk, ChatCompletionResponse } from '@baiibayu/srouter-shared/types.js';
-import { BaseProvider, providerHttpError, type KeyValidationResult, type CompletionOptions } from './base.js';
+import { BaseProvider, type KeyValidationResult } from './base.js';
 
 export const FREEAI_BASE_URL = 'https://api.free.ai';
 
@@ -28,7 +28,7 @@ export class FreeAiProvider extends BaseProvider {
   readonly name = 'Free.ai';
   readonly keyless = true; // Free-tier TTS accepts any key / no key
 
-  async validateKey(apiKey: string): Promise<KeyValidationResult> {
+  async validateKey(_apiKey: string): Promise<KeyValidationResult> {
     // Keyless provider: any key (including empty/bearer 'public') is accepted
     return true;
   }
