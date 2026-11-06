@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogPopup, DialogTitle } from '@/components/ui/dialog'
@@ -7,8 +7,8 @@ import { FieldError } from '@/components/ui/field-error'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { X } from 'lucide-react'
-import type { ApiKey, BudgetPeriod } from '../../../../shared/types'
+import { X, Network } from 'lucide-react'
+import type { ApiKey, BudgetPeriod, ProxyPoolNode } from '../../../../shared/types'
 import { useI18n } from '@/i18n'
 import { PLATFORMS } from './shared'
 import { GroupLabelField } from './group-label-field'
@@ -27,6 +27,7 @@ type UpdateBody = {
   monthlyTokenCap?: number
   budgetPeriod?: BudgetPeriod
   groupLabel?: string
+  proxyPoolId?: string | null
 }
 
 /** Parse a budget-cap input: blank or 0 means unlimited (0); otherwise a
@@ -71,6 +72,14 @@ export function EditKeyDialog({
   const [requestCap, setRequestCap] = useState(capToInput(apiKey.monthlyRequestCap))
   const [tokenCap, setTokenCap] = useState(capToInput(apiKey.monthlyTokenCap))
   const [period, setPeriod] = useState<BudgetPeriod>(apiKey.budgetPeriod ?? 'auto')
+  const [proxyPoolId, setProxyPoolId] = useState<string>(apiKey.proxyPoolId ?? '__none__')
+
+  const { data: proxyPoolData } = useQuery<{ pools: ProxyPoolNode[] }>({
+    queryKey: ['proxy-pools'],
+    queryFn: () => apiFetch('/api/settings/proxy/pools'),
+  })
+  const proxyPools = proxyPoolData?.pools ?? []
+  const activePools = proxyPools.filter(p => p.enabled)
 
   const needsAccountId = apiKey.platform === 'cloudflare'
   // Every row takes a credential, including the anonymous row of a
@@ -91,11 +100,12 @@ export function EditKeyDialog({
   const tokenCapValue = parseCap(tokenCap)
   const capError = requestCapValue === null || tokenCapValue === null
 
+  const proxyPoolChanged = proxyPoolId !== (apiKey.proxyPoolId ?? '__none__')
   const periodChanged = period !== (apiKey.budgetPeriod ?? 'auto')
   const groupLabelChanged = isCustom && groupLabel.trim() !== (apiKey.groupLabel ?? '')
   const requestCapChanged = requestCapValue !== (apiKey.monthlyRequestCap || 0)
   const tokenCapChanged = tokenCapValue !== (apiKey.monthlyTokenCap || 0)
-  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged || groupLabelChanged
+  const hasChanges = label !== apiKey.label || Boolean(credential) || requestCapChanged || tokenCapChanged || periodChanged || groupLabelChanged || proxyPoolChanged
 
   const updateKey = useMutation({
     mutationFn: (body: UpdateBody) =>
@@ -114,6 +124,7 @@ export function EditKeyDialog({
     }
 
     const body: UpdateBody = {}
+    if (proxyPoolChanged) body.proxyPoolId = (proxyPoolId !== '__none__' && proxyPoolId !== '__direct__') ? proxyPoolId : null
     if (label !== apiKey.label) body.label = label
     if (credential) body.key = credential
     if (requestCapChanged && requestCapValue !== null) body.monthlyRequestCap = requestCapValue
@@ -197,6 +208,62 @@ export function EditKeyDialog({
               {apiKey.keyless ? t('keys.keyOptionalHint') : t('keys.editCredentialHint')}
             </p>
           </div>
+
+          {/* Egress Relay / Proxy Node & Strategy (separated 9Router style) */}
+          {activePools.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2 pt-0.5">
+              <div className="space-y-1.5">
+                <Label className="text-xs flex items-center gap-1.5" htmlFor="edit-key-proxy-node">
+                  <Network className="size-3.5 text-muted-foreground" />
+                  {t('keys.egressProxyNode')}
+                </Label>
+                <select
+                  id="edit-key-proxy-node"
+                  value={proxyPoolId === '__round_robin__' ? '__all__' : proxyPoolId}
+                  onChange={e => {
+                    const val = e.target.value
+                    if (val === '__all__') setProxyPoolId('__round_robin__')
+                    else setProxyPoolId(val)
+                  }}
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  {apiKey.keyless && (
+                    <option value="__all__">{t('keys.allActivePools')}</option>
+                  )}
+                  <option value="__none__">{t('keys.directConnection')}</option>
+                  {activePools.map(pool => (
+                    <option key={pool.id} value={pool.id}>
+                      {pool.name} ({pool.protocol})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="edit-key-proxy-strategy">
+                  {t('keys.proxyRoutingStrategy')}
+                </Label>
+                {apiKey.keyless ? (
+                  <select
+                    id="edit-key-proxy-strategy"
+                    value={proxyPoolId === '__round_robin__' || proxyPoolId === '__all__' ? 'round-robin' : (proxyPoolId === '__none__' || proxyPoolId === '__direct__' ? 'direct' : 'sticky')}
+                    onChange={e => {
+                      if (e.target.value === 'round-robin') setProxyPoolId('__round_robin__')
+                      else if (e.target.value === 'direct') setProxyPoolId('__none__')
+                    }}
+                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="round-robin">{t('keys.rotatePoolStrategy')}</option>
+                    <option value="direct">{t('keys.directConnection')}</option>
+                  </select>
+                ) : (
+                  <div className="flex h-8 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-xs text-muted-foreground">
+                    {t('keys.stickyStrategy')}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Budget caps (#1158) stay one collapsed line; they open by
               default only when a cap is already set, so a cap is never hidden. */}

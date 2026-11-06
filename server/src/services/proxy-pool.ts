@@ -1,6 +1,6 @@
 import { getDb } from '../db/index.js';
 import type { ProxyPoolNode, ProxyPoolProtocol, ProxyPoolStatus, ProxyPoolStrategy, ProxyPoolRole } from '@baiibayu/srouter-shared/types.js';
-import { probeProxyUrl, registerProxyNodeSelector } from '../lib/proxy.js';
+import { probeProxyUrl, registerProxyNodeSelector, type ProxyNodeSelectorOptions } from '../lib/proxy.js';
 import { PROXY_POOLS_STRATEGY_SETTING } from '../db/migrations/20261023_000001_proxy_pools.js';
 
 let roundRobinIndex = 0;
@@ -280,6 +280,15 @@ export function getActiveProxyPoolNodes(): ProxyPoolNode[] {
   }
 }
 
+export function getProxyPoolNodeById(id: string): ProxyPoolNode | null {
+  try {
+    const row = getDb().prepare('SELECT * FROM proxy_pools WHERE id = ?').get(id) as DbProxyRow | undefined;
+    return row ? mapRow(row) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function addProxyPoolNode(node: {
   name: string;
   url: string;
@@ -421,44 +430,73 @@ function resolveClusteredNode(node: ProxyPoolNode): ProxyPoolNode {
 }
 
 /**
- * Select next proxy node from the pool according to the active strategy and conditional routing rules.
+ * Select next proxy node from the pool according to the active strategy, conditional routing rules,
+ * and 9Router-style per-account sticky binding vs keyless round-robin.
  */
-export function selectProxyNode(platform?: string): ProxyPoolNode | null {
+export function selectProxyNode(
+  platform?: string,
+  options?: ProxyNodeSelectorOptions
+): ProxyPoolNode | null {
   const nodes = getActiveProxyPoolNodes();
   if (nodes.length === 0) return null;
 
-  // 1. Conditional Priority: Check if there is an active node targeted specifically to this platform
+  // 1. Sticky Account Binding: If keyId is provided, check if key is explicitly bound to a proxy_pool_id
+  if (options?.keyId) {
+    try {
+      const row = getDb().prepare('SELECT proxy_pool_id FROM api_keys WHERE id = ?').get(options.keyId) as { proxy_pool_id?: string | null } | undefined;
+      if (row?.proxy_pool_id && row.proxy_pool_id !== '__none__') {
+        if (row.proxy_pool_id === '__direct__') {
+          return null; // Explicit direct connection without proxy
+        }
+        if (row.proxy_pool_id === '__round_robin__') {
+          const primaryNodes = nodes.filter(n => !n.role || n.role === 'primary');
+          const pool = primaryNodes.length > 0 ? primaryNodes : nodes;
+          const chosen = pool[roundRobinIndex % pool.length];
+          roundRobinIndex = (roundRobinIndex + 1) % 1_000_000;
+          return resolveClusteredNode(chosen);
+        }
+        const bound = nodes.find(n => n.id === row.proxy_pool_id);
+        if (bound) return resolveClusteredNode(bound);
+      }
+    } catch {}
+  }
+
+  // 2. Targeted Platform Node: Check if there is an active node targeted specifically to this platform
   if (platform) {
     const targeted = nodes.find(n => n.role === 'targeted' && n.targetedPlatforms?.includes(platform));
     if (targeted) return resolveClusteredNode(targeted);
   }
 
-  // 2. Primary Pool: Filter nodes configured for primary traffic (role is 'primary' or unassigned)
-  const primaryNodes = nodes.filter(n => !n.role || n.role === 'primary');
-  let chosen: ProxyPoolNode | null = null;
-
-  if (primaryNodes.length > 0) {
-    const strategy = getProxyPoolStrategy();
-    if (strategy === 'forward') {
-      chosen = primaryNodes[0];
-    } else if (strategy === 'random') {
-      chosen = primaryNodes[Math.floor(Math.random() * primaryNodes.length)];
-    } else {
-      chosen = primaryNodes[roundRobinIndex % primaryNodes.length];
+  // 3. Keyless / noAuth Providers (e.g. opencode free, pollinations):
+  // Rate limits are IP-bucketed, so Round-Robin / Fallback across active proxy pool nodes is applied!
+  if (options?.isKeyless) {
+    const primaryNodes = nodes.filter(n => !n.role || n.role === 'primary');
+    if (primaryNodes.length > 0) {
+      const chosen = primaryNodes[roundRobinIndex % primaryNodes.length];
       roundRobinIndex = (roundRobinIndex + 1) % 1_000_000;
+      return resolveClusteredNode(chosen);
     }
-  } else {
-    // 3. Fallback: If no primary nodes are available/active, route through fallback nodes
     const fallbackNodes = nodes.filter(n => n.role === 'fallback');
     if (fallbackNodes.length > 0) {
-      chosen = fallbackNodes[roundRobinIndex % fallbackNodes.length];
+      const chosen = fallbackNodes[roundRobinIndex % fallbackNodes.length];
       roundRobinIndex = (roundRobinIndex + 1) % 1_000_000;
-    } else {
-      chosen = nodes[0];
+      return resolveClusteredNode(chosen);
     }
+    return resolveClusteredNode(nodes[0]);
   }
 
-  return chosen ? resolveClusteredNode(chosen) : null;
+  // 4. Keyed / Account-based Providers without explicit binding:
+  // CRITICAL ANTI-BAN RULE: NEVER rotate IP per request for the same account!
+  // If keyId is present, use deterministic sticky hash (hash % pool.length) so the account stays on 1 IP!
+  const primaryNodes = nodes.filter(n => !n.role || n.role === 'primary');
+  const pool = primaryNodes.length > 0 ? primaryNodes : nodes;
+  if (options?.keyId) {
+    const hash = Math.abs(Number(options.keyId) || 0);
+    return resolveClusteredNode(pool[hash % pool.length]);
+  }
+
+  // Fallback if no keyId known: use first stable primary node (no random hopping)
+  return resolveClusteredNode(pool[0]);
 }
 
 // ── Instant Deployment: Cloudflare Workers ──────────────────────────────

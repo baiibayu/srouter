@@ -51,6 +51,9 @@ async function submit() {
   act(() => { container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
   await flush()
 }
+function expectNoPatch() {
+  expect(apiFetch).not.toHaveBeenCalledWith(expect.stringMatching(/^\/api\/keys/), expect.anything())
+}
 describe('editing provider credentials', () => {
   it('sends both trimmed Cloudflare credential parts in the PATCH request', async () => {
     mount(<EditKeyDialog apiKey={key} onOpenChange={onOpenChange} />)
@@ -63,7 +66,7 @@ describe('editing provider credentials', () => {
     mount(<EditKeyDialog apiKey={key} onOpenChange={onOpenChange} />)
     enter(part === 'account' ? 'input[placeholder="Account ID"]' : '#edit-key-value', 'incomplete')
     await submit()
-    expect(apiFetch).not.toHaveBeenCalled()
+    expectNoPatch()
     expect(onOpenChange).not.toHaveBeenCalled()
   })
   it('can change a label without replacing its saved credential', async () => {
@@ -107,7 +110,7 @@ describe('editing provider credentials', () => {
     expect(container.textContent).toContain('42 requests')
     expect(container.textContent).toContain(`${(1234).toLocaleString()} tokens`)
     await submit()
-    expect(apiFetch).not.toHaveBeenCalled()
+    expectNoPatch()
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
   it('shows relative usage against caps and reset date', async () => {
@@ -137,7 +140,7 @@ describe('editing provider credentials', () => {
     mount(<EditKeyDialog apiKey={{ ...key, platform: 'groq' }} onOpenChange={onOpenChange} />)
     enter('#edit-key-request-cap', '10k')
     await submit()
-    expect(apiFetch).not.toHaveBeenCalled()
+    expectNoPatch()
     expect(container.querySelector('#edit-key-request-cap')!.getAttribute('aria-invalid')).toBe('true')
   })
   it('loads model choices from the full catalog instead of a limited active chain', async () => {

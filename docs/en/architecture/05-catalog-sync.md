@@ -279,3 +279,24 @@ startCatalogSync(scheduler: Scheduler)
 | Version older than baseline | `skipped_older`, wait for newer catalog |
 | DB unavailable during apply | Transaction rolls back, error, keep previous state |
 | License check unreachable | Keep cached status, sync still runs (tier determined server-side) |
+
+---
+
+## 16. Upstream Retirement Tombstones & Auto-Discovery Harmonization
+
+To prevent notification spam and zombie models, SRouter harmonizes background catalog sync with dynamic live auto-discovery:
+
+1. **Active Ownership Query Guard**:
+   When auto-discovery reconciles local models against live provider endpoints, ownership queries strictly filter for active rows:
+   ```sql
+   SELECT id, model_id FROM models WHERE platform = ? AND source = 'user' AND enabled = 1;
+   SELECT id, model_id FROM embedding_models WHERE platform = ? AND quota_label = 'auto-discovered' AND enabled = 1;
+   SELECT id, model_id FROM media_models WHERE platform = ? AND quota_label = 'auto-discovered' AND enabled = 1;
+   ```
+   This prevents already-disabled / benched models (such as discontinued OVH media models or Kilo variants) from being repeatedly identified as "newly removed" on each discovery tick.
+
+2. **Upstream Retirement Tombstones**:
+   When a model is legitimately removed by a provider, a tombstone record is written to `catalog_model_tombstones` with `reason = 'upstream_retired'`. Subsequent catalog syncs respect this tombstone and will not resurrect the retired model on boot or scheduled catalog syncs.
+
+3. **Automatic Re-Activation (Self-Healing)**:
+   If a provider re-enables or restores access to a previously retired model on their live `/models` API endpoint, `auto-discover` automatically detects the live evidence, removes the tombstone via `clearUpstreamRetiredTombstone(platform, modelId)`, re-enables the model, and pushes an `'added'` notification.

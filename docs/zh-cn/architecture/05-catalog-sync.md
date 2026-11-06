@@ -279,3 +279,24 @@ startCatalogSync(scheduler: Scheduler)
 | 版本老于基线 | `skipped_older`、等更新版目录 |
 | 应用时 DB 不可用 | 事务回滚、报错、保留上一状态 |
 | 授权检查不可达 | 保留缓存状态、同步仍跑（层由服务端定） |
+
+---
+
+## 16. 上游下架墓碑与自动发现协同机制
+
+为防止通知泛滥与幽灵模型循环，SRouter 将后台目录同步与动态实时自动发现进行了深度协同：
+
+1. **活跃状态归属查询守卫**：
+   当自动发现将本地模型与提供商在线端点进行比对时，模型归属查询强制增加 `enabled = 1` 过滤：
+   ```sql
+   SELECT id, model_id FROM models WHERE platform = ? AND source = 'user' AND enabled = 1;
+   SELECT id, model_id FROM embedding_models WHERE platform = ? AND quota_label = 'auto-discovered' AND enabled = 1;
+   SELECT id, model_id FROM media_models WHERE platform = ? AND quota_label = 'auto-discovered' AND enabled = 1;
+   ```
+   这可彻底杜绝已被禁用的模型（如已下架的 OVH 媒体模型或 Kilo 变体）在每次自动发现轮询时反复触发“模型已删除”通知循环。
+
+2. **上游下架墓碑（Tombstones）**：
+   当提供商确认下架某模型时，系统在 `catalog_model_tombstones` 记录 `reason = 'upstream_retired'`。后续目录同步将遵从该墓碑，在系统重启或定期同步时不会将其复活。
+
+3. **自动恢复机制（Self-Healing）**：
+   若提供商日后在其 `/models` 端点重新启用了此前下架的模型，`auto-discover` 会实时捕获到在线证据，调用 `clearUpstreamRetiredTombstone(platform, modelId)` 清除墓碑，重新启用该模型，并推送 `'added'` 恢复通知。

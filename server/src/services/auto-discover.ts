@@ -23,6 +23,11 @@ import { OpenAICompatProvider } from '../providers/openai-compat.js';
 import { parseModelCatalog, type DiscoveredModelKind } from './model-discovery.js';
 import { ensureModelInProfiles } from './profile-models.js';
 import { addNotifications, getSyncIntervalHours, type SyncNotification } from './catalog-sync.js';
+import {
+  recordCatalogModelTombstone,
+  clearUpstreamRetiredTombstone,
+  getCatalogModelTombstone,
+} from './model-state.js';
 import type { Scheduler } from '../lib/scheduler.js';
 import type { Platform } from '@baiibayu/srouter-shared/types.js';
 
@@ -78,6 +83,11 @@ const PLATFORM_DEFAULTS: Record<string, PlatformRateDefaults> = {
   sealion:     { rpm: 10,   rpd: null,  tpm: null,     tpd: null },     // 10 RPM free tier
   radeon:      { rpm: 30,   rpd: null,  tpm: null,     tpd: null },     // 30 RPM; $10/day credits
   agnes:       { rpm: 30,   rpd: null,  tpm: null,     tpd: null },     // ~30 concurrent before 429
+  cline:       { rpm: 10,   rpd: 200,   tpm: null,     tpd: null },     // free tier rotating models
+  nous:        { rpm: 10,   rpd: 500,   tpm: null,     tpd: null },     // free plan rate limit
+  freebuff:    { rpm: 5,    rpd: 200,   tpm: null,     tpd: null },     // agent-run quota
+  puter:       { rpm: 10,   rpd: 500,   tpm: null,     tpd: null },     // personal cloud AI driver
+  kiro:        { rpm: 15,   rpd: 1000,  tpm: null,     tpd: null },     // AWS CodeWhisperer conversational quota
 
   // ── Providers with generous/unpublished limits (conservative) ──
   mistral:     { rpm: 30,   rpd: null,  tpm: null,     tpd: null },     // free plan, ~30 rpm observed
@@ -541,24 +551,26 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
 
   const db = getDb();
 
-  // Find an enabled key for this platform
-  const keyRow = db.prepare(
-    'SELECT id, encrypted_key, iv, auth_tag FROM api_keys WHERE platform = ? AND enabled = 1 LIMIT 1'
-  ).get(platform) as { id: number; encrypted_key: string; iv: string; auth_tag: string } | undefined;
-
-  if (!keyRow) return empty;
-
   // Resolve the provider
   const provider = resolveProvider(platform as Platform);
   if (!provider || !(provider instanceof OpenAICompatProvider)) return empty;
 
-  // Decrypt the key (import dynamically to avoid circular deps)
-  const { decrypt } = await import('../lib/crypto.js');
-  let apiKey: string;
-  try {
-    apiKey = decrypt(keyRow.encrypted_key, keyRow.iv, keyRow.auth_tag);
-  } catch {
-    return empty;
+  // Find an enabled key for this platform (or proceed keyless if supported)
+  const keyRow = db.prepare(
+    'SELECT id, encrypted_key, iv, auth_tag FROM api_keys WHERE platform = ? AND enabled = 1 LIMIT 1'
+  ).get(platform) as { id: number; encrypted_key: string; iv: string; auth_tag: string } | undefined;
+
+  if (!keyRow && !provider.keyless) return empty;
+
+  let apiKey = '';
+  if (keyRow) {
+    // Decrypt the key (import dynamically to avoid circular deps)
+    const { decrypt } = await import('../lib/crypto.js');
+    try {
+      apiKey = decrypt(keyRow.encrypted_key, keyRow.iv, keyRow.auth_tag);
+    } catch {
+      if (!provider.keyless) return empty;
+    }
   }
 
   // Fetch the provider's model catalog
@@ -610,7 +622,16 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
   // `tier` as an access filter when at least one model actually says
   // tier === 'free'; otherwise fall through to the `:free` suffix check.
   const tierHasFreeValue = hasTierField && rawModels.some((m: any) => m?.tier === 'free');
-  if (hasAccessTierField) {
+  if (platform === 'navy') {
+    // NavyAI publishes premium: false on its free-tier models (150K tokens/day allowance)
+    const freeIds = new Set<string>();
+    for (const m of rawModels) {
+      if (m?.premium === false || m?.token_multiplier === 0) freeIds.add(m.id);
+    }
+    const beforeCount = freeModels.length;
+    freeModels = freeModels.filter(m => freeIds.has(m.id));
+    console.log(`[auto-discover] navy: premium:false filter (${beforeCount} → ${freeModels.length} models)`);
+  } else if (hasAccessTierField) {
     // Authoritative: the upstream tells us the tier per row. Match on the raw
     // list (which carries the field) and project onto the parsed models.
     const freeIds = new Set<string>();
@@ -632,9 +653,9 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     // No tier field, or tier is quality-based (no 'free' value) — check if
     // models use the `:free` suffix convention. If ANY model id ends with
     // ':free', assume this provider uses the pattern and only keep those.
-    // NOTE: cline has a hand-curated list of verified free models that mix
-    // openrouter/free, qwen, deepseek, and :free suffix models, so don't filter cline.
-    const hasColonFree = platform !== 'cline' && rawModels.some((m: any) => typeof m?.id === 'string' && m.id.endsWith(':free'));
+    // NOTE: cline, nous, freebuff, puter, and kiro have verified catalogs that mix
+    // openrouter/free, hermes, claude, qwen, deepseek, and unadorned model IDs without :free suffix.
+    const hasColonFree = !['cline', 'nous', 'freebuff', 'puter', 'kiro', 'navy'].includes(platform) && rawModels.some((m: any) => typeof m?.id === 'string' && m.id.endsWith(':free'));
     if (hasColonFree) {
       const beforeCount = freeModels.length;
       freeModels = freeModels.filter(m => m.id.endsWith(':free'));
@@ -695,7 +716,16 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
   // five `deepseek/*` rows `access_tier: 'free'` with zero pricing, yet every
   // one answers a free-plan key with 403 "available to paying customers only".
   let verifiedChatModels = chatModels;
-  if (hasAccessTierField) {
+  if (platform === 'navy') {
+    // NavyAI publishes premium: false on its free-tier models (150K tokens/day allowance)
+    const freeIds = new Set<string>();
+    for (const m of rawModels) {
+      if (m?.premium === false || m?.token_multiplier === 0) freeIds.add(m.id);
+    }
+    const beforeCount = freeModels.length;
+    freeModels = freeModels.filter(m => freeIds.has(m.id));
+    console.log(`[auto-discover] navy: premium:false filter (${beforeCount} → ${freeModels.length} models)`);
+  } else if (hasAccessTierField) {
     const { probeFreeAccess } = await import('../providers/xkiro.js');
     verifiedChatModels = [];
     let paid = 0;
@@ -740,7 +770,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       intelligence_rank, speed_rank, size_label,
       supports_vision, supports_tools, context_window,
       rpm_limit, rpd_limit, tpm_limit, tpd_limit, monthly_token_budget)
-    VALUES (?, ?, ?, 'user', 1,
+    VALUES (?, ?, ?, 'discovered', 1,
       ?, ?, ?,
       ?, ?, ?,
       ?, ?, ?, ?, ?)
@@ -795,6 +825,14 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
 
     // ──── 1. CHAT MODELS ────────────────────────────────────────
     for (const m of verifiedChatModels.slice(0, MAX_AUTO_MODELS)) {
+      // Respect explicit user deletion (tombstone with source = 'user')
+      const tomb = getCatalogModelTombstone(db, 'chat', platform, m.id);
+      if (tomb?.source === 'user') {
+        continue;
+      }
+      // If model was previously retired by upstream EOL, lift it now that provider offers it again
+      clearUpstreamRetiredTombstone(db, 'chat', platform, m.id);
+
       const size = classifySize(m.id);
       const vision = m.vision ? 1 : 0;
       const tools = /gpt|gemini|claude|mistral|qwen|llama.*3|deepseek|command/i.test(m.id) ? 1 : 0;
@@ -811,7 +849,18 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
 
       if (existing) {
         stillOffered.add(existing.id);
-        if (existing.source === 'user') {
+        // Ensure model is re-enabled if still offered upstream
+        db.prepare('UPDATE models SET enabled = 1 WHERE id = ?').run(existing.id);
+        const inChain = db.prepare('SELECT 1 FROM fallback_config WHERE model_db_id = ?').get(existing.id);
+        if (!inChain) {
+          insertFb.run(existing.id, maxP + 1 + idx);
+          idx++;
+        } else {
+          db.prepare('UPDATE fallback_config SET enabled = 1 WHERE model_db_id = ?').run(existing.id);
+        }
+        ensureModelInProfiles(db, existing.id);
+
+        if (existing.source === 'user' || existing.source === 'discovered') {
           // Basic metadata refresh
           const needsRefresh = existing.display_name !== display
             || existing.context_window !== ctx
@@ -881,14 +930,33 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       idx++;
     }
 
-    // Clean out chat rows this platform's discovery created that upstream dropped (matching OpenCode clean sync)
+    // Clean out chat rows this platform's discovery created or active models that upstream dropped (matching OpenCode clean sync)
     if (stillOffered.size > 0) {
+      // Auto-prune stale catalog-disabled rows for this platform since live upstream is now authoritative
+      const deadCatalogRows = db.prepare(
+        "SELECT id, model_id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0"
+      ).all(platform) as { id: number; model_id: string }[];
+      for (const d of deadCatalogRows) {
+        recordCatalogModelTombstone(db, 'chat', platform, d.model_id, {
+          source: 'upstream_eol',
+          reason: 'Upstream provider no longer lists model',
+        });
+      }
+      db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0)").run(platform);
+      db.prepare("DELETE FROM profile_models WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0)").run(platform);
+      db.prepare("DELETE FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0").run(platform);
+
       const ownedRows = db.prepare(
-        "SELECT id, model_id FROM models WHERE platform = ? AND source = 'user'",
+        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 1 AND source IN ('user', 'discovered')",
       ).all(platform) as { id: number; model_id: string }[];
       for (const row of ownedRows) {
         if (stillOffered.has(row.id)) continue;
         benchModel.run(row.id);
+        db.prepare('UPDATE fallback_config SET enabled = 0 WHERE model_db_id = ?').run(row.id);
+        recordCatalogModelTombstone(db, 'chat', platform, row.model_id, {
+          source: 'upstream_eol',
+          reason: 'Upstream provider no longer lists model',
+        });
         benched++;
         retiredModelNames.push(row.model_id);
       }
@@ -904,7 +972,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       const family = guessEmbeddingFamily(m.id);
       const display = m.id.replace(/[-_]/g, ' ');
       const maxInput = m.contextWindow ?? null;
-      const keyId = keyRow.id;
+      const keyId = keyRow?.id ?? null;
 
       const existing = selectExistingEmbedding.get(platform, m.id) as {
         id: number; display_name: string | null; dimensions: number;
@@ -930,7 +998,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     // Bench embedding rows this platform's discovery created that upstream dropped
     if (stillOfferedEmbeddings.size > 0) {
       const ownedEmbs = db.prepare(
-        "SELECT id, model_id FROM embedding_models WHERE platform = ? AND quota_label = 'auto-discovered'",
+        "SELECT id, model_id FROM embedding_models WHERE platform = ? AND quota_label = 'auto-discovered' AND enabled = 1",
       ).all(platform) as { id: number; model_id: string }[];
       for (const row of ownedEmbs) {
         if (stillOfferedEmbeddings.has(row.model_id)) continue;
@@ -948,7 +1016,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       stillOfferedMedia.add(m.id);
       const modality = m.kind as string; // 'image' | 'audio' | 'video' | 'transcription'
       const display = m.id.replace(/[-_]/g, ' ');
-      const keyId = keyRow.id;
+      const keyId = keyRow?.id ?? null;
 
       const existing = selectExistingMedia.get(platform, m.id) as {
         id: number; display_name: string | null; modality: string;
@@ -974,7 +1042,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     // Bench media rows this platform's discovery created that upstream dropped
     if (stillOfferedMedia.size > 0) {
       const ownedMedia = db.prepare(
-        "SELECT id, model_id FROM media_models WHERE platform = ? AND quota_label = 'auto-discovered' AND modality IN ('image', 'audio', 'video', 'transcription')",
+        "SELECT id, model_id FROM media_models WHERE platform = ? AND quota_label = 'auto-discovered' AND enabled = 1 AND modality IN ('image', 'audio', 'video', 'transcription')",
       ).all(platform) as { id: number; model_id: string }[];
       for (const row of ownedMedia) {
         if (stillOfferedMedia.has(row.model_id)) continue;

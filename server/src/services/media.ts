@@ -32,7 +32,7 @@ export const MEDIA_PLATFORMS = new Set(['nvidia', 'pollinations', 'cloudflare', 
 export const VIDEO_PLATFORMS = new Set(['pollinations', 'huggingface']);
 
 /** Platforms whose free media path needs no API key (anonymous). */
-const KEYLESS_CAPABLE = new Set(['pollinations']);
+const KEYLESS_CAPABLE = new Set(['pollinations', 'freeai']);
 
 /** Platforms with a speech-to-text adapter below. catalog-sync gates the
  *  catalog's `transcriptionModels` entries on this, the way MEDIA_PLATFORMS
@@ -600,14 +600,15 @@ async function callSpeechProvider(
   const key = credential.key;
   switch (row.platform) {
     case 'freeai': {
-      if (!key) throw new MediaError('Free.ai API key required', 401);
+      // Keyless: Free.ai accepts any key (even empty) for free-tier TTS
+      const safeKey = key || '';
       if (row.model_id !== 'kokoro') throw new MediaError('Free.ai currently supports only the tested Kokoro speech route', 400);
       if (p.format && p.format !== 'wav') throw new MediaError('Free.ai Kokoro supports wav output through this adapter', 400);
       const standardVoices = new Set(['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse', 'marin', 'cedar']);
       const voice = !p.voice || standardVoices.has(p.voice.toLowerCase()) ? 'af_heart' : p.voice;
       const r = await mediaFetch(`${FREEAI_BASE_URL}/v1/tts/`, 'freeai', 'audio', {
         method: 'POST', redirect: 'error',
-        headers: { 'Content-Type': 'application/json', ...bearerAuthHeader(key) },
+        headers: { 'Content-Type': 'application/json', ...bearerAuthHeader(safeKey) },
         body: JSON.stringify({ model: row.model_id, text: p.input, voice }),
       });
       const body: unknown = await r.json();

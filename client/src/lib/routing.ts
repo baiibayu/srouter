@@ -468,6 +468,15 @@ auray:       '#635bff',
   // /v1/fetch readers (#1174 follow-up), so their usage rows keep one colour.
   tinyfish:    '#0f766e',
   jina:        '#7c3aed',
+  // Decision & System One hosts / additional platforms (#1450).
+  opencode:    '#10b981',
+  'opencode-free': '#059669',
+  'opencode-go': '#06b6d4',
+  typesafe:    '#8b5cf6',
+  local:       '#0284c7', // Sky Blue (kontras tinggi, beda dari oranye Cloudflare)
+  ovh:         '#0050d7',
+  agnes:       '#ec4899',
+  siliconflow: '#a855f7',
 }
 
 // ── Grouped (unified) rendering ──────────────────────────────────────────────

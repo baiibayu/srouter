@@ -444,6 +444,8 @@ export interface ApiKey {
   monthlyUsage?: { requests: number; tokens: number; resetsAt: string };
   /** The per-key proxy override with its password masked (#590); '' = none. */
   maskedProxyUrl?: string;
+  /** Explicit proxy pool / relay node ID bound to this key (sticky relay anti-ban). */
+  proxyPoolId?: string | null;
   models?: ApiKeyModel[];
   cooldowns?: ApiKeyCooldown[];
   /** True for a built-in provider key whose platform the catalog carries no
@@ -455,6 +457,8 @@ export interface ApiKeyCreate {
   platform: Platform;
   key: string;
   label?: string;
+  proxyPoolId?: string | null;
+  proxyUrl?: string;
 }
 
 // ---- Fallback Config ----

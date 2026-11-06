@@ -36,6 +36,7 @@ import type { Db } from '../db/types.js';
 import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import { parseModelScope } from '../lib/model-scope.js';
 import { KEY_PROXY_URL_ERROR, KEY_PROXY_URL_MAX, decryptProxyUrl, encryptProxyUrl, isValidKeyProxyUrl, maskProxyUrl } from '../lib/key-proxy.js';
+import { getActiveProxyPoolNodes } from '../services/proxy-pool.js';
 
 export const keysRouter = Router();
 
@@ -50,15 +51,13 @@ export const keysRouter = Router();
 const PLATFORMS = [
   'speka',
   'auray',
-  'typhoon',
-  'plugsky',
   'inferbase',
   'simplellm',
   'llmtr',
   'gizmo',
   'blockrun',
   'moondream',
- 'freeai',
+  'freeai',
   'google', 'groq', 'sail', 'electronhub', 'router9', 'septor', 'speechify', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'radeon', 'nvidia', 'mistral',
   'openrouter', 'cohere', 'tavily', 'exa', 'firecrawl', 'linkup', 'parallel', 'jina', 'cloudflare', 'zhipu', 'ollama',
   'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'siliconflow',
@@ -95,6 +94,7 @@ const addKeySchema = z.object({
   key: z.string().optional(),
   label: z.string().optional(),
   proxyUrl: proxyUrlSchema.optional(),
+  proxyPoolId: z.string().trim().nullable().optional(),
 });
 
 // `modelScope` (#657): the model_id list this key may serve — relay stations
@@ -106,6 +106,7 @@ const updateKeySchema = z.object({
   modelScope: z.array(z.string().trim().min(1).max(200)).max(100).nullable().optional(),
   // #590: '' clears the per-key proxy; absent leaves it unchanged.
   proxyUrl: proxyUrlSchema.optional(),
+  proxyPoolId: z.string().trim().nullable().optional(),
   // Monthly budget caps (#1158): 0 clears the cap (unlimited). The period
   // names the UTC window the caps count against (provider reset cycle).
   monthlyRequestCap: z.number().int().min(0).max(1_000_000_000).optional(),
@@ -116,8 +117,8 @@ const updateKeySchema = z.object({
   groupLabel: z.string().trim().max(80).optional(),
   // An absent credential leaves the encrypted key untouched.
   key: z.string().trim().min(1).optional(),
-}).refine(data => data.enabled !== undefined || data.label !== undefined || data.modelScope !== undefined || data.proxyUrl !== undefined || data.key !== undefined || data.monthlyRequestCap !== undefined || data.monthlyTokenCap !== undefined || data.budgetPeriod !== undefined || data.groupLabel !== undefined, {
-  message: 'At least one of enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap, budgetPeriod or groupLabel must be provided',
+}).refine(data => data.enabled !== undefined || data.label !== undefined || data.modelScope !== undefined || data.proxyUrl !== undefined || data.proxyPoolId !== undefined || data.key !== undefined || data.monthlyRequestCap !== undefined || data.monthlyTokenCap !== undefined || data.budgetPeriod !== undefined || data.groupLabel !== undefined, {
+  message: 'At least one of enabled, label, modelScope, proxyUrl, proxyPoolId, key, monthlyRequestCap, monthlyTokenCap, budgetPeriod or groupLabel must be provided',
 });
 
 const importKeySchema = z.object({
@@ -461,6 +462,7 @@ keysRouter.get('/', (_req: Request, res: Response) => {
       // override. Enough for the dashboard to show that a key routes through
       // its own exit, without handing the proxy credentials back out.
       maskedProxyUrl: maskProxyUrl(decryptProxyUrl(row)),
+      proxyPoolId: (row as any).proxy_pool_id ?? null,
       models: row.platform === 'custom' ? (modelsByEndpoint.get(endpointOf(Number(row.id))) ?? []) : undefined,
       modelDiscovery: canDiscover(row.platform),
       cooldowns: cooldowns.map(c => ({
@@ -681,7 +683,7 @@ keysRouter.post('/', async (req: Request, res: Response) => {
     return;
   }
 
-  const { platform, label } = parsed.data;
+  const { platform, label, proxyPoolId } = parsed.data;
   const isKeyless = resolveProvider(platform)?.keyless === true;
   const rawKey = parsed.data.key?.trim() ?? '';
 
@@ -744,6 +746,10 @@ keysRouter.post('/', async (req: Request, res: Response) => {
         updates.push('proxy_encrypted = ?', 'proxy_iv = ?', 'proxy_auth_tag = ?');
         values.push(proxy.encrypted, proxy.iv, proxy.authTag);
       }
+      if (proxyPoolId !== undefined) {
+        updates.push('proxy_pool_id = ?');
+        values.push(proxyPoolId && proxyPoolId !== '__none__' ? proxyPoolId : null);
+      }
       db.prepare(`UPDATE api_keys SET ${updates.join(', ')} WHERE id = ?`).run(...values, sentinel.id);
       clearCooldownsForKey(sentinel.id);
       await respond(sentinel.id, maskKey(rawKey));
@@ -755,10 +761,11 @@ keysRouter.post('/', async (req: Request, res: Response) => {
   // #590: the proxy URL is encrypted like the key itself — it usually embeds
   // `user:pass@` credentials. Absent/'' stores NULLs = no override.
   const proxy = encryptProxyUrl(proxyUrl);
+  const targetPoolId = proxyPoolId && proxyPoolId !== '__none__' ? proxyPoolId : null;
   const result = db.prepare(`
-    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, proxy_encrypted, proxy_iv, proxy_auth_tag)
-    VALUES (?, ?, ?, ?, ?, 'unknown', 1, ?, ?, ?)
-  `).run(platform, label ?? '', encrypted, iv, authTag, proxy.encrypted, proxy.iv, proxy.authTag);
+    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, proxy_encrypted, proxy_iv, proxy_auth_tag, proxy_pool_id)
+    VALUES (?, ?, ?, ?, ?, 'unknown', 1, ?, ?, ?, ?)
+  `).run(platform, label ?? '', encrypted, iv, authTag, proxy.encrypted, proxy.iv, proxy.authTag, targetPoolId);
 
   // Auto-discover models if the catalog hasn't shipped them for this provider
   let modelsAvailable = enabledModelCount(platform);
@@ -775,6 +782,7 @@ keysRouter.post('/', async (req: Request, res: Response) => {
     platform,
     label: label ?? '',
     maskedProxyUrl: maskProxyUrl(proxyUrl),
+    proxyPoolId: targetPoolId,
     maskedKey: maskKey(keyToStore),
     status: 'unknown',
     enabled: true,
@@ -1780,8 +1788,9 @@ keysRouter.post('/platform/:platform/refresh-models', async (req: Request, res: 
     return;
   }
   const db = getDb();
+  const provider = resolveProvider(platform as Platform);
   const key = db.prepare('SELECT 1 FROM api_keys WHERE platform = ? AND enabled = 1 LIMIT 1').get(platform);
-  if (!key) {
+  if (!key && (!provider || !provider.keyless)) {
     res.status(409).json({ error: { message: `Platform '${platform}' has no enabled API key` } });
     return;
   }
@@ -1814,10 +1823,15 @@ keysRouter.post('/refresh-all-models', async (_req: Request, res: Response) => {
     console.warn(`[sync-all] catalog sync failed: ${err instanceof Error ? err.message : err}`);
   }
 
-  // 2) Auto-discover — query each platform's API for user-key models
-  const platforms = db.prepare(`
-    SELECT DISTINCT platform FROM api_keys WHERE enabled = 1
-  `).all() as { platform: string }[];
+  // 2) Auto-discover — query each platform's API for user-key models and active keyless platforms
+  const platformsMap = new Set<string>(
+    db.prepare(`SELECT DISTINCT platform FROM api_keys WHERE enabled = 1`).all().map((r: any) => r.platform)
+  );
+  for (const p of PLATFORMS) {
+    const prov = resolveProvider(p as Platform);
+    if (prov?.keyless) platformsMap.add(p);
+  }
+  const platforms = Array.from(platformsMap).map(platform => ({ platform }));
 
   const results: { platform: string; registered: number; refreshed: number; retired: number; modelsAvailable: number; previousModelsAvailable: number; newModels: string[]; updatedModels: string[]; retiredModels: string[]; error?: string }[] = [];
   let totalRegistered = 0;
@@ -1889,7 +1903,7 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
     return;
   }
 
-  const { enabled, label, modelScope, proxyUrl, key, monthlyRequestCap, monthlyTokenCap, budgetPeriod, groupLabel } = parsed.data;
+  const { enabled, label, modelScope, proxyUrl, proxyPoolId, key, monthlyRequestCap, monthlyTokenCap, budgetPeriod, groupLabel } = parsed.data;
   const updates: string[] = [];
   const values: (string | number | null)[] = [];
   let changedKey: string | undefined;
@@ -1940,6 +1954,10 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
     const proxy = encryptProxyUrl(proxyUrl);
     updates.push('proxy_encrypted = ?', 'proxy_iv = ?', 'proxy_auth_tag = ?');
     values.push(proxy.encrypted, proxy.iv, proxy.authTag);
+  }
+  if (proxyPoolId !== undefined) {
+    updates.push('proxy_pool_id = ?');
+    values.push(proxyPoolId && proxyPoolId !== '__none__' && proxyPoolId !== '__direct__' ? proxyPoolId : null);
   }
   // Monthly budget caps (#1158): 0 = unlimited.
   if (monthlyRequestCap !== undefined) {
@@ -2010,6 +2028,7 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
   if (enabled !== undefined) response.enabled = enabled;
   if (label !== undefined) response.label = label;
   if (proxyUrl !== undefined) response.maskedProxyUrl = maskProxyUrl(proxyUrl);
+  if (proxyPoolId !== undefined) response.proxyPoolId = proxyPoolId && proxyPoolId !== '__none__' ? proxyPoolId : null;
   if (key !== undefined) response.maskedKey = maskKey(key);
   if (modelScope !== undefined) response.modelScope = scopeIds.length > 0 ? scopeIds : null;
   if (budgetPeriod !== undefined) {
@@ -2020,4 +2039,72 @@ keysRouter.patch('/:id', (req: Request, res: Response) => {
   }
   if (groupLabel !== undefined) response.groupLabel = normalizeGroupLabel(groupLabel);
   res.json(response);
+});
+
+// Explicit sticky proxy pool / relay assignment per key (9Router-style anti-ban)
+keysRouter.post('/:id/proxy-pool', (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: { message: 'Invalid key id' } });
+    return;
+  }
+  const { proxyPoolId } = req.body || {};
+  const targetPoolId = typeof proxyPoolId === 'string' && proxyPoolId.trim() && proxyPoolId !== '__none__'
+    ? proxyPoolId.trim()
+    : null;
+
+  const db = getDb();
+  const result = db.prepare('UPDATE api_keys SET proxy_pool_id = ? WHERE id = ?').run(targetPoolId, id);
+  if (result.changes === 0) {
+    res.status(404).json({ error: { message: 'Key not found' } });
+    return;
+  }
+  clearCooldownsForKey(id);
+  res.json({ success: true, id, proxyPoolId: targetPoolId });
+});
+
+// Bulk distribute or assign proxy pool relays across multiple accounts
+keysRouter.post('/bulk/assign-relays', (req: Request, res: Response) => {
+  const { ids, mode = 'distribute', proxyPoolId } = req.body || {};
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ error: { message: 'ids array is required' } });
+    return;
+  }
+
+  const activeNodes = getActiveProxyPoolNodes();
+
+  if (mode === 'distribute' && activeNodes.length === 0) {
+    res.status(400).json({ error: { message: 'No active proxy pool nodes available' } });
+    return;
+  }
+
+  const db = getDb();
+  const updateStmt = db.prepare('UPDATE api_keys SET proxy_pool_id = ? WHERE id = ?');
+
+  const runBulk = db.transaction(() => {
+    let updated = 0;
+    for (let i = 0; i < ids.length; i++) {
+      const keyId = Number(ids[i]);
+      if (!Number.isInteger(keyId)) continue;
+
+      let targetId: string | null = null;
+      if (mode === 'distribute') {
+        targetId = activeNodes[i % activeNodes.length].id;
+      } else if (mode === 'specific' && proxyPoolId && proxyPoolId !== '__none__') {
+        targetId = String(proxyPoolId);
+      } else if (mode === 'clear') {
+        targetId = null;
+      }
+
+      const res = updateStmt.run(targetId, keyId);
+      if (res.changes > 0) {
+        clearCooldownsForKey(keyId);
+        updated++;
+      }
+    }
+    return updated;
+  });
+
+  const updatedCount = runBulk();
+  res.json({ success: true, updated: updatedCount });
 });

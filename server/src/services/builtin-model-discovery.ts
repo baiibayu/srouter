@@ -4,7 +4,7 @@ import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import { getProvider } from '../providers/index.js';
 import { OpenAICompatProvider } from '../providers/openai-compat.js';
 import { decrypt } from '../lib/crypto.js';
-import { decryptProxyUrl } from '../lib/key-proxy.js';
+import { decryptProxyUrl, resolveKeyProxyConfig } from '../lib/key-proxy.js';
 import { withKeyProxy } from '../lib/proxy.js';
 import { discoverProviderModels, type DiscoveredModel } from './model-discovery.js';
 import { appliedCatalogPlatforms, DISCOVERED_MODEL_SOURCE } from './catalog-sync.js';
@@ -134,7 +134,7 @@ export async function discoverBuiltinModels(
   apiKeyOverride?: string,
 ): Promise<DiscoveredModel[]> {
   const apiKey = apiKeyOverride?.trim() || decrypt(key.encrypted_key, key.iv, key.auth_tag);
-  return withKeyProxy(decryptProxyUrl(key), () => discoverProviderModels(provider, apiKey, provider.modelsUrl.replace(/\/models\/?$/, '')));
+  return withKeyProxy(resolveKeyProxyConfig(key), () => discoverProviderModels(provider, apiKey, provider.modelsUrl.replace(/\/models\/?$/, '')));
 }
 
 /** Discovered model ids already present on this platform, in any provenance. */

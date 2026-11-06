@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import { randomBytes } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -7,6 +8,33 @@ import { encrypt, decrypt } from '../lib/crypto.js';
 import { autoDiscoverModels } from '../services/auto-discover.js';
 
 export const oauthRouter = Router();
+
+// ── Freebuff CLI OAuth Constants (mirrors official Codebuff CLI flow) ──
+const FREEBUFF_CONFIG = {
+  baseUrl: 'https://freebuff.com',
+  codeUrl: 'https://freebuff.com/api/auth/cli/code',
+  statusUrl: 'https://freebuff.com/api/auth/cli/status',
+  pollInterval: 5000,
+  loginTimeoutSec: 300,
+};
+
+function generateFreebuffFingerprintId(): string {
+  return `codebuff-cli-${randomBytes(6).toString('base64url').substring(0, 8)}`;
+}
+
+function encodeFreebuffLoginState(state: { fingerprintId: string; fingerprintHash: string; expiresAt: string }): string {
+  return Buffer.from(JSON.stringify(state), 'utf8').toString('base64url');
+}
+
+function decodeFreebuffLoginState(deviceCode: string): { fingerprintId: string; fingerprintHash: string; expiresAt: string } | null {
+  try {
+    const parsed = JSON.parse(Buffer.from(deviceCode, 'base64url').toString('utf8'));
+    if (parsed && parsed.fingerprintId && parsed.fingerprintHash && parsed.expiresAt) {
+      return parsed;
+    }
+  } catch {}
+  return null;
+}
 
 // ── AWS OIDC Constants for Kiro AI (from 9router / AWS CodeWhisperer) ──
 const KIRO_OIDC_CONFIG = {
@@ -129,41 +157,40 @@ oauthRouter.get('/:provider/authorize', async (req: Request, res: Response) => {
 
   try {
     if (provider === 'nous') {
-      try {
-        const resp = await fetch('https://portal.nousresearch.com/api/oauth/device/code', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-            'User-Agent': 'hermes-cli',
-          },
-          body: new URLSearchParams({ client_id: 'hermes-cli', scope: 'inference:invoke' }).toString(),
-        });
-        const data: any = await resp.json();
-        if (!resp.ok || data.error) {
-          throw new Error(data.error_description || data.error || 'Failed to initiate Nous device authorization');
-        }
-        res.json({
-          provider: 'nous',
-          flowType: 'device_code',
-          deviceCode: data.device_code,
-          userCode: data.user_code,
-          verificationUri: data.verification_uri || 'https://portal.nousresearch.com/manage-subscription',
-          verificationUriComplete: data.verification_uri_complete || `https://portal.nousresearch.com/manage-subscription?user_code=${data.user_code}`,
-          expiresIn: data.expires_in || 600,
-          interval: data.interval || 5,
-        });
-        return;
-      } catch (_err) {
-        // Fallback info if API request fails
-        res.json({
-          provider: 'nous',
-          flowType: 'browser_portal',
-          authUrl: 'https://portal.nousresearch.com',
-          instructions: 'Login to Nous Portal and copy your session token or personal key.',
+      const codeResp = await fetch('https://portal.nousresearch.com/api/oauth/device/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'User-Agent': 'hermes-cli',
+        },
+        body: new URLSearchParams({
+          client_id: 'hermes-cli',
+          scope: 'inference:invoke',
+        }).toString(),
+      });
+
+      if (!codeResp.ok) {
+        const errText = await codeResp.text();
+        res.status(codeResp.status).json({
+          error: { message: `Failed to initialize Nous device authorization: ${errText || codeResp.statusText}` },
         });
         return;
       }
+
+      const data: any = await codeResp.json();
+      res.json({
+        provider: 'nous',
+        flowType: 'device_code',
+        deviceCode: data.device_code,
+        userCode: data.user_code,
+        verificationUri: data.verification_uri || 'https://portal.nousresearch.com/manage-subscription',
+        verificationUriComplete: data.verification_uri_complete || `${data.verification_uri}?user_code=${data.user_code}`,
+        expiresIn: data.expires_in || 600,
+        interval: data.interval || 5,
+        instructions: `Open ${data.verification_uri_complete || data.verification_uri} and approve code ${data.user_code} to link your Nous Portal account without credit card or billing.`,
+      });
+      return;
     }
 
     if (provider === 'cline') {
@@ -258,6 +285,41 @@ oauthRouter.get('/:provider/authorize', async (req: Request, res: Response) => {
         region: KIRO_OIDC_CONFIG.region,
         expiresIn: authData.expiresIn,
         interval: authData.interval || 5,
+      });
+      return;
+    }
+
+    if (provider === 'freebuff') {
+      const fingerprintId = generateFreebuffFingerprintId();
+      const resp = await fetch(FREEBUFF_CONFIG.codeUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ fingerprintId }),
+      });
+      if (!resp.ok) {
+        throw new Error(`Freebuff login request failed (${resp.status})`);
+      }
+      const data = (await resp.json()) as { loginUrl?: string; fingerprintHash?: string; expiresAt?: string };
+      if (!data.loginUrl || !data.fingerprintHash || !data.expiresAt) {
+        throw new Error('Freebuff login response is missing required fields');
+      }
+      const deviceCode = encodeFreebuffLoginState({
+        fingerprintId,
+        fingerprintHash: data.fingerprintHash,
+        expiresAt: data.expiresAt,
+      });
+      const expMs = typeof data.expiresAt === 'number' ? data.expiresAt : Date.parse(String(data.expiresAt));
+      const expiresIn = Number.isFinite(expMs) ? Math.max(1, Math.floor((expMs - Date.now()) / 1000)) : 300;
+
+      res.json({
+        provider: 'freebuff',
+        flowType: 'device_code',
+        deviceCode,
+        userCode: fingerprintId.replace(/^codebuff-cli-/, ''),
+        verificationUri: data.loginUrl,
+        verificationUriComplete: data.loginUrl,
+        expiresIn,
+        interval: 5,
       });
       return;
     }
@@ -386,6 +448,84 @@ oauthRouter.post('/kiro/poll', async (req: Request, res: Response) => {
     res.status(502).json({ error: { message: 'Unexpected response from AWS OIDC' } });
   } catch (err: any) {
     res.status(500).json({ error: { message: (err as any)?.message || String(err) } });
+  }
+});
+
+/**
+ * POST /api/oauth/freebuff/poll
+ * Polls Freebuff CLI device status endpoint until user approves in browser.
+ */
+oauthRouter.post('/freebuff/poll', async (req: Request, res: Response) => {
+  const { deviceCode } = req.body || {};
+  if (!deviceCode) {
+    res.status(400).json({ error: { message: 'Missing deviceCode parameter' } });
+    return;
+  }
+
+  const state = decodeFreebuffLoginState(deviceCode);
+  if (!state) {
+    res.status(400).json({ error: { message: 'Malformed Freebuff login state' } });
+    return;
+  }
+
+  try {
+    const url = new URL(FREEBUFF_CONFIG.statusUrl);
+    url.searchParams.set('fingerprintId', state.fingerprintId);
+    url.searchParams.set('fingerprintHash', state.fingerprintHash);
+    url.searchParams.set('expiresAt', String(state.expiresAt));
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+
+    const expMs = typeof state.expiresAt === 'number' ? state.expiresAt : Date.parse(String(state.expiresAt));
+    const expired = Number.isFinite(expMs) && expMs <= Date.now();
+    if (!response.ok) {
+      if (expired) {
+        res.status(400).json({ success: false, pending: false, error: { message: 'Freebuff login expired' } });
+        return;
+      }
+      if (response.status === 429 || response.status >= 500) {
+        res.json({ success: false, pending: true, error: 'slow_down' });
+        return;
+      }
+      res.json({ success: false, pending: true, error: 'authorization_pending' });
+      return;
+    }
+
+    const text = await response.text();
+    let body: any = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {}
+
+    const user = body?.user;
+    if (user && typeof user.authToken === 'string' && user.authToken) {
+      const email = user.email || '';
+      const existingRows = getDb().prepare('SELECT id FROM api_keys WHERE platform = ?').all('freebuff') as any[];
+      const count = existingRows.length + 1;
+      const label = email ? `Freebuff (${email})` : (count > 1 ? `Freebuff (Account ${count})` : 'Freebuff (Connected Account)');
+      const keyId = saveOAuthKey('freebuff', user.authToken, label);
+      autoDiscoverModels('freebuff', { refresh: true }).catch(() => {});
+
+      res.json({
+        success: true,
+        keyId,
+        provider: 'freebuff',
+        email,
+        accessToken: user.authToken,
+      });
+      return;
+    }
+
+    if (expired) {
+      res.status(400).json({ success: false, pending: false, error: { message: 'Freebuff login expired' } });
+      return;
+    }
+    res.json({ success: false, pending: true, error: 'authorization_pending' });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: err?.message || String(err) } });
   }
 });
 
@@ -644,6 +784,32 @@ oauthRouter.post('/:provider/detect-local', async (req: Request, res: Response) 
         }
       }
       res.status(404).json({ error: { message: 'No active local Cline credentials found in ~/.cline' } });
+      return;
+    }
+
+    if (provider === 'freebuff') {
+      const candidatePaths = [
+        path.join(os.homedir(), '.config', 'manicode', 'credentials.json'),
+        path.join(os.homedir(), '.codebuff', 'credentials.json'),
+        path.join(os.homedir(), '.codebuff', 'config.json'),
+      ];
+      for (const cp of candidatePaths) {
+        if (!fs.existsSync(cp)) continue;
+        try {
+          const raw = fs.readFileSync(cp, 'utf8');
+          const data = JSON.parse(raw);
+          const profile = data?.default || data;
+          const token = profile?.authToken || profile?.token || profile?.apiKey;
+          const email = profile?.email || profile?.user?.email;
+          if (token && typeof token === 'string' && token.trim()) {
+            const keyId = saveOAuthKey('freebuff', token.trim(), email ? `Freebuff (${email})` : 'Freebuff (Local CLI Account)');
+            autoDiscoverModels('freebuff', { refresh: true }).catch(() => {});
+            res.json({ success: true, keyId, email, source: 'local_freebuff' });
+            return;
+          }
+        } catch {}
+      }
+      res.status(404).json({ error: { message: 'No active local Freebuff/Codebuff credentials found in ~/.config/manicode or ~/.codebuff' } });
       return;
     }
 

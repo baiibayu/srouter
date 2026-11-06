@@ -1,7 +1,8 @@
 import { getDb, getSetting, setSetting } from '../db/index.js';
 import { getProvider, hasProvider, resolveProvider } from '../providers/index.js';
 import { decrypt } from '../lib/crypto.js';
-import { decryptProxyUrl } from '../lib/key-proxy.js';
+import { decryptProxyUrl, resolveKeyProxyConfig } from '../lib/key-proxy.js';
+import type { PerKeyProxyConfig } from '../lib/proxy.js';
 import {
   canMakeRequest,
   canUseTokens,
@@ -219,6 +220,7 @@ export interface RouteResult {
    * path simply mean "no override".
    */
   proxyUrl?: string;
+  proxyConfig?: PerKeyProxyConfig;
   // Daily limits for this model, so a 429 handler can tell a genuine daily
   // exhaustion (escalate the cooldown) from a transient per-minute spike.
   rpdLimit: number | null;
@@ -1711,7 +1713,8 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
     roundRobinIndex.set(rrKey, idx);
     // Taken only once the key has cleared every gate and is definitely being
     // returned, so a rejected candidate never consumes concurrency budget.
-    const proxyUrl = decryptProxyUrl(key);
+    const proxyConfig = resolveKeyProxyConfig(key);
+    const proxyUrl = proxyConfig.url || undefined;
     const budget = reserveMonthlyBudget(key.id, estimatedTokens);
     if (!budget.allowed) { note('monthly-budget-cap'); continue; }
     const leaseId = acquireLease(entry.platform, entry.model_id, key.id, estimatedTokens);
@@ -1724,6 +1727,7 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
       keyLabel: key.label || null,
       // Decrypted once here, at the point the row is already in hand (#590).
       proxyUrl,
+      proxyConfig,
       platform: entry.platform,
       displayName: entry.display_name,
       contextWindow: entry.context_window,

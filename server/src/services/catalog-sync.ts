@@ -14,6 +14,7 @@ import {
   applyModelOverrides,
   deleteTombstonedCatalogModels,
   isCatalogModelTombstoned,
+  getCatalogModelTombstone,
   reinstateUpstreamRetiredCatalogModel,
 } from './model-state.js';
 import { ensureAllModelsInProfiles } from './profile-models.js';
@@ -55,7 +56,7 @@ MCowBQYDK2VwAyEAq9yv4+3EeyMHKsfVYBhkcz1lYgIXSUeHNnN6tNgYX3k=
 
 // Catalogs older than this are ignored. Bump to the bundled catalog's version
 // whenever a model migration lands, so the bundled DB is always the floor.
-export const MIN_CATALOG_VERSION = '2026.10.11.1';
+export const MIN_CATALOG_VERSION = '2026.11.06';
 
 const DEFAULT_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000; // default: 12h
 const BOOT_DELAY_MS = 10 * 1000; // let the server settle before first sync
@@ -527,14 +528,14 @@ export function appliedCatalogPlatforms(db: Db): Set<string> {
   return platforms;
 }
 
-export function applyCatalog(db: Db, catalog: Catalog): NonNullable<SyncResult['counts']> {
-  return applyCatalogDetailed(db, catalog).counts;
+export function applyCatalog(db: Db, catalog: Catalog, options?: { newEvidence?: boolean }): NonNullable<SyncResult['counts']> {
+  return applyCatalogDetailed(db, catalog, options).counts;
 }
 
 /** Same apply, but also returns the per-platform ledger of which models
  *  changed — what feeds the "3 models added on Groq" bell notifications.
  *  Counts alone cannot name a provider or a model. */
-export function applyCatalogDetailed(db: Db, catalog: Catalog): {
+export function applyCatalogDetailed(db: Db, catalog: Catalog, options?: { newEvidence?: boolean }): {
   counts: NonNullable<SyncResult['counts']>;
   details: CatalogChangeDetails;
 } {
@@ -543,7 +544,7 @@ export function applyCatalogDetailed(db: Db, catalog: Catalog): {
   // own commit + fsync executed on the event loop. On slow storage that made
   // the 12-hourly sync freeze every in-flight request — including the 3-query
   // profile-activate POST — for minutes.
-  return db.transaction(() => applyCatalogInner(db, catalog))();
+  return db.transaction(() => applyCatalogInner(db, catalog, options))();
 }
 
 /**
@@ -560,7 +561,7 @@ function catalogBringsNewEvidence(catalog: Catalog): boolean {
   return getSetting(SETTING_APPLIED_VERSION) !== catalog.version || getSetting(SETTING_APPLIED_TIER) !== catalog.tier;
 }
 
-function applyCatalogInner(db: Db, catalog: Catalog): {
+function applyCatalogInner(db: Db, catalog: Catalog, options?: { newEvidence?: boolean }): {
   counts: NonNullable<SyncResult['counts']>;
   details: CatalogChangeDetails;
 } {
@@ -568,7 +569,7 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
   const details: CatalogChangeDetails = { added: new Map(), removed: new Map(), updated: new Map() };
   // Read once: the applied-version settings are only written after this
   // transaction returns, so they cannot change underneath the loop.
-  const newEvidence = catalogBringsNewEvidence(catalog);
+  const newEvidence = options?.newEvidence ?? catalogBringsNewEvidence(catalog);
 
   /** Note one model change against its provider. Names use the catalog
  *  display_name where we have it (that is what the user recognises) and fall
@@ -702,14 +703,16 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
         continue;
       }
       if (isCatalogModelTombstoned(db, 'chat', m.platform, m.modelId)) continue;
-      // A model auto-retired from a 410/end-of-life response (#634) is disabled,
-      // not deleted. A catalog that STILL lists it — and lists it enabled — is
-      // newer evidence than that one provider response, so lift the retirement.
-      // Only for a catalog we have not applied yet: `reapplyCachedCatalog`
-      // replays the snapshot the retirement already came after, so replaying it
-      // back would clear every retirement on the next boot, however fresh the
-      // provider's 410 was.
-      if (m.enabled && newEvidence) reinstateUpstreamRetiredCatalogModel(db, m.platform, m.modelId);
+      const upstreamTomb = getCatalogModelTombstone(db, 'chat', m.platform, m.modelId);
+      if (upstreamTomb?.source === 'upstream_eol') {
+        if (m.enabled && newEvidence) {
+          reinstateUpstreamRetiredCatalogModel(db, m.platform, m.modelId);
+        } else {
+          // If the model was deleted from models table or we don't have new evidence, keep it skipped
+          const exists = selectModel.get(m.platform, m.modelId);
+          if (!exists) continue;
+        }
+      }
       inCatalog.add(`${m.platform}:${m.modelId}`);
 
       const row = selectModel.get(m.platform, m.modelId) as
@@ -749,8 +752,9 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
         applyModelOverrides(db, m.platform, m.modelId);
         counts.updated++;
           if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
-      } else {
-        insertModel.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+      } else if (m.enabled) {
+        if (getCatalogModelTombstone(db, 'chat', m.platform, m.modelId)) continue;
+        insertModel.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: 1 });
         refreshModelOverrideBaselines(db, m.platform, m.modelId);
         applyModelOverrides(db, m.platform, m.modelId);
         counts.inserted++;
@@ -786,8 +790,8 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
           updateMedia.run({ ...fields, id: row.id, enabled });
           counts.updated++;
           if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
-        } else {
-          insertMedia.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+        } else if (m.enabled) {
+          insertMedia.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: 1 });
           counts.inserted++;
           record(details.added, m.platform, m.displayName);
         }
@@ -860,8 +864,8 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
           const enabled = m.enabled ? row.enabled : 0;
           updateMedia.run({ ...fields, id: row.id, enabled });
           counts.updated++;
-        } else {
-          insertMedia.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+        } else if (m.enabled) {
+          insertMedia.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: 1 });
           counts.inserted++;
         }
       }
@@ -891,12 +895,12 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
           updateEmbedding.run({ ...fields, id: row.id, enabled });
           counts.updated++;
           if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
-        } else {
+        } else if (m.enabled) {
           insertEmbedding.run({
             ...fields,
             platform: m.platform,
             modelId: m.modelId,
-            enabled: m.enabled ? 1 : 0,
+            enabled: 1,
           });
           counts.inserted++;
           record(details.added, m.platform, m.displayName);
@@ -933,8 +937,8 @@ function applyCatalogInner(db: Db, catalog: Catalog): {
           updateTranscription.run({ ...fields, id: row.id, enabled });
           counts.updated++;
           if (row.displayName !== m.displayName) record(details.updated, m.platform, m.displayName);
-        } else {
-          insertTranscription.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: m.enabled ? 1 : 0 });
+        } else if (m.enabled) {
+          insertTranscription.run({ ...fields, platform: m.platform, modelId: m.modelId, enabled: 1 });
           counts.inserted++;
           record(details.added, m.platform, m.displayName);
         }
@@ -1345,7 +1349,7 @@ export function reapplyCachedCatalog(): { reapplied: boolean; version?: string }
         return { reapplied: false };
       }
       if (BUNDLED_CATALOG.version < MIN_CATALOG_VERSION) return { reapplied: false };
-      applyCatalog(getDb(), BUNDLED_CATALOG);
+      applyCatalog(getDb(), BUNDLED_CATALOG, { newEvidence: false });
       console.log(`[catalog-sync] applied bundled ${BUNDLED_CATALOG.tier} v${BUNDLED_CATALOG.version} after boot`);
       return { reapplied: true, version: BUNDLED_CATALOG.version };
     }
@@ -1359,7 +1363,7 @@ export function reapplyCachedCatalog(): { reapplied: boolean; version?: string }
     }
     const parsed: unknown = JSON.parse(raw);
     if (!isCatalog(parsed) || parsed.version < MIN_CATALOG_VERSION) return { reapplied: false };
-    applyCatalog(getDb(), parsed);
+    applyCatalog(getDb(), parsed, { newEvidence: false });
     console.log(`[catalog-sync] re-applied cached ${parsed.tier} v${parsed.version} after boot`);
     return { reapplied: true, version: parsed.version };
   } catch (err) {

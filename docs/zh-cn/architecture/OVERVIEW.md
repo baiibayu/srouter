@@ -14,6 +14,7 @@
 | [`04-degraded-mode-and-failover.md`](04-degraded-mode-and-failover.md) | 降级模式状态机 (f412e97)、重试预算耗尽时的对冲/中止 (1d2226a)、X-Fallback-Detail 头 (8cb75ac)、裸 safe/unsafe 分类输出回退 (a961d93) |
 | [`05-catalog-sync.md`](05-catalog-sync.md) | 实时签名目录同步、模型年龄闸（30 天）、迁移播种 vs 托管目录 |
 | [`06-observability.md`](06-observability.md) | 服务器日志查看器（环形缓冲 + 持久化 warn/error）、`/api/logs` API、请求分析、日志脱敏 |
+| [`07-stealth-and-antiban-architecture.md`](07-stealth-and-antiban-architecture.md) | 上游隐身与防封禁架构：固定出口拓扑、Ed25519 设备密码学认证、请求签名、请求头脱敏与三级风险分类矩阵 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 本域文档修订历史，从触及架构相关代码的提交播种而来 |
 
 ## 导航

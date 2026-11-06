@@ -27,6 +27,12 @@ export function reserveProviderCredential(
   skip: (keyId: number) => boolean = () => false,
 ): { credential: ReservedProviderCredential | null; budgetBlocked: boolean; budgetRetryAfterMs?: number } {
   if (row.platform === 'custom' && row.key_id == null) return { credential: null, budgetBlocked: false };
+  if (row.platform === 'local') {
+    return {
+      credential: { id: 0, key: 'local', baseUrl: null, release: () => {} },
+      budgetBlocked: false,
+    };
+  }
   const bound = row.key_id != null;
   const keys = getDb().prepare(`
     SELECT id, encrypted_key, iv, auth_tag, base_url FROM api_keys

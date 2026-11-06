@@ -1,5 +1,5 @@
 import type { ChatCompletionChunk, ChatCompletionResponse } from '@baiibayu/srouter-shared/types.js';
-import { BaseProvider, type KeyValidationResult } from './base.js';
+import { BaseProvider, providerHttpError, type KeyValidationResult, type CompletionOptions } from './base.js';
 
 export const FREEAI_BASE_URL = 'https://api.free.ai';
 
@@ -16,18 +16,21 @@ export function freeAiAudioUrl(body: unknown): string | null {
 
 /** TTS-only until the mismatched chat aliases are resolved. Free accounts share
  * 30K tokens/day and 1K API requests/month (no card; verified 2026-10-11).
- * https://free.ai/api/ — model rows belong only in the signed catalog. */
+ * https://free.ai/api/ — model rows belong only in the signed catalog.
+ *
+ * Free.ai accepts any key (even empty) for free-tier TTS access; there is no
+ * meaningful key validation endpoint that doesn't consume quota. Registered
+ * as keyless so the gateway stores a sentinel row and routing treats it as
+ * configured. The free tier is rate-limited per IP, not per key.
+ */
 export class FreeAiProvider extends BaseProvider {
   readonly platform = 'freeai' as const;
   readonly name = 'Free.ai';
+  readonly keyless = true; // Free-tier TTS accepts any key / no key
+
   async validateKey(apiKey: string): Promise<KeyValidationResult> {
-    if (!apiKey.trim()) return { valid: false, error: 'Free.ai API key is required' };
-    // Live controls (2026-10-11): /models, invalid-model errors and even Kokoro
-    // synthesis returned the same status with valid and bogus credentials.
-    // None proves authentication. Do not burn quota or mark a bogus key valid.
-    // The existing health service preserves unknown/healthy state on an
-    // inconclusive probe, so a configured key can still serve normal requests.
-    throw new Error('Free.ai has no verified credential-validation endpoint; key validity is unknown (no quota spent)');
+    // Keyless provider: any key (including empty/bearer 'public') is accepted
+    return true;
   }
 
   async chatCompletion(): Promise<ChatCompletionResponse> {

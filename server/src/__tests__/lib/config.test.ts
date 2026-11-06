@@ -1,7 +1,11 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { loadConfig } from '../../lib/config.js';
 
 const ENV_KEYS = ['PORT', 'HOST', 'SROUTER_DB_PATH', 'DASHBOARD_ORIGINS', 'CLIENT_DIST', 'PROXY_RATE_LIMIT_RPM', 'NODE_ENV', 'TRUST_PROXY'];
+
+beforeEach(() => {
+  ENV_KEYS.forEach(k => delete process.env[k]);
+});
 
 afterEach(() => {
   ENV_KEYS.forEach(k => delete process.env[k]);

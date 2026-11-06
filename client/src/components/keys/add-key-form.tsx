@@ -7,12 +7,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ModelCombobox } from '@/components/model-combobox'
 import { FieldError } from '@/components/ui/field-error'
-import type { ApiKey, Platform } from '../../../../shared/types'
+import type { ApiKey, Platform, ProxyPoolNode } from '../../../../shared/types'
 import { useI18n } from '@/i18n'
 import { toast } from '@/lib/toast'
 import type { FallbackEntry } from '@/lib/routing'
 import { scopeCandidates, shouldOfferModelPicker, type ScopeCandidate } from '@/lib/model-scope-selection'
 import { GetKeyLink, PLATFORMS } from './shared'
+import { Network } from 'lucide-react'
 
 /** A key that just landed, plus the models the picker should offer for it.
  *  Only produced when the picker is actually worth showing (#657) — otherwise
@@ -44,8 +45,11 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
   const [several, setSeveral] = useState(false)
   const [kiroPending, setKiroPending] = useState(false)
   const [kiroUserCode, setKiroUserCode] = useState<string | null>(null)
+  const [freebuffPending, setFreebuffPending] = useState(false)
+  const [freebuffUserCode, setFreebuffUserCode] = useState<string | null>(null)
   const [nousPending, setNousPending] = useState(false)
   const [nousUserCode, setNousUserCode] = useState<string | null>(null)
+  const [showManualKey, setShowManualKey] = useState(false)
 
   useEffect(() => {
     const handleMsg = (e: MessageEvent) => {
@@ -103,14 +107,60 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
     }
   }
 
+  const handleClineOAuth = () => {
+    window.open('/api/oauth/cline/authorize?redirect=true', 'cline_oauth', 'width=550,height=700')
+  }
+
+  const handleFreebuffOAuth = async () => {
+    try {
+      setFreebuffPending(true)
+      const auth = await apiFetch<any>('/api/oauth/freebuff/authorize')
+      if (auth.verificationUriComplete) {
+        setFreebuffUserCode(auth.userCode)
+        window.open(auth.verificationUriComplete, '_blank')
+
+        const pollTimer = setInterval(async () => {
+          try {
+            const pollRes = await apiFetch<any>('/api/oauth/freebuff/poll', {
+              method: 'POST',
+              body: JSON.stringify({
+                deviceCode: auth.deviceCode,
+              }),
+            })
+            if (pollRes.success) {
+              clearInterval(pollTimer)
+              setFreebuffPending(false)
+              setFreebuffUserCode(null)
+              queryClient.invalidateQueries({ queryKey: ['keys'] })
+              queryClient.invalidateQueries({ queryKey: ['keys-providers'] })
+              toast.success(pollRes.email ? `Connected Freebuff (${pollRes.email})!` : 'Connected Freebuff Account!')
+              onSuccess()
+            } else if (!pollRes.pending) {
+              clearInterval(pollTimer)
+              setFreebuffPending(false)
+            }
+          } catch {
+            clearInterval(pollTimer)
+            setFreebuffPending(false)
+          }
+        }, 4000)
+      }
+    } catch (err: any) {
+      setFreebuffPending(false)
+      toast.error(err?.message || 'Failed to start Freebuff OAuth')
+    }
+  }
+
   const handleNousOAuth = async () => {
     try {
       setNousPending(true)
       const auth = await apiFetch<any>('/api/oauth/nous/authorize')
-      if (auth.verificationUriComplete) {
+      const targetUrl = auth.verificationUriComplete || auth.verificationUri
+      if (targetUrl) {
         setNousUserCode(auth.userCode)
-        window.open(auth.verificationUriComplete, '_blank')
+        window.open(targetUrl, '_blank')
 
+        const pollIntervalMs = (auth.interval || 4) * 1000
         const pollTimer = setInterval(async () => {
           try {
             const pollRes = await apiFetch<any>('/api/oauth/nous/poll', {
@@ -125,7 +175,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
               setNousUserCode(null)
               queryClient.invalidateQueries({ queryKey: ['keys'] })
               queryClient.invalidateQueries({ queryKey: ['keys-providers'] })
-              toast.success(pollRes.email ? `Connected Nous Portal (${pollRes.email})!` : 'Connected Nous Portal!')
+              toast.success(pollRes.email ? `Connected Nous Portal (${pollRes.email})!` : 'Connected Nous Portal Account!')
               onSuccess()
             } else if (!pollRes.pending) {
               clearInterval(pollTimer)
@@ -135,16 +185,12 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
             clearInterval(pollTimer)
             setNousPending(false)
           }
-        }, 4000)
+        }, pollIntervalMs)
       }
     } catch (err: any) {
       setNousPending(false)
       toast.error(err?.message || 'Failed to start Nous Portal OAuth')
     }
-  }
-
-  const handleClineOAuth = () => {
-    window.open('/api/oauth/cline/authorize?redirect=true', 'cline_oauth', 'width=550,height=700')
   }
 
   // #707: the platform dropdown had no search and no way to skip providers that
@@ -160,6 +206,14 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
   })
   const addedPlatforms = useMemo(() => new Set<string>(keys.map(k => k.platform)), [keys])
   const [hideAdded, setHideAdded] = useState(false)
+  const [proxyPoolId, setProxyPoolId] = useState<string>('__none__')
+
+  const { data: proxyPoolData } = useQuery<{ pools: ProxyPoolNode[] }>({
+    queryKey: ['proxy-pools'],
+    queryFn: () => apiFetch('/api/settings/proxy/pools'),
+  })
+  const proxyPools = proxyPoolData?.pools ?? []
+  const activePools = proxyPools.filter(p => p.enabled)
 
   // #657 post-add scope picker: the platform's model list. This is the same
   // ['fallback'] query the Models page, the fallback chain and the command
@@ -208,7 +262,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
 
   const addKey = useMutation({
     meta: { silenceToast: true },
-    mutationFn: (body: { platform: string; key: string; label?: string }) =>
+    mutationFn: (body: { platform: string; key: string; label?: string; proxyPoolId?: string | null }) =>
       apiFetch<{ id: number; notice?: string | null }>('/api/keys', { method: 'POST', body: JSON.stringify(body) }),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['keys'] })
@@ -242,6 +296,8 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
   })
 
   const needsAccountId = platform === 'cloudflare'
+  const isOAuthOnly = platform === 'kiro'
+  const isOAuthSupported = ['cline', 'freebuff', 'nous'].includes(platform)
   // Key-optional providers (Kilo, OVH, AI Horde) work anonymously, but accept a
   // real key too (#1331): the field stays editable and may be left blank.
   const isKeyless = PLATFORMS.find(p => p.value === platform)?.keyless ?? false
@@ -279,24 +335,31 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
     // A blank key on a key-optional provider enables its anonymous tier; the
     // backend stores a sentinel and sends no Authorization header.
     const key = isKeyless ? apiKey.trim() : (needsAccountId ? `${accountId}:${apiKey}` : apiKey)
-    addKey.mutate({ platform, key, label: label || undefined })
+    addKey.mutate({
+      platform,
+      key,
+      label: label || undefined,
+      proxyPoolId: proxyPoolId !== '__none__' ? proxyPoolId : undefined,
+    })
   }
 
   return (
     <div>
       {platform === 'nous' && (
-        <div className="mb-4 rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <span>Nous Portal (OAuth Device Login)</span>
+              <span>Nous Portal (OAuth Device Login — Tanpa Kartu Kredit/Billing)</span>
               {nousUserCode && (
-                <span className="font-mono bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded text-[11px]">
+                <span className="font-mono bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[11px]">
                   Code: {nousUserCode}
                 </span>
               )}
             </div>
             <p className="text-[11px] text-muted-foreground">
-              {nousPending ? 'Waiting for approval in browser...' : 'Connect Nous Portal account via OAuth login to use models.'}
+              {nousPending
+                ? 'Menunggu verifikasi di browser... Konfirmasi kode jika diminta.'
+                : 'Hubungkan akun Nous Portal via OAuth device flow untuk menggunakan model tanpa perlu memasukkan billing/kartu kredit. Atau masukkan API Key manual di bawah.'}
             </p>
           </div>
           <Button
@@ -304,9 +367,9 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
             size="sm"
             onClick={handleNousOAuth}
             disabled={nousPending}
-            className="whitespace-nowrap shrink-0 bg-purple-600 hover:bg-purple-700 text-white"
+            className="whitespace-nowrap shrink-0"
           >
-            {nousPending ? 'Polling Portal...' : 'Authorize Nous Portal'}
+            {nousPending ? 'Authorizing...' : 'Authorize Nous Portal'}
           </Button>
         </div>
       )}
@@ -315,10 +378,10 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
         <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <span>Cline Account OAuth (Multi-Account)</span>
+              <span>Cline Account (WorkOS OAuth & Personal Token)</span>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Sign in via WorkOS with account selection prompt to link any Google/GitHub Cline account.
+              Sign in via WorkOS to link your Cline account, or paste an existing token in the key field below.
             </p>
           </div>
           <Button
@@ -344,7 +407,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
               )}
             </div>
             <p className="text-[11px] text-muted-foreground">
-              {kiroPending ? 'Waiting for AWS approval in browser...' : 'Connect free Claude 4.5 Sonnet / Haiku via your AWS Builder ID.'}
+              {kiroPending ? 'Waiting for AWS approval in browser...' : 'Connect free Claude 4.5 Sonnet / Haiku via AWS Builder ID OIDC device authorization.'}
             </p>
           </div>
           <Button
@@ -359,47 +422,41 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
         </div>
       )}
 
-      {platform === 'puter' && (
-        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <span>Puter AI (Keyless / Free Personal Token)</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Leave API key empty to enable anonymous keyless tier, or get a free personal auth token from your Puter dashboard.
-            </p>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => window.open('https://puter.com/dashboard#account', '_blank')}
-            className="whitespace-nowrap shrink-0"
-          >
-            Get Puter Token
-          </Button>
-        </div>
-      )}
-
       {platform === 'freebuff' && (
         <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <span>Freebuff (Daily Freebucks & Auto-Detect)</span>
+              <span>Freebuff (Codebuff CLI Device Login & Personal Token)</span>
+              {freebuffUserCode && (
+                <span className="font-mono bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[11px]">
+                  ID: {freebuffUserCode}
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Auto-detects credentials from ~/.config/manicode or login at Freebuff to refill your daily Freebucks quota.
+              {freebuffPending ? 'Waiting for Freebuff approval in browser...' : 'Connect Freebuff account via unique fingerprint device login, or paste personal token below.'}
             </p>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => window.open('https://freebuff.com/account', '_blank')}
-            className="whitespace-nowrap shrink-0"
-          >
-            Freebuff Portal
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleFreebuffOAuth}
+              disabled={freebuffPending}
+              className="whitespace-nowrap"
+            >
+              {freebuffPending ? 'Polling Freebuff...' : 'Connect Freebuff Account'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => window.open('https://freebuff.com/account', '_blank')}
+              className="whitespace-nowrap"
+            >
+              Portal
+            </Button>
+          </div>
         </div>
       )}
 
@@ -409,7 +466,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
           <ModelCombobox
             value={platform}
             options={platformOptions}
-            onSelect={v => setPlatform(v as Platform)}
+            onSelect={v => { setPlatform(v as Platform); setShowManualKey(false); }}
             ariaLabel={t('keys.platform')}
             triggerPlaceholder={t('keys.selectPlatform')}
             placeholder={t('keys.filterPlaceholder')}
@@ -451,63 +508,137 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
             {addAttempted && <FieldError error={accountIdError} />}
           </div>
         )}
-        <div className="space-y-1.5 flex-1 min-w-[240px]">
-          <div className="flex items-center justify-between gap-2">
-            <Label className="text-xs">{needsAccountId ? t('keys.apiToken') : t('keys.customApiKey')}</Label>
-            {canPasteSeveral && (
-              <button
-                type="button"
-                onClick={() => setSeveral(v => !v)}
-                className={`text-[11px] underline-offset-2 hover:underline ${severalMode ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                {t('keys.pasteSeveral')}
-              </button>
+        {isOAuthOnly ? (
+          <div className="space-y-1.5 flex-1 min-w-[240px] flex items-center pt-5">
+            <p className="text-xs text-muted-foreground italic">
+              Kiro AI uses AWS Builder ID device authentication. Please click the Authorize button above to connect your account.
+            </p>
+          </div>
+        ) : isOAuthSupported && !showManualKey ? (
+          <div className="space-y-1.5 flex-1 min-w-[240px] flex items-center pt-5">
+            <button
+              type="button"
+              onClick={() => setShowManualKey(true)}
+              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+            >
+              Or paste existing token manually…
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1.5 flex-1 min-w-[240px]">
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs">{needsAccountId ? t('keys.apiToken') : t('keys.customApiKey')}</Label>
+              {canPasteSeveral && (
+                <button
+                  type="button"
+                  onClick={() => setSeveral(v => !v)}
+                  className={`text-[11px] underline-offset-2 hover:underline ${severalMode ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  {t('keys.pasteSeveral')}
+                </button>
+              )}
+            </div>
+            {severalMode ? (
+              <Textarea
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                placeholder={'gsk_first…\ngsk_second…'}
+                rows={3}
+                className="font-mono text-xs"
+                aria-invalid={addAttempted && !!keyError}
+              />
+            ) : (
+              <Input
+                type="password"
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                placeholder={isKeyless ? t('keys.keyOptionalPlaceholder') : (needsAccountId ? t('keys.bearerTokenPlaceholder') : t('keys.pasteKeyPlaceholder'))}
+                className="font-mono text-xs"
+                aria-invalid={addAttempted && !!keyError}
+              />
+            )}
+            {addAttempted && <FieldError error={keyError} />}
+            {isKeyless && (
+              <p className="text-[11px] text-muted-foreground">
+                {t('keys.keyOptionalHint')}
+              </p>
             )}
           </div>
-          {severalMode ? (
-            <Textarea
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              placeholder={'gsk_first…\ngsk_second…'}
-              rows={3}
-              className="font-mono text-xs"
-              aria-invalid={addAttempted && !!keyError}
-            />
-          ) : (
-            <Input
-              type="password"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              placeholder={isKeyless ? t('keys.keyOptionalPlaceholder') : (needsAccountId ? t('keys.bearerTokenPlaceholder') : t('keys.pasteKeyPlaceholder'))}
-              className="font-mono text-xs"
-              aria-invalid={addAttempted && !!keyError}
-            />
-          )}
-          {addAttempted && <FieldError error={keyError} />}
-          {isKeyless && (
-            <p className="text-[11px] text-muted-foreground">
-              {t('keys.keyOptionalHint')}
-            </p>
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t('keys.label')}</Label>
-          <div className="flex flex-wrap items-center space-x-3">
-            <Input
-              value={label}
-              onChange={e => setLabel(e.target.value)}
-              placeholder={t('keys.customDisplayNameOptional')}
-              className="w-[160px]"
-            />
-            <Button type="submit" size="sm" disabled={pending}>
-              {pending
-                ? t('keys.adding')
-                : severalMode && keyList.length > 1
-                  ? t('keys.importSelected', { count: keyList.length })
-                  : isKeyless && !apiKey.trim() ? t('keys.enable') : t('keys.addKey')}
-            </Button>
+        )}
+        {activePools.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 w-full pt-1">
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1.5" htmlFor="add-key-proxy-node">
+                <Network className="size-3.5 text-muted-foreground" />
+                {t('keys.egressProxyNode')}
+              </Label>
+              <select
+                id="add-key-proxy-node"
+                value={proxyPoolId === '__round_robin__' ? '__all__' : proxyPoolId}
+                onChange={e => {
+                  const val = e.target.value
+                  if (val === '__all__') setProxyPoolId('__round_robin__')
+                  else setProxyPoolId(val)
+                }}
+                className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {isKeyless && (
+                  <option value="__all__">{t('keys.allActivePools')}</option>
+                )}
+                <option value="__none__">{t('keys.directConnection')}</option>
+                {activePools.map(pool => (
+                  <option key={pool.id} value={pool.id}>
+                    {pool.name} ({pool.protocol})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs" htmlFor="add-key-proxy-strategy">
+                {t('keys.proxyRoutingStrategy')}
+              </Label>
+              {isKeyless ? (
+                <select
+                  id="add-key-proxy-strategy"
+                  value={proxyPoolId === '__round_robin__' || proxyPoolId === '__all__' ? 'round-robin' : (proxyPoolId === '__none__' || proxyPoolId === '__direct__' ? 'direct' : 'sticky')}
+                  onChange={e => {
+                    if (e.target.value === 'round-robin') setProxyPoolId('__round_robin__')
+                    else if (e.target.value === 'direct') setProxyPoolId('__none__')
+                  }}
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="round-robin">{t('keys.rotatePoolStrategy')}</option>
+                  <option value="direct">{t('keys.directConnection')}</option>
+                </select>
+              ) : (
+                <div className="flex h-8 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-xs text-muted-foreground">
+                  {t('keys.stickyStrategy')}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+        {!isOAuthOnly && (!isOAuthSupported || showManualKey) && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">{t('keys.label')}</Label>
+            <div className="flex flex-wrap items-center space-x-3">
+              <Input
+                value={label}
+                onChange={e => setLabel(e.target.value)}
+                placeholder={t('keys.customDisplayNameOptional')}
+                className="w-[160px]"
+              />
+              <Button type="submit" size="sm" disabled={pending}>
+                {pending
+                  ? t('keys.adding')
+                  : severalMode && keyList.length > 1
+                    ? t('keys.importSelected', { count: keyList.length })
+                    : isKeyless && !apiKey.trim() ? t('keys.enable') : t('keys.addKey')}
+              </Button>
+            </div>
+          </div>
+        )}
       </form>
       {(addKey.isError || addSeveral.isError) && (
         <p className="text-destructive text-xs mt-2">{((addKey.error ?? addSeveral.error) as Error).message}</p>

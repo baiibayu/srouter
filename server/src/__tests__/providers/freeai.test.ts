@@ -10,34 +10,27 @@ const audioUrl = 'https://api.free.ai/static/outputs/1bcc722e-4ddf-4e15-995a-b27
 describe('Free.ai', () => {
   afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
 
-  it('registers a TTS-only provider without inventing a chat endpoint', async () => {
+  it('registers a TTS-only provider as keyless without inventing a chat endpoint', async () => {
     expect(hasProvider('freeai')).toBe(true);
-    const fetch = vi.spyOn(globalThis, 'fetch');
     const provider = new FreeAiProvider();
+    expect(provider.keyless).toBe(true);
     await expect(provider.chatCompletion()).rejects.toMatchObject({ status: 400 });
     await expect(provider.streamChatCompletion().next()).rejects.toMatchObject({ status: 400 });
-    await expect(provider.validateKey('')).resolves.toMatchObject({ valid: false });
-    expect(fetch).not.toHaveBeenCalled();
+    // Keyless providers always return true for validateKey
+    await expect(provider.validateKey('')).resolves.toBe(true);
+    await expect(provider.validateKey('test-key')).resolves.toBe(true);
   });
 
-  it('leaves credential validity inconclusive without spending quota on public probes', async () => {
-    const fetch = vi.spyOn(globalThis, 'fetch');
-    const provider = new FreeAiProvider();
-    for (const key of ['test-key', 'invalid-freeai-control']) {
-      await expect(provider.validateKey(key)).rejects.toThrow('key validity is unknown');
-    }
-    expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it('keeps an unverified configured key routable during health checks without falsely validating it', async () => {
+  it('keyless provider health check marks key healthy', async () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
     const { encrypted, iv, authTag } = encrypt('test-key');
     const id = Number(getDb().prepare("INSERT INTO api_keys (platform,label,encrypted_key,iv,auth_tag,status,enabled) VALUES ('freeai','test',?,?,?,'unknown',1)").run(encrypted, iv, authTag).lastInsertRowid);
     const fetch = vi.spyOn(globalThis, 'fetch');
-    await expect(checkKeyHealth(id)).resolves.toBe('unknown');
+    // Keyless providers: validateKey returns true, so health check marks it 'healthy'
+    await expect(checkKeyHealth(id)).resolves.toBe('healthy');
     expect(getDb().prepare('SELECT status, enabled, last_health_error FROM api_keys WHERE id=?').get(id)).toMatchObject({
-      status: 'unknown', enabled: 1, last_health_error: expect.stringContaining('key validity is unknown'),
+      status: 'healthy', enabled: 1, last_health_error: null,
     });
     expect(fetch).not.toHaveBeenCalled();
   });

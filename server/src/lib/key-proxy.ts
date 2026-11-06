@@ -1,5 +1,7 @@
 import { encrypt, decrypt } from './crypto.js';
-import { PROXY_SCHEMES } from './proxy.js';
+import { PROXY_SCHEMES, type PerKeyProxyConfig } from './proxy.js';
+import { getDb } from '../db/index.js';
+import { selectProxyNode } from '../services/proxy-pool.js';
 
 /**
  * Per-key proxy override (#590) — storage and presentation helpers.
@@ -72,6 +74,62 @@ export function decryptProxyUrl(row: Partial<EncryptedProxyColumns> | undefined 
     console.warn('[proxy] A key\'s proxy override could not be decrypted — falling back to the global proxy.');
     return '';
   }
+}
+
+export interface KeyProxyRecord extends Partial<EncryptedProxyColumns> {
+  id?: number | string;
+  platform?: string;
+  proxy_pool_id?: string | null;
+}
+
+/**
+ * Resolve full proxy configuration for a key row (supporting explicit proxy_pool_id binding,
+ * direct encrypted proxyUrl, and keyId attribution for sticky anti-ban routing).
+ */
+export function resolveKeyProxyConfig(row: KeyProxyRecord | undefined | null): PerKeyProxyConfig {
+  const keyId = row?.id;
+
+  if (row?.proxy_pool_id) {
+    if (row.proxy_pool_id === '__direct__') {
+      return { url: '', keyId, nodeId: null };
+    }
+    if (row.proxy_pool_id === '__round_robin__') {
+      try {
+        const node = selectProxyNode(row.platform, { isKeyless: true });
+        if (node && node.enabled) {
+          return {
+            url: node.url,
+            protocol: node.protocol,
+            authToken: node.authToken,
+            keyId,
+            nodeId: node.id,
+            isKeyless: true,
+          };
+        }
+      } catch {}
+    }
+    if (row.proxy_pool_id !== '__none__') {
+      try {
+        const node = getDb().prepare('SELECT * FROM proxy_pools WHERE id = ?').get(row.proxy_pool_id) as any;
+        if (node && node.enabled === 1) {
+          return {
+            url: node.url,
+            protocol: node.protocol,
+            authToken: node.auth_token,
+            keyId,
+            nodeId: node.id,
+          };
+        }
+      } catch {}
+    }
+  }
+
+  const directUrl = decryptProxyUrl(row);
+  return {
+    url: directUrl,
+    keyId,
+    nodeId: null,
+  };
 }
 
 /**

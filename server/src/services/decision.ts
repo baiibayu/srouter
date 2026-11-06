@@ -426,6 +426,7 @@ function coolDown(row: DecisionModelRow, keyId: number, e: DecisionError): void 
 }
 
 function hasUsableKey(platform: string): boolean {
+  if (platform === 'local') return true;
   return !!getDb()
     .prepare("SELECT 1 FROM api_keys WHERE platform = ? AND enabled = 1 AND status IN ('healthy', 'unknown') LIMIT 1")
     .get(platform);

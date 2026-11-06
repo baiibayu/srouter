@@ -31,7 +31,7 @@ import { isAnonymousCredential } from '../lib/credential.js';
 //   6. Authorization: Bearer public
 //   7. Session & request headers (x-opencode-client, x-opencode-session, etc.)
 
-const UPSTREAM_BASE = 'https://opencode.ai/inference/v1';
+const UPSTREAM_BASE = 'https://opencode.ai/zen/v1';
 
 const USER_AGENT = 'opencode/latest/2.0.26/cli';
 
@@ -104,7 +104,11 @@ function genRequestId(): string {
     requestCounter = 0;
   }
   requestCounter++;
-  return `msg_${descendingTimeHex(now, requestCounter)}${cryptoBase62(14)}`;
+  const b = 4096n * BigInt(now) + BigInt(requestCounter);
+  const c = Array.from({ length: 6 }, (_, idx) =>
+    Number((b >> BigInt(40 - 8 * idx)) & 255n).toString(16).padStart(2, '0')
+  ).join('');
+  return `msg_${c}${cryptoBase62(14)}`;
 }
 
 // -- Environment Prompt Fingerprint -----------------------------------------
@@ -184,6 +188,21 @@ const FINGERPRINT_TOOLS = [
       required: ['command'],
       additionalProperties: false,
     },
+  },
+  {
+    name: 'bash',
+    description: 'OpenCode built-in bash tool',
+    params: { type: 'object', properties: {} },
+  },
+  {
+    name: 'glob',
+    description: 'OpenCode built-in glob tool',
+    params: { type: 'object', properties: {} },
+  },
+  {
+    name: 'grep',
+    description: 'OpenCode built-in grep tool',
+    params: { type: 'object', properties: {} },
   },
 ];
 
@@ -386,11 +405,19 @@ export class OpenCodeFreeProvider extends BaseProvider {
       return true;
     }
     try {
-      const res = await tlsFetch(`${UPSTREAM_BASE}/models`, {
-        method: 'GET',
-        headers: this.identityHeaders(apiKey),
-        timeoutMs: 10_000,
-      });
+      let res: Response;
+      try {
+        res = await this.fetchWithTimeout(`${UPSTREAM_BASE}/models`, {
+          method: 'GET',
+          headers: this.identityHeaders(apiKey),
+        }, 10_000);
+      } catch {
+        res = await tlsFetch(`${UPSTREAM_BASE}/models`, {
+          method: 'GET',
+          headers: this.identityHeaders(apiKey),
+          timeoutMs: 10_000,
+        });
+      }
       if (res.ok || (res.status >= 300 && res.status < 400) || res.status === 404 || res.status === 429) return true;
       if (res.status === 401 || res.status === 403) {
         return { valid: false, error: `OpenCode Free authentication failed (${res.status})` };
@@ -440,23 +467,18 @@ export class OpenCodeFreeProvider extends BaseProvider {
   ): Promise<Response> {
     const timeout = options?.timeoutMs ?? CHAT_TIMEOUT_MS;
     const url = `${UPSTREAM_BASE}/chat/completions`;
+    const fallbackUrl = 'https://opencode.ai/inference/v1/chat/completions';
     const headers = {
       ...this.identityHeaders(apiKey),
       'Content-Type': 'application/json',
     };
     const bodyStr = JSON.stringify(body);
 
-    let res: Response;
+    let res: Response | null = null;
+    let lastError: Error | null = null;
+
+    // 1. Try fetchWithTimeout first so any proxy pool / egress relay configured on the key is honored
     try {
-      res = await tlsFetch(url, {
-        method: 'POST',
-        headers,
-        body: bodyStr,
-        signal: options?.signal,
-        timeoutMs: timeout,
-      });
-    } catch (_tlsErr: any) {
-      // Fallback to fetchWithTimeout
       res = await this.fetchWithTimeout(
         url,
         {
@@ -467,6 +489,47 @@ export class OpenCodeFreeProvider extends BaseProvider {
         timeout,
         { signal: options?.signal, timeoutBounds: 'headers' },
       );
+    } catch (proxyErr: any) {
+      lastError = proxyErr;
+    }
+
+    // 2. If fetchWithTimeout failed or returned non-ok (e.g. Cloudflare challenged standard fetch), try tlsFetch with BoringSSL ClientHello ciphers
+    if (!res || !res.ok) {
+      try {
+        const directRes = await tlsFetch(url, {
+          method: 'POST',
+          headers,
+          body: bodyStr,
+          signal: options?.signal,
+          timeoutMs: timeout,
+        });
+        if (directRes.ok || !res) {
+          res = directRes;
+        }
+      } catch (tlsErr: any) {
+        if (!res) lastError = tlsErr;
+      }
+    }
+
+    // 3. Fallback to alternate inference endpoint if status was 404 or 429
+    if (!res || !res.ok) {
+      try {
+        const altUrl = url.includes('/zen/') ? fallbackUrl : `${UPSTREAM_BASE}/chat/completions`;
+        const altRes = await tlsFetch(altUrl, {
+          method: 'POST',
+          headers,
+          body: bodyStr,
+          signal: options?.signal,
+          timeoutMs: timeout,
+        });
+        if (altRes.ok || !res) {
+          res = altRes;
+        }
+      } catch {}
+    }
+
+    if (!res) {
+      throw lastError ?? new Error('OpenCode Free request failed to connect');
     }
 
     if (!res.ok) {

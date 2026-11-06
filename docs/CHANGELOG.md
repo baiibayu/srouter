@@ -1,3 +1,16 @@
+## 2026-11-06 — 0.1.70
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `release` | 2026-11-06 | feat(proxy): introduce Stealth & Antiban Egress Architecture with proxy pool nodes, SOCKS5/HTTP forward proxies, and multi-cloud Fetch Relays (Cloudflare Workers, Vercel Edge, Deno Deploy, Netlify Edge). |
+| `release` | 2026-11-06 | feat(proxy): add database migration `20261105_000001_api_key_proxy_pool` supporting node role assignment (primary, fallback, targeted) and routing strategies (round-robin pool rotation vs sticky session). |
+| `release` | 2026-11-06 | fix(discovery): resolve recurring removed models notification loop (OVH & Kilo) by enforcing `AND enabled = 1` across chat, embedding, and media ownership queries in `auto-discover.ts`. |
+| `release` | 2026-11-06 | feat(catalog): implement upstream retirement tombstones in `model-state.ts` and `catalog-sync.ts` with automatic resurrection if provider re-activates models. |
+| `release` | 2026-11-06 | chore(i18n): comprehensive audit and complete localization across all 60 supported languages with 1,422 synchronized keys; fully eliminated mixed English in Indonesian `id.json` (backups, search, keys, models, decision). |
+| `release` | 2026-11-06 | fix(ui): enhance color contrast and dynamic color formation on `/models/system-one` and `UsageSummaryCard` to avoid colliding hues. |
+| `release` | 2026-11-06 | feat(providers): add FreeAI TTS & chat endpoints, OpenCode Free routing, and improve Kiro / xKiro access tier verification. |
+| `release` | 2026-11-06 | chore(supervisor): formalize multi-agent non-collision protocols and zero-downtime child process supervisor reload guidelines. |
+
 ## 2026-11-04 — 0.1.66
 
 | Commit | Date | Summary |

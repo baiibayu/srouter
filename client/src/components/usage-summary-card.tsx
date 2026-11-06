@@ -1,5 +1,49 @@
+import { useMemo } from 'react'
 import { useI18n } from '@/i18n'
 import { formatTokens, platformColors } from '@/lib/routing'
+
+// High-contrast, distinct palette ensuring neighboring models never look alike
+const DISTINCT_PALETTE = [
+  '#0284c7', // Sky Blue
+  '#10b981', // Emerald Green
+  '#f97316', // Bright Orange
+  '#8b5cf6', // Violet
+  '#f43f5e', // Rose
+  '#06b6d4', // Cyan
+  '#eab308', // Amber Gold
+  '#d946ef', // Fuchsia / Magenta
+  '#14b8a6', // Teal
+  '#4f46e5', // Deep Indigo
+  '#84cc16', // Lime
+  '#ec4899', // Pink
+]
+
+/**
+ * Deterministik generator warna otomatis untuk model baru yang belum terdaftar di platformColors
+ * atau untuk model yang warnanya bentrok dengan model lain di dalam kartu yang sama.
+ */
+function autoModelColor(key: string, usedColors: Set<string>): string {
+  let hash = 0
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash << 5) - hash + key.charCodeAt(i)
+    hash |= 0
+  }
+  const abs = Math.abs(hash)
+  // 1. Coba pilih warna yang belum terpakai dari palet kontras kurasi
+  for (let i = 0; i < DISTINCT_PALETTE.length; i++) {
+    const candidate = DISTINCT_PALETTE[(abs + i) % DISTINCT_PALETTE.length]
+    if (!usedColors.has(candidate)) {
+      return candidate
+    }
+  }
+  // 2. Jika palet penuh, hasilkan hue menggunakan golden ratio agar distribusi warna merata
+  for (let i = 0; i < 16; i++) {
+    const hue = Math.round((abs + i * 137.508) % 360)
+    const color = `hsl(${hue}, 75%, 52%)`
+    if (!usedColors.has(color)) return color
+  }
+  return `hsl(${Math.round(abs % 360)}, 75%, 52%)`
+}
 
 // Month-to-date spend for the embedding / image / audio tabs, in the same card
 // slot the chat tab uses for its budget bar.
@@ -41,7 +85,29 @@ export function UsageSummaryCard({
   unit: 'tokens' | 'requests'
 }) {
   const { t } = useI18n()
-  const spent = rows.filter((r): r is UsageRow & { amount: number } => (r.amount ?? 0) > 0)
+
+  // Calculate distinct colors for each row to prevent identical/twin colors
+  const rowColors = useMemo(() => {
+    const usedColors = new Set<string>()
+    return rows.map((r) => {
+      const defined = r.platform ? platformColors[r.platform] : undefined
+      if (defined && !usedColors.has(defined)) {
+        usedColors.add(defined)
+        return defined
+      }
+      // If undefined or color already taken by another row in this card, deterministically pick/generate unique color
+      const chosen = autoModelColor(r.platform || r.label, usedColors)
+      usedColors.add(chosen)
+      return chosen
+    })
+  }, [rows])
+
+  const spent = useMemo(() => {
+    return rows
+      .map((r, i) => ({ ...r, color: rowColors[i] }))
+      .filter((r): r is UsageRow & { amount: number; color: string } => (r.amount ?? 0) > 0)
+  }, [rows, rowColors])
+
   const fmt = (n: number) => (unit === 'tokens' ? formatTokens(n) : String(n))
 
   return (
@@ -71,7 +137,7 @@ export function UsageSummaryCard({
               title={`${r.label}${r.platform ? ` (${r.platform})` : ''}: ${fmt(r.amount)}`}
               style={{
                 width: `${(r.amount / total) * 100}%`,
-                backgroundColor: platformColors[r.platform ?? ''] ?? '#94a3b8',
+                backgroundColor: r.color,
               }}
             />
           ))}
@@ -85,7 +151,7 @@ export function UsageSummaryCard({
           <div key={i} className="flex items-center gap-2 min-w-0">
             <span
               className="size-2 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: platformColors[r.platform ?? ''] ?? '#94a3b8' }}
+              style={{ backgroundColor: rowColors[i] }}
             />
             <span className="truncate">{r.label}</span>
             {r.quotaLabel && (

@@ -2,7 +2,7 @@ import { getDb } from '../db/index.js';
 import { resolveProvider } from '../providers/index.js';
 import { BaseProvider } from '../providers/base.js';
 import { decrypt } from '../lib/crypto.js';
-import { decryptProxyUrl } from '../lib/key-proxy.js';
+import { decryptProxyUrl, resolveKeyProxyConfig } from '../lib/key-proxy.js';
 import { withKeyProxy } from '../lib/proxy.js';
 import type { Platform, KeyStatus } from '@baiibayu/srouter-shared/types.js';
 import { inferQuotaPoolKey } from './provider-quota.js';
@@ -201,7 +201,7 @@ export async function pollKeyQuota(
 ): Promise<boolean> {
   try {
     const apiKey = decrypt(row.encrypted_key, row.iv, row.auth_tag);
-    return await withKeyProxy(decryptProxyUrl(row), () => provider.fetchQuota(apiKey, {
+    return await withKeyProxy(resolveKeyProxyConfig(row), () => provider.fetchQuota(apiKey, {
       platform: row.platform as Platform,
       keyId,
       quotaPoolKey: inferQuotaPoolKey(row.platform as Platform, null),
@@ -262,7 +262,7 @@ export async function checkKeyHealth(keyId: number): Promise<KeyStatus> {
     // only reachable through its own proxy (the reason to set one) would
     // otherwise be validated direct, fail, and be auto-disabled after three
     // checks while real requests through the proxy were working fine.
-    const validation = await withKeyProxy(decryptProxyUrl(row), () => provider.validateKey(apiKey, {
+    const validation = await withKeyProxy(resolveKeyProxyConfig(row), () => provider.validateKey(apiKey, {
       platform: row.platform as Platform,
       keyId,
       quotaPoolKey: inferQuotaPoolKey(row.platform as Platform, null),
@@ -379,7 +379,7 @@ export async function probeKeyValidity(keyId: number): Promise<KeyProbeOutcome> 
 
     const apiKey = decrypt(row.encrypted_key, row.iv, row.auth_tag);
     // Same reasoning as checkKeyHealth: probe through the key's own proxy (#590).
-    const validation = await withKeyProxy(decryptProxyUrl(row), () => provider.validateKey(apiKey, {
+    const validation = await withKeyProxy(resolveKeyProxyConfig(row), () => provider.validateKey(apiKey, {
       platform: row.platform as Platform,
       keyId,
       quotaPoolKey: inferQuotaPoolKey(row.platform as Platform, null),

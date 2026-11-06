@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    isolate: true,
     // Insurance for the volume tests (bandit exploration runs 2000–3000
     // routing draws ≈ 4.5s at baseline) — a busy machine can still push a
     // sequential run past the 5s default. `npm test` runs files one at a

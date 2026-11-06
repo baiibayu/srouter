@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -16,10 +16,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import { ChevronDown, CircleAlert, Copy, ExternalLink, FlaskConical, KeyRound, Layers, ListFilter, ListPlus, MoreHorizontal, Pencil, Plus, RefreshCcw, RefreshCw, Search, Sparkles, Trash2, Zap } from 'lucide-react'
-import type { ApiKey, ApiKeyModel } from '../../../../shared/types'
+import { ChevronDown, CircleAlert, Copy, ExternalLink, FlaskConical, KeyRound, Layers, ListFilter, ListPlus, MoreHorizontal, Pencil, Plus, RefreshCcw, RefreshCw, Search, Sparkles, Trash2, Zap, Network } from 'lucide-react'
+import type { ApiKey, ApiKeyModel, ProxyPoolNode } from '../../../../shared/types'
 import { formatSqliteUtcToLocalTime } from '@/lib/utils'
 import { useI18n } from '@/i18n'
 import { toast } from '@/lib/toast'
@@ -122,12 +122,12 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
     refetchInterval: 30000,
   })
 
-  const { data: proxyData } = useQuery<{ proxyUrl: string; enabled: boolean; bypassPlatforms: string[]; active: boolean }>({
-    queryKey: ['proxy-url'],
-    queryFn: () => apiFetch('/api/settings/proxy'),
+  const { data: proxyPoolData } = useQuery<{ pools: ProxyPoolNode[] }>({
+    queryKey: ['proxy-pools'],
+    queryFn: () => apiFetch('/api/settings/proxy/pools'),
   })
-  const bypassPlatforms = proxyData?.bypassPlatforms ?? []
-  const proxyEnabled = proxyData?.enabled ?? true
+  const proxyPools = proxyPoolData?.pools ?? []
+  const poolMap = useMemo(() => new Map(proxyPools.map(p => [p.id, p])), [proxyPools])
 
   const deleteKey = useMutation({
     mutationFn: (id: number) => apiFetch(`/api/keys/${id}`, { method: 'DELETE' }),
@@ -282,14 +282,22 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
     },
   })
 
-  const toggleBypass = useMutation({
-    mutationFn: (platform: string) => {
-      const next = bypassPlatforms.includes(platform)
-        ? bypassPlatforms.filter(p => p !== platform)
-        : [...bypassPlatforms, platform]
-      return apiFetch('/api/settings/proxy', { method: 'PUT', body: JSON.stringify({ bypassPlatforms: next }) })
+  const bulkAssignRelays = useMutation({
+    meta: { silenceToast: true },
+    mutationFn: async ({ ids, mode, proxyPoolId }: { ids: number[]; mode: 'distribute' | 'specific' | 'clear'; proxyPoolId?: string }) => {
+      return apiFetch<{ success: boolean; updated: number }>('/api/keys/bulk/assign-relays', {
+        method: 'POST',
+        body: JSON.stringify({ ids, mode, proxyPoolId }),
+      })
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['proxy-url'] }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['keys'] })
+      queryClient.invalidateQueries({ queryKey: ['health'] })
+      toast.success(t('keys.bulkRelaysSuccess', { count: data.updated }))
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : t('keys.bulkRelaysNoNodes'))
+    },
   })
 
   function copyGroupHandle(label: string) {
@@ -530,14 +538,31 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                             <ExternalLink className="ml-auto size-3.5" />
                           </DropdownMenuItem>
                         )}
-                        {proxyEnabled && (
-                          <DropdownMenuCheckboxItem
-                            checked={!bypassPlatforms.includes(group.platform)}
-                            onCheckedChange={() => toggleBypass.mutate(group.platform)}
-                            closeOnClick={false}
-                          >
-                            {t('keys.routeViaProxy')}
-                          </DropdownMenuCheckboxItem>
+                        {proxyPools.length > 0 && group.keys.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                bulkAssignRelays.mutate({
+                                  ids: group.keys.map(k => k.id),
+                                  mode: 'distribute'
+                                })
+                              }}
+                            >
+                              <Network className="mr-2 size-3.5" />
+                              {t('keys.bulkAssignRelays')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                bulkAssignRelays.mutate({
+                                  ids: group.keys.map(k => k.id),
+                                  mode: 'clear'
+                                })
+                              }}
+                            >
+                              {t('keys.bulkClearRelays')}
+                            </DropdownMenuItem>
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -575,6 +600,35 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                       <Button size="xs" variant="outline" disabled={bulkKeys.isPending} onClick={() => bulk('disable')}>
                         {t('keys.bulkDisable')}
                       </Button>
+                      {proxyPools.length > 0 && (
+                        <>
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            title={t('keys.bulkAssignRelaysTitle')}
+                            disabled={bulkAssignRelays.isPending}
+                            onClick={() => {
+                              bulkAssignRelays.mutate({ ids: groupSelected.map(k => k.id), mode: 'distribute' })
+                              clearGroup()
+                            }}
+                          >
+                            <Network className="size-3 mr-1" />
+                            {t('keys.bulkAssignRelays')}
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            className="text-muted-foreground text-[11px]"
+                            disabled={bulkAssignRelays.isPending}
+                            onClick={() => {
+                              bulkAssignRelays.mutate({ ids: groupSelected.map(k => k.id), mode: 'clear' })
+                              clearGroup()
+                            }}
+                          >
+                            {t('keys.bulkClearRelays')}
+                          </Button>
+                        </>
+                      )}
                       {/* Delete takes the dashboard's arm-then-fire idiom, same as the
                           per-key Remove below; the armed label names the count, since
                           one misclick here would take out the whole selection. */}
@@ -630,7 +684,7 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                                 })
                               }}
                               aria-label={t('keys.selectKey')}
-                              className={`size-3.5 flex-shrink-0 accent-foreground cursor-pointer transition-opacity focus-visible:opacity-100 ${groupHasSelection ? 'opacity-100' : 'opacity-0 group-hover/krow:opacity-100'}`}
+                              className={`size-3.5 flex-shrink-0 accent-foreground cursor-pointer transition-opacity focus-visible:opacity-100 ${groupHasSelection ? 'opacity-100' : 'opacity-40 group-hover/krow:opacity-100'}`}
                             />
                             {/* Per-key switch (#705). The group switch writes every key of the
                                 platform at once, which for the Custom group meant every endpoint
@@ -683,6 +737,19 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                                 title={k.modelScope!.join(', ')}
                               >
                                 {t(k.modelScope!.length === 1 ? 'keys.modelScopeBadgeOne' : 'keys.modelScopeBadgeOther', { count: k.modelScope!.length })}
+                              </Badge>
+                            )}
+                            {/* Egress Relay / Pool Strategy Badge */}
+                            {k.proxyPoolId && k.proxyPoolId !== '__direct__' && k.proxyPoolId !== '__none__' && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] bg-primary/5 text-primary border-primary/20 flex items-center gap-1 ${k.enabled ? '' : 'opacity-50'}`}
+                                title={k.proxyPoolId === '__round_robin__' ? t('keys.rotatePoolStrategy') : `Egress Relay: ${(poolMap.get(k.proxyPoolId)?.name ?? k.proxyPoolId).replace(/\s*\([^)]*\)/g, '').trim()}`}
+                              >
+                                <Network className="size-2.5" />
+                                {k.proxyPoolId === '__round_robin__'
+                                  ? 'Rotate Pool'
+                                  : (poolMap.get(k.proxyPoolId)?.name ?? k.proxyPoolId).replace(/\s*\([^)]*\)/g, '').trim() || k.proxyPoolId.slice(0, 12)}
                               </Badge>
                             )}
                             {/* #1403 phase 3: the provider-reported balance (#1403).

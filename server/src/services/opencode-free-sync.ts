@@ -18,7 +18,7 @@ import type { Scheduler } from '../lib/scheduler.js';
 
 // ── OpenCode Free Tier Identity (mirrors opencode-free.ts) ─────────────────
 
-const UPSTREAM_BASE = 'https://opencode.ai/inference/v1';
+const UPSTREAM_BASE = 'https://opencode.ai/zen/v1';
 
 const USER_AGENT = 'opencode/latest/2.0.26/cli';
 
@@ -64,7 +64,11 @@ function genRequestId(): string {
     requestCounter = 0;
   }
   requestCounter++;
-  return `msg_${descendingTimeHex(now, requestCounter)}${cryptoBase62(14)}`;
+  const b = 4096n * BigInt(now) + BigInt(requestCounter);
+  const c = Array.from({ length: 6 }, (_, idx) =>
+    Number((b >> BigInt(40 - 8 * idx)) & 255n).toString(16).padStart(2, '0')
+  ).join('');
+  return `msg_${c}${cryptoBase62(14)}`;
 }
 
 function identityHeaders(): Record<string, string> {
@@ -141,17 +145,21 @@ interface UpstreamModel {
   owned_by?: string;
 }
 
-interface FetchedFreeResult {
-  chatModels: UpstreamModel[];
-  decisionModels: UpstreamModel[];
-}
-
-async function fetchFreeModels(): Promise<FetchedFreeResult> {
-  const res = await fetch(`${UPSTREAM_BASE}/models`, {
-    method: 'GET',
-    headers: identityHeaders(),
-    signal: AbortSignal.timeout(15_000),
-  });
+async function fetchFreeModels(): Promise<UpstreamModel[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${UPSTREAM_BASE}/models`, {
+      method: 'GET',
+      headers: identityHeaders(),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (_err) {
+    res = await fetch('https://opencode.ai/inference/v1/models', {
+      method: 'GET',
+      headers: identityHeaders(),
+      signal: AbortSignal.timeout(15_000),
+    });
+  }
 
   if (!res.ok) {
     throw new Error(`OpenCode Free models endpoint returned HTTP ${res.status}`);
@@ -159,10 +167,7 @@ async function fetchFreeModels(): Promise<FetchedFreeResult> {
 
   const body = await res.json() as { data?: UpstreamModel[] };
   const all = body.data ?? [];
-  return {
-    chatModels: all.filter((m) => isFreeModel(m.id)),
-    decisionModels: all.filter((m) => m.id.startsWith('jev-') && m.id.endsWith(FREE_SUFFIX)),
-  };
+  return all.filter((m) => isFreeModel(m.id));
 }
 
 // ── Sync logic ─────────────────────────────────────────────────────────────
@@ -191,16 +196,15 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
     models: [],
   };
 
-  let fetched: FetchedFreeResult;
+  let freeModels: UpstreamModel[];
   try {
-    fetched = await fetchFreeModels();
+    freeModels = await fetchFreeModels();
   } catch (err: any) {
     result.error = err?.message ?? String(err);
     console.error(`[opencode-free-sync] fetch failed: ${result.error}`);
     return result;
   }
 
-  const freeModels = fetched.chatModels;
   result.total = freeModels.length;
   if (freeModels.length === 0) {
     console.log('[opencode-free-sync] upstream returned 0 free models — skipping');
@@ -307,38 +311,6 @@ export async function syncOpenCodeFreeModels(): Promise<FreeSyncResult> {
         deleteFb.run(m.id);
         deleteModel.run(m.id);
         result.retired++;
-      }
-    }
-
-    // Sync free decision models (Jev) into media_models (modality = 'decision')
-    const insertMediaDecision = db.prepare(`
-      INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
-      VALUES (?, ?, ?, 'decision', ?, 1, 'Keyless Zen Free', '{"contextWindow":32768}')
-    `);
-    const selectMediaDecision = db.prepare(
-      'SELECT id FROM media_models WHERE platform = ? AND model_id = ? AND modality = ?'
-    );
-    const activeDecisionIds = new Set(fetched.decisionModels.map((m) => m.id));
-    for (const dm of fetched.decisionModels) {
-      const existingDm = selectMediaDecision.get(platform, dm.id, 'decision');
-      if (!existingDm) {
-        insertMediaDecision.run(
-          platform,
-          dm.id,
-          dm.id === 'jev-1.13-free' ? 'OpenCode Zen (Jev 1.13 Free)' : `OpenCode Zen (${dm.id})`,
-          1,
-        );
-      }
-    }
-
-    // Purge or disable any opencode-free decision models no longer offered upstream
-    const allDbDecisions = db.prepare(
-      "SELECT id, model_id, enabled FROM media_models WHERE platform = ? AND modality = 'decision'"
-    ).all(platform) as Array<{ id: number; model_id: string; enabled: number }>;
-    for (const dm of allDbDecisions) {
-      if (!activeDecisionIds.has(dm.model_id) && dm.enabled) {
-        db.prepare('UPDATE media_models SET enabled = 0 WHERE id = ?').run(dm.id);
-        console.log(`[opencode-free-sync] decision model ${dm.model_id} dropped upstream — disabled`);
       }
     }
   })();

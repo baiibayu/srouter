@@ -276,6 +276,17 @@ export function clearCatalogModelTombstone(
     .run(kind, platform, modelId);
 }
 
+export function clearUpstreamRetiredTombstone(
+  db: Db,
+  kind: CatalogModelKind,
+  platform: string,
+  modelId: string,
+): boolean {
+  const res = db.prepare("DELETE FROM catalog_model_tombstones WHERE kind = ? AND platform = ? AND model_id = ? AND source = 'upstream_eol'")
+    .run(kind, platform, modelId);
+  return res.changes > 0;
+}
+
 export function upsertModelOverrides(
   db: Db,
   platform: string,

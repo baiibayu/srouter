@@ -12,11 +12,20 @@ import type { ProxyMode } from '@baiibayu/srouter-shared/types.js';
 // singletons, so the per-key override cannot live on the provider instance —
 // it rides request-scoped AsyncLocalStorage instead, set by the dispatcher
 // around a provider call and read here in proxyFetch.
-const perKeyProxyStore = new AsyncLocalStorage<string>();
+export interface PerKeyProxyConfig {
+  url: string;
+  protocol?: string;
+  authToken?: string | null;
+  keyId?: number | string;
+  isKeyless?: boolean;
+  nodeId?: string | null;
+}
+
+const perKeyProxyStore = new AsyncLocalStorage<string | PerKeyProxyConfig>();
 
 /** Run `fn` with a per-key proxy override in effect; empty URL = global proxy. */
-export function withKeyProxy<T>(proxyUrl: string | undefined, fn: () => T): T {
-  return perKeyProxyStore.run(proxyUrl ?? '', fn);
+export function withKeyProxy<T>(proxyOverride: string | PerKeyProxyConfig | undefined, fn: () => T): T {
+  return perKeyProxyStore.run(proxyOverride ?? '', fn);
 }
 
 
@@ -285,9 +294,14 @@ export interface SelectedProxyNode {
   authToken?: string | null;
 }
 
-let _proxyNodeSelector: ((platform?: string) => SelectedProxyNode | null) | null = null;
+export interface ProxyNodeSelectorOptions {
+  isKeyless?: boolean;
+  keyId?: number | string;
+}
 
-export function registerProxyNodeSelector(fn: (platform?: string) => SelectedProxyNode | null): void {
+let _proxyNodeSelector: ((platform?: string, options?: ProxyNodeSelectorOptions) => SelectedProxyNode | null) | null = null;
+
+export function registerProxyNodeSelector(fn: (platform?: string, options?: ProxyNodeSelectorOptions) => SelectedProxyNode | null): void {
   _proxyNodeSelector = fn;
 }
 
@@ -1004,7 +1018,13 @@ async function dispatchFetch(
   // #590: a per-key proxy override (set via withKeyProxy around the provider
   // call) takes precedence over the global proxy for THIS request. Empty
   // string (the store default) means "fall back to global".
-  const perKeyUrl = perKeyProxyStore.getStore() ?? '';
+  const perKeyStore = perKeyProxyStore.getStore();
+  const perKeyUrl = typeof perKeyStore === 'string' ? perKeyStore : (perKeyStore?.url ?? '');
+  const perKeyProtocol = typeof perKeyStore === 'object' ? perKeyStore?.protocol : undefined;
+  const perKeyAuthToken = typeof perKeyStore === 'object' ? perKeyStore?.authToken : undefined;
+  const currentKeyId = typeof perKeyStore === 'object' ? perKeyStore?.keyId : undefined;
+  const isKeyless = typeof perKeyStore === 'object' ? perKeyStore?.isKeyless : undefined;
+
   if (perKeyUrl) {
     // Every bypass still applies, unchanged: the global on/off switch, the
     // per-platform bypass list, NO_PROXY, and local/LAN destinations. A
@@ -1012,6 +1032,14 @@ async function dispatchFetch(
     // proxied — an operator who turned proxying off, listed the upstream in
     // NO_PROXY, or points at a local box still gets a direct connection.
     if (!shouldBypassProxy(url, platform)) {
+      if (
+        perKeyProtocol === 'fetch-relay' ||
+        perKeyUrl.includes('workers.dev') ||
+        perKeyUrl.includes('vercel.app') ||
+        perKeyUrl.includes('netlify.app')
+      ) {
+        return fetchRelayFetch(perKeyUrl, url, init, perKeyAuthToken ?? _fetchRelayToken);
+      }
       const resolved = await resolvePerKeyDispatcher(perKeyUrl);
       if (resolved) {
         if (resolved.isSocks) {
@@ -1041,7 +1069,7 @@ async function dispatchFetch(
     // No relay pool URLs configured, fall through to other methods
   }
 
-  const poolNode = _proxyNodeSelector?.(platform);
+  const poolNode = _proxyNodeSelector?.(platform, { isKeyless, keyId: currentKeyId });
   if (poolNode) {
     if (poolNode.protocol === 'fetch-relay') {
       return fetchRelayFetch(poolNode.url, url, init, poolNode.authToken ?? '');

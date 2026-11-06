@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogPopup, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { X } from 'lucide-react'
+import { useI18n } from '@/i18n'
 import type { ProxyPoolProtocol, ProxyPoolNode, ProxyPoolRole } from '../../../../shared/types'
 
 interface ProxyNodeDialogProps {
@@ -15,6 +16,7 @@ interface ProxyNodeDialogProps {
 }
 
 export function ProxyNodeDialog({ open, onOpenChange }: ProxyNodeDialogProps) {
+  const { t } = useI18n()
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
@@ -72,13 +74,13 @@ export function ProxyNodeDialog({ open, onOpenChange }: ProxyNodeDialogProps) {
       <DialogPopup maxWidth="max-w-md" className="flex flex-col gap-4">
         <div className="flex items-center justify-between border-b pb-3">
           <div>
-            <DialogTitle className="text-base font-medium">Add proxy node</DialogTitle>
+            <DialogTitle className="text-base font-medium">{t('keys.addProxyNode')}</DialogTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Register a proxy endpoint or fetch relay into the outbound pool
+              {t('keys.addProxyNodeDesc')}
             </p>
           </div>
           <DialogClose
-            aria-label="Close"
+            aria-label={t('common.cancel')}
             className="-mr-1 rounded-lg p-1 text-muted-foreground/70 transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <X className="size-4" />
@@ -87,18 +89,18 @@ export function ProxyNodeDialog({ open, onOpenChange }: ProxyNodeDialogProps) {
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div className="space-y-1.5">
-            <Label className="text-xs">Node label</Label>
+            <Label className="text-xs">{t('keys.nodeNameLabel')}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. SG SOCKS5, Cloudflare Edge, Corporate"
+              placeholder={t('keys.nodeNamePlaceholder')}
               className="text-xs"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Protocol</Label>
+              <Label className="text-xs">{t('keys.nodeProtocolLabel')}</Label>
               <Select value={protocol} onValueChange={(val) => setProtocol(val as ProxyPoolProtocol)}>
                 <SelectTrigger className="w-full text-xs">
                   <SelectValue />
@@ -112,15 +114,15 @@ export function ProxyNodeDialog({ open, onOpenChange }: ProxyNodeDialogProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Role</Label>
+              <Label className="text-xs">{t('keys.nodeRoleLabel')}</Label>
               <Select value={role} onValueChange={(val) => setRole(val as ProxyPoolRole)}>
                 <SelectTrigger className="w-full text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="primary" label="Primary (Regular Pool)">Primary (Regular Pool)</SelectItem>
-                  <SelectItem value="fallback" label="Fallback (Failover Only)">Fallback (Failover Only)</SelectItem>
-                  <SelectItem value="targeted" label="Targeted (Specific Platforms)">Targeted (Specific Platforms)</SelectItem>
+                  <SelectItem value="primary" label={t('keys.nodeRolePrimary')}>{t('keys.nodeRolePrimary')}</SelectItem>
+                  <SelectItem value="fallback" label={t('keys.nodeRoleFallbackOption')}>{t('keys.nodeRoleFallbackOption')}</SelectItem>
+                  <SelectItem value="targeted" label={t('keys.nodeRoleTargetedOption')}>{t('keys.nodeRoleTargetedOption')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -128,21 +130,21 @@ export function ProxyNodeDialog({ open, onOpenChange }: ProxyNodeDialogProps) {
 
           {role === 'targeted' && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Targeted Platforms (comma-separated)</Label>
+              <Label className="text-xs">{t('keys.nodeTargetedPlatformsLabel')}</Label>
               <Input
                 value={targetedPlatformsStr}
                 onChange={(e) => setTargetedPlatformsStr(e.target.value)}
-                placeholder="e.g. openai, anthropic"
+                placeholder={t('keys.nodeTargetedPlatformsPlaceholder')}
                 className="font-mono text-xs"
               />
               <p className="text-[11px] text-muted-foreground">
-                This node will only be used when routing traffic to the specified platforms.
+                {t('keys.egressProxyNodeDesc')}
               </p>
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Proxy URL</Label>
+            <Label className="text-xs">{t('keys.nodeEndpointUrlLabel')}</Label>
             <Input
               required
               value={url}
@@ -170,7 +172,7 @@ export function ProxyNodeDialog({ open, onOpenChange }: ProxyNodeDialogProps) {
 
           {protocol === 'fetch-relay' && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Relay auth token (optional)</Label>
+              <Label className="text-xs">{t('keys.nodeAuthTokenLabel')}</Label>
               <Input
                 type="password"
                 autoComplete="new-password"
@@ -193,14 +195,14 @@ export function ProxyNodeDialog({ open, onOpenChange }: ProxyNodeDialogProps) {
               size="sm"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               size="sm"
               disabled={addNode.isPending || !url.trim()}
             >
-              {addNode.isPending ? 'Saving…' : 'Add node'}
+              {addNode.isPending ? t('common.save') + '…' : t('keys.addNode')}
             </Button>
           </div>
         </form>

@@ -49,7 +49,7 @@ See [OVERVIEW.md](OVERVIEW.md) for deep-dives.
 - **Tool-call rescue** (`server/src/lib/tool-call-rescue.ts`) — models that emit tool calls as plain text instead of structured JSON are rescued into real `tool_calls` automatically, and tool requests only route to models that actually support them.
 - **Key import & export** — bulk-import keys by pasting a `.env` file (with preview and per-key selection), export back out as JSON, `.env`, or CSV.
 
-> Routing strategies, bandit scoring, quota and cooldown accounting, streaming, degraded-mode failover and the provider catalog are covered at implementation depth in the deep-dives — See [OVERVIEW.md](OVERVIEW.md) for deep-dives.
+> Routing strategies, bandit scoring, quota and cooldown accounting, streaming, degraded-mode failover, the provider catalog, and upstream stealth/anti-ban evasion are covered at implementation depth in the deep-dives — See [OVERVIEW.md](OVERVIEW.md) for deep-dives.
 
 ## Not yet supported
 

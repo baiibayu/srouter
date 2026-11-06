@@ -16,11 +16,12 @@ This domain holds the implementation deep-dives for SRouter's server-side archit
 | [`04-degraded-mode-and-failover.md`](04-degraded-mode-and-failover.md) | Degraded-mode state machine (f412e97), hedging/abort on retry budget expiry (1d2226a), X-Fallback-Detail header (8cb75ac), bare safe/unsafe classification failover (a961d93), Idempotency-Key replay cross-ref (`36b877d`/`95bc46f`, `X-Routed-Via: idempotency`) |
 | [`05-catalog-sync.md`](05-catalog-sync.md) | Live signed catalog sync, model-age gate (30 days), migration seeding vs hosted catalog |
 | [`06-observability.md`](06-observability.md) | Observability internals: server-logs ingest path, structured provider logs, boot preload, request analytics, log redaction, attempt tracing, health/routing-trace headers, desktop `srouter.log` file logger. The operator-facing log viewer and polling API live in [logs/](../logs/01-server-logs-viewer.md). |
+| [`07-stealth-and-antiban-architecture.md`](07-stealth-and-antiban-architecture.md) | Upstream stealth and anti-ban evasion architecture: sticky egress topology, cryptographic Ed25519 device attestation & per-request signing, header scrubbing & persona replication, concurrency shaping, and 3-tier risk classification. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Doc revision history for this domain, seeded from architecture-relevant commits |
 
 ## How deep-dives fit
 
-The root [00-high-level-index.md](00-high-level-index.md) stays the high-level index (two-paragraph system summary, request-flow diagram, limitations and ToS). The files above are the deep-dives: start with `01` (bandit scoring & routing) and `02` (quota & cooldown) for the router core, then `03`/`04` for streaming and degraded-mode failover, `05` for catalog sync and `06` for observability internals. The operator-facing logs viewer and polling API are documented separately in [`logs/`](../logs/01-server-logs-viewer.md) and cross-linked from `06`.
+The root [00-high-level-index.md](00-high-level-index.md) stays the high-level index (two-paragraph system summary, request-flow diagram, limitations and ToS). The files above are the deep-dives: start with `01` (bandit scoring & routing) and `02` (quota & cooldown) for the router core, then `03`/`04` for streaming and degraded-mode failover, `05` for catalog sync, `06` for observability internals, and `07` for stealth & anti-ban architecture. The operator-facing logs viewer and polling API are documented separately in [`logs/`](../logs/01-server-logs-viewer.md) and cross-linked from `06`.
 
 ## Navigation
 

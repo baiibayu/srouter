@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogPopup, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { copyText } from '@/lib/clipboard'
 import { X, ExternalLink } from 'lucide-react'
+import { useI18n } from '@/i18n'
 
 const CLOUDFLARE_WORKER_SCRIPT = `export default {
   async fetch(request, env, ctx) {
@@ -177,6 +178,7 @@ interface ProxyQuickDeployDialogProps {
 }
 
 export function ProxyQuickDeployDialog({ open, onOpenChange }: ProxyQuickDeployDialogProps) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [platform, setPlatform] = useState<DeployPlatform>('cloudflare');
 
@@ -315,13 +317,13 @@ export function ProxyQuickDeployDialog({ open, onOpenChange }: ProxyQuickDeployD
       <DialogPopup maxWidth="max-w-2xl" className="flex flex-col gap-4">
         <div className="flex items-center justify-between border-b pb-3">
           <div>
-            <DialogTitle className="text-base font-medium">Deploy &amp; Setup Relay</DialogTitle>
+            <DialogTitle className="text-base font-medium">{t('keys.deployRelay')}</DialogTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Deploy a serverless fetch relay or configure proxy presets for your pool.
+              {t('keys.quickDeployDesc')}
             </p>
           </div>
           <DialogClose
-            aria-label="Close"
+            aria-label={t('common.cancel')}
             className="-mr-1 rounded-lg p-1 text-muted-foreground/70 transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <X className="size-4" />
