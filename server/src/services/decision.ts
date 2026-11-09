@@ -1,6 +1,8 @@
 import { getDb, getSetting, setSetting } from '../db/index.js';
 import { parseRetryAfterMs } from '../providers/base.js';
-import { getProvider } from '../providers/index.js';
+import { getProvider, resolveProvider } from '../providers/index.js';
+import { OpenAICompatProvider } from '../providers/openai-compat.js';
+import type { Platform } from '@baiibayu/srouter-shared/types.js';
 import { RetryHintTracker } from '../lib/retry-hint.js';
 import { getClientContext } from '../lib/client-context.js';
 import { proxyFetch } from '../lib/proxy.js';
@@ -104,48 +106,24 @@ function parseMeta(raw: string | null): DecisionModelMeta {
   }
 }
 
-function allDecisionRows(): DecisionModelRow[] {
-  const db = getDb();
-  if (process.env.NODE_ENV !== 'test') {
-    const hasTypesafe = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ?').get(DECISION_MODALITY, 'typesafe');
-    if (!hasTypesafe) {
-      try {
-        db.prepare(`
-          INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
-          VALUES ('typesafe', 'typesafe/jev-1.13', 'TypeSafe Jev (System One)', ?, 2, 1, 'TypeSafe API', '{"contextWindow":32768}')
-        `).run(DECISION_MODALITY);
-      } catch {
-        // Ignored if table locked or constraint
-      }
-    }
-    const hasOpencodeFree = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ? AND model_id = ?').get(DECISION_MODALITY, 'opencode-free', 'jev-1.13-free');
-    if (!hasOpencodeFree) {
-      try {
-        db.prepare(`
-          INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
-          VALUES ('opencode-free', 'jev-1.13-free', 'OpenCode Zen (Jev 1.13 Free)', ?, 1, 1, 'Keyless Zen Free', '{"contextWindow":32768}')
-        `).run(DECISION_MODALITY);
-      } catch {
-        // Ignored if table locked or constraint
-      }
-    }
-    const hasLocal = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ? AND model_id = ?').get(DECISION_MODALITY, 'local', 'heuristic');
-    if (!hasLocal) {
-      try {
-        db.prepare(`
-          INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
-          VALUES ('local', 'heuristic', 'Heuristic Decider (Local Built-in)', ?, 99, 1, 'Local classifier (0ms, free)', '{"contextWindow":131072}')
-        `).run(DECISION_MODALITY);
-      } catch {
-        // Ignored if table locked or constraint
-      }
-    }
-    // Deprecate & remove inception/mercury-decide:free since OpenRouter no longer offers it for free (404)
+function ensureLocalHeuristic(db: ReturnType<typeof getDb>): void {
+  const hasLocal = db.prepare('SELECT 1 FROM media_models WHERE modality = ? AND platform = ? AND model_id = ?').get(DECISION_MODALITY, 'local', 'heuristic');
+  if (!hasLocal) {
     try {
-      db.prepare("DELETE FROM media_models WHERE model_id = 'inception/mercury-decide:free' AND modality = ?").run(DECISION_MODALITY);
+      db.prepare(`
+        INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+        VALUES ('local', 'heuristic', 'Heuristic Decider (Local Built-in)', ?, 99, 1, 'Local classifier (0ms, free)', '{"contextWindow":131072}')
+      `).run(DECISION_MODALITY);
     } catch {
       // Ignored
     }
+  }
+}
+
+function allDecisionRows(): DecisionModelRow[] {
+  const db = getDb();
+  if (process.env.NODE_ENV !== 'test') {
+    ensureLocalHeuristic(db);
   }
   return db
     .prepare(`SELECT id, platform, model_id, display_name, priority, enabled, quota_label, meta_json
@@ -205,6 +183,40 @@ function cloudflareKey(key: string): { accountId: string; token: string } {
   return { accountId: key.slice(0, sep), token: key.slice(sep + 1) };
 }
 
+function getDefaultBaseUrl(platform: string): string {
+  if (platform === 'typesafe') return 'https://api.typesafe.ai';
+  if (platform === 'ollama') return 'https://ollama.com';
+  const provider = resolveProvider(platform as Platform);
+  if (provider && provider instanceof OpenAICompatProvider && provider.baseUrlPublic) {
+    return provider.baseUrlPublic;
+  }
+  return `https://api.${platform}.com`;
+}
+
+/** Generic System One runner (standard protocol for Ollama Cloud, TypeSafe, and custom/third-party backends) */
+function genericSystemOne(platform: string): Adapter {
+  return async (cred, modelId, body, signal) => {
+    const rawBase = cred.baseUrl?.replace(/\/+$/, '') || getDefaultBaseUrl(platform);
+    const url = rawBase.endsWith('/v1/systemone') || rawBase.endsWith('/v1/decision') ? rawBase : `${rawBase}/v1/systemone`;
+    const json = (await upstream(
+      url,
+      platform,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${cred.key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model: modelId, state: body.state, questions: body.questions }),
+      },
+      signal,
+    )) as { answers?: unknown; usage?: unknown; error?: string | { message?: string } };
+    const errMsg = typeof json?.error === 'string' ? json.error : json?.error?.message;
+    if (errMsg) throw new DecisionError(`${platform}: ${errMsg}`, 502);
+    return { answers: answersOf(json?.answers, platform), usage: usageOf(json?.usage) };
+  };
+}
+
 const ADAPTERS: Record<string, Adapter> = {
   // Workers AI runs Clef through ai/run, with a short `model` selector
   // ("clef-flash") inside the body. Response: { result: { answers, usage } }.
@@ -247,23 +259,8 @@ const ADAPTERS: Record<string, Adapter> = {
     if (json?.error) throw new DecisionError(`openrouter: ${json.error.message ?? 'error'}`, 502);
     return { answers: answersOf(json?.answers, 'openrouter'), usage: usageOf(json?.usage) };
   },
-  typesafe: async (cred, modelId, body, signal) => {
-    const json = await upstream(
-      'https://api.typesafe.ai/v1/systemone',
-      'typesafe',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${cred.key}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ model: modelId, state: body.state, questions: body.questions }),
-      },
-      signal,
-    ) as { answers?: unknown; usage?: unknown; error?: { message?: string } };
-    if (json?.error) throw new DecisionError(`typesafe: ${json.error.message ?? 'error'}`, 502);
-    return { answers: answersOf(json?.answers, 'typesafe'), usage: usageOf(json?.usage) };
-  },
+  typesafe: genericSystemOne('typesafe'),
+  ollama: genericSystemOne('ollama'),
   'opencode-free': async (cred, modelId, body, signal) => {
     try {
       const json = await upstream(
@@ -306,6 +303,10 @@ const ADAPTERS: Record<string, Adapter> = {
     };
   },
 };
+
+export function resolveDecisionAdapter(platform: string): Adapter {
+  return ADAPTERS[platform] ?? genericSystemOne(platform);
+}
 
 export function recordLocalDecisionUsage(modelId = 'heuristic', latencyMs = 0): void {
   try {
@@ -434,11 +435,11 @@ function hasUsableKey(platform: string): boolean {
 
 /** True when at least one enabled decision model has a usable key. */
 export function decisionsAvailable(): boolean {
-  return allDecisionRows().some(r => r.enabled === 1 && ADAPTERS[r.platform] && hasUsableKey(r.platform));
+  return allDecisionRows().some(r => r.enabled === 1 && resolveDecisionAdapter(r.platform) && hasUsableKey(r.platform));
 }
 
 function decisionChain(model: string | undefined): DecisionModelRow[] {
-  const enabled = allDecisionRows().filter(r => r.enabled === 1 && ADAPTERS[r.platform]);
+  const enabled = allDecisionRows().filter(r => r.enabled === 1 && resolveDecisionAdapter(r.platform));
   if (!model || model === 'auto') {
     const defaultModelId = getSetting(SYSTEMONE_DEFAULT_SETTING) ?? null;
     if (defaultModelId) {
@@ -491,7 +492,8 @@ export async function runDecision(body: DecisionRequest, opts: DecisionOptions =
       attempted++;
       const started = Date.now();
       try {
-        const out = await ADAPTERS[row.platform]!(credential, row.model_id, body, opts.signal);
+        const adapter = resolveDecisionAdapter(row.platform);
+        const out = await adapter(credential, row.model_id, body, opts.signal);
         logDecision(row, credential.id, 'ok', Date.now() - started, questionCount, out.usage.input_tokens, clientAgent, null);
         return { model: row.model_id, provider: row.platform, answers: out.answers, usage: out.usage };
       } catch (err: any) {

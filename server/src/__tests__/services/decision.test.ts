@@ -64,7 +64,22 @@ describe('decision service', () => {
   });
 
   it('has adapters for exactly the launch platforms', () => {
-    expect([...DECISION_PLATFORMS].sort()).toEqual(['cloudflare', 'opencode-free', 'openrouter', 'typesafe']);
+    expect([...DECISION_PLATFORMS].sort()).toEqual(['cloudflare', 'ollama', 'opencode-free', 'openrouter', 'typesafe']);
+  });
+
+  it('calls Ollama v1/systemone with the model and bearer key', async () => {
+    getDb().prepare(`
+      INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, meta_json)
+      VALUES ('ollama', 'clef-flash', 'Clef Flash', 'decision', 3, 1, 'Ollama Cloud', '{}')
+    `).run();
+    addKey('ollama', 'ollama-key-123');
+    const fn = mockFetch(() => json({ model: 'clef-flash', answers: ANSWERS, usage: { input_tokens: 100, output_tokens: 10 } }));
+    const out = await runDecision(REQUEST, { model: 'clef-flash', clientAgent: null });
+    expect(out).toEqual({ model: 'clef-flash', provider: 'ollama', answers: ANSWERS, usage: { input_tokens: 100, output_tokens: 10 } });
+    const [url, init] = calls(fn)[0];
+    expect(url).toBe('https://ollama.com/v1/systemone');
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer ollama-key-123');
+    expect(bodyOf(calls(fn)[0])).toEqual({ model: 'clef-flash', state: REQUEST.state, questions: REQUEST.questions });
   });
 
   it('calls Cloudflare ai/run with the account from the key and the short model selector', async () => {

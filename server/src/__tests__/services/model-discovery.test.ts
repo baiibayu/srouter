@@ -314,6 +314,15 @@ describe('non-chat kind inferred from the model id (#1051)', () => {
     expect(m.kind).toBe('image');
     const [n] = parseModelCatalog({ data: [{ id: 'plain-9', object: 'embedding' }] });
     expect(n.kind).toBe('embedding');
+    const [d] = parseModelCatalog({ data: [{ id: 'smart-judge', type: 'systemone' }] });
+    expect(d.kind).toBe('decision');
+  });
+
+  it('classifies System One and decision models by id markers', () => {
+    const [f] = parseModelCatalog({ data: [{ id: 'clef-flash' }] });
+    expect(f.kind).toBe('decision');
+    const [c] = parseModelCatalog({ data: [{ id: 'clef' }] });
+    expect(c.kind).toBe('decision');
   });
 
   it("ignores OpenAI's uninformative object:'model'", () => {

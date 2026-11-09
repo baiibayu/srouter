@@ -1,3 +1,14 @@
+## 2026-11-09 — 0.2.1
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `release` | 2026-11-09 | feat(systemone): introduce Universal Auto-Discovery for Decision / System One models (`clef`, `clef-flash`, `jev`, `systemone`), automatically discovering and syncing them across providers. |
+| `release` | 2026-11-09 | feat(systemone): add native Ollama Cloud System One support (`clef-flash`, `clef`) with healthy key detection and zero-downtime routing. |
+| `release` | 2026-11-09 | refactor(architecture): replace bespoke provider adapters with unified `genericSystemOne` factory, automatically enabling any provider with a `/v1/systemone` endpoint. |
+| `release` | 2026-11-09 | fix(discovery): resolve false-negative liveness benching where chat-only model discovery previously disabled catalog System One models. |
+| `release` | 2026-11-09 | refactor(seeder): remove bloated runtime ad-hoc SQL checks from `allDecisionRows()`, delegating catalog models cleanly to Catalog Sync and dynamic models to Auto-Discovery. |
+| `release` | 2026-11-09 | test(systemone): add comprehensive unit test suites for model discovery kind classification and generic System One runner execution. |
+
 ## 2026-11-09 — 0.2.0
 
 | Commit | Date | Summary |

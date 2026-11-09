@@ -30,7 +30,7 @@ const MAX_MODEL_ID_LENGTH = 256;
 /** What a discovered model IS, when it discernibly isn't a chat model (#1051).
  *  Absent means "chat as far as anyone can tell" — the field is emitted only
  *  when a non-chat kind is detected, so plain chat rows keep their shape. */
-export type DiscoveredModelKind = 'embedding' | 'image' | 'audio' | 'transcription' | 'video';
+export type DiscoveredModelKind = 'embedding' | 'image' | 'audio' | 'transcription' | 'video' | 'decision';
 
 export interface DiscoveredModel {
   id: string;
@@ -270,6 +270,10 @@ const KIND_ID_MARKERS: ReadonlyArray<readonly [DiscoveredModelKind, RegExp]> = [
   ['image', /^kolors$/],
   ['image', /^imagen\d*$/],
   ['image', /^photomaker(v\d+)?$/],
+  // Decision / System One models (evaluators, routers, complexity gates).
+  ['decision', /^clef(-flash)?$/],
+  ['decision', /^(systemone|decision|decide)$/],
+  ['decision', /^jev(-\d.*)?$/],
 ];
 
 // Upstream type metadata beats the id when it exists: a few relays ship a
@@ -282,6 +286,7 @@ const KIND_METADATA_VALUES: ReadonlyArray<readonly [DiscoveredModelKind, RegExp]
   ['audio', /(text-?to-?speech|\btts\b|speech-?synthesis)/],
   ['video', /video/],
   ['image', /(text-?to-?image|image-?generation|diffusion)/],
+  ['decision', /(decision|system-?one)/],
 ];
 
 /** The model's kind read off its id, for upstreams that advertise no usable

@@ -704,9 +704,10 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
   // ── Split models by kind ──────────────────────────────────────────
   const chatModels = freeModels.filter(m => !m.kind);
   const embeddingModels = freeModels.filter(m => m.kind === 'embedding');
-  const mediaModels = freeModels.filter(m => m.kind && m.kind !== 'embedding');
+  const decisionModels = freeModels.filter(m => m.kind === 'decision');
+  const mediaModels = freeModels.filter(m => m.kind && m.kind !== 'embedding' && m.kind !== 'decision');
 
-  if (chatModels.length === 0 && embeddingModels.length === 0 && mediaModels.length === 0) {
+  if (chatModels.length === 0 && embeddingModels.length === 0 && mediaModels.length === 0 && decisionModels.length === 0) {
     console.log(`[auto-discover] ${platform} has ${freeModels.length} free models but none are registerable — skipping`);
     return empty;
   }
@@ -1052,24 +1053,45 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       }
     }
 
-    // ──── 4. DECISION MODELS LIVENESS REFRESH ────────────────────
-    // Ensure decision models for this platform reflect live upstream availability
-    const allUpstreamIds = new Set<string>(rawModels.map((r: any) => r?.id).filter(Boolean));
-    if (allUpstreamIds.size > 0) {
-      const platformDecisions = db.prepare(
-        "SELECT id, model_id, enabled FROM media_models WHERE platform = ? AND modality = 'decision'",
-      ).all(platform) as { id: number; model_id: string; enabled: number }[];
-      for (const dm of platformDecisions) {
-        const stillAlive = allUpstreamIds.has(dm.model_id);
-        if (!stillAlive && dm.enabled) {
-          db.prepare('UPDATE media_models SET enabled = 0 WHERE id = ?').run(dm.id);
-          benched++;
-          retiredModelNames.push(dm.model_id);
-          console.log(`[auto-discover] ${platform}: decision model ${dm.model_id} no longer offered upstream — disabled`);
-        } else if (stillAlive && !dm.enabled) {
-          db.prepare('UPDATE media_models SET enabled = 1 WHERE id = ?').run(dm.id);
-          console.log(`[auto-discover] ${platform}: decision model ${dm.model_id} restored upstream — re-enabled`);
+    // ──── 4. DECISION MODELS (System One / Evaluators) ──────────
+    let decisionRegistered = 0;
+    let decisionRefreshed = 0;
+    const stillOfferedDecisions = new Set<string>();
+    for (const m of decisionModels.slice(0, MAX_AUTO_MODELS)) {
+      stillOfferedDecisions.add(m.id);
+      const display = m.id.replace(/[-_]/g, ' ');
+      const keyId = keyRow?.id ?? null;
+
+      const existing = selectExistingMedia.get(platform, m.id) as {
+        id: number; display_name: string | null; modality: string;
+      } | undefined;
+
+      if (existing) {
+        if (existing.display_name !== display || existing.modality !== 'decision') {
+          refreshMedia.run(display, 'decision', existing.id);
+          decisionRefreshed++;
+          updatedModelNames.push(m.id);
         }
+        db.prepare('UPDATE media_models SET enabled = 1 WHERE id = ?').run(existing.id);
+        continue;
+      }
+
+      insertMedia.run(platform, m.id, display, 'decision', 100 + idx, keyId);
+      decisionRegistered++;
+      newModelNames.push(m.id);
+      idx++;
+    }
+
+    // Bench decision rows THIS PLATFORM'S DISCOVERY CREATED that upstream dropped
+    if (stillOfferedDecisions.size > 0) {
+      const ownedDecisions = db.prepare(
+        "SELECT id, model_id FROM media_models WHERE platform = ? AND quota_label = 'auto-discovered' AND enabled = 1 AND modality = 'decision'",
+      ).all(platform) as { id: number; model_id: string }[];
+      for (const row of ownedDecisions) {
+        if (stillOfferedDecisions.has(row.model_id)) continue;
+        db.prepare('UPDATE media_models SET enabled = 0 WHERE id = ?').run(row.id);
+        benched++;
+        retiredModelNames.push(row.model_id);
       }
     }
 
@@ -1079,8 +1101,8 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     // Store counts for return
     (txResult as any)._embRegistered = embRegistered;
     (txResult as any)._embRefreshed = embRefreshed;
-    (txResult as any)._mediaRegistered = mediaRegistered;
-    (txResult as any)._mediaRefreshed = mediaRefreshed;
+    (txResult as any)._mediaRegistered = mediaRegistered + decisionRegistered;
+    (txResult as any)._mediaRefreshed = mediaRefreshed + decisionRefreshed;
     (txResult as any)._quirkCount = quirkCount;
   });
 
