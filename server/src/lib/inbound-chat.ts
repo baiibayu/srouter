@@ -48,12 +48,15 @@ import { logRequest } from './request-log.js';
 import { getStickyModel, setStickyModel } from '../routes/proxy.js';
 import { breakLoop } from '../services/loop-breaker.js';
 import { classifyClientAgent } from './client-classifier.js';
+import { getClientContext } from './client-context.js';
+import { recordRouteTrace } from './route-live.js';
 import { deriveTaskType } from './task-type.js';
 import { classifyComplexity } from '../services/complexity-gate.js';
 import type { CompletionOptions } from '../providers/base.js';
 
 export interface InboundChatRequest {
   model?: string;
+  requestedModel?: string;
   messages: ChatMessage[];
   stream: boolean;
   maxTokens?: number;
@@ -188,7 +191,10 @@ export async function runInboundChat(
   const maxTokens = input.maxTokens
     ?? (budget.maxTokens != null ? Math.min(1024, budget.maxTokens) : 1024);
 
-  const clientAgent = classifyClientAgent(req);
+  const clientCtx = getClientContext();
+  const clientAgent = clientCtx.agent && clientCtx.agent !== 'unknown'
+    ? clientCtx.agent
+    : classifyClientAgent(req);
   const loopBreaker = breakLoop({
     messages: input.messages,
     temperature: input.temperature,
@@ -265,6 +271,11 @@ export async function runInboundChat(
   const complexity = await classifyComplexity(input.messages, input.tools);
   const taskType = deriveTaskType(input.tools, input.messages);
 
+  const requestId = input.sessionId
+    || (typeof res.getHeader === 'function' ? (res.getHeader('X-Request-Id') as string | undefined) : undefined)
+    || `inbound-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const requestedModelLabel = input.requestedModel ?? pin.pinnedLabel ?? undefined;
+
   await runFallbackLoop({
     state,
     attemptLog,
@@ -292,6 +303,16 @@ export async function runInboundChat(
       );
     },
     dispatch: async (route, attempt) => {
+      recordRouteTrace({
+        event: attempt === 0 ? 'start' : 'next',
+        requestId,
+        attempt,
+        platform: route.platform,
+        model: route.modelId,
+        requestedModel: requestedModelLabel,
+        clientAgent,
+      });
+
       if (!input.stream) {
         const result = await route.provider.chatCompletion(
           route.apiKey,
@@ -375,6 +396,16 @@ export async function runInboundChat(
         if (pin.pinnedLabel == null) setStickyModel(input.messages, route.modelDbId, input.sessionId);
         res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
         setFallbackHeaders(res, attempt, attemptLog);
+        recordRouteTrace({
+          event: 'ok',
+          requestId,
+          attempt,
+          platform: route.platform,
+          model: route.modelId,
+          latencyMs: Date.now() - start,
+          requestedModel: requestedModelLabel,
+          clientAgent,
+        });
         logRequest(
           route.platform,
           route.modelId,
@@ -385,7 +416,7 @@ export async function runInboundChat(
           Date.now() - start,
           null,
           null,
-          pin.pinnedLabel,
+          requestedModelLabel ?? null,
           null,
           'http',
         );
@@ -569,6 +600,16 @@ export async function runInboundChat(
         wire.finishStream(res, normalized);
         recordUpstreamSuccess(route, estimatedInputTokens + outputTokens, state);
         if (pin.pinnedLabel == null) setStickyModel(input.messages, route.modelDbId, input.sessionId);
+        recordRouteTrace({
+          event: 'ok',
+          requestId,
+          attempt,
+          platform: route.platform,
+          model: route.modelId,
+          latencyMs: Date.now() - start,
+          requestedModel: requestedModelLabel,
+          clientAgent,
+        });
         logRequest(
           route.platform,
           route.modelId,
@@ -579,7 +620,7 @@ export async function runInboundChat(
           Date.now() - start,
           null,
           null,
-          pin.pinnedLabel,
+          requestedModelLabel ?? null,
           null,
           'http',
         );
@@ -588,6 +629,16 @@ export async function runInboundChat(
         if (!committed) throw error;
         wire.sendStreamError?.(res, sanitizeProviderErrorMessage(error.message));
         if (!res.writableEnded) res.end();
+        recordRouteTrace({
+          event: clientGone ? 'canceled' : 'fail',
+          requestId,
+          attempt,
+          platform: route.platform,
+          model: route.modelId,
+          latencyMs: Date.now() - start,
+          requestedModel: requestedModelLabel,
+          clientAgent,
+        });
         logRequest(
           route.platform,
           route.modelId,
@@ -598,7 +649,7 @@ export async function runInboundChat(
           Date.now() - start,
           sanitizeProviderErrorMessage(error.message),
           null,
-          pin.pinnedLabel,
+          requestedModelLabel ?? null,
           null,
           'http',
         );
@@ -606,6 +657,16 @@ export async function runInboundChat(
       }
     },
     logFailure: (route, error) => {
+      recordRouteTrace({
+        event: 'fail',
+        requestId,
+        attempt: attemptLog.length,
+        platform: route.platform,
+        model: route.modelId,
+        latencyMs: Date.now() - start,
+        requestedModel: requestedModelLabel,
+        clientAgent,
+      });
       logRequest(
         route.platform,
         route.modelId,
@@ -616,7 +677,7 @@ export async function runInboundChat(
         Date.now() - start,
         sanitizeProviderErrorMessage(error.message),
         null,
-        pin.pinnedLabel,
+        requestedModelLabel ?? null,
         null,
         'http',
       );

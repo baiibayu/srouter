@@ -407,6 +407,54 @@ exports[`tool generators > setup-dsh has stable golden output 1`] = `
 }
 `;
 
+exports[`tool generators > setup-gemini has stable golden output 1`] = `
+{
+  "files": [
+    {
+      "format": "json",
+      "path": "/home/tester/.gemini/settings.json",
+      "sensitive": true,
+      "value": {
+        "env": {
+          "GEMINI_API_KEY": "srouter-test-key",
+          "GEMINI_MODEL": "fast-coder",
+          "GOOGLE_GEMINI_BASE_URL": "http://localhost:3000",
+        },
+        "mcpServers": {
+          "srouter": {
+            "headers": {
+              "Authorization": "Bearer srouter-test-key",
+            },
+            "type": "http",
+            "url": "http://localhost:3000/mcp",
+          },
+        },
+        "security": {
+          "auth": {
+            "selectedType": "gemini-api-key",
+          },
+        },
+      },
+    },
+    {
+      "content": "GEMINI_API_KEY=srouter-test-key
+GOOGLE_GEMINI_BASE_URL=http://localhost:3000
+GEMINI_MODEL=fast-coder
+",
+      "format": "env",
+      "path": "/home/tester/.gemini/.env",
+      "sensitive": true,
+    },
+  ],
+  "notes": [
+    "Gemini CLI will read this configuration automatically.",
+    "Endpoint: http://localhost:3000",
+    "Model mapping is active for Gemini Pro, Flash, and Flash-Lite.",
+    "MCP: wrote mcpServers.srouter -> /home/tester/.gemini/settings.json",
+  ],
+}
+`;
+
 exports[`tool generators > setup-generic has stable golden output 1`] = `
 {
   "files": [],

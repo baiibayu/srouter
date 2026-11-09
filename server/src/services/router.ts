@@ -1612,6 +1612,22 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
     "SELECT * FROM api_keys WHERE platform = ? AND enabled = 1 AND status IN ('healthy', 'unknown')"
   ).all(entry.platform) as KeyRow[];
   if (allKeys.length === 0) {
+    if (provider.keyless) {
+      return {
+        provider,
+        modelId: entry.model_id,
+        modelDbId: entry.model_db_id,
+        apiKey: 'no-key',
+        keyId: 0,
+        keyLabel: null,
+        platform: entry.platform,
+        displayName: entry.display_name,
+        contextWindow: entry.context_window,
+        endpointScope: entry.endpoint_scope,
+        rpdLimit: entry.rpd_limit,
+        tpdLimit: entry.tpd_limit,
+      };
+    }
     diag?.push(`${label}: no enabled+healthy key for platform`);
     return null;
   }

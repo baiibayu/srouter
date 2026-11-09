@@ -1,3 +1,16 @@
+## 2026-11-09 — 0.2.0
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `release` | 2026-11-09 | feat(agents): overhaul `/agents` and Agent Detail Page with interactive Quick Start workflows, agent tool configurations, and URL-token generation. |
+| `release` | 2026-11-09 | feat(gemini-cli): add first-class Gemini CLI (`@google/gemini-cli`) detection, environment shims, and seamless proxy routing. |
+| `release` | 2026-11-09 | fix(router): report `requested_model: "auto"` for unpinned Gemini requests, eliminating false "Direct Pin Bypass Router" badges in live dashboard. |
+| `release` | 2026-11-09 | fix(discovery): resolve chat-only provider startup looping and notification flood by updating skip conditions in `auto-discover.ts`. |
+| `release` | 2026-11-09 | fix(providers): correct NavyAI free-tier filter to enforce `premium: false` on verified models (83 active free models). |
+| `release` | 2026-11-09 | refactor(architecture): enforce centralized catalog-sync & discovery reconciliation, completely eliminating ad-hoc DB migrations for model data pruning. |
+| `release` | 2026-11-09 | fix(lint): resolve ESLint unused variable errors in Cohere message sanitizer to guarantee pristine CI passes on Node 20 and Node 22. |
+| `release` | 2026-11-09 | chore(i18n): localize all new agent management and key mapping components across 60 supported locales. |
+
 ## 2026-11-06 — 0.1.70
 
 | Commit | Date | Summary |

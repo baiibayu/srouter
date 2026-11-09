@@ -38,7 +38,7 @@ export interface ToolDefinition {
   category: 'code' | 'agent';
   configType: 'env' | 'file' | 'guide';
   protocol: string;
-  baseUrlSupport: 'root' | '/v1';
+  baseUrlSupport: 'root' | '/v1' | '/v1beta';
   command: string;
   docsUrl: string;
   /** Dashboard hint: 'full' setup brings in every model (auto, auto:*, fusion);

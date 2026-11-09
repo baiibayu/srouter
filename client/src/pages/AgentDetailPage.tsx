@@ -12,6 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { apiFetch } from '@/lib/api'
 import toolCatalog from '@/data/agent-tools.json'
 import { toast } from '@/lib/toast'
+import { AnthropicSection } from '@/components/keys/anthropic-section'
+import { GeminiModelMappingSection } from '@/components/keys/gemini-model-mapping-section'
 
 interface ClientAnalytics {
   clientAgent: string
@@ -36,7 +38,7 @@ interface ToolCatalog {
   category: 'code' | 'agent'
   configType: 'env' | 'file' | 'guide'
   protocol: string
-  baseUrlSupport: 'root' | '/v1'
+  baseUrlSupport: 'root' | '/v1' | '/v1beta'
   command: string
   docsUrl: string
   modelBehavior: 'default' | 'full'
@@ -148,9 +150,13 @@ export default function AgentDetailPage() {
     ? `http://${window.location.hostname}:${__SERVER_PORT__}`
     : window.location.origin
   const command = `npx @baiibayu/srouter ${tool.command} --url ${origin}`
-  const endpoint = tool.baseUrlSupport === 'root' ? origin : `${origin}/v1`
-  const realConnection = `BASE_URL=${endpoint}\nAPI_KEY=${keyData?.apiKey ?? '<unified-key>'}`
-  const shownConnection = `BASE_URL=${endpoint}\nAPI_KEY=${keyData?.apiKey ?? '••••••••••••'}`
+  const endpoint = tool.baseUrlSupport === 'root' ? origin : `${origin}${tool.baseUrlSupport}`
+  const realConnection = tool.id === 'gemini'
+    ? `GOOGLE_GEMINI_BASE_URL=${endpoint}\nGEMINI_API_KEY=${keyData?.apiKey ?? '<unified-key>'}`
+    : `BASE_URL=${endpoint}\nAPI_KEY=${keyData?.apiKey ?? '<unified-key>'}`
+  const shownConnection = tool.id === 'gemini'
+    ? `GOOGLE_GEMINI_BASE_URL=${endpoint}\nGEMINI_API_KEY=${keyData?.apiKey ?? '••••••••••••'}`
+    : `BASE_URL=${endpoint}\nAPI_KEY=${keyData?.apiKey ?? '••••••••••••'}`
 
   return (
     <div className="min-h-screen">
@@ -270,6 +276,16 @@ export default function AgentDetailPage() {
             </CardContent>
           </Card>
         </section>
+
+        {/* Model Mapping: Anthropic / Claude Code */}
+        {isNativeClaude && (
+          <AnthropicSection />
+        )}
+
+        {/* Model Mapping: Gemini CLI */}
+        {tool.id === 'gemini' && (
+          <GeminiModelMappingSection />
+        )}
 
         {/* Web Tools (Search & Fetch) Integration Note */}
         {hasWebTools && (

@@ -1293,7 +1293,8 @@
       "openclaude": "A Claude-compatible CLI that routes through an OpenAI-compatible gateway.",
       "atomcode": "An Atom IDE extension that integrates with OpenAI-compatible gateways.",
       "reasonix": "Tác tử lập trình trên terminal dành riêng cho DeepSeek, xây dựng quanh bộ nhớ đệm tiền tố để các phiên dài vẫn rẻ.",
-      "zcode": "Terminal client for the ZCode agent runtime, with multi-provider routing and dynamic workflows."
+      "zcode": "Terminal client for the ZCode agent runtime, with multi-provider routing and dynamic workflows.",
+      "gemini": "Google's official terminal agent for code generation, workspace inspection, and Google Generative AI workflows."
     },
     "modelNoteFull": "Thiết lập đưa vào tất cả các mô hình (auto, auto:*, fusion)",
     "modelNoteDefault": "Thiết lập chỉ đưa vào auto — chọn mô hình khác qua giao diện agent",

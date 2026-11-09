@@ -5,20 +5,15 @@ import { CheckCircle2, ChevronRight } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useI18n } from '@/i18n'
 import { PageHeader } from '@/components/page-header'
-import { CopyButton } from '@/components/copy-button'
 import { AgentIcon } from '@/components/agent-icons'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { GatewayProtocolsSection } from '@/components/agents/gateway-protocols-section'
 import toolCatalog from '@/data/agent-tools.json'
 
 interface ClientAnalytics {
   clientAgent: string
   requests: number
   lastSeenAt: string | null
-}
-
-interface KeyResponse {
-  apiKey: string
 }
 
 interface AgentDetectionItem {
@@ -46,26 +41,15 @@ const analyticsIds: Record<string, string> = {
   openclaw: 'openclaw',
   hermes: 'hermes-agent',
   pi: 'pi',
-
   droid: 'droid',
   zcode: 'zcode',
   reasonix: 'reasonix',
   cursor: 'cursor',
-}
-
-function masked(value: string): string {
-  if (value.length < 12) return '••••••••'
-  return `${value.slice(0, 8)}${'•'.repeat(12)}${value.slice(-4)}`
+  gemini: 'gemini-cli',
 }
 
 export default function AgentsPage() {
   const { t } = useI18n()
-  const [revealKey, setRevealKey] = useState(false)
-  const { data: keyData } = useQuery<KeyResponse>({
-    queryKey: ['api-key'],
-    queryFn: () => apiFetch('/api/settings/api-key'),
-    staleTime: 60_000,
-  })
   const { data: byClient = [] } = useQuery<ClientAnalytics[]>({
     queryKey: ['analytics', 'by-client', '30d'],
     queryFn: () => apiFetch('/api/analytics/by-client?range=30d'),
@@ -84,43 +68,15 @@ export default function AgentsPage() {
   const seen = new Map(byClient
     .filter(row => row.lastSeenAt && Date.parse(row.lastSeenAt) >= seenCutoff)
     .map(row => [row.clientAgent, row]))
-  const origin = import.meta.env.DEV
-    ? `http://${window.location.hostname}:${__SERVER_PORT__}`
-    : window.location.origin
-  const shownKey = keyData?.apiKey
-    ? (revealKey ? keyData.apiKey : masked(keyData.apiKey))
-    : '…'
 
   return (
     <div>
       <PageHeader
         title={t('agents.title')}
         description={t('agents.description')}
-        actions={
-          <Button variant="outline" size="sm" onClick={() => setRevealKey(value => !value)}>
-            {revealKey ? t('common.hide') : t('common.show')} {t('agents.apiKey')}
-          </Button>
-        }
       />
 
-      <section className="mb-6 rounded-3xl border bg-card p-4 sm:p-5">
-        <h2 className="text-sm font-medium">{t('agents.quickstartTitle')}</h2>
-        <p className="mt-0.5 max-w-prose text-xs text-muted-foreground">{t('agents.quickstart')}</p>
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
-          <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs">
-            npx @baiibayu/srouter setup-claude --url {origin}
-          </code>
-          <CopyButton
-            text={`npx @baiibayu/srouter setup-claude --url ${origin}`}
-            className="size-7 shrink-0"
-            label={t('common.copy')}
-          />
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span>{t('agents.currentKey')}</span>
-          <code className="font-mono break-all">{shownKey}</code>
-        </div>
-      </section>
+      <GatewayProtocolsSection />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {toolCatalog.map(tool => {
@@ -173,6 +129,11 @@ export default function AgentsPage() {
 
               <div className="mt-4 flex items-center justify-between gap-2 pt-3 border-t">
                 {statusBadge({ status, t })}
+                {(tool.id === 'claude' || tool.id === 'openclaude' || tool.id === 'gemini') && (
+                  <span className="text-[10px] font-medium text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-full">
+                    Model Mapping
+                  </span>
+                )}
               </div>
             </Link>
           )

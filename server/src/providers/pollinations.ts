@@ -1,6 +1,7 @@
 import { OpenAICompatProvider, isAnonymousCredential } from './openai-compat.js';
-import type { KeyValidationResult } from './base.js';
+import type { KeyValidationResult, CompletionOptions } from './base.js';
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
+import type { ChatMessage, ChatCompletionResponse, ChatCompletionChunk } from '@baiibayu/srouter-shared/types.js';
 
 const POLLINATIONS_BASE_URL = 'https://gen.pollinations.ai/v1';
 /** Authenticated key-introspection endpoint — note it sits OUTSIDE /v1. */
@@ -32,6 +33,59 @@ export class PollinationsProvider extends OpenAICompatProvider {
     });
   }
 
+  /** Map the stored credential to the bearer we send upstream. The keyless flow
+   * stores `'no-key'` (or nothing) for the anonymous case → send NO Authorization
+   * header for keyless calls. Any other stored value is treated as a real key. */
+  private resolveBearer(apiKey: string): string {
+    const k = apiKey?.trim();
+    if (!k || k === 'no-key') return '';
+    return k;
+  }
+
+  /** Pollinations expects model IDs like "openai/gpt-5.4-nano" or "mistralai/mistral-large-3".
+   * Strip only the SRouter platform prefix ("pollinations/") if present. */
+  private stripPlatformPrefix(modelId: string): string {
+    const platformPrefix = `${this.platform}/`;
+    return modelId.startsWith(platformPrefix) ? modelId.slice(platformPrefix.length) : modelId;
+  }
+
+  /** Anonymous access sends NO Authorization header: keyless providers
+   * (Pollinations) holding the stored `no-key` sentinel, and
+   * custom endpoints whose stored credential is the same sentinel with auth
+   * off. Sending `Bearer no-key` upstream is never right — upstreams read it
+   * as an invalid key. A REAL key saved on a keyless platform is used instead
+   * of the anonymous path, and a real key on a custom endpoint still gets its
+   * bearer (#1331): the presence of a credential decides at request time. */
+  protected authHeader(apiKey: string): Record<string, string> {
+    const k = this.resolveBearer(apiKey);
+    if (!k) return {};
+    return { Authorization: `Bearer ${k}` };
+  }
+
+  override async chatCompletion(
+    apiKey: string,
+    messages: ChatMessage[],
+    modelId: string,
+    options?: CompletionOptions,
+    quotaContext?: QuotaObservationContext,
+  ): Promise<ChatCompletionResponse> {
+    const strippedModelId = this.stripPlatformPrefix(modelId);
+    return super.chatCompletion(apiKey, messages, strippedModelId, options, quotaContext);
+  }
+
+  override async *streamChatCompletion(
+    apiKey: string,
+    messages: ChatMessage[],
+    modelId: string,
+    options?: CompletionOptions,
+    quotaContext?: QuotaObservationContext,
+  ): AsyncGenerator<ChatCompletionChunk> {
+    const strippedModelId = this.stripPlatformPrefix(modelId);
+    for await (const chunk of super.streamChatCompletion(apiKey, messages, strippedModelId, options, quotaContext)) {
+      yield chunk;
+    }
+  }
+
   override async validateKey(apiKey: string, quotaContext?: QuotaObservationContext): Promise<KeyValidationResult> {
     // Keyless path: confirm the upstream is reachable via the public models
     // catalog. A 200 from /v1/models means keyless routing will work.
@@ -54,7 +108,7 @@ export class PollinationsProvider extends OpenAICompatProvider {
     // Keyed path: probe the authenticated /account/key endpoint (#608).
     const res = await this.fetchWithTimeout(POLLINATIONS_ACCOUNT_KEY_URL, {
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${apiKey}` },
+      headers: { 'Authorization': `Bearer ${this.resolveBearer(apiKey)}` },
     }, 30000, { timeoutBounds: 'request' });
 
     recordQuotaObservationsFromResponse(res, {

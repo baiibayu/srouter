@@ -29,6 +29,24 @@ function sanitizeCohereTools(tools?: ChatToolDefinition[]): ChatToolDefinition[]
   );
 }
 
+// Cohere rejects reasoning content in message history for non-reasoning models
+// ("thinking content is not allowed in chat history for non-reasoning models").
+function sanitizeCohereMessages(messages: ChatMessage[]): ChatMessage[] {
+  return flattenMessageContent(messages).map((m) => {
+    const { reasoning_content: _rc, thought: _th, thinking: _tk, ...rest } = m as unknown as Record<string, unknown>;
+    return rest as unknown as ChatMessage;
+  });
+}
+
+// Cohere command-r models strictly enforce a 4096 max output token limit.
+function clampCohereMaxTokens(modelId: string, tokens: number | undefined): number | undefined {
+  if (tokens == null) return tokens;
+  if (modelId.includes('command-r')) {
+    return Math.min(tokens, 4096);
+  }
+  return tokens;
+}
+
 export class CohereProvider extends BaseProvider {
   readonly platform = 'cohere' as const;
   readonly name = 'Cohere';
@@ -42,9 +60,9 @@ export class CohereProvider extends BaseProvider {
   ): Promise<ChatCompletionResponse> {
     const body: Record<string, unknown> = {
       model: modelId,
-      messages: flattenMessageContent(messages),
+      messages: sanitizeCohereMessages(messages),
       temperature: options?.temperature,
-      max_tokens: resolveMaxTokens(this.platform, options?.max_tokens, options?.contextBudget),
+      max_tokens: clampCohereMaxTokens(modelId, resolveMaxTokens(this.platform, options?.max_tokens, options?.contextBudget)),
       top_p: options?.top_p,
       stop: options?.stop,
       tools: sanitizeCohereTools(options?.tools),
@@ -73,7 +91,8 @@ export class CohereProvider extends BaseProvider {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw providerHttpError(res, `Cohere API error ${res.status}: ${(err as any).error?.message ?? res.statusText}`, err);
+      const errMsg = (err as any).error?.message ?? (err as any).message ?? res.statusText;
+      throw providerHttpError(res, `Cohere API error ${res.status}: ${errMsg}`, err);
     }
 
     const data = await res.json() as ChatCompletionResponse;
@@ -90,9 +109,9 @@ export class CohereProvider extends BaseProvider {
   ): AsyncGenerator<ChatCompletionChunk> {
     const body: Record<string, unknown> = {
       model: modelId,
-      messages: flattenMessageContent(messages),
+      messages: sanitizeCohereMessages(messages),
       temperature: options?.temperature,
-      max_tokens: resolveMaxTokens(this.platform, options?.max_tokens, options?.contextBudget),
+      max_tokens: clampCohereMaxTokens(modelId, resolveMaxTokens(this.platform, options?.max_tokens, options?.contextBudget)),
       top_p: options?.top_p,
       stop: options?.stop,
       tools: sanitizeCohereTools(options?.tools),

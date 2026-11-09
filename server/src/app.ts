@@ -189,6 +189,13 @@ export function createApp(config?: Config) {
       callback(null, !origin || allowedCorsOrigins.has(origin));
     },
   }));
+  // Normalize redundant /v1beta/v1beta prefix if an agent or user configures GOOGLE_GEMINI_BASE_URL with /v1beta
+  app.use((req, _res, next) => {
+    if (req.url.startsWith('/v1beta/v1beta')) {
+      req.url = req.url.replace(/^\/v1beta\/v1beta/, '/v1beta');
+    }
+    next();
+  });
   // Two-tier JSON body limits. The LLM wire surfaces carry vision payloads —
   // base64 images inline in the body (~33% inflation; google.ts forwards
   // images up to 8MB apiece) — so a single-screenshot Codex turn can clear

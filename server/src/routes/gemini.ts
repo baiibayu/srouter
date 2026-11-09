@@ -17,7 +17,12 @@ import {
   geminiToolsToChatTools,
   type GeminiInboundRequest,
 } from '../lib/gemini-wire.js';
-import { resolveGeminiModel } from '../services/gemini-map.js';
+import {
+  resolveGeminiModel,
+  classifyGeminiFamily,
+  geminiFamilyDiscoveryEntries,
+  GEMINI_FAMILY_ALIASES,
+} from '../services/gemini-map.js';
 
 export const geminiRouter = Router();
 
@@ -84,9 +89,21 @@ geminiRouter.get('/models', (req, res) => {
   const listed = ['1', 'true', 'yes'].includes(availableOnly)
     ? models.filter(model => model.available === 1)
     : models;
+
+  const familyEntries = geminiFamilyDiscoveryEntries().map(alias => ({
+    name: `models/${alias.id}`,
+    displayName: alias.displayName,
+    description: 'srouter mapped Gemini model',
+    inputTokenLimit: autoContextWindow ?? 128_000,
+    outputTokenLimit: 8192,
+    supportedGenerationMethods: ['generateContent', 'streamGenerateContent', 'countTokens'],
+    version: alias.id,
+  }));
+
   res.json({
     models: [
       modelShape(null, autoContextWindow),
+      ...familyEntries,
       ...listed.map(model => modelShape(model, autoContextWindow)),
     ],
   });
@@ -100,8 +117,36 @@ geminiRouter.get(/^\/models\/(.+)$/, (req, res) => {
     res.json(modelShape(null, autoContextWindow));
     return;
   }
+  const aliasMatch = GEMINI_FAMILY_ALIASES.find(a => a.id.toLowerCase() === requested.toLowerCase());
+  if (aliasMatch) {
+    const familyEntries = geminiFamilyDiscoveryEntries();
+    const entry = familyEntries.find(e => e.id.toLowerCase() === requested.toLowerCase());
+    res.json({
+      name: `models/${aliasMatch.id}`,
+      displayName: entry?.displayName ?? aliasMatch.label,
+      description: 'srouter mapped Gemini model',
+      inputTokenLimit: autoContextWindow ?? 128_000,
+      outputTokenLimit: 8192,
+      supportedGenerationMethods: ['generateContent', 'streamGenerateContent', 'countTokens'],
+      version: aliasMatch.id,
+    });
+    return;
+  }
   const model = models.find(entry => entry.id === requested);
   if (!model) {
+    const family = classifyGeminiFamily(requested);
+    if (family) {
+      res.json({
+        name: `models/${requested}`,
+        displayName: `Gemini ${requested}`,
+        description: 'srouter mapped Gemini model',
+        inputTokenLimit: autoContextWindow ?? 128_000,
+        outputTokenLimit: 8192,
+        supportedGenerationMethods: ['generateContent', 'streamGenerateContent', 'countTokens'],
+        version: requested,
+      });
+      return;
+    }
     sendError(res, 404, `Model '${requested}' was not found`, 'NOT_FOUND');
     return;
   }
@@ -196,8 +241,11 @@ async function handleGenerate(req: Request, res: Response, stream: boolean): Pro
   const rawSession = req.headers['x-goog-request-id'] ?? req.headers['x-session-id'];
   const sessionId = Array.isArray(rawSession) ? rawSession[0] : rawSession;
   const tools = geminiToolsToChatTools(body.tools);
+  const resolvedModel = resolveGeminiModel(model);
+  const isPinned = resolvedModel !== 'auto';
   await runInboundChat(req, res, {
-    model: resolveGeminiModel(model),
+    model: resolvedModel,
+    requestedModel: isPinned ? resolvedModel : 'auto',
     messages: geminiContentsToMessages(body),
     stream,
     // Gemini CLI never sends maxOutputTokens; the shared 1024-token default

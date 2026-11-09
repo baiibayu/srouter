@@ -50,6 +50,13 @@ export function configPathFor(id: string): string | null {
     }
     case 'codex':
       return path.join(home, '.codex', 'config.toml');
+    case 'gemini': {
+      const geminiSettings = path.join(home, '.gemini', 'settings.json');
+      if (fs.existsSync(geminiSettings)) return geminiSettings;
+      const geminiEnv = path.join(home, '.gemini', '.env');
+      if (fs.existsSync(geminiEnv)) return geminiEnv;
+      return geminiSettings;
+    }
     case 'cline':
       return path.join(home, '.cline', 'data', 'settings', 'providers.json');
     case 'continue':
@@ -168,6 +175,8 @@ function binaryNameFor(id: string): string | null {
       return 'claude';
     case 'codex':
       return 'codex';
+    case 'gemini':
+      return 'gemini';
     case 'aider':
       return 'aider';
     case 'opencode':
@@ -237,7 +246,7 @@ function isBinaryInPath(name: string): boolean {
   const lowerName = name.toLowerCase();
   const extensions =
     process.platform === 'win32'
-      ? (process.env.PATHEXT ? [...process.env.PATHEXT.split(';'), ''] : ['.exe', '.cmd', '.bat', ''])
+      ? (process.env.PATHEXT ? [...process.env.PATHEXT.split(';'), '.ps1', ''] : ['.exe', '.cmd', '.bat', '.ps1', ''])
       : [''];
 
   for (const ext of extensions) {
@@ -323,6 +332,12 @@ function isAppInstalled(id: string): boolean {
       );
     case 'atomcode':
       return isBinaryInPath('atom') || fs.existsSync(path.join(home, '.atom'));
+    case 'gemini':
+      return (
+        isBinaryInPath('gemini') ||
+        fs.existsSync(path.join(home, '.gemini')) ||
+        fs.existsSync(path.join(localAppData, 'Programs', 'gemini'))
+      );
     default:
       return false;
   }
@@ -388,6 +403,7 @@ export function detectAgent(id: string): AgentDetection {
 export const AGENT_IDS = [
   'claude',
   'codex',
+  'gemini',
   'cline',
   'continue',
   'aider',

@@ -448,7 +448,7 @@ describe('Anthropic-compatible /v1/messages', () => {
     expect(sonnet).toBeTruthy();
     expect(sonnet.type).toBe('model');
     // The label must not read as hosted Claude.
-    expect(sonnet.display_name).toContain('Sonnet slot');
+    expect(sonnet.display_name).toContain('Sonnet 4.5 slot');
     for (const id of ['claude-opus-4-5', 'claude-haiku-4-5']) {
       expect(body.data.some((m: any) => m.id === id)).toBe(true);
     }
@@ -521,7 +521,7 @@ describe('Anthropic-compatible /v1/messages', () => {
   it('GET /api/settings/anthropic-map returns defaults (all auto) when unset', async () => {
     const { status, body } = await send(app, 'GET', '/api/settings/anthropic-map', undefined, { Authorization: `Bearer ${dashToken}` });
     expect(status).toBe(200);
-    expect(body.map).toEqual({ default: 'auto', opus: 'auto', sonnet: 'auto', haiku: 'auto' });
+    expect(body.map).toEqual({ default: 'auto', fable: 'auto', opus: 'auto', sonnet: 'auto', haiku: 'auto' });
   });
 
   // ── Same-model cross-provider failover (#932) ────────────────────────────

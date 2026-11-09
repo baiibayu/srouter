@@ -35,7 +35,6 @@ import type { Platform } from '@baiibayu/srouter-shared/types.js';
 // that either don't have /v1/models, are handled by the catalog already,
 // or are 100% paid and we don't want to register any of their models.
 const SKIP_AUTO_DISCOVER = new Set([
-  'ollama',       // local, handled separately
   'custom',       // custom endpoints use their own flow
   'aihorde',      // uses its own API format
 ]);
@@ -86,6 +85,7 @@ const PLATFORM_DEFAULTS: Record<string, PlatformRateDefaults> = {
   cline:       { rpm: 10,   rpd: 200,   tpm: null,     tpd: null },     // free tier rotating models
   nous:        { rpm: 10,   rpd: 500,   tpm: null,     tpd: null },     // free plan rate limit
   freebuff:    { rpm: 5,    rpd: 200,   tpm: null,     tpd: null },     // agent-run quota
+  pollinations:{ rpm: 15,   rpd: null,  tpm: null,     tpd: null },     // free keyless per IP
   puter:       { rpm: 10,   rpd: 500,   tpm: null,     tpd: null },     // personal cloud AI driver
   kiro:        { rpm: 15,   rpd: 1000,  tpm: null,     tpd: null },     // AWS CodeWhisperer conversational quota
 
@@ -535,9 +535,9 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     };
   }
 
-  // Check if the platform already has all three model types — only skip if
-  // chat + embeddings + media are all populated. Platforms that have chat
-  // models but lack embeddings or media should still be discovered.
+  // Check if the platform already has models registered — only run unforced
+  // auto-discovery on startup for platforms that have zero models.
+  // Full refreshes (opts.refresh = true) bypass this check.
   if (!opts.refresh) {
     const dbPre = getDb();
     const row = dbPre.prepare(`
@@ -546,7 +546,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
         (SELECT COUNT(*) FROM embedding_models WHERE platform = ? AND enabled = 1) AS emb,
         (SELECT COUNT(*) FROM media_models WHERE platform = ? AND enabled = 1) AS media
     `).get(platform, platform, platform) as { chat: number; emb: number; media: number };
-    if (row.chat > 0 && row.emb > 0 && row.media > 0) return empty;
+    if (row.chat > 0 || row.emb > 0 || row.media > 0) return empty;
   }
 
   const db = getDb();
@@ -722,9 +722,9 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     for (const m of rawModels) {
       if (m?.premium === false || m?.token_multiplier === 0) freeIds.add(m.id);
     }
-    const beforeCount = freeModels.length;
-    freeModels = freeModels.filter(m => freeIds.has(m.id));
-    console.log(`[auto-discover] navy: premium:false filter (${beforeCount} → ${freeModels.length} models)`);
+    const beforeCount = chatModels.length;
+    verifiedChatModels = chatModels.filter(m => freeIds.has(m.id));
+    console.log(`[auto-discover] navy: premium:false filter (${beforeCount} → ${verifiedChatModels.length} models)`);
   } else if (hasAccessTierField) {
     const { probeFreeAccess } = await import('../providers/xkiro.js');
     verifiedChatModels = [];
@@ -947,7 +947,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
       db.prepare("DELETE FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0").run(platform);
 
       const ownedRows = db.prepare(
-        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 1 AND source IN ('user', 'discovered')",
+        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 1",
       ).all(platform) as { id: number; model_id: string }[];
       for (const row of ownedRows) {
         if (stillOffered.has(row.id)) continue;
@@ -1165,14 +1165,14 @@ export async function autoDiscoverAll(): Promise<void> {
 
   for (const { platform } of configured) {
     if (SKIP_AUTO_DISCOVER.has(platform)) continue;
-    // Skip platforms that already have all three model types
+    // Skip platforms that already have models registered
     const counts = db.prepare(`
       SELECT
         (SELECT COUNT(*) FROM models WHERE platform = ? AND enabled = 1) AS chat,
         (SELECT COUNT(*) FROM embedding_models WHERE platform = ? AND enabled = 1) AS emb,
         (SELECT COUNT(*) FROM media_models WHERE platform = ? AND enabled = 1) AS media
     `).get(platform, platform, platform) as { chat: number; emb: number; media: number };
-    if (counts.chat > 0 && counts.emb > 0 && counts.media > 0) continue;
+    if (counts.chat > 0 || counts.emb > 0 || counts.media > 0) continue;
 
     try {
       await autoDiscoverModels(platform);

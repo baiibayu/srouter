@@ -23,6 +23,17 @@
     "modelBehavior": "default"
   },
   {
+    "id": "gemini",
+    "name": "Gemini CLI",
+    "category": "code",
+    "configType": "file",
+    "protocol": "Google Gemini",
+    "baseUrlSupport": "root",
+    "command": "setup-gemini",
+    "docsUrl": "https://github.com/google-gemini/gemini-cli",
+    "modelBehavior": "default"
+  },
+  {
     "id": "cline",
     "name": "Cline",
     "category": "code",

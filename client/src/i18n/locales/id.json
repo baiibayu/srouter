@@ -1293,7 +1293,8 @@
       "openclaude": "CLI kompatibel Claude yang merutekan request melalui gateway kompatibel OpenAI.",
       "atomcode": "Ekstensi Atom IDE yang terintegrasi dengan gateway kompatibel OpenAI.",
       "reasonix": "Agen coding terminal yang dibuat khusus untuk DeepSeek, dibangun di sekitar prefix caching agar sesi panjang tetap murah.",
-      "zcode": "Klien terminal untuk runtime agen ZCode, dengan perutean multi-provider dan alur kerja dinamis."
+      "zcode": "Klien terminal untuk runtime agen ZCode, dengan perutean multi-provider dan alur kerja dinamis.",
+      "gemini": "Agent terminal resmi Google untuk pembuatan kode, inspeksi workspace, dan alur kerja Google Generative AI."
     },
     "modelNoteFull": "Setup membawa semua model (auto, auto:*, fusion)",
     "modelNoteDefault": "Setup hanya membawa auto — pilih model lain via UI agent",

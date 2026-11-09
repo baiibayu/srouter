@@ -183,9 +183,13 @@ export class OpenAICompatProvider extends BaseProvider {
    * old error.message-only read collapsed that to "Bad Request", so neither the
    * logs nor the error classifier could ever see the DEGRADED marker (#522). */
   private upstreamErrorText(errBody: unknown, res: Response): string {
-    const e = errBody as { error?: { message?: unknown }; detail?: unknown; title?: unknown };
+    const e = errBody as { error?: { message?: unknown }; message?: unknown; detail?: unknown; title?: unknown };
     if (typeof e?.error?.message === 'string' && e.error.message) return e.error.message;
+    if (typeof e?.message === 'string' && e.message) return e.message;
     if (typeof e?.detail === 'string' && e.detail) return e.detail;
+    if (Array.isArray(e?.detail)) {
+      return e.detail.map((d: any) => d?.msg || JSON.stringify(d)).join('; ');
+    }
     if (typeof e?.title === 'string' && e.title) return e.title;
     return res.statusText;
   }
@@ -231,39 +235,87 @@ export class OpenAICompatProvider extends BaseProvider {
   private messagesForPlatform(messages: ChatMessage[], modelId: string): ChatMessage[] {
     if (OpenAICompatProvider.STRICT_PLATFORMS.has(this.platform)) {
       // Rebuild every message from a whitelist of keys, so `partial` and the
-      // reasoning extensions never reach these platforms.
-      return messages.map((m) => {
+      // reasoning extensions never reach these platforms. Also repair tool call
+      // pairing and role sequences so strict validators (Mistral) don't 400 with
+      // "Unexpected role 'tool' after role 'user'" or "Not the same number of function calls and responses".
+      const out: ChatMessage[] = [];
+      const pendingCallIds = new Set<string>();
+
+      const flushPendingCalls = () => {
+        if (pendingCallIds.size > 0) {
+          for (const callId of pendingCallIds) {
+            out.push({ role: 'tool', tool_call_id: callId, content: '{}' });
+          }
+          pendingCallIds.clear();
+        }
+      };
+
+      for (const m of messages) {
         if (m.role === 'assistant') {
-          return {
-            role: m.role,
-            content: m.content,
-            ...(m.name ? { name: m.name } : {}),
-            ...(m.tool_calls && m.tool_calls.length > 0 ? {
-              tool_calls: m.tool_calls.map((tc) => ({
+          flushPendingCalls();
+          const hasToolCalls = (m.tool_calls && m.tool_calls.length > 0) ?? false;
+          let safeContent = hasToolCalls ? (m.content ?? null) : (m.content ?? '');
+          if (Array.isArray(safeContent)) {
+            // Filter out unsupported reasoning blocks from array content
+            const cleaned = safeContent.filter((b: any) => b && b.type !== 'reasoning' && b.type !== 'thought');
+            safeContent = (this.platform === 'mistral' && cleaned.length === 1 && (cleaned[0] as any).type === 'text')
+              ? (cleaned[0] as any).text
+              : cleaned;
+          }
+          const toolCalls = hasToolCalls
+            ? m.tool_calls!.map((tc) => ({
                 id: tc.id,
                 type: tc.type,
                 function: {
                   name: tc.function.name,
                   arguments: tc.function.arguments,
                 },
-              })),
-            } : {}),
-          };
-        }
-        if (m.role === 'tool') {
-          return {
+              }))
+            : undefined;
+
+          if (toolCalls) {
+            for (const tc of toolCalls) {
+              if (tc.id) pendingCallIds.add(tc.id);
+            }
+          }
+
+          out.push({
+            role: 'assistant',
+            content: safeContent,
+            ...(m.name ? { name: m.name } : {}),
+            ...(toolCalls ? { tool_calls: toolCalls } : {}),
+          });
+        } else if (m.role === 'tool') {
+          const callId = m.tool_call_id;
+          if (callId && pendingCallIds.has(callId)) {
+            pendingCallIds.delete(callId);
+            out.push({
+              role: 'tool',
+              content: m.content,
+              tool_call_id: callId,
+              ...(m.name ? { name: m.name } : {}),
+            });
+          } else {
+            // Orphan tool message without an open tool_call: convert to user message
+            // so strict validators don't reject "Unexpected role 'tool' after role 'user'"
+            const text = contentToString(m.content);
+            out.push({
+              role: 'user',
+              content: text ? `[Tool Result: ${text}]` : '[Tool Result: completed]',
+            });
+          }
+        } else {
+          // user or system message: keep original content verbatim so multimodal array blocks are preserved
+          flushPendingCalls();
+          out.push({
             role: m.role,
             content: m.content,
-            ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
             ...(m.name ? { name: m.name } : {}),
-          };
+          });
         }
-        return {
-          role: m.role,
-          content: m.content,
-          ...(m.name ? { name: m.name } : {}),
-        };
-      });
+      }
+      flushPendingCalls();
+      return out;
     }
 
     // Moonshot's assistant `partial` prefill flag only survives to the wire

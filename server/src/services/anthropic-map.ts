@@ -14,15 +14,16 @@ import { getDb, getSetting, setSetting } from '../db/index.js';
 
 const SETTING_KEY = 'anthropic_model_map';
 
-export const CLAUDE_FAMILIES = ['default', 'opus', 'sonnet', 'haiku'] as const;
+export const CLAUDE_FAMILIES = ['default', 'fable', 'opus', 'sonnet', 'haiku'] as const;
 export type ClaudeFamily = (typeof CLAUDE_FAMILIES)[number];
 // Each value is either the sentinel 'auto' or a catalog model_id.
 export type AnthropicModelMap = Record<ClaudeFamily, string>;
 
-const DEFAULT_MAP: AnthropicModelMap = { default: 'auto', opus: 'auto', sonnet: 'auto', haiku: 'auto' };
+const DEFAULT_MAP: AnthropicModelMap = { default: 'auto', fable: 'auto', opus: 'auto', sonnet: 'auto', haiku: 'auto' };
 
 export const anthropicModelMapSchema = z.object({
   default: z.string().min(1).optional(),
+  fable: z.string().min(1).optional(),
   opus: z.string().min(1).optional(),
   sonnet: z.string().min(1).optional(),
   haiku: z.string().min(1).optional(),
@@ -38,6 +39,7 @@ export function getClaudeModelMap(): AnthropicModelMap {
       opus: typeof p.opus === 'string' && p.opus ? p.opus : 'auto',
       sonnet: typeof p.sonnet === 'string' && p.sonnet ? p.sonnet : 'auto',
       haiku: typeof p.haiku === 'string' && p.haiku ? p.haiku : 'auto',
+      fable: typeof p.fable === 'string' && p.fable ? p.fable : 'auto',
     };
   } catch {
     return { ...DEFAULT_MAP };
@@ -52,6 +54,7 @@ export function setClaudeModelMap(input: unknown): AnthropicModelMap {
     opus: patch.opus ?? current.opus,
     sonnet: patch.sonnet ?? current.sonnet,
     haiku: patch.haiku ?? current.haiku,
+    fable: patch.fable ?? current.fable,
   };
   setSetting(SETTING_KEY, JSON.stringify(next));
   return next;
@@ -62,9 +65,10 @@ export function setClaudeModelMap(input: unknown): AnthropicModelMap {
 export function classifyClaudeFamily(model?: string): ClaudeFamily | null {
   const m = (model ?? '').trim().toLowerCase();
   if (!m || m === 'auto' || m === 'default' || m === 'srouter-auto') return 'default';
-  // Claude Code's planning alias is opus-ish by name but must hit the catch-all,
+  // Claude Code's planning alias is opusplan-ish by name but must hit the catch-all,
   // so match it before the substring family checks below.
   if (m === 'opusplan' || m === 'opusplan-4') return 'default';
+  if (m.includes('fable')) return 'fable';
   if (m.includes('opus')) return 'opus';
   if (m.includes('sonnet')) return 'sonnet';
   if (m.includes('haiku')) return 'haiku';
@@ -136,9 +140,22 @@ export function resolveAnthropicModel(model?: string): ResolvedAnthropicModel {
 // the gateway really will serve. The display name says where the request
 // actually goes so nobody reads the entry as hosted Claude.
 export const CLAUDE_FAMILY_ALIASES: { id: string; family: ClaudeFamily; label: string }[] = [
-  { id: 'claude-opus-4-5', family: 'opus', label: 'Opus' },
-  { id: 'claude-sonnet-4-5', family: 'sonnet', label: 'Sonnet' },
-  { id: 'claude-haiku-4-5', family: 'haiku', label: 'Haiku' },
+  { id: 'claude-fable-5', family: 'fable', label: 'Claude Fable 5' },
+  { id: 'claude-opus-5', family: 'opus', label: 'Claude Opus 5' },
+  { id: 'claude-opus-4-6', family: 'opus', label: 'Claude Opus 4.6' },
+  { id: 'claude-opus-4-5', family: 'opus', label: 'Claude Opus 4.5' },
+  { id: 'claude-3-opus-20240229', family: 'opus', label: 'Claude 3 Opus' },
+  { id: 'claude-3-opus', family: 'opus', label: 'Claude 3 Opus' },
+  { id: 'claude-3-7-sonnet-20250219', family: 'sonnet', label: 'Claude 3.7 Sonnet' },
+  { id: 'claude-3-7-sonnet', family: 'sonnet', label: 'Claude 3.7 Sonnet' },
+  { id: 'claude-3-5-sonnet-20241022', family: 'sonnet', label: 'Claude 3.5 Sonnet' },
+  { id: 'claude-3-5-sonnet', family: 'sonnet', label: 'Claude 3.5 Sonnet' },
+  { id: 'claude-sonnet-5', family: 'sonnet', label: 'Claude Sonnet 5' },
+  { id: 'claude-sonnet-4-6', family: 'sonnet', label: 'Claude Sonnet 4.6' },
+  { id: 'claude-sonnet-4-5', family: 'sonnet', label: 'Claude Sonnet 4.5' },
+  { id: 'claude-3-5-haiku-20241022', family: 'haiku', label: 'Claude 3.5 Haiku' },
+  { id: 'claude-3-5-haiku', family: 'haiku', label: 'Claude 3.5 Haiku' },
+  { id: 'claude-haiku-4-5', family: 'haiku', label: 'Claude Haiku 4.5' },
 ];
 
 // Discovery entries for the family aliases, named after where each one routes:

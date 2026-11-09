@@ -1310,10 +1310,64 @@ function generic(ctx: GenerateContext): Generation {
   };
 }
 
+function gemini(ctx: GenerateContext): Generation {
+  const model = primaryModel(ctx.models, ctx.requestedModelId);
+  const directory = posixPath(ctx.homeDir, '.gemini');
+  const settingsPath = posixPath(directory, 'settings.json');
+  return {
+    files: [
+      {
+        path: settingsPath,
+        format: 'json',
+        sensitive: true,
+        value: {
+          security: {
+            auth: {
+              selectedType: 'gemini-api-key',
+            },
+          },
+          env: {
+            GEMINI_API_KEY: ctx.apiKey,
+            GOOGLE_GEMINI_BASE_URL: rootUrl(ctx.url),
+            GEMINI_MODEL: model.id,
+          },
+          mcpServers: {
+            srouter: {
+              type: 'http',
+              url: `${rootUrl(ctx.url)}/mcp`,
+              headers: {
+                Authorization: `Bearer ${ctx.apiKey}`,
+              },
+            },
+          },
+        },
+      },
+      {
+        path: posixPath(directory, '.env'),
+        format: 'env',
+        sensitive: true,
+        content: [
+          `GEMINI_API_KEY=${ctx.apiKey}`,
+          `GOOGLE_GEMINI_BASE_URL=${rootUrl(ctx.url)}`,
+          `GEMINI_MODEL=${model.id}`,
+          '',
+        ].join('\n'),
+      },
+    ],
+    notes: [
+      'Gemini CLI will read this configuration automatically.',
+      `Endpoint: ${rootUrl(ctx.url)}`,
+      'Model mapping is active for Gemini Pro, Flash, and Flash-Lite.',
+      `MCP: wrote mcpServers.srouter -> ${settingsPath}`,
+    ],
+  };
+}
+
 const metadata = [
 
   ['claude', 'Claude Code', 'code', 'file', 'Anthropic Messages', 'root', 'setup-claude', 'https://docs.anthropic.com/en/docs/claude-code', 'default', claude],
   ['codex', 'Codex CLI', 'code', 'file', 'OpenAI Responses', '/v1', 'setup-codex', 'https://developers.openai.com/codex', 'default', codex],
+  ['gemini', 'Gemini CLI', 'code', 'file', 'Google Gemini', 'root', 'setup-gemini', 'https://github.com/google-gemini/gemini-cli', 'default', gemini],
   ['cline', 'Cline', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-cline', 'https://docs.cline.bot', 'default', cline],
   ['continue', 'Continue', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-continue', 'https://docs.continue.dev', 'default', continueDev],
   ['aider', 'Aider', 'code', 'file', 'OpenAI Chat', '/v1', 'setup-aider', 'https://aider.chat/docs', 'default', aider],

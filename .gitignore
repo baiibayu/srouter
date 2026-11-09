@@ -54,6 +54,7 @@ server/LICENSE
 
 # Internal agent notes — personal paths, session logs, never public
 AGENTS.md
+GEMINI.md
 HANDOFF.md
 PROVIDER_CLASSIFICATION.md
 .claude/settings.local.json

@@ -60,7 +60,7 @@ export function classifyClientAgent(req: Request): ClientAgent {
   if (/claude[- ]?code|\bclaude-cli\b/.test(ua)) return 'claude-code';
   if (/\bcodex\b/.test(ua)) return 'codex';
   if (/qwen[- ]?code|\bqwen-cli\b/.test(ua)) return 'qwen-code';
-  if (/gemini[- /]?cli/.test(ua)) return 'gemini-cli';
+  if (/gemini[- /]?cli|@google\/gemini-cli/.test(ua) || Boolean(header(req, 'x-goog-api-client'))) return 'gemini-cli';
   if (/kilo[- ]?code|\bkilocode\b/.test(ua)) return 'kilo-code';
   if (/\bcrush(?:\/|\s|$)/.test(ua)) return 'crush';
   // `deepseek-harness/<version> (+https://github.com/deepseek-ai/deepseek-harness)`
@@ -107,7 +107,7 @@ export function classifyClientAgent(req: Request): ClientAgent {
 
   // Wire-format fallbacks for clients with no recognizable UA.
   if (path.startsWith('/v1/responses') || tokenizedPath.startsWith('/responses')) return 'codex';
-  if (path.startsWith('/v1beta/')) return 'gemini-cli';
+  if (path.startsWith('/v1beta')) return 'gemini-cli';
   if (path.startsWith('/v1/messages')) {
     // anthropic.ts session affinity treats x-session-id as a Claude Code
     // signal on this surface; anything else Anthropic-shaped stays coarse.

@@ -15,23 +15,20 @@ import { UnifiedKeySection } from '@/components/keys/unified-key-section'
 import { ClientProfilesSection } from '@/components/keys/client-profiles-section'
 import { ProxySettingsSection } from '@/components/keys/proxy-settings-section'
 import { BackupsSection } from '@/components/keys/backups-section'
-import { AnthropicSection } from '@/components/keys/anthropic-section'
 import { ProviderList } from '@/components/keys/provider-list'
 import { ProviderChecklistSection } from '@/components/keys/provider-checklist-section'
 import { WebSearchSection } from '@/components/keys/web-search-section'
 import { AddKeyDialog } from '@/components/keys/add-key-dialog'
 import { ExportKeysDialog } from '@/components/keys/export-keys-dialog'
-import { AgentCompatibilitySection } from '@/components/keys/agent-compatibility-section'
+import { UrlTokensSection } from '@/components/keys/url-tokens-section'
 import { SyncAllResultsDialog, type SyncAllResult } from '@/components/keys/sync-all-results-dialog'
 
-type KeysTab = 'providers' | 'webSearch' | 'quotaSignals' | 'apiKey' | 'anthropic' | 'agents'
+type KeysTab = 'providers' | 'webSearch' | 'quotaSignals' | 'apiKey'
 const KEYS_TABS: { id: KeysTab; labelKey: string }[] = [
   { id: 'providers', labelKey: 'keys.tabProviders' },
   { id: 'webSearch', labelKey: 'keys.tabWebSearch' },
   { id: 'quotaSignals', labelKey: 'keys.tabQuotaSignals' },
   { id: 'apiKey', labelKey: 'keys.tabApiKey' },
-  { id: 'anthropic', labelKey: 'keys.tabAnthropic' },
-  { id: 'agents', labelKey: 'keys.tabAgents' },
 ]
 
 export default function KeysPage() {
@@ -156,13 +153,12 @@ export default function KeysPage() {
           <>
             <UnifiedKeySection />
             <ClientProfilesSection />
+            <UrlTokensSection />
             <ProxySettingsSection />
             <BackupsSection />
           </>
         )}
 
-        {tab === 'anthropic' && <AnthropicSection />}
-        {tab === 'agents' && <AgentCompatibilitySection />}
         {tab === 'webSearch' && <WebSearchSection />}
 
         {tab === 'quotaSignals' && (

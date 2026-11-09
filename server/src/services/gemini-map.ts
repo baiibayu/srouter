@@ -79,3 +79,32 @@ export function resolveGeminiModel(model?: string): string {
   }
   return raw || 'auto';
 }
+
+export const GEMINI_FAMILY_ALIASES: { id: string; family: GeminiFamily; label: string }[] = [
+  { id: 'gemini-3.5-flash-lite', family: 'flashLite', label: 'Gemini 3.5 Flash-Lite' },
+  { id: 'gemini-3.1-pro-preview', family: 'pro', label: 'Gemini 3.1 Pro Preview' },
+  { id: 'gemini-3.1-pro', family: 'pro', label: 'Gemini 3.1 Pro' },
+  { id: 'gemini-3.5-flash', family: 'flash', label: 'Gemini 3.5 Flash' },
+  { id: 'gemini-3.8-flash', family: 'flash', label: 'Gemini 3.8 Flash' },
+  { id: 'gemini-2.5-pro', family: 'pro', label: 'Gemini 2.5 Pro' },
+  { id: 'gemini-2.5-flash', family: 'flash', label: 'Gemini 2.5 Flash' },
+  { id: 'gemini-2.5-flash-lite', family: 'flashLite', label: 'Gemini 2.5 Flash-Lite' },
+  { id: 'gemini-2.0-flash', family: 'flash', label: 'Gemini 2.0 Flash' },
+  { id: 'gemini-2.0-flash-lite', family: 'flashLite', label: 'Gemini 2.0 Flash-Lite' },
+  { id: 'gemini-1.5-pro', family: 'pro', label: 'Gemini 1.5 Pro' },
+  { id: 'gemini-1.5-flash', family: 'flash', label: 'Gemini 1.5 Flash' },
+];
+
+export function geminiFamilyDiscoveryEntries(): { id: string; displayName: string; family: GeminiFamily }[] {
+  const map = getGeminiModelMap();
+  return GEMINI_FAMILY_ALIASES.map(({ id, family, label }) => {
+    const target = map[family];
+    return {
+      id,
+      displayName: !target || target === 'auto'
+        ? `${label} (Auto)`
+        : `${label} (→ ${target})`,
+      family,
+    };
+  });
+}

@@ -190,6 +190,44 @@ export async function resetAgent(id: string): Promise<SetupResult> {
         break;
       }
 
+      case 'gemini': {
+        const geminiSettings = path.join(home, '.gemini', 'settings.json');
+        if (fs.existsSync(geminiSettings)) {
+          try {
+            const raw = fs.readFileSync(geminiSettings, 'utf8');
+            const data = JSON.parse(raw);
+            if (data.env && typeof data.env === 'object') {
+              delete data.env.GEMINI_API_KEY;
+              delete data.env.GOOGLE_GEMINI_BASE_URL;
+              delete data.env.GEMINI_MODEL;
+              if (Object.keys(data.env).length === 0) {
+                delete data.env;
+              }
+            }
+            if (data.security?.auth?.selectedType === 'gemini-api-key') {
+              delete data.security.auth.selectedType;
+              if (Object.keys(data.security.auth).length === 0) {
+                delete data.security.auth;
+              }
+              if (Object.keys(data.security).length === 0) {
+                delete data.security;
+              }
+            }
+            if (data.mcpServers?.srouter) {
+              delete data.mcpServers.srouter;
+              if (Object.keys(data.mcpServers).length === 0) {
+                delete data.mcpServers;
+              }
+            }
+            fs.writeFileSync(geminiSettings, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+          } catch {
+            // Ignore
+          }
+        }
+        removeLinesMatching(path.join(home, '.gemini', '.env'), /^(GEMINI_API_KEY|GOOGLE_GEMINI_BASE_URL|GEMINI_MODEL)=/);
+        break;
+      }
+
       case 'cline': {
         const providersPath = path.join(home, '.cline', 'data', 'settings', 'providers.json');
         if (fs.existsSync(providersPath)) {

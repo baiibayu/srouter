@@ -410,6 +410,7 @@ ollamaRouter.post('/api/chat', (req, res) => {
   const sessionId = Array.isArray(rawSession) ? rawSession[0] : rawSession;
   return runInboundChat(req, res, {
     model,
+    requestedModel: body.model ?? model,
     messages: ollamaMessages(body.messages),
     stream: body.stream !== false,
     maxTokens: typeof options?.num_predict === 'number' ? options.num_predict : undefined,
@@ -530,6 +531,7 @@ ollamaRouter.post('/api/generate', (req, res) => {
   });
   return runInboundChat(req, res, {
     model,
+    requestedModel: body.model ?? model,
     messages,
     stream: body.stream !== false,
     maxTokens: typeof options?.num_predict === 'number' ? options.num_predict : undefined,
