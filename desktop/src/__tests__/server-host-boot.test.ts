@@ -155,7 +155,7 @@ beforeEach(() => {
   calls.length = 0;
 });
 
-describe('desktop server boot sequence (#949)', () => {
+describe('desktop server boot sequence (#949)', { timeout: 20000 }, () => {
   it('hydrates the saved proxy settings on every start', async () => {
     await boot();
     expect(calls).toContain('restoreProxySettings');

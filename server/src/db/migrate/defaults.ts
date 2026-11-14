@@ -58,7 +58,6 @@ import * as apiKeyProxyPool from '../migrations/20261105_000001_api_key_proxy_po
 import * as cloudflareNeuronUsage from '../migrations/20261104_000001_cloudflare_neuron_usage.js';
 import * as seedSpeechifyMediaModels from '../migrations/20261111_000001_seed_speechify_media_models.js';
 import * as decommissionWebshareProxies from '../migrations/20261111_000002_decommission_webshare_proxies.js';
-import * as purgeObsoleteDisabledModels from '../migrations/20261112_000001_purge_obsolete_disabled_models.js';
 import * as removeDeadPlatformRouter9 from '../migrations/20261112_000002_remove_dead_platform_router9.js';
 import * as disableUnorouterBrokenGemini from '../migrations/20261112_000003_disable_unorouter_broken_gemini.js';
 import * as decommissionUnorouter from '../migrations/20261112_000004_decommission_unorouter.js';
@@ -133,7 +132,6 @@ export const FIX_DECISION_CHAT_JUDGE_ORDER_FILENAME = '20261022_000001_fix_decis
 export const PROXY_POOLS_FILENAME = '20261023_000001_proxy_pools.ts';
 export const PROXY_CONDITIONAL_ROUTING_FILENAME = '20261024_000001_proxy_conditional_routing.ts';
 
-export const PURGE_OBSOLETE_DISABLED_MODELS_FILENAME = '20261112_000001_purge_obsolete_disabled_models.ts';
 export const REMOVE_DEAD_PLATFORM_ROUTER9_FILENAME = '20261112_000002_remove_dead_platform_router9.ts';
 export const DISABLE_UNOROUTER_BROKEN_GEMINI_FILENAME = '20261112_000003_disable_unorouter_broken_gemini.ts';
 export const DECOMMISSION_UNOROUTER_FILENAME = '20261112_000004_decommission_unorouter.ts';
@@ -198,7 +196,6 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: API_KEY_PROXY_POOL_FILENAME, module: apiKeyProxyPool },
   { filename: SEED_SPEECHIFY_MEDIA_MODELS_FILENAME, module: seedSpeechifyMediaModels },
   { filename: DECOMMISSION_WEBSHARE_PROXIES_FILENAME, module: decommissionWebshareProxies },
-  { filename: PURGE_OBSOLETE_DISABLED_MODELS_FILENAME, module: purgeObsoleteDisabledModels },
   { filename: REMOVE_DEAD_PLATFORM_ROUTER9_FILENAME, module: removeDeadPlatformRouter9 },
   { filename: DISABLE_UNOROUTER_BROKEN_GEMINI_FILENAME, module: disableUnorouterBrokenGemini },
   { filename: DECOMMISSION_UNOROUTER_FILENAME, module: decommissionUnorouter },

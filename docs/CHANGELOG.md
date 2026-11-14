@@ -1,15 +1,25 @@
-## 2026-11-15 — 0.2.2
+## 2026-11-15 — 0.2.19
 
 | Commit | Date | Summary |
 | --- | --- | --- |
-| `release` | 2026-11-15 | feat(guard): introduce in-band upstream bot refusal and lockout detection (`isUpstreamBotFailureOutput`, `couldBecomeBotFailure`) targeting Google Gemini Web bot lockouts ("I can't use Google Drive..."), Cloudflare challenge walls, and login gates across inbound chat, Anthropic, and proxy routes. |
-| `release` | 2026-11-15 | fix(loop-breaker): enforce session affinity breaking on repetitive model output loops, preventing coding agents (Claude Code, Orca) from getting stuck in repetitive upstream bot failure responses. |
-| `release` | 2026-11-15 | fix(providers): decommission UnoRouter broken tool models and disable broken Gemini endpoints (`20261112_000003`, `20261112_000004`), disabling non-functional tools and purging from fallback chains. |
+| `release` | 2026-11-15 | fix(guard): introduce in-band upstream bot refusal and lockout detection (`isUpstreamBotFailureOutput`, `couldBecomeBotFailure`) targeting Google Gemini Web bot lockouts ("I can't use Google Drive..."), Cloudflare challenge walls, and login gates. |
+| `release` | 2026-11-15 | fix(routes): wire in-band bot failure guard into Anthropic streaming & non-streaming response handlers (`server/src/routes/anthropic.ts`). |
+| `release` | 2026-11-15 | fix(routes): wire in-band bot failure guard into inbound chat handlers (`server/src/lib/inbound-chat.ts`). |
+| `release` | 2026-11-15 | fix(routes): wire in-band bot failure guard into `/v1/chat/completions` proxy handler (`server/src/routes/proxy.ts`). |
+| `release` | 2026-11-15 | fix(routes): wire in-band bot failure guard into `/v1/responses` handler (`server/src/routes/responses.ts`). |
+| `release` | 2026-11-15 | fix(loop-breaker): enforce session affinity breaking on repetitive model output loops, invalidating sticky sessions to allow fallback escalation for coding agents (Claude Code, Orca). |
+| `release` | 2026-11-15 | fix(providers): decommission UnoRouter from fallback chains and profile models (`20261112_000004`), disabling non-functional tools. |
+| `release` | 2026-11-15 | fix(providers): disable UnoRouter broken Gemini endpoints (`20261112_000003`). |
 | `release` | 2026-11-15 | refactor(providers): permanently remove dead platform `Router9` across provider adapters, bundled catalog, schema, key parsers, and UI components (`20261112_000002`). |
-| `release` | 2026-11-15 | feat(providers): add native provider integrations and discovery for FreeInference, Nabh, NavyAI (free tier filter fix), and NovAI. |
+| `release` | 2026-11-15 | feat(providers): add FreeInference native provider integration and unit test suite (`server/src/providers/freeinference.ts`). |
+| `release` | 2026-11-15 | feat(providers): add Nabh native provider integration (`server/src/providers/nabh.ts`). |
+| `release` | 2026-11-15 | feat(providers): add NovAI native provider integration (`server/src/providers/novai.ts`). |
+| `release` | 2026-11-15 | fix(providers): fix NavyAI free-tier filter to strictly enforce `premium: false` on verified models. |
 | `release` | 2026-11-15 | feat(quotas): implement Cloudflare daily neuron usage tracking (`20261104_000001`) and quota consumption service. |
-| `release` | 2026-11-15 | feat(media): seed Speechify TTS media models (`20261111_000001`) and decommission legacy Webshare proxies (`20261111_000002`). |
-| `release` | 2026-11-15 | test(resilience): add comprehensive test suites for upstream bot failure classification, Cloudflare neurons, FreeInference, and migration roundtrip integrity. |
+| `release` | 2026-11-15 | feat(media): seed Speechify TTS media models (`20261111_000001`). |
+| `release` | 2026-11-15 | feat(proxy): decommission legacy Webshare proxies (`20261111_000002`). |
+| `release` | 2026-11-15 | docs(providers): add Septor documentation (`docs/septor.md`). |
+| `release` | 2026-11-15 | chore(supervisor): formalize supervisor daemon architecture with sub-2s child process reload without closing TCP port 20268 (`scripts/supervisor.cjs`). |
 
 ## 2026-11-09 — 0.2.1
 

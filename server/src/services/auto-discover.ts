@@ -946,32 +946,31 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
 
     // Clean out chat rows this platform's discovery created or active models that upstream dropped (matching OpenCode clean sync)
     if (stillOffered.size > 0) {
-      // Auto-prune stale disabled rows for this platform since live upstream is now authoritative
-      const deadRows = db.prepare(
-        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL"
+      // Auto-prune stale catalog-disabled rows for this platform since live upstream is now authoritative
+      const deadCatalogRows = db.prepare(
+        "SELECT id, model_id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0"
       ).all(platform) as { id: number; model_id: string }[];
-      for (const d of deadRows) {
+      for (const d of deadCatalogRows) {
         recordCatalogModelTombstone(db, 'chat', platform, d.model_id, {
           source: 'upstream_eol',
           reason: 'Upstream provider no longer lists model',
         });
       }
-      db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL)").run(platform);
-      db.prepare("DELETE FROM profile_models WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL)").run(platform);
-      db.prepare("DELETE FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL").run(platform);
+      db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0)").run(platform);
+      db.prepare("DELETE FROM profile_models WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0)").run(platform);
+      db.prepare("DELETE FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0").run(platform);
 
       const ownedRows = db.prepare(
-        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 1 AND key_id IS NULL",
+        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 1",
       ).all(platform) as { id: number; model_id: string }[];
       for (const row of ownedRows) {
         if (stillOffered.has(row.id)) continue;
+        benchModel.run(row.id);
+        db.prepare('UPDATE fallback_config SET enabled = 0 WHERE model_db_id = ?').run(row.id);
         recordCatalogModelTombstone(db, 'chat', platform, row.model_id, {
           source: 'upstream_eol',
           reason: 'Upstream provider no longer lists model',
         });
-        db.prepare('DELETE FROM fallback_config WHERE model_db_id = ?').run(row.id);
-        db.prepare('DELETE FROM profile_models WHERE model_db_id = ?').run(row.id);
-        db.prepare('DELETE FROM models WHERE id = ?').run(row.id);
         benched++;
         retiredModelNames.push(row.model_id);
       }
