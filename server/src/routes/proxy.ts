@@ -1521,7 +1521,6 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
         let totalOutputTokens = 0;
         let headerSent = false;
         let ttfbMs: number | null = null;
-        const attemptStart = Date.now();
         let sawText = false;
         let upstreamFinish: string | null = null;
         const buffered: unknown[] = [];
