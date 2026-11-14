@@ -61,10 +61,10 @@ describe('GET /api/keys/providers — provider checklist (#543)', () => {
       .toMatchObject({ platform: 'llmtr', name: 'LLMTR', configured: false, keyless: false });
     expect(body.providers.find((p: { platform: string }) => p.platform === 'plugsky'))
       .toMatchObject({ platform: 'plugsky', name: 'Plugsky', configured: false, keyless: false });
-    for (const [platform, name] of [['gizmo', 'Gizmo'], ['blockrun', 'BlockRun']]) {
-      expect(body.providers.find((p: { platform: string }) => p.platform === platform))
-        .toMatchObject({ platform, name, configured: false, keyless: false });
-    }
+    expect(body.providers.find((p: { platform: string }) => p.platform === 'gizmo'))
+      .toMatchObject({ platform: 'gizmo', name: 'Gizmo', configured: false, keyless: false });
+    expect(body.providers.find((p: { platform: string }) => p.platform === 'blockrun'))
+      .toMatchObject({ platform: 'blockrun', name: 'BlockRun', configured: false, keyless: true });
     expect(body.summary).toEqual({
       total: body.providers.length,
       configured: 0,

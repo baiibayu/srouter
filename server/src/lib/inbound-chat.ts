@@ -26,6 +26,7 @@ import {
   runFallbackLoop,
   setExhaustionHeaders,
   setFallbackHeaders,
+  REASONING_HOLD_MAX_MS,
   type AttemptRecord,
   type ExhaustionBody,
 } from './fallback-loop.js';
@@ -43,7 +44,7 @@ import {
   startsWithDialectMarker,
 } from './tool-call-rescue.js';
 import { sanitizeProviderErrorMessage } from './error-redaction.js';
-import { newClientAbortError, isUpstreamClassificationOutput } from './error-classify.js';
+import { newClientAbortError, isUpstreamClassificationOutput, isUpstreamBotFailureOutput, couldBecomeBotFailure } from './error-classify.js';
 import { logRequest } from './request-log.js';
 import { getStickyModel, setStickyModel } from '../routes/proxy.js';
 import { breakLoop } from '../services/loop-breaker.js';
@@ -333,12 +334,11 @@ export async function runInboundChat(
             result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
           );
         }
-        // #809: a bare "safe"/"unsafe" classification word from a relay is an
-        // upstream filter, not the requested model — fail over like an empty
-        // completion.
-        if (isUpstreamClassificationOutput(text, route.platform) && toolCalls.length === 0) {
+        // #809: a bare "safe"/"unsafe" classification word or bot failure lockout
+        // from a relay is an upstream failure, not the requested model — fail over.
+        if ((isUpstreamClassificationOutput(text, route.platform) || isUpstreamBotFailureOutput(text, route.platform)) && toolCalls.length === 0) {
           throw Object.assign(
-            new Error(`empty completion from ${route.displayName} (upstream classification output)`),
+            new Error(`empty completion from ${route.displayName} (upstream bot failure output)`),
             result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
           );
         }
@@ -425,6 +425,7 @@ export async function runInboundChat(
       }
 
       let committed = false;
+      const attemptStart = Date.now();
       let text = '';
       let reasoning = '';
       let finishReason: string | null = null;
@@ -440,6 +441,9 @@ export async function runInboundChat(
       let heldReasoning = '';
       const commit = () => {
         if (committed) return;
+        if (isUpstreamBotFailureOutput(text, route.platform) || isUpstreamBotFailureOutput(heldText, route.platform)) {
+          throw new Error(`in-band provider error from ${route.displayName}: upstream bot failure output`);
+        }
         res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
         setFallbackHeaders(res, attempt, attemptLog);
         wire.startStream(res, route);
@@ -471,7 +475,7 @@ export async function runInboundChat(
           if (deltaText) {
             text += deltaText;
             outputTokens += Math.ceil(deltaText.length / 4);
-            if (!wantsTools || dialectMode === 'passthrough') {
+            if ((!wantsTools || dialectMode === 'passthrough') && !couldBecomeBotFailure(text)) {
               commit();
               wire.sendTextDelta(res, route, deltaText);
             } else {
@@ -479,7 +483,7 @@ export async function runInboundChat(
               const probe = heldText.trimStart();
               if (startsWithDialectMarker(probe)) {
                 dialectMode = 'dialect';
-              } else if (!couldBecomeDialectMarker(probe) || heldText.length > 256) {
+              } else if ((!couldBecomeDialectMarker(probe) && !couldBecomeBotFailure(probe)) || heldText.length > 256) {
                 dialectMode = 'passthrough';
                 commit();
                 wire.sendTextDelta(res, route, heldText);
@@ -490,6 +494,8 @@ export async function runInboundChat(
           if (typeof deltaReasoning === 'string' && deltaReasoning) {
             reasoning += deltaReasoning;
             outputTokens += Math.ceil(deltaReasoning.length / 4);
+            // #1642: long reasoning with nothing sent yet: commit, then stream it live.
+            if (!committed && wire.sendReasoningDelta && Date.now() - attemptStart >= REASONING_HOLD_MAX_MS) commit();
             if (committed) {
               wire.sendReasoningDelta?.(res, route, deltaReasoning);
             } else {
@@ -553,9 +559,10 @@ export async function runInboundChat(
         // Opt-in schema verdict, before the tool calls are committed. Tool
         // calls are buffered to the end of the stream on this path, so a
         // tool-only turn has sent nothing yet and can still fail over. A turn
-        // that already streamed text is past its commit point — leave it
+        // that already streamed real text is past its commit point — leave it
         // alone rather than tearing down a stream the client is reading.
-        if (isToolArgumentValidationEnabled() && toolCalls.length > 0 && !committed) {
+        // Whitespace or an early reasoning commit (#1642) is not real text.
+        if (isToolArgumentValidationEnabled() && toolCalls.length > 0 && (!committed || !text.trim())) {
           const invalid = invalidToolCallReasons(toolCalls, schemas);
           if (invalid.length > 0) throw invalidToolArgumentsError(route.displayName, invalid);
         }
@@ -577,13 +584,12 @@ export async function runInboundChat(
             finishReason === 'length' ? { skipBench: true } : {},
           );
         }
-        // #809: bare "safe"/"unsafe" classification output from a relay is an
-        // upstream filter, not the requested model — fail over like an empty
-        // completion.
-        if (isUpstreamClassificationOutput(text, route.platform) && toolCalls.length === 0) {
+        // #809: bare "safe"/"unsafe" classification output or bot failure lockout
+        // from a relay is an upstream failure, not the requested model — fail over.
+        if ((isUpstreamClassificationOutput(text, route.platform) || isUpstreamBotFailureOutput(text, route.platform)) && toolCalls.length === 0) {
           if (clientGone) return 'committed';
           throw Object.assign(
-            new Error(`empty completion from ${route.displayName} (upstream classification output)`),
+            new Error(`empty completion from ${route.displayName} (upstream bot failure output)`),
             finishReason === 'length' ? { skipBench: true } : {},
           );
         }

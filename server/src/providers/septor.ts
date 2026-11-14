@@ -15,7 +15,7 @@ function checkModel(requested: string, returned: string): void {
 
 export class SeptorProvider extends OpenAICompatProvider {
   constructor() {
-    // /models rejects missing and invalid credentials (401), unlike Router9.
+    // /models rejects missing and invalid credentials (401).
     // Cloudflare in front challenges tool User-Agents (Node's default "node",
     // curl) from datacenter IPs with a 403 HTML page, which read as a bad key
     // on self-hosted VPS installs (#1298). A product UA passes.

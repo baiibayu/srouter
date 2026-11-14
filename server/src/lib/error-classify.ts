@@ -81,6 +81,7 @@ export function isRetryableError(err: any): boolean {
     // all thrown before any byte reached the client, so another model can
     // serve the request invisibly.
     || msg.includes('empty completion')
+    || msg.includes('upstream bot failure output')
     // The model answered in prose despite a response_format request (and the
     // JSON couldn't be healed out of the text) — thrown before any byte
     // reached the client, so the next candidate can serve it invisibly.
@@ -378,6 +379,18 @@ export function isProviderDegradedError(err: any): boolean {
   return msg.includes('degraded');
 }
 
+// A 5xx whose body blames ONE model's load, not the provider: Google answers
+// `503 "This model is currently experiencing high demand"` for a busy Gemini
+// model while its siblings on the same key keep serving. Ruling the whole
+// platform out on it left `auto` with nothing to try when that platform was
+// the only one configured. Narrow on purpose: the wording must name "this
+// model" / "the model", so a generic "service overloaded" stays provider-level.
+const MODEL_SCOPED_OVERLOAD = /\b(?:this|the) model is (?:currently )?(?:experiencing high demand|overloaded)\b/;
+
+export function isModelScopedOverloadError(err: any): boolean {
+  return MODEL_SCOPED_OVERLOAD.test((err?.message ?? '').toLowerCase());
+}
+
 // #788: provider-level failures — 5xx, timeouts, transport/network errors, a
 // degraded deployment — are symptoms of the PROVIDER being sick, not of this
 // particular key. Retrying the same provider with a sibling key would fail
@@ -403,7 +416,7 @@ export function isProviderLevelError(err: any): boolean {
   // the text is not.
   if (err?.skipModelForRequest === true) return false;
   const status = typeof err?.status === 'number' ? err.status : 0;
-  if (status >= 500) return true;
+  if (status >= 500) return !isModelScopedOverloadError(err);
   // A DEGRADED hosted deployment (NVIDIA NIM, #522) is provider health wearing
   // a 400 — same source of truth as everywhere else, not a second substring.
   if (isProviderDegradedError(err)) return true;
@@ -431,6 +444,51 @@ export function isUpstreamClassificationOutput(text: unknown, platform?: string)
   if (!platform || !CLASSIFICATION_RELAY_PLATFORMS.has(platform.toLowerCase())) return false;
   const t = (typeof text === 'string' ? text : '').trim().toLowerCase();
   return t === 'safe' || t === 'unsafe';
+}
+
+// ── Upstream Bot Failure Output Guard ─────────────────────────────────────────
+// Free aggregator routes (such as UnoRouter scraping Google Gemini Web sessions)
+// sometimes hit bot-session lockouts, Google Drive/Workspace authorization walls,
+// or anti-bot challenge interstitial text, which they wrap in a 200 OK completion
+// like "I can't use Google Drive because required Gmail settings are off. Turn on
+// these settings to continue."
+//
+// These are upstream failure outputs, NOT genuine AI completions. Surfacing them
+// poisons the user's agent turn (e.g. Claude Code or Cursor displays the canned
+// refusal and fails the task). We intercept these outputs before committing, bench
+// the toxic route, and fail over to the next candidate model invisibly.
+const BOT_FAILURE_PATTERNS: RegExp[] = [
+  // Google Gemini Web Workspace / Drive bot refusal
+  /I can't use Google Drive because required Gmail settings are off/i,
+  /required Gmail settings are off\.?\s*Turn on these settings to continue/i,
+  /cannot access Google Drive because required .* settings are off/i,
+  /Google Drive is not available because required settings are off/i,
+  // Cloudflare anti-bot challenge interstitial rendered in 200 text
+  /Attention Required!\s*\|\s*Cloudflare/i,
+  /Just a moment.*?Enable JavaScript and cookies to continue/is,
+  // Google web session login wall
+  /Sign in\s*-\s*Google Accounts/i,
+];
+
+const BOT_FAILURE_PREFIXES: string[] = [
+  "i can't use google drive",
+  "i cannot access google drive",
+  "google drive is not available",
+  "attention required! | cloudflare",
+  "just a moment... enable javascript",
+  "sign in - google accounts",
+];
+
+export function isUpstreamBotFailureOutput(text: unknown, _platform?: string): boolean {
+  if (typeof text !== 'string' || text.length === 0) return false;
+  const sample = text.slice(0, 1000);
+  return BOT_FAILURE_PATTERNS.some(p => p.test(sample));
+}
+
+export function couldBecomeBotFailure(probe: string): boolean {
+  const p = probe.trimStart().toLowerCase();
+  if (p.length < 4) return false;
+  return BOT_FAILURE_PREFIXES.some(prefix => prefix.startsWith(p) || p.startsWith(prefix));
 }
 
 // Provider-side 400s are retryable because another provider may accept the same

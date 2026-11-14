@@ -170,6 +170,14 @@ function benchKeyAcrossPlatform(
 // Precedence mirrors the response cache: the settings-table value wins when
 // present (runtime-tunable), then the env var, then the default.
 export const DEFAULT_FALLBACK_TIME_BUDGET_MS = 120_000;
+
+// #1642: streaming surfaces hold reasoning-only output uncommitted so a dead
+// attempt fails over invisibly, but the client hears nothing meanwhile and
+// idle-watchdog clients (Claude Code) hang up. Once an attempt has been
+// reasoning this long it has proven alive, so it commits (headers, status and
+// X-Routed-Via for THIS attempt) and keeps the stream audibly alive; a later
+// failure takes the surface's normal mid-stream error path.
+export const REASONING_HOLD_MAX_MS = 15_000;
 // Share of the wall-clock budget an aborted attempt must have been silent for
 // before the hedge abort counts as provider health rather than bad luck. An
 // attempt late in a ladder inherits only the scraps of the budget its

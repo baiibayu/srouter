@@ -256,12 +256,9 @@ describe('applyCatalog', () => {
   it('imports the new chat providers and keeps Speechify exclusively in audio', () => {
     const models = existingAsCatalogModels();
     models.push(baseModel({ platform: 'septor', modelId: 'test-septor' }));
-    models.push(baseModel({ platform: 'router9', modelId: 'test-router9' }));
     models.push(baseModel({ platform: 'speechify', modelId: 'test-simba', modality: 'audio' }));
     applyCatalog(getDb(), catalogOf(models));
-    for (const platform of ['septor', 'router9']) {
-      expect(getDb().prepare('SELECT enabled FROM models WHERE platform = ?').get(platform)).toEqual({ enabled: 1 });
-    }
+    expect(getDb().prepare('SELECT enabled FROM models WHERE platform = ?').get('septor')).toEqual({ enabled: 1 });
     expect(getDb().prepare("SELECT id FROM models WHERE platform = 'speechify'").get()).toBeUndefined();
     expect(getDb().prepare("SELECT model_id, modality, enabled FROM media_models WHERE platform = 'speechify'").get()).toEqual({ model_id: 'test-simba', modality: 'audio', enabled: 1 });
   });

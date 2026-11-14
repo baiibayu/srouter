@@ -32,6 +32,10 @@ const PLATFORM_LABELS: Record<string, string> = {
   typhoon: 'OpenTyphoon',
   unorouter: 'UnoRouter',
   xkiro: 'xKIRO',
+  powertokens: 'PowerTokens',
+  freeinference: 'FreeInference',
+  novai: 'NovAI',
+  nabh: 'nabh.cloud',
 }
 
 /** A provider's display name, falling back to a title-cased id for unknown ones. */

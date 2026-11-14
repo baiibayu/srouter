@@ -88,6 +88,10 @@ const PLATFORM_DEFAULTS: Record<string, PlatformRateDefaults> = {
   pollinations:{ rpm: 15,   rpd: null,  tpm: null,     tpd: null },     // free keyless per IP
   puter:       { rpm: 10,   rpd: 500,   tpm: null,     tpd: null },     // personal cloud AI driver
   kiro:        { rpm: 15,   rpd: 1000,  tpm: null,     tpd: null },     // AWS CodeWhisperer conversational quota
+  powertokens: { rpm: 15,   rpd: null,  tpm: null,     tpd: null },     // free tier GLM, DeepSeek, Qwen & MiniMax
+  freeinference: { rpm: 10, rpd: 200,   tpm: null,     tpd: null },     // research daily free allowance
+  novai:       { rpm: 5,    rpd: 100,   tpm: null,     tpd: null },     // 5 req/min free tier GLM, DeepSeek & Qwen
+  nabh:        { rpm: 15,   rpd: null,  tpm: null,     tpd: null },     // monthly account allowance
 
   // ── Providers with generous/unpublished limits (conservative) ──
   mistral:     { rpm: 30,   rpd: null,  tpm: null,     tpd: null },     // free plan, ~30 rpm observed
@@ -764,7 +768,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
     LIMIT 1
   `);
   const selectExistingChat = db.prepare(
-    'SELECT id, source, display_name, context_window, size_label, supports_vision, rpm_limit, rpd_limit, intelligence_rank, speed_rank FROM models WHERE platform = ? AND model_id = ?',
+    'SELECT id, source, display_name, context_window, size_label, supports_vision, rpm_limit, rpd_limit, tpm_limit, tpd_limit, intelligence_rank, speed_rank FROM models WHERE platform = ? AND model_id = ?',
   );
   const insertModel = db.prepare(`
     INSERT INTO models (platform, model_id, display_name, source, enabled,
@@ -845,6 +849,7 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
         id: number; source: string; display_name: string | null;
         context_window: number | null; size_label: string | null; supports_vision: number | null;
         rpm_limit: number | null; rpd_limit: number | null;
+        tpm_limit: number | null; tpd_limit: number | null;
         intelligence_rank: number | null; speed_rank: number | null;
       } | undefined;
 
@@ -894,7 +899,15 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
             const upSpeed = catMeta?.speed_rank ?? ranks.speed;
             // P4: also backfill budget for old models that lack it
             const upBudget = estimateMonthlyBudget(upTpd, upTpm, upRpd);
-            upgradeLimits.run(upRpm, upRpd, upTpm, upTpd, upIntel, upSpeed, upBudget, existing.id);
+            const limitsChanged = existing.rpm_limit !== upRpm
+              || existing.rpd_limit !== upRpd
+              || existing.tpm_limit !== upTpm
+              || existing.tpd_limit !== upTpd
+              || existing.intelligence_rank !== upIntel
+              || existing.speed_rank !== upSpeed;
+            if (limitsChanged) {
+              upgradeLimits.run(upRpm, upRpd, upTpm, upTpd, upIntel, upSpeed, upBudget, existing.id);
+            }
           }
         }
         continue;
@@ -933,31 +946,32 @@ export async function autoDiscoverModels(platform: string, opts: { refresh?: boo
 
     // Clean out chat rows this platform's discovery created or active models that upstream dropped (matching OpenCode clean sync)
     if (stillOffered.size > 0) {
-      // Auto-prune stale catalog-disabled rows for this platform since live upstream is now authoritative
-      const deadCatalogRows = db.prepare(
-        "SELECT id, model_id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0"
+      // Auto-prune stale disabled rows for this platform since live upstream is now authoritative
+      const deadRows = db.prepare(
+        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL"
       ).all(platform) as { id: number; model_id: string }[];
-      for (const d of deadCatalogRows) {
+      for (const d of deadRows) {
         recordCatalogModelTombstone(db, 'chat', platform, d.model_id, {
           source: 'upstream_eol',
           reason: 'Upstream provider no longer lists model',
         });
       }
-      db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0)").run(platform);
-      db.prepare("DELETE FROM profile_models WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0)").run(platform);
-      db.prepare("DELETE FROM models WHERE platform = ? AND source = 'catalog' AND enabled = 0").run(platform);
+      db.prepare("DELETE FROM fallback_config WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL)").run(platform);
+      db.prepare("DELETE FROM profile_models WHERE model_db_id IN (SELECT id FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL)").run(platform);
+      db.prepare("DELETE FROM models WHERE platform = ? AND enabled = 0 AND key_id IS NULL").run(platform);
 
       const ownedRows = db.prepare(
-        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 1",
+        "SELECT id, model_id FROM models WHERE platform = ? AND enabled = 1 AND key_id IS NULL",
       ).all(platform) as { id: number; model_id: string }[];
       for (const row of ownedRows) {
         if (stillOffered.has(row.id)) continue;
-        benchModel.run(row.id);
-        db.prepare('UPDATE fallback_config SET enabled = 0 WHERE model_db_id = ?').run(row.id);
         recordCatalogModelTombstone(db, 'chat', platform, row.model_id, {
           source: 'upstream_eol',
           reason: 'Upstream provider no longer lists model',
         });
+        db.prepare('DELETE FROM fallback_config WHERE model_db_id = ?').run(row.id);
+        db.prepare('DELETE FROM profile_models WHERE model_db_id = ?').run(row.id);
+        db.prepare('DELETE FROM models WHERE id = ?').run(row.id);
         benched++;
         retiredModelNames.push(row.model_id);
       }

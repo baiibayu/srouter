@@ -14,6 +14,6 @@ export const nowMs = (): number => Date.now()
 /** The models the dialog should list, smartest first. Exported for tests. */
 export function selectTestableModels(models: readonly Model[], platform: string, keyId?: number | null): Model[] {
   return models
-    .filter(m => m.platform === platform && (keyId == null || m.keyId === keyId))
+    .filter(m => m.platform === platform && (keyId == null || m.keyId === keyId) && (m.enabled as any) !== false && (m.enabled as any) !== 0)
     .sort((a, b) => a.intelligenceRank - b.intelligenceRank || a.displayName.localeCompare(b.displayName))
 }

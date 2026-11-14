@@ -25,7 +25,6 @@ import { GizmoProvider } from './gizmo.js';
 import { BlockRunProvider } from './blockrun.js';
 import { MoondreamProvider } from './moondream.js';
 import { ElectronHubProvider } from './electronhub.js';
-import { Router9Provider } from './router9.js';
 import { SeptorProvider } from './septor.js';
 import { SpeechifyProvider } from './speechify.js';
 import { FreeAiProvider } from './freeai.js';
@@ -42,6 +41,10 @@ import { ClineProvider } from './cline.js';
 import { FreebuffProvider } from './freebuff.js';
 import { KiroProvider } from './kiro.js';
 import { NousProvider } from './nous.js';
+import { NabhProvider } from './nabh.js';
+import { NovaiProvider } from './novai.js';
+import { FreeInferenceProvider } from './freeinference.js';
+import { NavyProvider } from './navy.js';
 
 
 const providers = new Map<Platform, BaseProvider>();
@@ -90,10 +93,9 @@ register(new AurayProvider());
 // Free-plan grants are shared wallets, not free credits per model. Eligibility
 // and tested model rows belong in Oracle, never in bundled DB migrations.
 register(new ElectronHubProvider());
-// Router9 has shared monthly credits; Septor's zero-price models share daily
+// Septor's zero-price models share daily
 // quota (its signup credit is one-time). Model rows live only in Oracle so
 // the existing catalog age-in gate remains authoritative.
-register(new Router9Provider());
 register(new SeptorProvider());
 register(new SpeechifyProvider());
 register(new FreeAiProvider());
@@ -104,6 +106,17 @@ register(new AirforceProvider());
 register(new DreamPromptingProvider());
 register(new WaterfallProvider());
 register(new LogfareProvider());
+register(new NabhProvider());
+register(new NovaiProvider());
+register(new FreeInferenceProvider());
+
+// PowerTokens — OpenAI-compatible gateway (https://api.powertokens.ai/v1).
+// Free model glm-4.7-flash: $0 / 1M in + out (0 Credits) on the Models UI.
+register(new OpenAICompatProvider({
+  platform: 'powertokens',
+  name: 'PowerTokens',
+  baseUrl: 'https://api.powertokens.ai/v1',
+}));
 
 
 // AnyAPI - OpenAI-compatible gateway (anyapi.ai). Free tier (checked against
@@ -431,18 +444,8 @@ register(new OpenAICompatProvider({
   baseUrl: 'https://router.requesty.ai/v1',
 }));
 
-// NavyAI — OpenAI-compatible unified API (api.navy/v1). Free key from the
-// Discord-backed dashboard; the free plan is 150K tokens/day and 20 RPM.
-// Live smoke tests required an explicit User-Agent header.
-register(new OpenAICompatProvider({
-  platform: 'navy',
-  name: 'NavyAI',
-  baseUrl: 'https://api.navy/v1',
-  validateUrl: 'https://api.navy/v1/models',
-  extraHeaders: {
-    'User-Agent': 'srouter/1.0',
-  },
-}));
+// NavyAI — OpenAI-compatible unified API (api.navy/v1).
+register(new NavyProvider());
 
 // NaraRouter — OpenAI-compatible aggregator (router.bynara.id/v1). Free plan
 // requires a no-card API key plus Telegram channel/link verification. Live

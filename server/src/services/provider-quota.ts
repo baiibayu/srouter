@@ -124,7 +124,6 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'inferbase') return 'inferbase::managed-free';
   if (platform === 'simplellm') return 'simplellm::free';
   if (platform === 'electronhub') return normalizedModelId.endsWith(':free') ? 'electronhub::daily-free' : 'electronhub::weekly-credit';
-  if (platform === 'router9') return 'router9::monthly-credit';
   if (platform === 'septor') return 'septor::daily-free';
   if (platform === 'speechify') return 'speechify::monthly-characters';
   if (platform === 'lucidity') return 'lucidity::daily-free';
@@ -132,6 +131,10 @@ export function inferPoolForPlatform(platform: Platform, modelId?: string | null
   if (platform === 'dreamprompting') return 'dreamprompting::daily-free';
   if (platform === 'waterfall') return 'waterfall::community-free';
   if (platform === 'logfare') return 'logfare::fair-use';
+  if (platform === 'novai') return 'novai::daily-free';
+  if (platform === 'nabh') return 'nabh::monthly-credit';
+  if (platform === 'freeinference') return 'freeinference::daily-free';
+  if (platform === 'powertokens') return 'powertokens::account';
   if (platform === 'radeon') return 'radeon::daily-free';
   if (platform === 'nvidia') return 'nvidia::credit-pool';
   if (platform === 'mistral') return 'mistral::experiment-pool';
@@ -185,18 +188,13 @@ function isSharedPool(platform: Platform): boolean {
   if (platform === 'plugsky') return true;
   if (platform === 'codecraft') return true;
   if (platform === 'inferbase' || platform === 'simplellm') return true;
-  if (['electronhub', 'experiential', 'router9', 'septor', 'speechify', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
+  if (['electronhub', 'experiential', 'septor', 'speechify', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare'].includes(platform)) return true;
   return ['openrouter', 'google', 'groq', 'sail', 'radeon', 'nvidia', 'mistral', 'github', 'cohere', 'cloudflare', 'zhipu', 'ollama', 'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'opencode-go', 'routeway', 'bazaarlink', 'aion', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'anyapi', 'modelscope', 'aihorde', 'puter', 'cline', 'freebuff', 'kiro'].includes(platform);
 }
 
 type HeaderSpec = { metric: QuotaMetric; limit: string; remaining?: string; reset?: string; strategy?: QuotaResetStrategy };
 
 const HEADER_SPECS: Partial<Record<Platform, HeaderSpec[]>> = {
-  // Observe actual headers only: Router9's documented request windows differ
-  // from live headers. No invented per-model quotas or credit-to-token math.
-  router9: [
-    { metric: 'credits', limit: 'x-credits-limit', remaining: 'x-credits-remaining', reset: 'x-credits-reset', strategy: 'provider_reported' },
-  ],
   septor: [
     { metric: 'requests', limit: 'x-ratelimit-limit', remaining: 'x-ratelimit-remaining', reset: 'x-ratelimit-reset', strategy: 'provider_reported' },
   ],

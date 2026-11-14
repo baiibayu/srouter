@@ -43,8 +43,6 @@ describe('provider-quota: pool inference', () => {
     expect(inferQuotaPoolKey('electronhub', 'qwen3.8-flash')).toBe('electronhub::weekly-credit');
     expect(inferQuotaPoolKey('electronhub', 'gpt-oss-120b')).toBe('electronhub::weekly-credit');
     expect(inferQuotaPoolKey('electronhub', 'some-model:free')).toBe('electronhub::daily-free');
-    expect(inferQuotaPoolKey('router9', 'minimax/minimax-m3')).toBe('router9::monthly-credit');
-    expect(inferQuotaPoolKey('router9', 'another-model')).toBe('router9::monthly-credit');
     expect(inferQuotaPoolKey('septor', 'qwen3-coder-free')).toBe('septor::daily-free');
     expect(inferQuotaPoolKey('septor', 'minimax-m2.5-free')).toBe('septor::daily-free');
     for (const model of ['first-model', 'another-model']) {
@@ -283,15 +281,6 @@ describe('provider-quota: parse from response headers (shared parseRetryAfterMs)
       resetAt: new Date(1788690000000).toISOString(),
     });
     expect(observations.some(o => o.metric === 'credits')).toBe(false);
-  });
-
-  it('keeps Router9 decimal credit observations separate from tokens and undocumented request windows', () => {
-    const obs = parseQuotaObservationsFromResponse(new Response(null, { headers: {
-      'x-credits-limit': '50000', 'x-credits-remaining': '49998.4484',
-      'x-ratelimit-limit-4h': '1000', 'x-ratelimit-limit-weekly': '100',
-    } }), { platform: 'router9', modelId: 'minimax/minimax-m3' });
-    expect(obs).toHaveLength(1);
-    expect(obs[0]).toMatchObject({ metric: 'credits', quotaPoolKey: 'router9::monthly-credit', limit: 50000, remaining: 49998.4484, resetAt: null });
   });
 
   it('observes Septor reported limits without treating signup credits as a monthly grant', () => {

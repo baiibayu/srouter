@@ -354,7 +354,7 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
   // key redundancy. They are excluded here so they never appear in the
   // Providers list, while any already-stored keys remain functional.
   const grouped: ProviderGroup[] = [
-    ...PLATFORMS.map(p => ({ ...p, platform: p.value, keys: keys.filter(k => k.platform === p.value) })),
+    ...PLATFORMS.filter(p => !isSearchPlatform(p.value)).map(p => ({ ...p, platform: p.value, keys: keys.filter(k => k.platform === p.value) })),
     ...[...customGroups.values()].sort((a, b) =>
       a.customGroup === null ? -1 : b.customGroup === null ? 1 : a.label.localeCompare(b.label)),
   ].filter(p => p.keys.length > 0)
@@ -466,6 +466,8 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
             // #787: once a selection exists in this group the checkboxes stay
             // visible, so the rest of the selection can be built without hunting.
             const groupHasSelection = group.keys.some(k => selectedKeyIds.has(k.id))
+            const hasRotatePool = group.keys.some(k => k.proxyPoolId === '__round_robin__')
+            const poolKey = group.keys.find(k => k.proxyPoolId && k.proxyPoolId !== '__direct__' && k.proxyPoolId !== '__none__')
             return (
               <div key={group.value}>
                 <div className="flex items-center gap-2 pb-2">
@@ -505,6 +507,25 @@ export function ProviderList({ onAddKey }: { onAddKey: () => void }) {
                         </span>
                       )}
                     </span>
+                    {hasRotatePool ? (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-primary/5 text-primary border-primary/20 flex items-center gap-1 font-normal py-0 px-1.5 h-4.5"
+                        title={t('keys.rotatePoolStrategy')}
+                      >
+                        <Network className="size-2.5" />
+                        Rotate Pool
+                      </Badge>
+                    ) : poolKey?.proxyPoolId ? (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-primary/5 text-primary border-primary/20 flex items-center gap-1 font-normal py-0 px-1.5 h-4.5"
+                        title={`Egress Relay: ${(poolMap.get(poolKey.proxyPoolId)?.name ?? poolKey.proxyPoolId).replace(/\s*\([^)]*\)/g, '').trim()}`}
+                      >
+                        <Network className="size-2.5" />
+                        {(poolMap.get(poolKey.proxyPoolId)?.name ?? poolKey.proxyPoolId).replace(/\s*\([^)]*\)/g, '').trim() || 'Proxy Pool'}
+                      </Badge>
+                    ) : null}
                   </button>
                   <DropdownMenu>
                       <DropdownMenuTrigger

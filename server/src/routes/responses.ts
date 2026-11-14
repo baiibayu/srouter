@@ -37,7 +37,7 @@ import { applyTokenBudget, tokenBudgetMessage } from '../lib/guardrails.js';
 import { samplingParamSchemaFields, pickSamplingParams, type ResponseFormat } from '../lib/sampling-params.js';
 import { enforceJsonContent } from '../lib/structured-output.js';
 import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
-import { isClientAbortError, newClientAbortError, newHedgeAbortError } from '../lib/error-classify.js';
+import { isClientAbortError, newClientAbortError, newHedgeAbortError, isUpstreamBotFailureOutput, couldBecomeBotFailure } from '../lib/error-classify.js';
 import { inferQuotaPoolKey, type QuotaObservationContext } from '../services/provider-quota.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
 import { breakLoop } from '../services/loop-breaker.js';
@@ -1455,8 +1455,11 @@ export async function handleResponses(req: Request, res: Response): Promise<void
                   const probe = heldText.trimStart();
                   if (startsWithDialectMarker(probe)) {
                     dialectMode = 'dialect';
-                  } else if (!couldBecomeDialectMarker(probe) || heldText.length > 256) {
+                  } else if ((!couldBecomeDialectMarker(probe) && !couldBecomeBotFailure(probe)) || heldText.length > 256) {
                     dialectMode = 'passthrough';
+                    if (isUpstreamBotFailureOutput(heldText, route.platform)) {
+                      throw new Error(`in-band provider error from ${route.displayName}: upstream bot failure output`);
+                    }
                     openTextItem(heldText);
                     heldText = '';
                   }

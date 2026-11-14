@@ -122,7 +122,6 @@ export type Platform =
   // ElectronHub renews weekly credits.
   | 'electronhub'
   // Catalog-managed gateways: monthly shared credits vs daily free-model quota.
-  | 'router9'
   | 'septor'
   | 'speechify'
   // Self-hosted TTS: shared 30K tokens/day and 1K API requests/month, no card.
@@ -135,6 +134,14 @@ export type Platform =
   | 'dreamprompting'
   | 'waterfall'
   | 'logfare'
+  // PowerTokens — OpenAI-compatible gateway (https://api.powertokens.ai/v1). Free tier: glm-4.7-flash.
+  | 'powertokens'
+  // FreeInference — Research API; chat and embeddings share a daily quota.
+  | 'freeinference'
+  // NovAI — Daily-free GLM chat and media generation routes.
+  | 'novai'
+  // nabh.cloud — Shared renewable monthly credit allowance.
+  | 'nabh'
   // AnyAPI — OpenAI-compatible gateway. Free tier is $0/no card/recurring but
   // capped at 100K tokens/day over "free and basic" models only; no RPM/RPD is
   // published. Catalog rows live in the hosted catalog (premium now, free after
@@ -615,6 +622,9 @@ export interface ChatCompletionResponse {
     platform: Platform;
     model: string;
   };
+  // Anthropic auto-mode classifier results, when the upstream supplied them
+  // (#1589). Never synthesized here; absent when the upstream sends none.
+  safeguard_results?: unknown;
 }
 
 export interface ChatCompletionChunk {
@@ -633,6 +643,10 @@ export interface ChatCompletionChunk {
     finish_reason: string | null;
   }[];
   usage?: TokenUsage;
+  // Anthropic auto-mode classifier results carried on a stream chunk, when
+  // the upstream supplied them (#1589). Same rule as the non-streaming
+  // response: passed through verbatim, never synthesized.
+  safeguard_results?: unknown;
 }
 
 // ---- Analytics Types ----

@@ -19,6 +19,7 @@ import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 import { extractThinkFromMessage } from '../lib/think-tags.js';
 import { isAnonymousCredential } from '../lib/credential.js';
+import { isPlatformProxied } from '../lib/proxy.js';
 
 // -- OpenCode Free Tier Identity --------------------------------------------
 //
@@ -412,11 +413,23 @@ export class OpenCodeFreeProvider extends BaseProvider {
           headers: this.identityHeaders(apiKey),
         }, 10_000);
       } catch {
-        res = await tlsFetch(`${UPSTREAM_BASE}/models`, {
-          method: 'GET',
-          headers: this.identityHeaders(apiKey),
-          timeoutMs: 10_000,
-        });
+        if (isPlatformProxied(`${UPSTREAM_BASE}/models`, this.platform)) {
+          // If proxy pool is configured, retry via proxy to prevent local IP leak
+          try {
+            res = await this.fetchWithTimeout('https://opencode.ai/inference/v1/models', {
+              method: 'GET',
+              headers: this.identityHeaders(apiKey),
+            }, 10_000);
+          } catch {
+            return true;
+          }
+        } else {
+          res = await tlsFetch(`${UPSTREAM_BASE}/models`, {
+            method: 'GET',
+            headers: this.identityHeaders(apiKey),
+            timeoutMs: 10_000,
+          });
+        }
       }
       if (res.ok || (res.status >= 300 && res.status < 400) || res.status === 404 || res.status === 429) return true;
       if (res.status === 401 || res.status === 403) {
@@ -476,6 +489,7 @@ export class OpenCodeFreeProvider extends BaseProvider {
 
     let res: Response | null = null;
     let lastError: Error | null = null;
+    const proxied = isPlatformProxied(url, this.platform);
 
     // 1. Try fetchWithTimeout first so any proxy pool / egress relay configured on the key is honored
     try {
@@ -493,39 +507,63 @@ export class OpenCodeFreeProvider extends BaseProvider {
       lastError = proxyErr;
     }
 
-    // 2. If fetchWithTimeout failed or returned non-ok (e.g. Cloudflare challenged standard fetch), try tlsFetch with BoringSSL ClientHello ciphers
-    if (!res || !res.ok) {
-      try {
-        const directRes = await tlsFetch(url, {
-          method: 'POST',
-          headers,
-          body: bodyStr,
-          signal: options?.signal,
-          timeoutMs: timeout,
-        });
-        if (directRes.ok || !res) {
-          res = directRes;
+    // 2. If proxied: do NOT fallback to direct local IP via tlsFetch (prevents local IP leak & 429 rate limit exhaustion).
+    // Instead, if 404 or connection failed, retry alternate inference endpoint via proxy pool.
+    if (proxied) {
+      if (!res || res.status === 404) {
+        try {
+          const altUrl = url.includes('/zen/') ? fallbackUrl : `${UPSTREAM_BASE}/chat/completions`;
+          const altRes = await this.fetchWithTimeout(
+            altUrl,
+            {
+              method: 'POST',
+              headers,
+              body: bodyStr,
+            },
+            timeout,
+            { signal: options?.signal, timeoutBounds: 'headers' },
+          );
+          if (altRes.ok || !res) {
+            res = altRes;
+          }
+        } catch (altErr: any) {
+          if (!res) lastError = altErr;
         }
-      } catch (tlsErr: any) {
-        if (!res) lastError = tlsErr;
       }
-    }
-
-    // 3. Fallback to alternate inference endpoint if status was 404 or 429
-    if (!res || !res.ok) {
-      try {
-        const altUrl = url.includes('/zen/') ? fallbackUrl : `${UPSTREAM_BASE}/chat/completions`;
-        const altRes = await tlsFetch(altUrl, {
-          method: 'POST',
-          headers,
-          body: bodyStr,
-          signal: options?.signal,
-          timeoutMs: timeout,
-        });
-        if (altRes.ok || !res) {
-          res = altRes;
+    } else {
+      // Direct (unproxied) mode: can try tlsFetch with BoringSSL ClientHello ciphers
+      if (!res || !res.ok) {
+        try {
+          const directRes = await tlsFetch(url, {
+            method: 'POST',
+            headers,
+            body: bodyStr,
+            signal: options?.signal,
+            timeoutMs: timeout,
+          });
+          if (directRes.ok || !res) {
+            res = directRes;
+          }
+        } catch (tlsErr: any) {
+          if (!res) lastError = tlsErr;
         }
-      } catch {}
+      }
+
+      if (!res || !res.ok) {
+        try {
+          const altUrl = url.includes('/zen/') ? fallbackUrl : `${UPSTREAM_BASE}/chat/completions`;
+          const altRes = await tlsFetch(altUrl, {
+            method: 'POST',
+            headers,
+            body: bodyStr,
+            signal: options?.signal,
+            timeoutMs: timeout,
+          });
+          if (altRes.ok || !res) {
+            res = altRes;
+          }
+        } catch {}
+      }
     }
 
     if (!res) {

@@ -1,3 +1,16 @@
+## 2026-11-15 — 0.2.2
+
+| Commit | Date | Summary |
+| --- | --- | --- |
+| `release` | 2026-11-15 | feat(guard): introduce in-band upstream bot refusal and lockout detection (`isUpstreamBotFailureOutput`, `couldBecomeBotFailure`) targeting Google Gemini Web bot lockouts ("I can't use Google Drive..."), Cloudflare challenge walls, and login gates across inbound chat, Anthropic, and proxy routes. |
+| `release` | 2026-11-15 | fix(loop-breaker): enforce session affinity breaking on repetitive model output loops, preventing coding agents (Claude Code, Orca) from getting stuck in repetitive upstream bot failure responses. |
+| `release` | 2026-11-15 | fix(providers): decommission UnoRouter broken tool models and disable broken Gemini endpoints (`20261112_000003`, `20261112_000004`), disabling non-functional tools and purging from fallback chains. |
+| `release` | 2026-11-15 | refactor(providers): permanently remove dead platform `Router9` across provider adapters, bundled catalog, schema, key parsers, and UI components (`20261112_000002`). |
+| `release` | 2026-11-15 | feat(providers): add native provider integrations and discovery for FreeInference, Nabh, NavyAI (free tier filter fix), and NovAI. |
+| `release` | 2026-11-15 | feat(quotas): implement Cloudflare daily neuron usage tracking (`20261104_000001`) and quota consumption service. |
+| `release` | 2026-11-15 | feat(media): seed Speechify TTS media models (`20261111_000001`) and decommission legacy Webshare proxies (`20261111_000002`). |
+| `release` | 2026-11-15 | test(resilience): add comprehensive test suites for upstream bot failure classification, Cloudflare neurons, FreeInference, and migration roundtrip integrity. |
+
 ## 2026-11-09 — 0.2.1
 
 | Commit | Date | Summary |

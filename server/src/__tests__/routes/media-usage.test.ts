@@ -54,6 +54,7 @@ describe('GET /api/media/usage', () => {
   beforeEach(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
+    getDb().prepare('DELETE FROM media_models').run();
     app = createApp();
     dashToken = mintDashboardToken();
     seedModels();

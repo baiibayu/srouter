@@ -4,23 +4,20 @@ import { recordQuotaObservationsFromResponse, type QuotaObservationContext } fro
 import type { ChatMessage, ChatCompletionResponse, ChatCompletionChunk } from '@baiibayu/srouter-shared/types.js';
 
 const POLLINATIONS_BASE_URL = 'https://gen.pollinations.ai/v1';
+const POLLINATIONS_TEXT_URL = 'https://text.pollinations.ai/openai';
 /** Authenticated key-introspection endpoint — note it sits OUTSIDE /v1. */
 const POLLINATIONS_ACCOUNT_KEY_URL = 'https://gen.pollinations.ai/account/key';
+
+const TEXT_COMPAT_MODELS = new Set(['openai-fast', 'openai', 'gpt-oss', 'gpt-oss-20b', 'ovh-reasoning']);
 
 /**
  * Pollinations — OpenAI-compatible shared-capacity tier.
  *
- * Free models are accessible without an API key (keyless). The public
- * GET /v1/models catalog lists all available models, including 135+ free
- * routes that accept requests with no Authorization header. Authenticated
- * keys unlock paid models and higher rate limits.
+ * Anonymous/keyless requests route to https://text.pollinations.ai/openai
+ * which serves the free tier (openai-fast / gpt-oss-20b) with zero authentication.
  *
- * validateKey probes the public /v1/models endpoint (which answers 200
- * without auth) to confirm network reachability. A live /v1/models response
- * means the platform is up and keyless routing will work.
- *
- * Keyed access validates against /account/key (401 for missing/invalid key,
- * 200 for live keys, 402 for out-of-pollen accounts). See issue #608.
+ * Authenticated requests (with an API key from enter.pollinations.ai) route to
+ * https://gen.pollinations.ai/v1 which unlocks all catalog models and higher limits.
  */
 export class PollinationsProvider extends OpenAICompatProvider {
   override keyless = true;
@@ -31,6 +28,10 @@ export class PollinationsProvider extends OpenAICompatProvider {
       name: 'Pollinations',
       baseUrl: POLLINATIONS_BASE_URL,
     });
+  }
+
+  protected override resolveBaseUrl(apiKey?: string): string {
+    return isAnonymousCredential(apiKey) ? POLLINATIONS_TEXT_URL : POLLINATIONS_BASE_URL;
   }
 
   /** Map the stored credential to the bearer we send upstream. The keyless flow
@@ -47,6 +48,17 @@ export class PollinationsProvider extends OpenAICompatProvider {
   private stripPlatformPrefix(modelId: string): string {
     const platformPrefix = `${this.platform}/`;
     return modelId.startsWith(platformPrefix) ? modelId.slice(platformPrefix.length) : modelId;
+  }
+
+  /** Resolve effective model ID: for keyless calls, route models not recognized
+   * by the Classic text endpoint to openai-fast. */
+  private resolveModelForMode(apiKey: string, modelId: string): string {
+    const stripped = this.stripPlatformPrefix(modelId);
+    if (isAnonymousCredential(apiKey)) {
+      if (TEXT_COMPAT_MODELS.has(stripped.toLowerCase())) return stripped;
+      return 'openai-fast';
+    }
+    return stripped;
   }
 
   /** Anonymous access sends NO Authorization header: keyless providers
@@ -69,8 +81,8 @@ export class PollinationsProvider extends OpenAICompatProvider {
     options?: CompletionOptions,
     quotaContext?: QuotaObservationContext,
   ): Promise<ChatCompletionResponse> {
-    const strippedModelId = this.stripPlatformPrefix(modelId);
-    return super.chatCompletion(apiKey, messages, strippedModelId, options, quotaContext);
+    const effectiveModelId = this.resolveModelForMode(apiKey, modelId);
+    return super.chatCompletion(apiKey, messages, effectiveModelId, options, quotaContext);
   }
 
   override async *streamChatCompletion(
@@ -80,15 +92,14 @@ export class PollinationsProvider extends OpenAICompatProvider {
     options?: CompletionOptions,
     quotaContext?: QuotaObservationContext,
   ): AsyncGenerator<ChatCompletionChunk> {
-    const strippedModelId = this.stripPlatformPrefix(modelId);
-    for await (const chunk of super.streamChatCompletion(apiKey, messages, strippedModelId, options, quotaContext)) {
+    const effectiveModelId = this.resolveModelForMode(apiKey, modelId);
+    for await (const chunk of super.streamChatCompletion(apiKey, messages, effectiveModelId, options, quotaContext)) {
       yield chunk;
     }
   }
 
   override async validateKey(apiKey: string, quotaContext?: QuotaObservationContext): Promise<KeyValidationResult> {
-    // Keyless path: confirm the upstream is reachable via the public models
-    // catalog. A 200 from /v1/models means keyless routing will work.
+    // Keyless path: confirm the upstream is reachable via the public models catalog.
     if (isAnonymousCredential(apiKey)) {
       const res = await this.fetchWithTimeout(`${POLLINATIONS_BASE_URL}/models`, {
         method: 'GET',

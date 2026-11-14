@@ -22,11 +22,11 @@ import { invalidToolArgumentsError, invalidToolCallReasons, isToolArgumentValida
 import { rescueInlineToolCalls, startsWithDialectMarker, couldBecomeDialectMarker, containsDialectMarker } from '../lib/tool-call-rescue.js';
 import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
 import { convertDocumentBlock, documentRejectionMessage } from '../lib/anthropic-documents.js';
-import { isClientAbortError, newClientAbortError, newHedgeAbortError, isUpstreamClassificationOutput } from '../lib/error-classify.js';
+import { isClientAbortError, newClientAbortError, newHedgeAbortError, isUpstreamClassificationOutput, isUpstreamBotFailureOutput, couldBecomeBotFailure } from '../lib/error-classify.js';
 import { logRequest } from '../lib/request-log.js';
-import { extractApiToken, timingSafeStringEqual, getStickyModel, setStickyModel } from './proxy.js';
+import { extractApiToken, timingSafeStringEqual, getStickyModel, setStickyModel, providerSafeStop } from './proxy.js';
 import { breakLoop } from '../services/loop-breaker.js';
-import { runFallbackLoop, newFallbackState, fallbackRoutingTokens, recordUpstreamSuccess, type ExhaustionBody, setFallbackHeaders, setExhaustionHeaders, type AttemptRecord, type FallbackState } from '../lib/fallback-loop.js';
+import { runFallbackLoop, newFallbackState, fallbackRoutingTokens, recordUpstreamSuccess, type ExhaustionBody, setFallbackHeaders, setExhaustionHeaders, type AttemptRecord, type FallbackState, REASONING_HOLD_MAX_MS } from '../lib/fallback-loop.js';
 import { routedViaValue } from '../lib/header-value.js';
 import { applyTokenBudget, tokenBudgetMessage } from '../lib/guardrails.js';
 import { resolveAnthropicModel, claudeFamilyDiscoveryEntries } from '../services/anthropic-map.js';
@@ -165,6 +165,29 @@ interface AnthropicMessageResponse {
   stop_reason: AnthropicStopReason;
   stop_sequence: string | null;
   usage: { input_tokens: number; output_tokens: number };
+  safeguard_results?: unknown;
+}
+
+// Anthropic compatibility metadata a `/v1/messages` caller may carry (#1589):
+// Claude Code sends its auto-mode classifier state as the `safeguards`
+// request field plus an `anthropic-beta` header. Both are opaque to this
+// gateway. Preserve them as internal metadata for a future native adapter;
+// current OpenAI-compatible adapters intentionally do not forward either.
+export interface AnthropicCompatMetadata {
+  safeguards?: unknown;
+  anthropicBeta?: string;
+}
+
+export function extractAnthropicCompat(
+  body: Record<string, unknown>,
+  headers: Record<string, string | string[] | undefined>,
+): AnthropicCompatMetadata {
+  const out: AnthropicCompatMetadata = {};
+  if (body.safeguards !== undefined) out.safeguards = body.safeguards;
+  const beta = headers['anthropic-beta'];
+  const value = Array.isArray(beta) ? beta.join(', ') : beta;
+  if (typeof value === 'string' && value.length > 0) out.anthropicBeta = value;
+  return out;
 }
 
 function sendError(res: Response, status: number, errorType: string, message: string): void {
@@ -577,8 +600,24 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
     messages = loopBreaker.messages;
   }
 
+  // #1589: keep the caller's classifier metadata with the request through
+  // the routing loop. OpenAI-compatible adapters never serialize it into the
+  // outbound body (strict upstreams 400 on unknown fields); it travels only
+  // as request metadata, for a future Anthropic-native adapter to forward.
+  const anthropicCompat = extractAnthropicCompat(
+    body as unknown as Record<string, unknown>,
+    req.headers as Record<string, string | string[] | undefined>,
+  );
+
   const completionOptions = {
     temperature: effectiveTemperature, max_tokens, top_p, top_k: body.top_k ?? undefined, tools, tool_choice,
+    ...(anthropicCompat.safeguards !== undefined || anthropicCompat.anthropicBeta !== undefined
+      ? { anthropicCompat }
+      : {}),
+    // tool_choice.disable_parallel_tool_use is OpenAI's parallel_tool_calls: false.
+    parallel_tool_calls: body.tool_choice?.disable_parallel_tool_use ? false : undefined,
+    // OpenAI's `stop`, capped the same way /v1/chat/completions caps it.
+    stop: body.stop_sequences?.length ? providerSafeStop(body.stop_sequences) : undefined,
     // Native `thinking: {type, budget_tokens}` → the same internal knob the
     // OpenAI surface's reasoning_effort feeds; absent when the client sent none.
     reasoning_effort: effortFromAnthropicThinking(body.thinking),
@@ -668,11 +707,12 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
     // The strict chain already fixes the model; the only preference left is
     // which member served this session last. Passing a non-member would make
     // routeRequest splice an off-group model into the chain and break the pin.
-    const sticky = getStickyModel(messages, sessionId, stickyScope);
+    const sticky = loopBreaker.escalateModel ? undefined : getStickyModel(messages, sessionId, stickyScope);
     preferredModel = (sticky != null && groupChain.some(r => r.model_db_id === sticky)) ? sticky : undefined;
   }
   if (preferredModel == null && !groupChain) {
-    preferredModel = resolveStickyPreference(getStickyModel(messages, sessionId, strategyKey), resolvedChain?.chain);
+    const stickyId = loopBreaker.escalateModel ? undefined : getStickyModel(messages, sessionId, strategyKey);
+    preferredModel = resolveStickyPreference(stickyId, resolvedChain?.chain);
   }
 
   // Thin adapter over the shared fallback loop (lib/fallback-loop.ts): the
@@ -781,12 +821,11 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
           result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
         );
       }
-      // #809: bare "safe"/"unsafe" classification output from a relay is an
-      // upstream filter, not the requested model — fail over like an empty
-      // completion.
-      if (isUpstreamClassificationOutput(respText, route.platform) && respToolCalls.length === 0) {
+      // #809: bare "safe"/"unsafe" classification output or bot-failure lockout
+      // from a relay is an upstream failure, not the requested model — fail over.
+      if ((isUpstreamClassificationOutput(respText, route.platform) || isUpstreamBotFailureOutput(respText, route.platform)) && respToolCalls.length === 0) {
         throw Object.assign(
-          new Error(`empty completion from ${route.displayName} (upstream classification output)`),
+          new Error(`empty completion from ${route.displayName} (upstream bot failure output)`),
           result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
         );
       }
@@ -848,6 +887,10 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
         stop_reason: mapStopReason(result.choices?.[0]?.finish_reason ?? null, respToolCalls.length > 0),
         stop_sequence: null,
         usage: { input_tokens: promptTokens, output_tokens: completionTokens },
+        // #1589: return upstream-supplied classifier results verbatim. Absent
+        // when the routed provider sent none — never fabricated. Preserving
+        // metadata alone does not establish server-side classifier eligibility.
+        ...(result.safeguard_results !== undefined ? { safeguard_results: result.safeguard_results } : {}),
       };
 
       res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
@@ -933,6 +976,10 @@ async function streamCompletion(
   let nextIndex = 0;
   let outputChars = 0;
   let upstreamFinish: string | null = null;
+  // #1589: classifier results arriving on a stream chunk, carried to
+  // message_delta verbatim. Absent unless the upstream sent them.
+  let upstreamSafeguardResults: unknown;
+  let sawSafeguardResults = false;
   const toolAcc = new Map<number, { id?: string; name: string; args: string; thought_signature?: string }>();
 
   // Inline-dialect hold window (#231): the first text is held until it either
@@ -973,6 +1020,7 @@ async function streamCompletion(
   // point where it was: a stream that produces ONLY reasoning and dies still
   // fails over invisibly, exactly like the OpenAI surface's preamble hold.
   let reasoningBuf = '';
+  let quietSince = Date.now(); // last time the client heard from this attempt
   const flushThinking = () => {
     if (reasoningBuf.length === 0) return;
     const idx = nextIndex++;
@@ -985,6 +1033,9 @@ async function streamCompletion(
 
   // Commit (if needed), open the text block (if needed), and stream `text`.
   const emitText = (text: string) => {
+    if (!messageStarted && isUpstreamBotFailureOutput(text, route.platform)) {
+      throw new Error(`in-band provider error from ${route.displayName}: upstream bot failure output`);
+    }
     ensureMessageStart();
     if (!textBlockOpen) {
       flushThinking(); // thinking block precedes the text block
@@ -1012,6 +1063,11 @@ async function streamCompletion(
     for await (const chunk of gen) {
       if (ctx.clientGone()) break; // client hung up: stop pulling; reader.cancel() aborts upstream
       const anyChunk = chunk as Record<string, any>;
+      // #1589: a chunk may carry the upstream's classifier results top-level.
+      if (anyChunk.safeguard_results !== undefined) {
+        upstreamSafeguardResults = anyChunk.safeguard_results;
+        sawSafeguardResults = true;
+      }
 
       // In-band provider error frame (e.g. Groq emits {"error":…} inside a 200
       // stream). Before message_start: retryable → fail over invisibly. After:
@@ -1046,6 +1102,12 @@ async function streamCompletion(
       // `reasoning`); the shared <think> extractor emits reasoning_content.
       const reasoningDelta = choice.delta?.reasoning_content ?? choice.delta?.reasoning;
       if (typeof reasoningDelta === 'string' && reasoningDelta.length > 0) reasoningBuf += reasoningDelta;
+      // #1642: long reasoning with nothing streamed yet: commit and ping.
+      if (reasoningBuf.length > 0 && !textBlockOpen && Date.now() - quietSince >= REASONING_HOLD_MAX_MS) {
+        ensureMessageStart();
+        writeSse(res, 'ping', { type: 'ping' });
+        quietSince = Date.now();
+      }
 
       const text = typeof choice.delta?.content === 'string' ? choice.delta.content : '';
       if (text.length === 0) continue;
@@ -1058,7 +1120,7 @@ async function streamCompletion(
           const probe = heldText.trimStart();
           if (startsWithDialectMarker(probe)) {
             dialectMode = 'dialect';
-          } else if (!couldBecomeDialectMarker(probe) || heldText.length > 256) {
+          } else if ((!couldBecomeDialectMarker(probe) && !couldBecomeBotFailure(probe)) || heldText.length > 256) {
             dialectMode = 'passthrough';
             emitText(heldText);
             heldText = '';
@@ -1116,10 +1178,11 @@ async function streamCompletion(
     // Opt-in schema verdict, same rule as the non-streaming surface above and
     // as /chat/completions: this is the surface the silent failure hurt most,
     // and Claude Code streams. Placed after the dialect rescue so a rescued
-    // call is judged too, and gated on `!messageStarted` — once message_start
-    // has gone out there is no failing over, and tearing the SSE stream down
-    // would be worse for the client than a tool_use the schema dislikes.
-    if (isToolArgumentValidationEnabled() && !messageStarted && completedCalls.length > 0) {
+    // call is judged too, and gated on `!textBlockOpen`: once text has gone
+    // out there is no failing over, and tearing the SSE stream down would be
+    // worse for the client than a tool_use the schema dislikes. A #1642 early
+    // commit sent only pings, so a bad call there ends in the catch's error event.
+    if (isToolArgumentValidationEnabled() && !textBlockOpen && completedCalls.length > 0) {
       const invalid = invalidToolCallReasons(
         completedCalls.map(c => ({ function: { name: c.name, arguments: c.arguments } })),
         schemas,
@@ -1127,9 +1190,10 @@ async function streamCompletion(
       if (invalid.length > 0) throw invalidToolArgumentsError(route.displayName, invalid);
     }
 
-    // Nothing usable came out — fail over (message_start was never sent, so the
-    // client never saw this attempt).
-    if (!messageStarted && completedCalls.length === 0) {
+    // Nothing usable came out — fail over (normally message_start was never sent,
+    // so the client never saw this attempt; after a #1642 early commit the
+    // catch below turns this into the mid-stream error event).
+    if (!textBlockOpen && completedCalls.length === 0) {
       // Disconnect before the commit point: the pump loop broke with nothing
       // accumulated because the CLIENT left, not because the provider failed —
       // benching a healthy model+key for it was wrong. StreamAlreadyStarted
@@ -1174,7 +1238,14 @@ async function streamCompletion(
 
     const stopReason = mapStopReason(upstreamFinish, completedCalls.length > 0);
     const outputTokens = Math.ceil(outputChars / 4);
-    writeSse(res, 'message_delta', { type: 'message_delta', delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: outputTokens } });
+    writeSse(res, 'message_delta', {
+      type: 'message_delta',
+      delta: { stop_reason: stopReason, stop_sequence: null },
+      usage: { output_tokens: outputTokens },
+      // #1589: upstream-supplied classifier results, verbatim; omitted when
+      // the upstream sent none — never fabricated.
+      ...(sawSafeguardResults ? { safeguard_results: upstreamSafeguardResults } : {}),
+    });
     writeSse(res, 'message_stop', { type: 'message_stop' });
     res.end();
 

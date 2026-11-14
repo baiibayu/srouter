@@ -28,12 +28,12 @@ import { rescueInlineToolCalls, startsWithDialectMarker, couldBecomeDialectMarke
 import { getContextHandoffMode, recordIncomingMessages, maybeInjectContextHandoff, recordSuccessfulModel, hasPriorModel, HANDOFF_MAX_TOKENS } from '../services/context-handoff.js';
 import { breakLoop } from '../services/loop-breaker.js';
 import { isFusionModel, runFusion, fusionConfigSchema, FusionError, FUSION_MODEL_ID } from '../services/fusion.js';
-import { isRetryableError, isPaymentRequiredError, isModelNotFoundError, isModelAccessForbiddenError, isClientAbortError, newClientAbortError, newHedgeAbortError, isUpstreamClassificationOutput } from '../lib/error-classify.js';
+import { isRetryableError, isPaymentRequiredError, isModelNotFoundError, isModelAccessForbiddenError, isClientAbortError, newClientAbortError, newHedgeAbortError, isUpstreamClassificationOutput, isUpstreamBotFailureOutput, couldBecomeBotFailure } from '../lib/error-classify.js';
 import { logRequest } from '../lib/request-log.js';
 import { observeServedModel } from '../lib/served-model.js';
 import { parseCacheDirective, cacheActive, isCacheableTemperature, computeCacheKey, getCachedResponse, storeCachedResponse, getCachedStreamResponse, storeCachedStreamResponse, STREAM_CACHE_MAX_BYTES } from '../services/cache.js';
 import { normalizeIdempotencyKey, hashIdempotencyKey, computeIdempotencyFingerprint, lookupIdempotencyReplay, storeIdempotencyResult } from '../services/idempotency.js';
-import { runFallbackLoop, newFallbackState, fallbackRoutingTokens, recordUpstreamSuccess, exhaustedRetryError, setFallbackHeaders, exhaustionErrorPayload, setExhaustionHeaders, type AttemptRecord } from '../lib/fallback-loop.js';
+import { runFallbackLoop, newFallbackState, fallbackRoutingTokens, recordUpstreamSuccess, exhaustedRetryError, setFallbackHeaders, exhaustionErrorPayload, setExhaustionHeaders, type AttemptRecord, REASONING_HOLD_MAX_MS } from '../lib/fallback-loop.js';
 import { routedViaValue, safeHeaderValue } from '../lib/header-value.js';
 import { applyTokenBudget, tokenBudgetMessage } from '../lib/guardrails.js';
 import { samplingParamSchemaFields, pickSamplingParams, supportedParametersForPlatforms } from '../lib/sampling-params.js';
@@ -640,7 +640,7 @@ const toolChoiceSchema = z.union([
 
 const stopSchema = z.union([z.string(), z.array(z.string()).min(1).max(64)]);
 
-function providerSafeStop(stop: string | string[] | undefined): string | string[] | undefined {
+export function providerSafeStop(stop: string | string[] | undefined): string | string[] | undefined {
   if (!Array.isArray(stop)) return stop;
   return stop.slice(0, 4);
 }
@@ -1521,6 +1521,7 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
         let totalOutputTokens = 0;
         let headerSent = false;
         let ttfbMs: number | null = null;
+        const attemptStart = Date.now();
         let sawText = false;
         let upstreamFinish: string | null = null;
         const buffered: unknown[] = [];
@@ -1688,12 +1689,11 @@ proxyRouter.post('/completions', async (req: Request, res: Response) => {
           result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
         );
       }
-      // #809: a bare "safe"/"unsafe" classification word from a relay is an
-      // upstream filter, not the requested model — fail over like an empty
-      // completion.
-      if (isUpstreamClassificationOutput(text, route.platform)) {
+      // #809: a bare "safe"/"unsafe" classification word or bot failure lockout
+      // from a relay is an upstream failure, not the requested model — fail over.
+      if (isUpstreamClassificationOutput(text, route.platform) || isUpstreamBotFailureOutput(text, route.platform)) {
         throw Object.assign(
-          new Error(`empty completion from ${route.displayName} (upstream classification output)`),
+          new Error(`empty completion from ${route.displayName} (upstream bot failure output)`),
           result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
         );
       }
@@ -2556,6 +2556,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
         let totalOutputTokens = 0;
         let headerSent = false;
         let ttfbMs: number | null = null;
+        const attemptStart = Date.now();
 
         // Hold-window state: 'undecided' until the first text either matches
         // a dialect marker (→ 'dialect': buffer everything, rescue at end),
@@ -2731,6 +2732,9 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
               // reasoning keys; forwarding them raw would duplicate the call).
               // #764: thinking-only chunks still consumed tokens — count them.
               if (reasoning.length > 0) totalOutputTokens += Math.ceil(reasoning.length / 4);
+              // #1642: long reasoning with nothing sent yet: commit, then stream it live.
+              // Not for response_format: json mode keeps its free failover (#933).
+              if (reasoning.length > 0 && !headerSent && !samplingParams.response_format && Date.now() - attemptStart >= REASONING_HOLD_MAX_MS) flushHeaders();
               if (choice.delta && Object.keys(choice.delta).some(k => k !== 'content' && k !== 'tool_calls' && choice.delta[k] != null)) {
                 // `usage: undefined` (dropped by JSON.stringify): it was held
                 // above and is re-emitted once, after our finish chunk.
@@ -2766,8 +2770,11 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
               // response_format must be caught here, before any byte leaves —
               // the client asked for machine-readable output, not an essay.
               mode = 'json';
-            } else if (!wantsTools || !couldBecomeDialectMarker(probe) || probe.length > 256) {
+            } else if (!wantsTools || (!couldBecomeDialectMarker(probe) && !couldBecomeBotFailure(probe)) || probe.length > 256) {
               mode = 'passthrough';
+              if (!headerSent && isUpstreamBotFailureOutput(heldText, route.platform)) {
+                throw new Error(`in-band provider error from ${route.displayName}: upstream bot failure output`);
+              }
               flushHeaders();
               writeChunk(mkChunk({ content: heldText }, null));
               heldText = '';
@@ -2811,8 +2818,9 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
           // Opt-in schema verdict, taken AFTER the rescue so it covers the
           // calls the rescue reconstructed from prose — those are the ones
           // most likely to be malformed, and running first exempted exactly
-          // them. `!headerSent` is the whole licence to throw here: the commit
-          // point is held until the first meaningful content, so the common
+          // them. No prose flushed yet is the whole licence to throw here (after
+          // a #1642 reasoning-only commit the catch ends it with `stream_error`):
+          // the commit point is held until the first meaningful content, so the common
           // tool-call turn (no prose before the call) has sent no bytes yet and
           // can still fail over invisibly. A turn that already flushed prose is
           // past the point of no return — the catch below would have to tear
@@ -2820,7 +2828,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
           // for the client than forwarding a tool call the schema dislikes.
           // Off-by-default or not, this check must never turn a served answer
           // into a broken one.
-          if (isToolArgumentValidationEnabled() && !headerSent && completedCalls.length > 0) {
+          if (isToolArgumentValidationEnabled() && mode !== 'passthrough' && completedCalls.length > 0) {
             const invalid = invalidToolCallReasons(completedCalls, schemas);
             if (invalid.length > 0) throw invalidToolArgumentsError(route.displayName, invalid);
           }
@@ -2831,7 +2839,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
           // throw below, which would bench a healthy model+key for 90s and
           // log a provider error for every Ctrl-C during a reasoning model's
           // TTFB window.
-          if (clientGone && !headerSent && heldText.trim().length === 0 && completedCalls.length === 0) {
+          if (clientGone && mode !== 'passthrough' && heldText.trim().length === 0 && completedCalls.length === 0) {
             console.log(`[Proxy] client disconnected before first token from ${route.displayName} — dropping attempt without benching`);
             traceRouteEvent('Proxy', {
               event: 'canceled',
@@ -2843,7 +2851,7 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
             return 'committed';
           }
 
-          const hasText = headerSent || heldText.trim().length > 0;
+          const hasText = mode === 'passthrough' || heldText.trim().length > 0;
           if (!hasText && completedCalls.length === 0) {
             // Nothing usable came out — same failover semantics as the
             // non-stream empty-completion path. Headers can't have been sent
@@ -2856,12 +2864,11 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
               upstreamFinish === 'length' ? { skipBench: true } : {},
             );
           }
-          // #809: a bare "safe"/"unsafe" classification word streamed by a
-          // relay is an upstream filter, not the requested model — fail over
-          // like an empty completion.
-          if (isUpstreamClassificationOutput(heldText, route.platform) && completedCalls.length === 0) {
+          // #809: a bare "safe"/"unsafe" classification word or bot failure lockout
+          // streamed by a relay is an upstream failure, not the requested model — fail over.
+          if ((isUpstreamClassificationOutput(heldText, route.platform) || isUpstreamBotFailureOutput(heldText, route.platform)) && completedCalls.length === 0) {
             throw Object.assign(
-              new Error(`empty completion from ${route.displayName} (upstream classification output)`),
+              new Error(`empty completion from ${route.displayName} (upstream bot failure output)`),
               upstreamFinish === 'length' ? { skipBench: true } : {},
             );
           }
@@ -3056,12 +3063,11 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
             result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
           );
         }
-        // #809: a bare "safe"/"unsafe" classification word from a relay is an
-        // upstream filter, not the requested model — fail over like an empty
-        // completion.
-        if (isUpstreamClassificationOutput(respText, route.platform) && (respMsg?.tool_calls?.length ?? 0) === 0) {
+        // #809: a bare "safe"/"unsafe" classification word or bot failure lockout
+        // from a relay is an upstream failure, not the requested model — fail over.
+        if ((isUpstreamClassificationOutput(respText, route.platform) || isUpstreamBotFailureOutput(respText, route.platform)) && (respMsg?.tool_calls?.length ?? 0) === 0) {
           throw Object.assign(
-            new Error(`empty completion from ${route.displayName} (upstream classification output)`),
+            new Error(`empty completion from ${route.displayName} (upstream bot failure output)`),
             result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
           );
         }

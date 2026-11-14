@@ -58,12 +58,13 @@ const PLATFORMS = [
   'blockrun',
   'moondream',
   'freeai',
-  'google', 'groq', 'sail', 'electronhub', 'router9', 'septor', 'speechify', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'radeon', 'nvidia', 'mistral',
+  'google', 'groq', 'sail', 'electronhub', 'septor', 'speechify', 'lucidity', 'airforce', 'dreamprompting', 'waterfall', 'logfare', 'radeon', 'nvidia', 'mistral',
   'openrouter', 'cohere', 'tavily', 'exa', 'firecrawl', 'linkup', 'parallel', 'jina', 'cloudflare', 'zhipu', 'ollama',
   'kilo', 'pollinations', 'llm7', 'huggingface', 'opencode', 'opencode-free', 'ovh', 'agnes', 'siliconflow',
   'routeway', 'bazaarlink', 'aion', 'anyapi', 'requesty', 'navy', 'nara', 'sealion', 'orcarouter', 'unorouter', 'xkiro', 'modelscope',
   'qianfan', 'volcengine', 'longcat', 'xfyun', 'aihorde', 'opencode-go', 'typesafe', 'puter', 'cline', 'freebuff', 'kiro', 'custom',
   'nous', 'typhoon', 'plugsky', 'tokenharbor', 'alibaba', 'codecraft',
+  'powertokens', 'freeinference', 'novai', 'nabh',
 ] as const;
 
 const ALLOWED_IMPORT_EXTENSIONS = new Set(['.env', '.json', '.jsonc', '.md', '.txt', '.csv']);

@@ -55,6 +55,13 @@ import * as removeDeadPlatformsV2 from '../migrations/20261030_000001_remove_dea
 import * as seedJinaSearch from '../migrations/20261030_000002_seed_jina_search.js';
 import * as removeDeadPlatformClod from '../migrations/20261031_000001_remove_dead_platform_clod.js';
 import * as apiKeyProxyPool from '../migrations/20261105_000001_api_key_proxy_pool.js';
+import * as cloudflareNeuronUsage from '../migrations/20261104_000001_cloudflare_neuron_usage.js';
+import * as seedSpeechifyMediaModels from '../migrations/20261111_000001_seed_speechify_media_models.js';
+import * as decommissionWebshareProxies from '../migrations/20261111_000002_decommission_webshare_proxies.js';
+import * as purgeObsoleteDisabledModels from '../migrations/20261112_000001_purge_obsolete_disabled_models.js';
+import * as removeDeadPlatformRouter9 from '../migrations/20261112_000002_remove_dead_platform_router9.js';
+import * as disableUnorouterBrokenGemini from '../migrations/20261112_000003_disable_unorouter_broken_gemini.js';
+import * as decommissionUnorouter from '../migrations/20261112_000004_decommission_unorouter.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -111,8 +118,11 @@ export const KEY_BUDGET_PERIOD_AUTO_FILENAME = '20261005_000002_key_budget_perio
 export const REMOVE_DEAD_PLATFORMS_FILENAME = '20261009_000001_remove_dead_platforms.ts';
 export const REMOVE_DEAD_PLATFORMS_V2_FILENAME = '20261030_000001_remove_dead_platforms_v2.ts';
 export const SEED_JINA_SEARCH_FILENAME = '20261030_000002_seed_jina_search.ts';
+export const SEED_SPEECHIFY_MEDIA_MODELS_FILENAME = '20261111_000001_seed_speechify_media_models.ts';
+export const DECOMMISSION_WEBSHARE_PROXIES_FILENAME = '20261111_000002_decommission_webshare_proxies.ts';
 export const REMOVE_DEAD_PLATFORM_CLOD_FILENAME = '20261031_000001_remove_dead_platform_clod.ts';
 export const API_KEY_PROXY_POOL_FILENAME = '20261105_000001_api_key_proxy_pool.ts';
+export const CLOUDFLARE_NEURON_USAGE_FILENAME = '20261104_000001_cloudflare_neuron_usage.ts';
 export const SEARCH_ENGINES_FILENAME = '20261013_000001_search_engines.ts';
 export const DECISION_REQUESTS_FILENAME = '20261016_000001_decision_requests.ts';
 export const SEED_LOCAL_SEARCH_ENGINES_FILENAME = '20261019_000001_seed_local_search_engines.ts';
@@ -122,6 +132,11 @@ export const DECISION_CHAT_JUDGE_FILENAME = '20261021_000001_decision_chat_judge
 export const FIX_DECISION_CHAT_JUDGE_ORDER_FILENAME = '20261022_000001_fix_decision_chat_judge_order.ts';
 export const PROXY_POOLS_FILENAME = '20261023_000001_proxy_pools.ts';
 export const PROXY_CONDITIONAL_ROUTING_FILENAME = '20261024_000001_proxy_conditional_routing.ts';
+
+export const PURGE_OBSOLETE_DISABLED_MODELS_FILENAME = '20261112_000001_purge_obsolete_disabled_models.ts';
+export const REMOVE_DEAD_PLATFORM_ROUTER9_FILENAME = '20261112_000002_remove_dead_platform_router9.ts';
+export const DISABLE_UNOROUTER_BROKEN_GEMINI_FILENAME = '20261112_000003_disable_unorouter_broken_gemini.ts';
+export const DECOMMISSION_UNOROUTER_FILENAME = '20261112_000004_decommission_unorouter.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -179,5 +194,12 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: REMOVE_DEAD_PLATFORMS_V2_FILENAME, module: removeDeadPlatformsV2 },
   { filename: SEED_JINA_SEARCH_FILENAME, module: seedJinaSearch },
   { filename: REMOVE_DEAD_PLATFORM_CLOD_FILENAME, module: removeDeadPlatformClod },
+  { filename: CLOUDFLARE_NEURON_USAGE_FILENAME, module: cloudflareNeuronUsage },
   { filename: API_KEY_PROXY_POOL_FILENAME, module: apiKeyProxyPool },
+  { filename: SEED_SPEECHIFY_MEDIA_MODELS_FILENAME, module: seedSpeechifyMediaModels },
+  { filename: DECOMMISSION_WEBSHARE_PROXIES_FILENAME, module: decommissionWebshareProxies },
+  { filename: PURGE_OBSOLETE_DISABLED_MODELS_FILENAME, module: purgeObsoleteDisabledModels },
+  { filename: REMOVE_DEAD_PLATFORM_ROUTER9_FILENAME, module: removeDeadPlatformRouter9 },
+  { filename: DISABLE_UNOROUTER_BROKEN_GEMINI_FILENAME, module: disableUnorouterBrokenGemini },
+  { filename: DECOMMISSION_UNOROUTER_FILENAME, module: decommissionUnorouter },
 ];

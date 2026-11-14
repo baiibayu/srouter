@@ -13,6 +13,7 @@ import { toast } from '@/lib/toast'
 import type { FallbackEntry } from '@/lib/routing'
 import { scopeCandidates, shouldOfferModelPicker, type ScopeCandidate } from '@/lib/model-scope-selection'
 import { GetKeyLink, PLATFORMS } from './shared'
+import { isSearchPlatform } from '@/lib/search'
 import { Network } from 'lucide-react'
 
 /** A key that just landed, plus the models the picker should offer for it.
@@ -249,6 +250,7 @@ export function AddKeyForm({ onSuccess, initialPlatform }: { onSuccess: (offer?:
   // A single, unlabelled list needs no group heading.
   const platformOptions = useMemo(
     () => PLATFORMS
+      .filter(p => !isSearchPlatform(p.value))
       // The selected provider always stays listed, so hiding added ones never
       // blanks out the trigger label.
       .filter(p => !hideAdded || !addedPlatforms.has(p.value) || p.value === platform)

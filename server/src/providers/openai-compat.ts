@@ -86,7 +86,7 @@ export interface QuotaProbeSpec {
 export class OpenAICompatProvider extends BaseProvider {
   readonly platform: Platform;
   readonly name: string;
-  protected readonly baseUrl: string;
+  protected baseUrl: string;
 
   /** Read-only accessor for the merged provider catalog export. */
   get baseUrlPublic(): string {
@@ -204,6 +204,15 @@ export class OpenAICompatProvider extends BaseProvider {
    * Kilo, OVH and AI Horde all accept both modes per their docs. */
   protected authHeader(apiKey: string): Record<string, string> {
     return bearerAuthHeader(apiKey);
+  }
+
+  /**
+   * Resolve the base URL for completions dynamically per-request.
+   * Useful for providers like Pollinations that route keyless traffic to
+   * text.pollinations.ai and keyed traffic to gen.pollinations.ai.
+   */
+  protected resolveBaseUrl(_apiKey?: string, _modelId?: string): string {
+    return this.baseUrl;
   }
 
   /** Requesty's Leanstral route rejects greedy sampling when temperature=0.
@@ -355,7 +364,8 @@ export class OpenAICompatProvider extends BaseProvider {
     quotaContext?: QuotaObservationContext,
   ): Promise<ChatCompletionResponse> {
     const sampling = this.samplingForModel(modelId, options);
-    const res = await this.fetchWithTimeout(`${this.baseUrl}/chat/completions`, {
+    const endpointUrl = `${this.resolveBaseUrl(apiKey, modelId)}/chat/completions`;
+    const res = await this.fetchWithTimeout(endpointUrl, {
       method: 'POST',
       headers: {
         ...this.authHeader(apiKey),
@@ -488,7 +498,8 @@ export class OpenAICompatProvider extends BaseProvider {
     quotaContext?: QuotaObservationContext,
   ): AsyncGenerator<ChatCompletionChunk> {
     const sampling = this.samplingForModel(modelId, options);
-    const res = await this.fetchWithTimeout(`${this.baseUrl}/chat/completions`, {
+    const endpointUrl = `${this.resolveBaseUrl(apiKey, modelId)}/chat/completions`;
+    const res = await this.fetchWithTimeout(endpointUrl, {
       method: 'POST',
       headers: {
         ...this.authHeader(apiKey),

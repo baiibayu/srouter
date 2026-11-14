@@ -30,7 +30,7 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'freeai', label: 'Free.ai (shared daily free TTS tokens)', url: 'https://free.ai/account/#api-keys' },
   { value: 'llmtr', label: 'LLMTR (zero-priced routes, daily/rolling quotas)', url: 'https://llmtr.com' },
   { value: 'gizmo', label: 'Gizmo (monthly free-model requests)', url: 'https://gizmoplatforms.com/developers' },
-  { value: 'blockrun', label: 'BlockRun (zero-priced models)', url: 'https://user.blockrun.ai/dashboard/keys' },
+  { value: 'blockrun', label: 'BlockRun (free open-weights, keyless)', url: 'https://blockrun.ai/free', keyless: true },
   { value: 'moondream', label: 'Moondream ($5 shared monthly credits)', url: 'https://moondream.ai/c/cloud/api-keys' },
   { value: 'nous', label: 'Nous Portal (OAuth no-billing / API key)', url: 'https://portal.nousresearch.com' },
   { value: 'typhoon', label: 'OpenTyphoon (free research showcase)', url: 'https://playground.opentyphoon.ai/api-key' },
@@ -42,7 +42,6 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'groq', label: 'Groq', url: 'https://console.groq.com/keys' },
   { value: 'sail', label: 'Sail Research ($5 monthly with payment method)', url: 'https://app.sailresearch.com' },
   { value: 'electronhub', label: 'ElectronHub (shared weekly credits)', url: 'https://app.electronhub.ai' },
-  { value: 'router9', label: 'Router9 (shared monthly credits)', url: 'https://www.router9.com' },
   { value: 'septor', label: 'Septor Labs (daily free-model quota)', url: 'https://septorlabs.com/dashboard' },
   { value: 'speechify', label: 'Speechify (monthly free TTS characters)', url: 'https://platform.speechify.ai' },
   { value: 'lucidity', label: 'Lucidity Composite (daily free-model requests)', url: 'https://composite.lucidity.sh' },
@@ -67,7 +66,7 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'opencode-free', label: 'OpenCode Free (no key needed)', url: 'https://opencode.ai', keyless: true },
   { value: 'opencode-go', label: 'OpenCode Go (separate tier)', url: 'https://opencode.ai/auth' },
   { value: 'agnes', label: 'Agnes AI (free key)', url: 'https://platform.agnes-ai.com' },
-  { value: 'siliconflow', label: 'SiliconFlow (image + TTS)', url: 'https://siliconflow.com' },
+  { value: 'siliconflow', label: 'SiliconFlow (chat, image, TTS, rerank)', url: 'https://siliconflow.com' },
   { value: 'routeway', label: 'Routeway (free key)', url: 'https://routeway.ai' },
   { value: 'bazaarlink', label: 'BazaarLink (free key)', url: 'https://bazaarlink.ai' },
   { value: 'aion', label: 'Aion Labs (free key)', url: 'https://www.aionlabs.ai' },
@@ -78,7 +77,6 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'orcarouter', label: 'OrcaRouter (free key)', url: 'https://www.orcarouter.ai' },
   { value: 'unorouter', label: 'UnoRouter (free key)', url: 'https://unorouter.com' },
   { value: 'xkiro', label: 'xKiro (free key)', url: 'https://xkiro.com' },
-  { value: 'jina', label: 'Jina AI (search / reader / embeddings)', url: 'https://jina.ai', keyless: false },
   // AnyAPI advertises 100K tokens/day free, but live testing on 2026-08-10
   // could not get a single free-tier request served (see
   // CATALOG-ANYAPI-SMOKE-2026-08-10 in the ops repo). No quota claim until
@@ -99,4 +97,8 @@ export const PLATFORMS: PlatformEntry[] = [
   { value: 'cline', label: 'Cline (free OAuth tokens)', url: 'https://cline.bot' },
   { value: 'freebuff', label: 'Freebuff (free AI models)', url: 'https://freebuff.com' },
   { value: 'kiro', label: 'Kiro (free Claude/GPT access)', url: 'https://kiro.dev' },
+  { value: 'powertokens', label: 'PowerTokens (free GLM, DeepSeek, Qwen & MiniMax)', url: 'https://powertokens.ai' },
+  { value: 'freeinference', label: 'FreeInference (research free chat & embeddings)', url: 'https://freeinference.org' },
+  { value: 'novai', label: 'NovAI (free GLM, DeepSeek & Qwen)', url: 'https://aiapi-pro.com' },
+  { value: 'nabh', label: 'nabh.cloud (monthly free allowance)', url: 'https://nabh.cloud' },
 ]

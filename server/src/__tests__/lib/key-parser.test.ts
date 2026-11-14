@@ -70,8 +70,6 @@ describe('key parser', () => {
     expect(detectPlatform('SAIL_RESEARCH_')).toBe('sail');
     expect(detectPlatform('ELECTRONHUB_')).toBe('electronhub');
     expect(detectPlatform('ELECTRON_HUB_')).toBe('electronhub');
-    expect(detectPlatform('ROUTER9_')).toBe('router9');
-    expect(detectPlatform('ROUTER_9_')).toBe('router9');
     expect(detectPlatform('LUCIDITY_')).toBe('lucidity');
     expect(detectPlatform('AIRFORCE_')).toBe('airforce');
     expect(detectPlatform('API_AIRFORCE_')).toBe('airforce');
@@ -100,8 +98,6 @@ describe('key parser', () => {
     expect(AUTH_JSON_PROVIDER_MAP['amd-tokenfactory']).toBe('radeon');
     expect(AUTH_JSON_PROVIDER_MAP['sail-research']).toBe('sail');
     expect(AUTH_JSON_PROVIDER_MAP['electron-hub']).toBe('electronhub');
-    expect(AUTH_JSON_PROVIDER_MAP['router9']).toBe('router9');
-    expect(AUTH_JSON_PROVIDER_MAP['router-9']).toBe('router9');
     expect(AUTH_JSON_PROVIDER_MAP['septor']).toBe('septor');
     expect(AUTH_JSON_PROVIDER_MAP['septor-labs']).toBe('septor');
     expect(AUTH_JSON_PROVIDER_MAP['septorlabs']).toBe('septor');

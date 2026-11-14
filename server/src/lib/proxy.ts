@@ -773,6 +773,20 @@ export function describeFetchFailure(err: unknown, url: string, platform?: strin
 }
 
 /**
+ * Checks whether outbound requests to the given URL/platform are routed through
+ * a proxy (per-key proxy, proxy pool, relay pool, or global proxy).
+ */
+export function isPlatformProxied(url: string, platform?: string): boolean {
+  if (!_proxyEnabled) return false;
+  if (shouldBypassProxy(url, platform)) return false;
+  if (perKeyProxyStore.getStore()) return true;
+  if (platform && shouldUseRelayPool(platform)) return true;
+  if (_proxyNodeSelector?.(platform, { isKeyless: true })) return true;
+  if (_proxyUrl) return true;
+  return false;
+}
+
+/**
  * Rewrite an AbortError rejection so its `.message` carries the compact
  * triage tag `<platform>, <type>, <timeout>s`. Preserves `name: 'AbortError'`
  * so `isRetryableError()` (which matches on the substring "aborted") keeps

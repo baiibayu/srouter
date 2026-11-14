@@ -15,6 +15,7 @@
 import { getDb } from '../db/index.js';
 import { ensureModelInProfiles } from './profile-models.js';
 import type { Scheduler } from '../lib/scheduler.js';
+import { proxyFetch } from '../lib/proxy.js';
 
 // ── OpenCode Free Tier Identity (mirrors opencode-free.ts) ─────────────────
 
@@ -148,17 +149,29 @@ interface UpstreamModel {
 async function fetchFreeModels(): Promise<UpstreamModel[]> {
   let res: Response;
   try {
-    res = await fetch(`${UPSTREAM_BASE}/models`, {
-      method: 'GET',
-      headers: identityHeaders(),
-      signal: AbortSignal.timeout(15_000),
-    });
+    res = await proxyFetch(
+      `${UPSTREAM_BASE}/models`,
+      {
+        method: 'GET',
+        headers: identityHeaders(),
+        signal: AbortSignal.timeout(15_000),
+      },
+      'opencode-free',
+      'chat',
+      15_000,
+    );
   } catch (_err) {
-    res = await fetch('https://opencode.ai/inference/v1/models', {
-      method: 'GET',
-      headers: identityHeaders(),
-      signal: AbortSignal.timeout(15_000),
-    });
+    res = await proxyFetch(
+      'https://opencode.ai/inference/v1/models',
+      {
+        method: 'GET',
+        headers: identityHeaders(),
+        signal: AbortSignal.timeout(15_000),
+      },
+      'opencode-free',
+      'chat',
+      15_000,
+    );
   }
 
   if (!res.ok) {
